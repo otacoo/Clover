@@ -1,0 +1,1332 @@
+/*
+ * BlueClover - 4chan browser https://github.com/nnuudev/BlueClover
+ * Copyright (C) 2021 nnuudev
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.otacoo.chan.ui.captcha;
+
+import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
+
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.net.Uri;
+import android.text.InputType;
+import android.widget.EditText;
+import android.widget.Toast;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.AttributeSet;
+import android.util.Base64;
+import android.view.MotionEvent;
+import android.view.ViewParent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.ValueCallback;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import org.otacoo.chan.R;
+import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.core.site.SiteAuthentication;
+import org.otacoo.chan.ui.controller.EmailVerificationController;
+import org.otacoo.chan.ui.theme.ThemeHelper;
+import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.Logger;
+
+
+public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInterface {
+    private static final String TAG = "NewCaptchaLayout";
+
+    /** True when we are showing a captcha UI (asset challenges/legacy image) that would be lost if the user backs out. */
+    private volatile boolean showingActiveCaptcha;
+
+    /** True when we have already reported a solved captcha to the callback for the current session. */
+    private boolean reportedCompletion;
+
+    private static final int NATIVE_PAYLOAD_MAX_RETRIES = 20;
+    private static final int CLOUDFLARE_MAX_RETRIES = 60;
+    private static final int NATIVE_PAYLOAD_RETRY_DELAY_MS = 500;
+
+    private static volatile String ticket = "";
+
+    private AuthenticationLayoutCallback callback;
+    private String baseUrl;
+    private String board;
+    private int thread_id;
+    /** True when we served asset HTML from intercept (no #t-root; skip waitForCaptchaForm). */
+    private boolean lastResponseWasAsset;
+    /** When true, do not intercept the next captcha load so the WebView gets the native 4chan page (e.g. after cooldown). */
+    private boolean skipInterceptNextLoad;
+    /** True after we have done the first "Get Captcha" navigation (loadUrl); that load sets 4chan-tc-ticket. After that we only use fetch() so we never leave the page. */
+    private boolean haveGetCaptchaNavigationDone;
+    /** Counter for consecutive failed fetch attempts - after too many failures, fall back to native page load */
+    private int failedFetchAttempts = 0;
+    /** Tracks how many times we've seen pcd=0 but no data in a single sequence of fetches. */
+    private int pcdLoopCount = 0;
+    /** Tracks how many times user pressed "Get Captcha" manually. If it persists, forceful reload is better. */
+    private int manualGetCaptchaClickCount = 0;
+    /** Track whether we had cf_clearance before the current page load started, to detect when Cloudflare challenge completes */
+    private boolean hadCloudflareClearanceBeforePageLoad = false;
+
+    /** Retry state for extracting payload from the native captcha page without clobbering its DOM (needed for JS challenges). */
+    private int nativePayloadRetryAttempts = 0;
+    private String nativePayloadRetryUrl = null;
+
+    /** If true, the WebView is being used as a standalone captcha challenge (no keyboard needed). */
+    private boolean isCaptchaOnlyMode = true;
+
+    /** Convert a WebView evaluateJavascript return value to a plain Java String. */
+    private static String jsResultToPlainString(String value) {
+        if (value == null) return "";
+        if ("null".equals(value)) return "";
+        String out = value;
+        // Returned values are JSON-encoded strings, e.g. "\"abc\"".
+        if (out.length() >= 2 && out.startsWith("\"") && out.endsWith("\"")) {
+            try {
+                out = new org.json.JSONArray("[" + out + "]").getString(0);
+            } catch (Exception ignored) {
+                // fall through
+            }
+        }
+        return out == null ? "" : out;
+    }
+
+    /** Ensure static {@link #ticket} is populated from localStorage before requesting captcha again. */
+    private void ensureTicketLoadedThen(final Runnable next) {
+        if (next == null) return;
+        if (ticket != null && !ticket.isEmpty()) {
+            next.run();
+            return;
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            next.run();
+            return;
+        }
+        try {
+            evaluateJavascript(
+                    "(function(){try{return localStorage.getItem('4chan-tc-ticket')||'';}catch(e){return ''}})();",
+                    new ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String value) {
+                            String t = jsResultToPlainString(value);
+                            if (t != null && !t.isEmpty()) {
+                                ticket = t;
+                            } else {
+                            }
+                            next.run();
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            Logger.e(TAG, "ensureTicketLoadedThen failed", e);
+            next.run();
+        }
+    }
+
+    public NewCaptchaLayout(Context context) {
+        super(context);
+        commonInit();
+    }
+
+    public NewCaptchaLayout(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        commonInit();
+    }
+
+    public NewCaptchaLayout(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        commonInit();
+    }
+
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    private void commonInit() {
+        WebSettings settings = getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        
+        // Ensure persistence across app restarts
+        Context ctx = getContext();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            String databasePath = ctx.getDir("databases", 0).getPath();
+            settings.setDatabasePath(databasePath);
+        }
+        
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        
+        // Ensure cookies are accepted and shared across sessions
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.setAcceptThirdPartyCookies(this, true);
+        }
+
+        // Set a default user agent from settings
+        String userAgent = ChanSettings.customUserAgent.get();
+        if (!userAgent.isEmpty()) {
+            settings.setUserAgentString(userAgent);
+        }
+
+        // Use the captcha page client for interception logic
+        setWebViewClient(captchaPageClient(null, settings.getUserAgentString()));
+        
+        setBackgroundColor(getAttrColor(getContext(), R.attr.backcolor));
+        addJavascriptInterface(new CaptchaInterface(this), "CaptchaCallback");
+    }
+
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    @Override
+    public void initialize(Loadable loadable, AuthenticationLayoutCallback callback) {
+        this.callback = callback;
+        this.isCaptchaOnlyMode = true;
+        this.reportedCompletion = false;
+
+        SiteAuthentication authentication = loadable.site.actions().postAuthenticate();
+        loadable.site.requestModifier().modifyWebView(this);
+
+        this.baseUrl = authentication.baseUrl;
+        this.board = loadable.boardCode;
+        this.thread_id = loadable.no;
+        
+        failedFetchAttempts = 0;
+        pcdLoopCount = 0;
+        manualGetCaptchaClickCount = 0;
+
+        // initialize() is for the captcha placement in the reply layout.
+        // We need focusable true so user can interact with native challenges (Cloudflare, etc.)
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+    }
+
+    @Override
+    public boolean onCheckIsTextEditor() {
+        return !isCaptchaOnlyMode && super.onCheckIsTextEditor();
+    }
+
+    @Override
+    public void reset() {
+        showingActiveCaptcha = false;
+        reportedCompletion = false;
+        hardReset();
+    }
+
+    @Override
+    public void hardReset() {
+        showingActiveCaptcha = false;
+        reportedCompletion = false;
+        hardReset(false);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (getWindowToken() != null) {
+            AndroidUtils.hideKeyboard(this);
+        }
+    }
+
+    /** Used by ReplyLayout to warn before leaving the captcha screen mid-challenge. */
+    public boolean shouldConfirmBeforeClosing() {
+        return showingActiveCaptcha;
+    }
+
+    /** Handle payload from fetch() in page context: decoded from encodeURIComponent; if cooldown inject UI (same page/session), else load asset. */
+    private void onCaptchaPayloadFromFetch(String payloadEncoded) {
+        String payload = null;
+        if (payloadEncoded != null && !payloadEncoded.isEmpty()) {
+            try {
+                payload = URLDecoder.decode(payloadEncoded, StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                Logger.e(TAG, "onCaptchaPayloadFromFetch: decode failed", e);
+            }
+        }
+
+        if (payload == null || payload.isEmpty()) {
+            failedFetchAttempts++;
+            if (failedFetchAttempts >= 5) {
+                Logger.i(TAG, "onCaptchaPayloadFromFetch: after " + failedFetchAttempts + " failed attempts, falling back to native page load");
+                failedFetchAttempts = 0;
+                skipInterceptNextLoad = true;
+                hardReset(true, true);
+                return;
+            }
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: no payload (attempt " + failedFetchAttempts + "/5), retrying fetch in 1s");
+            new Handler(Looper.getMainLooper()).postDelayed(this::requestCaptchaViaFetch, 1000);
+            return;
+        }
+
+        // Check if the payload is actually the full HTML page instead of the JSON snippet.
+        // If it's HTML, extract the JSON payload from it using our Java parser.
+        if (payload.contains("<html") || payload.contains("<!DOCTYPE") || payload.contains("<body")) {
+            String extracted = extractTwisterPayload(payload);
+            if (extracted != null) {
+                payload = extracted;
+            } else {
+                // If we couldn't find a JSON payload in the HTML, maybe the page is just a challenge or error.
+                // We'll treat it as empty and let the retry logic handle it.
+                failedFetchAttempts++;
+                Logger.w(TAG, "onCaptchaPayloadFromFetch: payload looks like HTML but no postMessage found (attempt " + failedFetchAttempts + "/5). HTML start: " + (payload.length() > 200 ? payload.substring(0, 200) : payload));
+                if (failedFetchAttempts >= 5) {
+                    failedFetchAttempts = 0;
+                    skipInterceptNextLoad = true;
+                    hardReset(true, true);
+                } else {
+                    new Handler(Looper.getMainLooper()).postDelayed(this::requestCaptchaViaFetch, 1000);
+                }
+                return;
+            }
+        }
+
+        failedFetchAttempts = 0;
+        haveGetCaptchaNavigationDone = true;
+        boolean darkTheme = !ThemeHelper.theme().isLightTheme;
+        int pcdValue = getPcdFromPayload(payload);
+
+        if (pcdValue > 0) {
+            pcdLoopCount = 0;
+            manualGetCaptchaClickCount = 0;
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: pcd=" + pcdValue + " — loading asset with cooldown payload");
+            String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+            if (assetHtml == null) {
+                skipInterceptNextLoad = true;
+                hardReset(true, true);
+                return;
+            }
+            lastResponseWasAsset = true;
+            String baseUrl = "https://sys.4chan.org/";
+            loadDataWithBaseURL(baseUrl, assetHtml, "text/html", "UTF-8", baseUrl);
+            onCaptchaLoaded();
+            return;
+        }
+
+        if (pcdValue == 0 && payloadHasCaptchaData(payload)) {
+            pcdLoopCount = 0;
+            manualGetCaptchaClickCount = 0;
+            String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+            if (assetHtml == null) {
+                skipInterceptNextLoad = true;
+                hardReset(true, true);
+                return;
+            }
+            lastResponseWasAsset = true;
+            String baseUrl = "https://sys.4chan.org/";
+            loadDataWithBaseURL(baseUrl, assetHtml, "text/html", "UTF-8", baseUrl);
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: loaded asset with captcha data from fetch (pcd=0)");
+            onCaptchaLoaded();
+            return;
+        }
+
+        // If we get pcd=0 but NO data, or pcd=-1 (invalid), we check if we should retry or show manual UI.
+        persistTicketFromPayload(payload);
+
+        // If we have a ticket but no data, we should try to request the captcha again immediately.
+        if (ticket != null && !ticket.isEmpty() && pcdLoopCount < 3) {
+            pcdLoopCount++;
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: pcd=" + pcdValue + " but have ticket, auto-retrying fetch (loop " + pcdLoopCount + ")");
+            requestCaptchaViaFetch();
+            return;
+        }
+
+        pcdLoopCount = 0;
+
+        // If we still have no captcha data and NO TICKET after retries, 
+        // force a native reload so the user can see the challenge or error.
+        if ((ticket == null || ticket.isEmpty()) && failedFetchAttempts < 2) {
+            failedFetchAttempts++;
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: insufficient data (pcd=" + pcdValue + "), forcing native reload (fail count: " + failedFetchAttempts + ")");
+            skipInterceptNextLoad = true;
+            hardReset(true, true);
+            return;
+        }
+
+        Logger.i(TAG, "onCaptchaPayloadFromFetch: giving up on automation, showing manual UI (ticket present: " + (ticket != null && !ticket.isEmpty()) + ")");
+        injectRequestCaptchaUI(darkTheme, true);
+        onCaptchaLoaded();
+    }
+
+    /**
+     * User tapped "Get Captcha".
+     *
+     * Important: OkHttp requests increasingly get served JS-based bot/challenge HTML (e.g. spur/mcl) that does not contain
+     * the expected postMessage payload. To avoid this, we prefer a WebView navigation to the native captcha page and
+     * extract the payload from the resulting HTML (same cookies + JS context as the browser).
+     */
+    private void onGetCaptchaPressed() {
+        manualGetCaptchaClickCount++;
+        if (!haveGetCaptchaNavigationDone || manualGetCaptchaClickCount > 2) {
+            Logger.i(TAG, "onGetCaptchaPressed: forcing hard reload (clicks=" + manualGetCaptchaClickCount + ")");
+            manualGetCaptchaClickCount = 0;
+            haveGetCaptchaNavigationDone = true;
+            skipInterceptNextLoad = true;
+            hardReset(true, true);
+        } else {
+            // We've already done the first navigation to establish cookies/session. 
+            // Now use fetch() to request the captcha without reloading the page,
+            // which preserves the JavaScript state and session better.
+            Logger.i(TAG, "onGetCaptchaPressed: requesting via fetch()");
+            requestCaptchaViaFetch();
+        }
+    }
+
+    /** Request captcha via OkHttp (same cookies as intercept) so 4chan gets our session/ticket and returns challenges instead of a new cooldown. Runs on background thread, applies result on main thread. */
+    private void requestCaptchaViaOkHttp() {
+        String ticketParam = (ticket != null && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
+        final String captchaUrl = "https://sys.4chan.org/captcha?board=" + board +
+                (thread_id > 0 ? "&thread_id=" + thread_id : "") + "&_=" + System.currentTimeMillis() + ticketParam;
+        final String cookieHeader = get4chanCookieHeader();
+        final String userAgent = getSettings().getUserAgentString();
+        final String referer = "https://boards.4chan.org/" + board + "/thread/" + thread_id;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String payload = null;
+                try {
+                    Request.Builder rb = new Request.Builder().url(captchaUrl);
+                    if (cookieHeader != null) rb.header("Cookie", cookieHeader);
+                    rb.header("Referer", referer);
+                    if (userAgent != null && !userAgent.isEmpty()) rb.header("User-Agent", userAgent);
+                    rb.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                    Response response = new OkHttpClient.Builder().build().newCall(rb.build()).execute();
+                    int responseCode = response.code();
+                    String body = response.body() != null ? response.body().string() : null;
+                    copyResponseCookiesToWebView(response, "https://sys.4chan.org");
+                    response.close();
+                    if (response.isSuccessful() && body != null && !body.isEmpty()) {
+                        payload = extractTwisterPayload(body);
+                    }
+                } catch (Exception e) {
+                    Logger.e(TAG, "requestCaptchaViaOkHttp failed", e);
+                }
+                final String payloadFinal = payload;
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (payloadFinal == null || payloadFinal.isEmpty()) {
+                            failedFetchAttempts++;
+                            Logger.w(TAG, "requestCaptchaViaOkHttp: no payload (attempt " + failedFetchAttempts + "/5)");
+                            if (failedFetchAttempts >= 5) {
+                                failedFetchAttempts = 0;
+                                Logger.w(TAG, "requestCaptchaViaOkHttp: Too many failures. Fallback to native load (no intercept).");
+                                skipInterceptNextLoad = true;
+                                hardReset(true, true);
+                                return;
+                            }
+                            // If user is getting challenges that require JS (like spur.us), retrying immediately via OkHttp is pointless.
+                            // But we don't know for sure.
+                            // Let's add a small delay and retry.
+                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestCaptchaViaOkHttp();
+                                }
+                            }, 1000);
+                            return;
+                        }
+                        failedFetchAttempts = 0;
+                        persistTicketFromPayload(payloadFinal);
+                        applyCaptchaPayload(payloadFinal);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private static String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            return value;
+        }
+    }
+
+    /** Apply a captcha payload (from OkHttp or fetch): load asset for cooldown or challenges, or inject "request captcha" UI. Must run on main thread. */
+    private void applyCaptchaPayload(String payload) {
+        boolean darkTheme = !ThemeHelper.theme().isLightTheme;
+        int pcdValue = getPcdFromPayload(payload);
+        if (pcdValue > 0) {
+            showingActiveCaptcha = false;
+            String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+            if (assetHtml == null) {
+                Logger.w(TAG, "applyCaptchaPayload: failed to load asset HTML");
+                skipInterceptNextLoad = true;
+                hardReset(true, true);
+                return;
+            }
+            lastResponseWasAsset = true;
+            loadDataWithBaseURL("https://sys.4chan.org/", assetHtml, "text/html", "UTF-8", "https://sys.4chan.org/");
+            onCaptchaLoaded();
+            return;
+        }
+        if (!payloadHasCaptchaData(payload)) {
+            showingActiveCaptcha = false;
+            injectRequestCaptchaUI(darkTheme, true);
+            onCaptchaLoaded();
+            return;
+        }
+
+        // We have actual captcha data (legacy image or native tasks).
+        showingActiveCaptcha = true;
+        String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+        if (assetHtml != null) {
+            lastResponseWasAsset = true;
+            loadDataWithBaseURL("https://sys.4chan.org/", assetHtml, "text/html", "UTF-8", "https://sys.4chan.org/");
+        }
+        onCaptchaLoaded();
+    }
+
+    /** Request captcha via fetch() from current page (same origin, credentials). Kept for fallback; after cooldown we use requestCaptchaViaOkHttp so cookies are sent. */
+    private void requestCaptchaViaFetch() {
+        final String captchaUrl = "https://sys.4chan.org/captcha?board=" + board +
+                (thread_id > 0 ? "&thread_id=" + thread_id : "") + "&_=" + System.currentTimeMillis();
+        String escUrl = captchaUrl.replace("\\", "\\\\").replace("'", "\\'");
+        String escTicket = (ticket != null ? ticket : "").replace("\\", "\\\\").replace("'", "\\'");
+        
+        // Use a trivial fetch script with enhanced browser-like headers.
+        String js = "(function(){\n"
+            + "  var u='" + escUrl + "';\n"
+            + "  var jt='" + escTicket + "';\n"
+            + "  try{\n"
+            + "    var t=localStorage.getItem('4chan-tc-ticket');\n"
+            + "    if(!t && jt) { t=jt; try{localStorage.setItem('4chan-tc-ticket',jt);}catch(e){} }\n"
+            + "    if(t && t !== 'null') u+='&ticket='+encodeURIComponent(t);\n"
+            + "  }catch(e){}\n"
+            + "  fetch(u,{\n"
+            + "    credentials:'include',\n"
+            + "    headers:{\n"
+            + "      'X-Requested-With':'XMLHttpRequest',\n"
+            + "      'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',\n"
+            + "      'Sec-Fetch-Dest':'empty',\n"
+            + "      'Sec-Fetch-Mode':'cors',\n"
+            + "      'Sec-Fetch-Site':'same-origin'\n"
+            + "    }\n"
+            + "  })\n"
+            + "    .then(r => r.text())\n"
+            + "    .then(h => {\n"
+            + "      try {\n"
+            + "        var enc = encodeURIComponent(h);\n"
+            + "        CaptchaCallback.onCaptchaPayloadReady(enc);\n"
+            + "      } catch(e) { CaptchaCallback.onCaptchaPayloadReady(''); }\n"
+            + "    })\n"
+            + "    .catch(e => { try { CaptchaCallback.onCaptchaPayloadReady(''); } catch(ex){} });\n"
+            + "})();";
+        evaluateJavascript(js, null);
+    }
+
+    /** @param afterCooldown true when user tapped "Get Captcha" after cooldown so we skip intercept and use cache-busting */
+    private void hardReset(boolean afterCooldown) {
+        hardReset(afterCooldown, false);
+    }
+
+    /**
+     * Hard reload the native captcha page.
+     * @param afterCooldown adds cache-busting query param
+     * @param includeTicketParam appends &ticket=... when available
+     */
+    private void hardReset(boolean afterCooldown, boolean includeTicketParam) {
+        showingActiveCaptcha = false;
+        String ticketParam = (includeTicketParam && ticket != null && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
+        String captchaUrl = "https://sys.4chan.org/captcha?board=" + board +
+                (thread_id > 0 ? "&thread_id=" + thread_id : "") + ticketParam;
+        if (afterCooldown) {
+            captchaUrl = captchaUrl + "&_=" + System.currentTimeMillis();
+        }
+        final String loadUrlFinal = captchaUrl;
+        lastResponseWasAsset = false;
+        String userAgent = getSettings().getUserAgentString();
+        setWebViewClient(captchaPageClient(loadUrlFinal, userAgent));
+        java.util.Map<String, String> headers = new java.util.HashMap<>();
+        headers.put("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id);
+        loadUrl(captchaUrl, headers);
+    }
+
+    /** WebViewClient: intercept captcha HTML, extract payload, serve new_captcha.html asset. */
+    private WebViewClient captchaPageClient(final String captchaUrl, final String userAgent) {
+        return new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String requestUrl = request.getUrl().toString();
+                boolean isMainFrame = request.isForMainFrame();
+                
+                // Track cf_clearance state at start of main frame requests to sys.4chan.org
+                boolean hasCf = hasCloudflareClearance();
+                if (isMainFrame && requestUrl.contains("sys.4chan.org/")) {
+                    hadCloudflareClearanceBeforePageLoad = hasCf;
+                }
+
+                // Match captcha requests: usually /captcha?board=... or /captcha?action=...
+                // If board is set, we use a more specific match to avoid intercepting other things
+                boolean isCaptchaRequest;
+                if (board != null && !board.isEmpty()) {
+                    String core = "https://sys.4chan.org/captcha?board=" + board;
+                    isCaptchaRequest = requestUrl.startsWith(core);
+                } else {
+                    isCaptchaRequest = requestUrl.contains("sys.4chan.org/captcha?");
+                }
+                
+                // Only intercept when we have Cloudflare clearance and it's the captcha request
+                // Also respect skipInterceptNextLoad (used for cooldown fallback to native load)
+                if (isCaptchaRequest && hasCf && !skipInterceptNextLoad) {
+                    try {
+                        String cookieHeader = get4chanCookieHeader();
+                        // If we don't have board/thread, use a generic referer
+                        String referer = (board != null && thread_id > 0) 
+                            ? "https://boards.4chan.org/" + board + "/thread/" + thread_id
+                            : "https://sys.4chan.org/";
+                        
+                        Request.Builder rb = new Request.Builder().url(requestUrl);
+                        if (cookieHeader != null) rb.header("Cookie", cookieHeader);
+                        rb.header("Referer", referer);
+                        if (userAgent != null && !userAgent.isEmpty()) rb.header("User-Agent", userAgent);
+                        rb.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                        Response response = new OkHttpClient.Builder().build().newCall(rb.build()).execute();
+                        int code = response.code();
+                        String body = response.body() != null ? response.body().string() : null;
+                        copyResponseCookiesToWebView(response, "https://sys.4chan.org");
+                        response.close();
+                        
+                        if (response.isSuccessful() && body != null && !body.isEmpty()) {
+                            String payload = extractTwisterPayload(body);
+                            if (payload != null) {
+                                persistTicketFromPayload(payload);
+                                haveGetCaptchaNavigationDone = true;
+                                boolean darkTheme = !ThemeHelper.theme().isLightTheme;
+                                String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+                                if (assetHtml != null) {
+                                    lastResponseWasAsset = true;
+                                    return new WebResourceResponse("text/html", "UTF-8",
+                                            new ByteArrayInputStream(assetHtml.getBytes(StandardCharsets.UTF_8)));
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Logger.e(TAG, "Intercept captcha failed", e);
+                    }
+                }
+                
+                // If we get here it means we are loading natively or intercept failed
+                if (isMainFrame && isCaptchaRequest) {
+                    skipInterceptNextLoad = false;
+                    lastResponseWasAsset = false;
+                }
+                
+                return null;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (url == null || !url.contains("sys.4chan.org")) return;
+                
+                Logger.i(TAG, "onPageFinished: url=" + url + " lastResponseWasAsset=" + lastResponseWasAsset + " showingActiveCaptcha=" + showingActiveCaptcha);
+                CookieManager.getInstance().flush();
+                
+                boolean hasCloudflareNow = hasCloudflareClearance();
+                if (!hadCloudflareClearanceBeforePageLoad && hasCloudflareNow) {
+                    Logger.i(TAG, "cf_clearance set, reloading current page: " + url);
+                    hadCloudflareClearanceBeforePageLoad = true;
+                    loadUrl(url);
+                    return;
+                }
+                
+                // Don't interfere with non-captcha pages (like sign-in or verification)
+                if (!url.contains("/captcha")) {
+                    onCaptchaLoaded();
+                    return;
+                }
+                
+                if (lastResponseWasAsset) {
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (view.getWindowToken() == null) return;
+                            installPostMessageHook();
+                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (view.getWindowToken() == null) return;
+                                    onCaptchaLoaded();
+                                }
+                            }, 500);
+                        }
+                    }, 500);
+                } else {
+                    extractPayloadFromNativePageAndLoadAsset(view, url);
+                }
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                String host = Uri.parse(url).getHost();
+                if (host == null) return false;
+                if (host.contains("4chan.org") || host.contains("cloudflare")) {
+                    return false;
+                }
+                AndroidUtils.openLink(url);
+                return true;
+            }
+        };
+    }
+
+    private boolean hasCloudflareClearance() {
+        CookieManager.getInstance().flush();  // Ensure cookies are written
+        String cookies = CookieManager.getInstance().getCookie("https://sys.4chan.org");
+        boolean hasClearance = cookies != null && cookies.contains("cf_clearance");
+        Logger.i(TAG, "hasCloudflareClearance: " + hasClearance + " cookies: " + (cookies != null ? cookies.substring(0, Math.min(200, cookies.length())) : "null"));
+        return hasClearance;
+    }
+
+    /** Build Cookie header from WebView's CookieManager for 4chan domains. */
+    private String get4chanCookieHeader() {
+        CookieManager cm = CookieManager.getInstance();
+        Set<String> parts = new LinkedHashSet<>();
+        for (String base : new String[]{"https://sys.4chan.org", "https://boards.4chan.org", "https://www.4chan.org"}) {
+            String c = cm.getCookie(base);
+            if (c != null && !c.isEmpty()) {
+                parts.addAll(Arrays.asList(c.split(";\\s*")));
+            }
+        }
+        return parts.isEmpty() ? null : android.text.TextUtils.join("; ", parts);
+    }
+
+    /** Copy Set-Cookie headers from OkHttp response into WebView CookieManager so reply POST sends same session. */
+    private static void copyResponseCookiesToWebView(Response response, String cookieUrl) {
+        try {
+            CookieManager cm = CookieManager.getInstance();
+            for (int i = 0; i < response.headers().size(); i++) {
+                String name = response.headers().name(i);
+                if (name != null && "Set-Cookie".equalsIgnoreCase(name)) {
+                    String value = response.headers().value(i);
+                    if (value != null && !value.isEmpty()) {
+                        cm.setCookie(cookieUrl, value);
+                    }
+                }
+            }
+            cm.flush();
+        } catch (Exception e) {
+            Logger.e(TAG, "Copy captcha cookies to WebView failed", e);
+        }
+    }
+
+    /** Extract the twister/captcha JSON from 4chan HTML (window.parent.postMessage({...}, '*')). */
+    private static String extractTwisterPayload(String html) {
+        if (html == null) return null;
+        
+        // If the HTML clearly contains a Cloudflare/Turnstile challenge, we should NOT extract a partial payload.
+        // Doing so might lead us to serve a "pcd:0" asset that covers the actual challenge widget.
+        if (html.contains("cf-turnstile") || html.contains("challenges.cloudflare.com") || html.contains("cf-browser-verification")) {
+            return null;
+        }
+
+        // Find all occurrences of postMessage and pick the longest one that looks like a valid payload.
+        // This handles cases where the page sends multiple status messages (e.g. pcd:0 then later the actual data).
+        String bestPayload = null;
+        int lastIndex = -1;
+        while ((lastIndex = html.indexOf("postMessage", lastIndex + 1)) != -1) {
+            int start = html.indexOf("{", lastIndex);
+            if (start < 0) continue;
+            
+            int depth = 1;
+            int i = start + 1;
+            while (i < html.length() && depth > 0) {
+                char c = html.charAt(i);
+                if (c == '{') depth++;
+                else if (c == '}') depth--;
+                i++;
+            }
+            
+            if (depth == 0) {
+                String candidate = html.substring(start, i).trim();
+                
+                // Strict validation: must be valid JSON and contain actionable fields.
+                try {
+                    org.json.JSONObject obj = new org.json.JSONObject(candidate);
+                    org.json.JSONObject data = obj.optJSONObject("twister");
+                    if (data == null) data = obj;
+                    
+                    // A valid payload must have pcd, ticket, or captcha-specific data (img/tasks).
+                    // If it only has "challenge" and "response" as strings (mock/template), it is rejected.
+                    boolean hasPcd = data.has("pcd");
+                    boolean hasTicket = data.has("ticket") && !data.isNull("ticket");
+                    boolean hasAssets = data.has("img") || data.has("tasks");
+                    
+                    if (hasPcd || hasTicket || hasAssets) {
+                        // Prefer the one with assets or ticket.
+                        if (bestPayload == null || hasAssets || hasTicket) {
+                            bestPayload = candidate;
+                        }
+                    }
+                } catch (Exception e) {
+                    // Not valid JSON
+                }
+            }
+        }
+        
+        return bestPayload;
+    }
+
+    /** Load asset captcha/new_captcha.html with __CLOVER_JSON__ and __C_*__ color placeholders replaced (valid CSS; ternary in CSS is invalid). */
+    private String loadAssetWithCaptchaData(String jsonPayload, boolean darkTheme) {
+        try {
+            InputStream is = getContext().getAssets().open("captcha/new_captcha.html");
+            String html = new java.util.Scanner(is, StandardCharsets.UTF_8.name()).useDelimiter("\\A").next();
+            is.close();
+            String escaped = jsonPayload
+                    .replace("\\", "\\\\")
+                    .replace("'", "\\'")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("</", "<\\/");
+            html = html.replace("__CLOVER_JSON__", escaped);
+            if (darkTheme) {
+                html = html.replace("__C_BG__", "#0d0d0d");
+                html = html.replace("__C_FG__", "#e8e8e8");
+                html = html.replace("__C_TIMER_SHADOW__", "0 0 1px rgba(255,255,255,0.25)");
+                html = html.replace("__C_LINK__", "#b8b8b8");
+                html = html.replace("__C_INPUT_BG__", "#1e1e1e");
+                html = html.replace("__C_INPUT_FG__", "#e0e0e0");
+                html = html.replace("__C_INPUT_BORDER__", "#444");
+                html = html.replace("__C_BTN_BG__", "#333");
+                html = html.replace("__C_BTN_FG__", "#e0e0e0");
+                html = html.replace("__C_BTN_BORDER__", "#555");
+                html = html.replace("__C_MUTED__", "#b0b0b0");
+                html = html.replace("__C_WARNING_BG__", "#1a1a1a");
+                html = html.replace("__C_WARNING_FG__", "#b0b0b0");
+            } else {
+                html = html.replace("__C_BG__", "#ffffff");
+                html = html.replace("__C_FG__", "#1a1a1a");
+                html = html.replace("__C_TIMER_SHADOW__", "0 1px 2px rgba(0,0,0,0.15)");
+                html = html.replace("__C_LINK__", "#1565c0");
+                html = html.replace("__C_INPUT_BG__", "#fff");
+                html = html.replace("__C_INPUT_FG__", "#000");
+                html = html.replace("__C_INPUT_BORDER__", "#ccc");
+                html = html.replace("__C_BTN_BG__", "#0066cc");
+                html = html.replace("__C_BTN_FG__", "#fff");
+                html = html.replace("__C_BTN_BORDER__", "#0052a3");
+                html = html.replace("__C_MUTED__", "#555");
+                html = html.replace("__C_WARNING_BG__", "#f5f5f5");
+                html = html.replace("__C_WARNING_FG__", "#666");
+            }
+            return html;
+        } catch (Exception e) {
+            Logger.e(TAG, "Load new_captcha.html failed", e);
+            return null;
+        }
+    }
+
+    /** Native 4chan page often renders blank in WebView. Extract twister payload from document and load our asset. */
+    private void extractPayloadFromNativePageAndLoadAsset(final WebView view, final String url) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            installPostMessageHook();
+            waitForCaptchaForm();
+            return;
+        }
+
+        // Always install the hook on native pages as well: some flows only deliver payload via postMessage after JS runs.
+        installPostMessageHook();
+
+        // Reset retry counter if URL changed.
+        if (nativePayloadRetryUrl == null || !nativePayloadRetryUrl.equals(url)) {
+            nativePayloadRetryUrl = url;
+            nativePayloadRetryAttempts = 0;
+        }
+        // Mark that we've done the first GetCaptcha navigation (native page load that sets 4chan-tc-ticket).
+        // After this, we only use fetch() to get new captcha, never leaving the page.
+        if (!haveGetCaptchaNavigationDone) {
+            haveGetCaptchaNavigationDone = true;
+            Logger.i(TAG, "extractPayloadFromNativePageAndLoadAsset: set haveGetCaptchaNavigationDone=true (first native page load with ticket)");
+        }
+        // Log whether 4chan set the ticket (helps debug captcha not loading)
+        evaluateJavascript("(function(){ try { var t = localStorage.getItem('4chan-tc-ticket'); return t ? 'set' : 'not set'; } catch(e) { return 'error'; } })();", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String ticketStatus) {
+                Logger.i(TAG, "localStorage 4chan-tc-ticket: " + ticketStatus);
+            }
+        });
+        evaluateJavascript("(function(){ return document.documentElement.outerHTML; })();", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String value) {
+                AndroidUtils.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean darkTheme = !ThemeHelper.theme().isLightTheme;
+                        if (value == null || value.isEmpty()) {
+                            Logger.w(TAG, "extractPayloadFromNativePage: got null or empty HTML");
+                            installPostMessageHook();
+                            waitForCaptchaForm();
+                            return;
+                        }
+                        String html = value;
+                        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+                            try {
+                                html = new org.json.JSONArray("[" + value + "]").getString(0);
+                            } catch (Exception e) {
+                                Logger.e(TAG, "extractPayloadFromNativePage: failed to parse HTML string", e);
+                            }
+                        }
+                        Logger.i(TAG, "extractPayloadFromNativePage: HTML length=" + (html != null ? html.length() : 0));
+                        String payload = extractTwisterPayload(html);
+                        if (payload != null) {
+                            nativePayloadRetryAttempts = 0;
+                            nativePayloadRetryUrl = null;
+                            // Persist ticket from server response so next fetch() can send it (Chance does this; 4chan page script may not set localStorage).
+                            persistTicketFromPayload(payload);
+                            int pcdValue = getPcdFromPayload(payload);
+                            Logger.i(TAG, "extractPayloadFromNativePage: extracted payload length=" + payload.length() + " pcd=" + pcdValue);
+                            if (pcdValue > 0) {
+                                // Cooldown: load our asset with cooldown payload so UI shows timer and "Get Captcha" button
+                                String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+                                if (assetHtml != null) {
+                                    lastResponseWasAsset = true;
+                                    loadDataWithBaseURL(url, assetHtml, "text/html", "UTF-8", url);
+                                    Logger.i(TAG, "extractPayloadFromNativePage: loaded our asset with cooldown payload");
+                                    onCaptchaLoaded();
+                                    return;
+                                }
+                            }
+                            // pcd=0 or no pcd: cooldown over. Only replace document when we have actual captcha; else inject "request captcha" UI to preserve page/session/ticket.
+                            if (payloadHasCaptchaData(payload)) {
+                                String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+                                if (assetHtml != null) {
+                                    lastResponseWasAsset = true;
+                                    loadDataWithBaseURL(url, assetHtml, "text/html", "UTF-8", url);
+                                    Logger.i(TAG, "extractPayloadFromNativePage: loaded our asset (has captcha data), calling onCaptchaLoaded");
+                                    onCaptchaLoaded();
+                                    return;
+                                }
+                            }
+                            
+                            // If we have a ticket but no captcha data, try to auto-trigger fetch once.
+                            // This often solves cases where the native page just issued a ticket and is ready for request.
+                            if (ticket != null && !ticket.isEmpty() && !lastResponseWasAsset) {
+                                Logger.i(TAG, "extractPayloadFromNativePage: pcd=0 and have ticket, auto-triggering fetch");
+                                requestCaptchaViaFetch();
+                                return;
+                            }
+                            
+                            // After first "Get Captcha" (loadUrl) we set haveGetCaptchaNavigationDone=true, so show "Cooldown expired" message; otherwise show "Tap the button below".
+                            injectRequestCaptchaUI(darkTheme, haveGetCaptchaNavigationDone);
+                            onCaptchaLoaded();
+                            return;
+                        } else {
+                            // If no payload found (e.g. challenge page), give it a moment or user interaction might solve it.
+                            // But usually, challenge pages reload automatically.
+                            // If we inject UI immediately, we might break the challenge script or just look weird.
+                            // Let's verify ticket status too.
+                            Logger.w(TAG, "extractPayloadFromNativePage: no payload found in native page. Checking for challenge markers...");
+
+                            boolean isCloudflare = html != null && (html.contains("cf-turnstile") || html.contains("challenges.cloudflare.com") || html.contains("cf-browser-verification"));
+                            boolean isSpur = html != null && (html.contains("spur.us") || html.contains("spur-input"));
+                            boolean isTwister = html != null && (html.contains("id=\"t-root\"") || html.contains("id=\"t-msg\"") || (html.contains("Challenge") && html.contains("of")));
+                            int maxRetries = (isCloudflare || isSpur || isTwister) ? CLOUDFLARE_MAX_RETRIES : NATIVE_PAYLOAD_MAX_RETRIES;
+
+                            if (isCloudflare || isSpur || isTwister) {
+                                Logger.i(TAG, (isCloudflare ? "Cloudflare" : (isSpur ? "Spur" : "Twister")) + " detected, calling onCaptchaLoaded so user can see/solve challenge. Max retries: " + maxRetries);
+                                showingActiveCaptcha = true;
+                                onCaptchaLoaded();
+                            }
+
+                            // Don't clobber the page immediately: mcl/spur challenges need the DOM intact to run.
+                            // Retry a few times; postMessage hook may also fire asynchronously.
+                            if (nativePayloadRetryAttempts < maxRetries) {
+                                nativePayloadRetryAttempts++;
+                                Logger.i(TAG, "extractPayloadFromNativePage: retrying native payload extraction (" + nativePayloadRetryAttempts + "/" + maxRetries + ")");
+                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (view.getWindowToken() == null) return;
+                                        extractPayloadFromNativePageAndLoadAsset(view, url);
+                                    }
+                                }, NATIVE_PAYLOAD_RETRY_DELAY_MS);
+                                return;
+                            }
+
+                            // Still nothing after retries. Provide a manual retry button.
+                            Logger.w(TAG, "extractPayloadFromNativePage: giving up after retries; injecting manual retry UI");
+                            injectRequestCaptchaUI(darkTheme, haveGetCaptchaNavigationDone);
+                            onCaptchaLoaded();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /** True if payload contains actual captcha (image or tasks), not just cooldown/request message. */
+    private static boolean payloadHasCaptchaData(String payload) {
+        return payload != null && (payload.contains("\"img\"") || payload.contains("\"tasks\""));
+    }
+
+    /** 4chan wraps captcha data in postMessage( { twister: { pcd, pcd_msg, ... } } ). Return inner object JSON string for pcd/captcha, or full payload if no twister. */
+    private static String unwrapTwisterPayload(String payload) {
+        if (payload == null || payload.isEmpty()) return payload;
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject(payload);
+            org.json.JSONObject twister = obj.optJSONObject("twister");
+            return twister != null ? twister.toString() : payload;
+        } catch (Exception e) {
+            return payload;
+        }
+    }
+
+    /** Read pcd from payload, using twister object if present. Returns -1 if payload is invalid or pcd is missing. */
+    private static int getPcdFromPayload(String payload) {
+        String data = unwrapTwisterPayload(payload);
+        if (data == null) {
+            return -1;
+        }
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject(data);
+            if (!obj.has("pcd")) return -1;
+            int pcd = obj.optInt("pcd", 0);
+            Logger.i(TAG, "getPcdFromPayload: extracted pcd=" + pcd);
+            return pcd;
+        } catch (Exception e) {
+            Logger.w(TAG, "getPcdFromPayload: JSON parse failed for snippet: " + (data.length() > 50 ? data.substring(0, 50) : data));
+            return -1;
+        }
+    }
+
+    /** Persist ticket from payload into WebView localStorage and static ticket so next OkHttp request can send ?ticket=. */
+    private void persistTicketFromPayload(String payload) {
+        if (payload == null || payload.isEmpty()) return;
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject(payload);
+            org.json.JSONObject data = obj.optJSONObject("twister");
+            if (data == null) data = obj;
+            
+            // Check for ticket in either twister object or top-level.
+            if (data == null || !data.has("ticket")) {
+                Logger.w(TAG, "persistTicketFromPayload: payload has no ticket field");
+                return;
+            }
+            
+            Object t = data.opt("ticket");
+            String ticketStr = (t == null || data.isNull("ticket")) ? null : t.toString();
+            if (ticketStr != null && !ticketStr.isEmpty()) {
+                ticket = ticketStr;
+                String esc = ticketStr.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", " ");
+                final String escFinal = esc;
+                AndroidUtils.runOnUiThread(() -> {
+                    // Also store in localStorage so 4chan's own scripts can find it if they reload.
+                    evaluateJavascript("try{localStorage.setItem('4chan-tc-ticket','" + escFinal + "');}catch(e){}", null);
+                    Logger.i(TAG, "persistTicketFromPayload: set 4chan-tc-ticket from server response: " + ticketStr.substring(0, Math.min(ticketStr.length(), 8)) + "...");
+                });
+            } else {
+                ticket = "";
+                AndroidUtils.runOnUiThread(() -> {
+                    evaluateJavascript("try{localStorage.removeItem('4chan-tc-ticket');}catch(e){}", null);
+                    Logger.i(TAG, "persistTicketFromPayload: removed 4chan-tc-ticket (falsy in response)");
+                });
+            }
+        } catch (Exception e) {
+            Logger.e(TAG, "persistTicketFromPayload failed", e);
+        }
+    }
+
+    /** Inject message + Get Captcha button into current page (preserving scripts/DOM). @param afterCooldown if false, show neutral text. */
+    private void injectRequestCaptchaUI(boolean darkTheme, boolean afterCooldown) {
+        if (showingActiveCaptcha) {
+            Logger.i(TAG, "injectRequestCaptchaUI: already showing active captcha, skipping overlay injection");
+            return;
+        }
+        showingActiveCaptcha = false;
+        String msg = afterCooldown ? "Cooldown expired. You can now request a captcha." : "Tap the button below to load the captcha.";
+        // Semi-transparent background so challenges underneath can be seen if they appear.
+        String bg = darkTheme ? "rgba(18,18,18,0.85)" : "rgba(255,255,255,0.85)";
+        String fg = darkTheme ? "#e0e0e0" : "#000";
+        String btnStyle = darkTheme ? "padding:12px 24px;margin-top:16px;font-size:16px;cursor:pointer;background:#333;color:#e0e0e0;border:1px solid #555;border-radius:6px;" : "padding:12px 24px;margin-top:16px;font-size:16px;cursor:pointer;background:#0066cc;color:#fff;border:none;border-radius:6px;";
+        String escMsg = msg.replace("\\", "\\\\").replace("'", "\\'");
+        
+        // Use a non-destructive overlay instead of replacing body.innerHTML.
+        // This preserves native scripts (like Cloudflare/Turnstile) that might be running.
+        // Also check if any challenge markers are present in the DOM; if so, maybe don't show the overlay or make it smaller.
+        String js = "(function(){"
+                + "if(document.querySelector('[src*=\"challenges.cloudflare.com\"]') || document.querySelector('.cf-turnstile')) return;"
+                + "var msg='" + escMsg + "',bg='" + bg + "',fg='" + fg + "',btnStyle='" + btnStyle.replace("'", "\\'") + "';"
+                + "var ov = document.getElementById('clover-overlay');"
+                + "if (!ov) {"
+                + "  ov = document.createElement('div');"
+                + "  ov.id = 'clover-overlay';"
+                + "  document.body.appendChild(ov);"
+                + "}"
+                + "ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;background:'+bg+';color:'+fg+';display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:20%;font-family:sans-serif;text-align:center;padding-left:24px;padding-right:24px;box-sizing:border-box;';"
+                + "ov.innerHTML = '<div style=\"margin-bottom:20px;font-weight:bold;font-size:18px;line-height:1.4;\">'+msg+'</div><button type=\"button\" id=\"gcb\" style=\"'+btnStyle+'\">Get Captcha</button>';"
+                + "document.getElementById('gcb').onclick = function(){ "
+                + "  this.disabled = true; this.innerText = \"Loading...\"; "
+                + "  var btn=this; var sec=30;"
+                + "  var t=setInterval(function(){ sec--; if(sec<=0){ clearInterval(t); btn.disabled=false; btn.innerText=\"Get Captcha\"; } else { btn.innerText=\"Get Captcha (\"+sec+\"s)\"; } }, 1000);"
+                + "  if(typeof CaptchaCallback!=='undefined'&&CaptchaCallback.onRequestCaptcha) CaptchaCallback.onRequestCaptcha(); "
+                + "  else if(typeof CaptchaCallback!=='undefined'&&CaptchaCallback.onCooldownExpired) CaptchaCallback.onCooldownExpired(); "
+                + "};"
+                + "})();";
+        evaluateJavascript(js, null);
+    }
+
+    private void installPostMessageHook() {
+        String hookCode = "(function() {" +
+                "  if (window.__postMessageHookInstalled) return;" +
+                "  window.__postMessageHookInstalled = true;" +
+                "  var original = window.parent.postMessage.bind(window.parent);" +
+                "  window.parent.postMessage = function(msg, origin) {" +
+                "    if (msg && typeof msg === 'object' && msg.twister) {" +
+                "      var t = msg.twister;" +
+            "      try { CaptchaCallback.onCaptchaEntered(t.challenge || '', t.response || ''); } catch (e) {}" +
+            "      try {" +
+            "        var hasPayload = (t && (t.tasks !== undefined || t.img !== undefined || t.pcd !== undefined || t.ticket !== undefined));" +
+            "        if (hasPayload) {" +
+            "          var json = JSON.stringify(msg);" +
+            "          var enc = encodeURIComponent(json);" +
+            "          CaptchaCallback.onCaptchaPayloadReady(enc);" +
+            "        }" +
+            "      } catch (e) {}" +
+                "    }" +
+                "    return original(msg, origin);" +
+                "  };" +
+                "})();";
+        evaluateJavascript(hookCode, null);
+    }
+
+    private void waitForCaptchaForm() {
+        String waitCode = "(function() {" +
+                "  var attempts = 0;" +
+                "  function checkForForm() {" +
+                "    attempts++;" +
+                "    var hasTRoot = !!document.getElementById('t-root');" +
+                "    var hasTMsg = !!document.getElementById('t-msg');" +
+                "    if (hasTRoot || hasTMsg) {" +
+                "      CaptchaCallback.onCaptchaLoaded();" +
+                "    } else if (attempts < 50) {" +
+                "      setTimeout(checkForForm, 100);" +
+                "    } else {" +
+                "      CaptchaCallback.onCaptchaLoaded();" +
+                "    }" +
+                "  }" +
+                "  checkForForm();" +
+                "})();";
+        evaluateJavascript(waitCode, null);
+    }
+
+    @Override
+    public boolean requireResetAfterComplete() {
+        return false;
+    }
+
+    @Override
+    public void onDestroy() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                CookieManager.getInstance().flush();
+            } else {
+                CookieSyncManager.createInstance(getContext());
+                CookieSyncManager.getInstance().sync();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /** Return null so the IME is never shown: captcha only needs taps (buttons/images), no text input. */
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        if (isCaptchaOnlyMode) {
+            return null;
+        }
+        return super.onCreateInputConnection(outAttrs);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            // captcha is 300px x 150px, and I scale it to the 75% of the screen
+            // therefore the height is the 37.5% of the screen
+            float realHeight = getMeasuredWidth() * 0.375f;
+            // don't let the user swipe the screen if he's touching the part
+            // of the screen where the captcha actually is
+            if (event.getY() < realHeight) {
+                // there be dragons
+                ViewParent disallowHere = this;
+                while (disallowHere != null) {
+                    disallowHere.requestDisallowInterceptTouchEvent(true);
+                    disallowHere = disallowHere.getParent();
+                }
+            }
+        }
+        return super.onTouchEvent(event);
+    }
+
+    private void onCaptchaLoaded() {
+        requestFocus();
+        AndroidUtils.hideKeyboard(this);
+    }
+
+    private void onCaptchaEntered(String challenge, String response) {
+        if (reportedCompletion) return;
+        reportedCompletion = true;
+        showingActiveCaptcha = false;
+        if (callback != null) {
+            callback.onAuthenticationComplete(this, challenge, response);
+        }
+    }
+    private void showVerificationLinkDialog() {
+        AndroidUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setTitle("Email Verification");
+                builder.setMessage("Paste the verification link from your email:");
+
+                final EditText input = new EditText(getContext());
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+                input.setHint("https://sys.4chan.org/signin?action=verify&tkn=...");
+                builder.setView(input);
+
+                builder.setPositiveButton("Verify", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String url = input.getText().toString().trim();
+                        if (url.isEmpty()) {
+                            return;
+                        }
+                        
+                        // Validate it's a 4chan verification URL
+                        if (url.contains("sys.4chan.org/signin") && url.contains("action=verify") && url.contains("tkn=")) {
+                            Logger.i(TAG, "Loading verification URL: " + url);
+                            EmailVerificationController verificationController = new EmailVerificationController(getContext(), url);
+                            // We don't have direct access to navigationController here, 
+                            // but we can try to find a way to navigate.
+                            // However, since we're in a dialog, the easiest way is to let the user know
+                            // that this feature is now reachable via Site Setup/Verification.
+                            Toast.makeText(getContext(), "Please use 'Enter verification token' in Site Setup for this URL.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(getContext(), "Invalid verification link", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+        });
+    }
+    public static class CaptchaInterface {
+        private final NewCaptchaLayout layout;
+
+        public CaptchaInterface(NewCaptchaLayout layout) {
+            this.layout = layout;
+        }
+
+        @JavascriptInterface
+        public void onCaptchaLoaded() {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout.onCaptchaLoaded();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void onCaptchaEntered(final String challenge, final String response) {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout.onCaptchaEntered(challenge, response);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void onCooldownExpired() {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout.onGetCaptchaPressed();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void onRequestCaptcha() {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout.onGetCaptchaPressed();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void onCaptchaPayloadReady(final String payloadBase64) {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout.onCaptchaPayloadFromFetch(payloadBase64);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void saveTicket(final String ticket) {
+            AndroidUtils.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    NewCaptchaLayout.ticket = ticket;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        try {
+                            String esc = ticket == null ? "" : ticket
+                                    .replace("\\", "\\\\")
+                                    .replace("'", "\\'")
+                                    .replace("\n", "\\n")
+                                    .replace("\r", " ");
+                            layout.evaluateJavascript(
+                                    "try{localStorage.setItem('4chan-tc-ticket','" + esc + "');}catch(e){}",
+                                    null
+                            );
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            });
+        }
+    }
+}

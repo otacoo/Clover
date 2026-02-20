@@ -1,0 +1,413 @@
+/*
+ * Clover - 4chan browser https://github.com/Floens/Clover/
+ * Copyright (C) 2014  Floens
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.otacoo.chan.ui.adapter;
+
+import static org.otacoo.chan.Chan.inject;
+import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
+import static org.otacoo.chan.utils.AndroidUtils.ROBOTO_MEDIUM;
+import static org.otacoo.chan.utils.AndroidUtils.dp;
+import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
+import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
+import static org.otacoo.chan.utils.AndroidUtils.sp;
+
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.RecyclerView;
+
+import org.otacoo.chan.R;
+import org.otacoo.chan.core.manager.WatchManager;
+import org.otacoo.chan.core.model.orm.Pin;
+import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.ui.helper.PinHelper;
+import org.otacoo.chan.ui.helper.PostHelper;
+import org.otacoo.chan.ui.view.ThumbnailView;
+import org.otacoo.chan.utils.AndroidUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import javax.inject.Inject;
+
+public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    public enum HeaderAction {
+        CLEAR, CLEAR_ALL
+    }
+
+    private static final int PIN_OFFSET = 2;
+
+    private static final int TYPE_SETTINGS = 0;
+    private static final int TYPE_HEADER = 1;
+    private static final int TYPE_PIN = 2;
+
+    private static final Comparator<Pin> SORT_PINS = new Comparator<Pin>() {
+        @Override
+        public int compare(Pin lhs, Pin rhs) {
+            return lhs.order - rhs.order;
+        }
+    };
+
+    @Inject
+    WatchManager watchManager;
+
+    private final Callback callback;
+    private List<Pin> pins = new ArrayList<>();
+    private Pin highlighted;
+
+    public DrawerAdapter(Callback callback) {
+        inject(this);
+        this.callback = callback;
+        setHasStableIds(true);
+    }
+
+    public void setPinHighlighted(Pin highlighted) {
+        this.highlighted = highlighted;
+    }
+
+    public ItemTouchHelper.Callback getItemTouchHelperCallback() {
+        return new ItemTouchHelper.Callback() {
+            @Override
+            public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+                boolean pin = getItemViewType(viewHolder.getAdapterPosition()) == TYPE_PIN;
+                int dragFlags = pin ? ItemTouchHelper.UP | ItemTouchHelper.DOWN : 0;
+                int swipeFlags = pin ? ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT : 0;
+
+                return makeMovementFlags(dragFlags, swipeFlags);
+            }
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                int from = viewHolder.getAdapterPosition();
+                int to = target.getAdapterPosition();
+
+                if (getItemViewType(to) == TYPE_PIN) {
+                    Pin item = pins.remove(from - PIN_OFFSET);
+                    pins.add(to - PIN_OFFSET, item);
+                    notifyItemMoved(from, to);
+                    applyOrder();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                // Will call #onPinRemoved, and remove the pin from pins
+                callback.onPinRemoved(pins.get(viewHolder.getAdapterPosition() - PIN_OFFSET));
+            }
+        };
+    }
+
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        switch (viewType) {
+            case TYPE_SETTINGS:
+                return new SettingsHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_settings, parent, false));
+            case TYPE_HEADER:
+                return new HeaderHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_header, parent, false));
+            case TYPE_PIN:
+                return new PinViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_pin, parent, false));
+        }
+        return null;
+    }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        switch (holder.getItemViewType()) {
+            case TYPE_SETTINGS:
+                SettingsHolder settingsHolder = (SettingsHolder) holder;
+                theme().settingsDrawable.apply(settingsHolder.imageSettings);
+                theme().historyDrawable.apply(settingsHolder.imageHistory);
+
+                break;
+            case TYPE_HEADER:
+                HeaderHolder headerHolder = (HeaderHolder) holder;
+                headerHolder.text.setText(R.string.drawer_pinned);
+                theme().clearDrawable.apply(headerHolder.clear);
+
+                break;
+            case TYPE_PIN:
+                final Pin pin = pins.get(position - PIN_OFFSET);
+                PinViewHolder pinHolder = (PinViewHolder) holder;
+                updatePinViewHolder(pinHolder, pin);
+        }
+    }
+
+    @Override
+    public int getItemCount() {
+        return pins.size() + PIN_OFFSET;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        position -= PIN_OFFSET;
+        if (position >= 0 && position < pins.size()) {
+            return pins.get(position).id + 10;
+        } else {
+            return position;
+        }
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        switch (position) {
+            case 0:
+                return TYPE_SETTINGS;
+            case 1:
+                return TYPE_HEADER;
+            default:
+                return TYPE_PIN;
+        }
+    }
+
+    public void onPinsChanged(List<Pin> pins) {
+        this.pins.clear();
+        this.pins.addAll(pins);
+        Collections.sort(pins, SORT_PINS);
+        notifyDataSetChanged();
+    }
+
+    public void onPinAdded(Pin pin) {
+        pins.add(pin);
+        Collections.sort(pins, SORT_PINS);
+        notifyDataSetChanged();
+    }
+
+    public void onPinRemoved(Pin pin) {
+        pins.remove(pin);
+        Collections.sort(pins, SORT_PINS);
+        notifyDataSetChanged();
+    }
+
+    public void onPinChanged(RecyclerView recyclerView, Pin pin) {
+        PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(pins.indexOf(pin) + PIN_OFFSET);
+        if (holder != null) {
+            updatePinViewHolder(holder, pin);
+        }
+    }
+
+    public void updateHighlighted(RecyclerView recyclerView) {
+        for (int i = 0; i < pins.size(); i++) {
+            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(i + PIN_OFFSET);
+            if (holder != null) {
+                updatePinViewHolder(holder, pins.get(i));
+            }
+        }
+    }
+
+    private void updatePinViewHolder(PinViewHolder holder, Pin pin) {
+        CharSequence text = pin.loadable.title;
+        if (pin.isError) {
+            text = TextUtils.concat(PostHelper.addIcon(PostHelper.trashIcon, sp(14 + 2)), text);
+        } else if (pin.archived) {
+            text = TextUtils.concat(PostHelper.addIcon(PostHelper.archivedIcon, sp(14 + 2)), text);
+        }
+
+        holder.textView.setText(text);
+        holder.image.setUrl(pin.thumbnailUrl, dp(40), dp(40));
+
+        if (ChanSettings.watchEnabled.get()) {
+            String count = PinHelper.getShortUnreadCount(pin.getNewPostCount());
+            holder.watchCountText.setVisibility(View.VISIBLE);
+            holder.watchCountText.setText(count);
+
+            if (!pin.watching) {
+                holder.watchCountText.setTextColor(0xff898989); // TODO material colors
+            } else if (pin.getNewQuoteCount() > 0) {
+                holder.watchCountText.setTextColor(0xffFF4444);
+            } else {
+                holder.watchCountText.setTextColor(0xff33B5E5);
+            }
+
+            // The 16dp padding now belongs to the counter, for a bigger touch area
+            holder.textView.setPadding(holder.textView.getPaddingLeft(), holder.textView.getPaddingTop(),
+                    0, holder.textView.getPaddingBottom());
+            holder.watchCountText.setPadding(dp(16), holder.watchCountText.getPaddingTop(),
+                    holder.watchCountText.getPaddingRight(), holder.watchCountText.getPaddingBottom());
+        } else {
+            // The 16dp padding now belongs to the textview, for better ellipsize
+            holder.watchCountText.setVisibility(View.GONE);
+            holder.textView.setPadding(holder.textView.getPaddingLeft(), holder.textView.getPaddingTop(),
+                    dp(16), holder.textView.getPaddingBottom());
+        }
+
+        boolean highlighted = pin == this.highlighted;
+        if (highlighted && !holder.highlighted) {
+            holder.itemView.setBackgroundColor(0x22000000);
+            holder.highlighted = true;
+        } else if (!highlighted && holder.highlighted) {
+            //noinspection deprecation
+            holder.itemView.setBackgroundDrawable(AndroidUtils.getAttrDrawable(holder.itemView.getContext(), android.R.attr.selectableItemBackground));
+            holder.highlighted = false;
+        }
+    }
+
+    private void applyOrder() {
+        watchManager.reorder(pins);
+        notifyDataSetChanged();
+    }
+
+    private class PinViewHolder extends RecyclerView.ViewHolder {
+        private boolean highlighted;
+        private ThumbnailView image;
+        private TextView textView;
+        private TextView watchCountText;
+
+        private PinViewHolder(View itemView) {
+            super(itemView);
+            image = itemView.findViewById(R.id.thumb);
+            image.setCircular(true);
+            textView = itemView.findViewById(R.id.text);
+            textView.setTypeface(ROBOTO_MEDIUM);
+            watchCountText = itemView.findViewById(R.id.watch_count);
+            watchCountText.setTypeface(ROBOTO_MEDIUM);
+
+            setRoundItemBackground(watchCountText);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    if (pos >= 0 && pos < pins.size()) {
+                        callback.onPinClicked(pins.get(pos));
+                    }
+                }
+            });
+
+            /*itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    if (pos >= 0 && pos < pins.size()) {
+                        callback.onPinLongClicked(pins.get(pos));
+                    }
+
+                    return true;
+                }
+            });*/
+
+            watchCountText.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    if (pos >= 0 && pos < pins.size()) {
+                        callback.onWatchCountClicked(pins.get(pos));
+                    }
+                }
+            });
+        }
+    }
+
+    public class HeaderHolder extends RecyclerView.ViewHolder {
+        private TextView text;
+        private ImageView clear;
+
+        private HeaderHolder(View itemView) {
+            super(itemView);
+            text = itemView.findViewById(R.id.text);
+            text.setTypeface(ROBOTO_MEDIUM);
+            clear = itemView.findViewById(R.id.clear);
+            setRoundItemBackground(clear);
+            clear.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    callback.onHeaderClicked(HeaderHolder.this, HeaderAction.CLEAR);
+                }
+            });
+            clear.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    callback.onHeaderClicked(HeaderHolder.this, HeaderAction.CLEAR_ALL);
+                    return true;
+                }
+            });
+        }
+    }
+
+    private class SettingsHolder extends RecyclerView.ViewHolder {
+        private ImageView imageSettings;
+        private TextView textSettings;
+        private ImageView imageHistory;
+
+        private SettingsHolder(View itemView) {
+            super(itemView);
+            imageSettings = itemView.findViewById(R.id.image_settings);
+            textSettings = itemView.findViewById(R.id.text_settings);
+            imageHistory = itemView.findViewById(R.id.image_history);
+            textSettings.setTypeface(ROBOTO_MEDIUM);
+
+            itemView.findViewById(R.id.settings).setOnClickListener(v -> callback.openSettings());
+            imageHistory.setOnClickListener(v -> callback.openHistory());
+        }
+    }
+
+    private class BoardInputHolder extends RecyclerView.ViewHolder {
+        private EditText input;
+
+        private BoardInputHolder(View itemView) {
+            super(itemView);
+            input = itemView.findViewById(R.id.input);
+        }
+    }
+
+    private class DividerHolder extends RecyclerView.ViewHolder {
+        private boolean withBackground = false;
+        private View divider;
+
+        private DividerHolder(View itemView) {
+            super(itemView);
+            divider = itemView.findViewById(R.id.divider);
+        }
+
+        private void withBackground(boolean withBackground) {
+            if (withBackground != this.withBackground) {
+                this.withBackground = withBackground;
+                if (withBackground) {
+                    divider.setBackgroundColor(getAttrColor(itemView.getContext(), R.attr.divider_color));
+                } else {
+                    divider.setBackgroundColor(0);
+                }
+            }
+        }
+    }
+
+    public interface Callback {
+        void onPinClicked(Pin pin);
+
+        void onWatchCountClicked(Pin pin);
+
+        void onHeaderClicked(HeaderHolder holder, HeaderAction headerAction);
+
+        void onPinRemoved(Pin pin);
+
+        void onPinLongClicked(Pin pin);
+
+        void openSettings();
+
+        void openHistory();
+    }
+}
