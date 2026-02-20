@@ -1,0 +1,122 @@
+New in v3.20 build 20240624_1330
+- Trying to reencode WebPee garbage no longer crashes the app.
+- Replaced Google Images with Google Lens.
+- Added Gruvbox Black theme stolen from KurobaEx.
+
+New in v3.20 build 20240209_1440
+- Out of sheer desperation, the app now saves all cookies from 4chan, hopefully this will help dealing with the cooldowns and all that stuff. Barely tested, might fail, feel free to use the previous build if this one is too broken (they all use the same build number, you can downgrade without uninstalling first).
+PLEASE NOTE: Cookies are used to track you after you switch to a new IP. If you don't want to be tracked (*cough* you filthy ban evader *cough*), you MUST clear the cookies manually by going to Settings > Behavior > Clear all saved cookies.
+
+New in v3.20 build 20240208_0025
+- Fixed posting with a bunch of code stolen from Kuroba-Ex. Go to Settings > Behavior, set the Custom User-Agent to an empty string, and restart the app. It fails a lot, it will tell you that the captcha is wrong at random, and posts will keep disappearing. Consider using other app instead.
+- Because of the barely usable state of the app, don't expect more fixes when 4chan will break the app again tomorrow or the day after tomorrow because at this point it doesn't make sense anymore. It was a good run, but the app has been officially abandoned for more than a year now, we all knew some day it would be over.
+
+New in v3.20 build 20240202_1300
+- Added a "Recover" button to the "Post successful" message in case it wasn't actually successful. Barely tested, might fail.
+- The Cloudflare cookie should be saved when closing the app, I think (you can clear cookies in Settings > Behavior).
+- Filenames when using the "Remove filename" option are now random instead of just the current date.
+
+New in v3.20 build 20240201_1230
+- Quick and dirty support for making threads after the latest changes.
+- Cloudflare cookie handling improved, now it should be properly saved and it's used in the report window too.
+- Filtering by poster ID is now done using a regex, posts without an ID ("imptrash") can be filtered with /^$/.
+- Added support for filtering countries by name (exact string match).
+
+New in v3.20 build 20231025_1616
+- Fixed crash caused by WebView 117.
+- For real life, now with a non-broken APK!
+
+New in v3.20 build 20230727_1405
+- Added option to change user agents.
+- Removed non-English locales (sorry).
+- Fixed crash when clicking cross-thread links.
+- Fixed Google image search.
+- Removed 4chan pass mentions from error messages.
+- Captcha should honor the selected theme's colors.
+
+New in v3.20 build 20220829_2240
+- Support for Cloudflare garbage is a bit prettier.
+- Added a "my posts" button.
+
+New in v3.20 build 20220827_1000
+- Basic support for Cloudflare garbage (see README.md).
+
+New in v3.20 build 20211001_1545
+- New G5 flags on /mlp/.
+-- Watch the movie!
+
+New in v3.20 build 20210908_1940
+- Re-enabled update manager.
+- Compact drawer inspired by Kuroba.
+-- Bookmarked threads can be refreshed with a swipe.
+- Added thumbnail scale setting.
+- Changed default view mode to Catalog.
+- Updated translations from Clover's Crowdin.
+
+New in v3.20 build 20210829_1030
+- The other sites (besides 4chan) should work again.
+-- Updating from a previous release might show some "INVALID SITE" on the site list, those have to be manually removed.
+- Add ability to delete sites.
+-- Merged from https://github.com/chandevel/Clover/pull/708.
+- When the thread watcher is enabled, bookmarked threads will show a trash icon if they 404.
+
+New in v3.20 build 20210813_2250
+- Removed 8chan.
+
+New in v3.20 build 20210731_1400
+- Removed unused libraries, the apk is ~1 MB smaller now.
+- Albums are now downloaded to the right folder.
+
+New in v3.20 build 20210729_1950
+- Added options to select download subfolders (adjust in Settings > Media).
+-- Images can no longer be downloaded by pressing their thumbnail.
+
+New in v3.20 build 20210727_1120
+- Added "web search" option to text selection.
+- Added new menu entry to mark or unmark a post as yours.
+- Added option to show the text below the thumbnail to fill the screen width when there's only one image (enable in Settings > Appearance).
+- Links to dead posts can now be opened on an external archive (using the browser).
+- Added option to choose between downloading image (old behavior) or copying its URL (new default) when long-pressing it (enable in Settings > Media).
+- Moved flag selector button thingy to the left.
+
+New in v3.20 build 20210723_1110
+- Added board flags to catalog view.
+- Added Copy URL and Rotate options to images.
+- External archive quick access (opens in the browser).
+- Immersive image view (enable in Settings > Appearance).
+-- Used some code from https://github.com/Adamantcheese/Kuroba.
+
+New in v3.20 build 20210721_1120
+- Implement thread activity sort order.
+-- Merged from https://github.com/chandevel/Clover/pull/717.
+- Image re encoding.
+-- Merged from https://github.com/chandevel/Clover/pull/669.
+
+New in v3.20 build 20210720_1140
+- Added Furbooru as image search option on /trash/.
+- Image uploading progress.
+-- Merged from https://github.com/chandevel/Clover/pull/670.
+- DNS Over HTTP setting.
+-- Merged from https://github.com/chandevel/Clover/pull/799.
+- Minor fixes for Android 4.
+
+New in v3.20 build 20210719_1140
+- Improved board flag support.
+-- Used some code from https://github.com/Adamantcheese/Kuroba.
+- Flags on /mlp/ are sorted like this: Mane 6, rest, G5, TFH, EqG.
+- Added Derpibooru as image search option on /mlp/ and /trash/.
+- Changed default theme for people who are new to Blue Clover.
+
+New in v3.20 build 20210718_0905
+[INITIAL RELEASE, based on Clover-dev 3.0.2 0e32fb7]
+- NEW CAPTCHA SUPPORT!
+- Added page counter at the bottom of the thread view.
+- Fixed Yandex reverse image search.
+- Fixed image selection in the album downloader.
+- Added workaround to bypass 4chan cache (instant update).
+-- WARNING: updating too often might get you banned!
+- Partial board flag support.
+-- Use a flag by writing its code between square brackets in the options field.
+- Long press attach button to download the URL in the clipboard.
+- Enabled TLSv1.2 support on Android 4.4.
+- And probably some other minor changes.
