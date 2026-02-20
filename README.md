@@ -7,6 +7,7 @@
 
 > [!NOTE]
 > This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [CHANGES_old_nuudev.txt](CHANGES_old_nuudev.txt)).\
+>It also contains some changes by [EmiriUchi](https://github.com/EmiriUchi/) in [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/).\
 > It retains the Blue Clover icon but changed the app name to **Clover**.
 
 This fork is meant primarily to add support for the new 4chan captcha and 8chan.moe site support.\
@@ -32,3 +33,10 @@ We have a special guide for [making new themes.](https://github.com/chandevel/Cl
 
 ## License
 Clover is [GPLv3](https://github.com/floens/Clover/blob/dev/COPYING.txt), [licenses of the used libraries](https://github.com/otacoo/Clover/blob/dev/Clover/app/src/main/assets/html/licenses.html).
+
+
+## Contributor chain
+
+floens - original [Clover](https://github.com/floens/Clover)
+nuudev - [Blue Clover](https://github.com/nuudev/BlueClover)
+EmiriUchi - [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/).
