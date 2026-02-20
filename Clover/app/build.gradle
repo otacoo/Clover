@@ -1,18 +1,10 @@
+import java.time.format.DateTimeFormatter
+
 apply plugin: 'com.android.application'
-
-if (project.sentryMappingUploadingEnabled) {
-    apply plugin: 'io.sentry.android.gradle'
-
-    sentry {
-        // We'll do this manually because we only enable the sentry plugin on
-        // the build server.
-        autoProguardConfig false
-    }
-}
 
 // Code style
 apply plugin: 'checkstyle'
-task('checkstyle', type: Checkstyle) {
+tasks.register('checkstyle', Checkstyle) {
     configFile rootProject.file('checkstyle.xml')
     source 'src/main/java'
     ignoreFailures false
@@ -26,42 +18,46 @@ afterEvaluate {
     tasks.findByName('check').dependsOn('checkstyle')
 }
 
-/**
- * Gets the version name from the latest Git tag
- */
-def getCommitHash = { ->
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', '--short=8', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
-
 android {
-    compileSdkVersion 29
-    // update the travis config when changing this
-    buildToolsVersion '29.0.3'
+    //noinspection GradleDependency
+    compileSdk 34
+    namespace "org.otacoo.chan"
 
     defaultConfig {
-        applicationId "org.floens.chan"
-        minSdkVersion 17
-        targetSdkVersion 29
+        applicationId "org.otacoo.chan"
+        minSdk 28
+        //noinspection ExpiredTargetSdkVersion
+        targetSdk 29
+        //noinspection ExpiredTargetSdkVersion
+        multiDexEnabled true
 
-        versionName "v3.0.2"
+        versionName "v3.21"
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
-        versionCode 30002
+        versionCode 32000
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
+
+    /*
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    */
 
     lintOptions {
         abortOnError false
     }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    def formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.from(ZoneOffset.UTC))
+    def timestamp = formatter.format(Instant.now())
 
     /*
     If you want to sign releases, make a file in app/keys.properties with the following content:
@@ -70,8 +66,6 @@ android {
     keyAlias=alias
     keyPass=pass
     */
-
-    def hash = getCommitHash()
 
     File f = file('keys.properties')
     boolean doSign = f.exists()
@@ -93,42 +87,23 @@ android {
         is.close()
     }
 
-    defaultPublishConfig "default"
     flavorDimensions "default"
     productFlavors {
-        // NOTE: the file provider authority names append to the package name.
-        // When changing this also update the authority in the manifest files.
-
         // The app name refers to the name as displayed on the launcher.
-        // the flavor name is appended to the name in the settings.
         "default" {
             dimension "default"
             resValue "string", "app_name", "Clover"
-            resValue "string", "app_flavor_name", ""
-            buildConfigField "String", "BUILD_HASH", "\"$hash\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://build.floens.org/api/update\""
-            buildConfigField "String", "CRASH_REPORT_TOKEN", "\"https://d453201738b8469da2113a922c543a3b@sentry.io/1413946\""
+            resValue "string", "app_flavor_name", "(build $timestamp)"
+            buildConfigField "String", "BUILD_HASH", "\"$timestamp\""
+            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://otacoo.github.io/Clover/api/update.json\""
         }
 
         dev {
             dimension "default"
-            applicationIdSuffix ".dev"
-            resValue "string", "app_name", "Clover dev"
-            resValue "string", "app_flavor_name", ""
-            buildConfigField "String", "BUILD_HASH", "\"$hash\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://build.floens.org/api/update_dev\""
-            buildConfigField "String", "CRASH_REPORT_TOKEN", "\"https://d453201738b8469da2113a922c543a3b@sentry.io/1413946\""
-
-            versionNameSuffix "-" + hash
-        }
-
-        fdroid {
-            dimension "default"
             resValue "string", "app_name", "Clover"
-            resValue "string", "app_flavor_name", "F-Droid"
-            buildConfigField "String", "BUILD_HASH", "\"$hash\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://chandevel.github.io/Clover/api/update\""
-            buildConfigField "String", "CRASH_REPORT_TOKEN", "\"https://d453201738b8469da2113a922c543a3b@sentry.io/1413946\""
+            resValue "string", "app_flavor_name", "(build $timestamp-dev)"
+            buildConfigField "String", "BUILD_HASH", "\"\""
+            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"\""
         }
     }
 
@@ -138,7 +113,7 @@ android {
                 signingConfig signingConfigs.release
             }
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
             buildConfigField "boolean", "DEVELOPER_MODE", "false"
         }
 
@@ -148,9 +123,22 @@ android {
             buildConfigField "boolean", "DEVELOPER_MODE", "true"
         }
     }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+            variant.outputs.all {
+                if (variant.flavorName == "default") {
+                    outputFileName = new File("Clover-" + timestamp + ".apk")
+                } else {
+                    outputFileName = new File("Clover-" + timestamp + "-" + variant.flavorName + ".apk")
+                }
+            }
+        }
+    }
 }
 
 dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'])
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
@@ -161,26 +149,27 @@ dependencies {
     implementation 'androidx.browser:browser:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.11.7'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.11.7'
+    implementation 'androidx.media3:media3-exoplayer:1.2.1'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.2.1'
+    implementation 'androidx.media3:media3-ui:1.2.1'
+    implementation 'com.android.volley:volley:1.2.1'
 
-    implementation 'com.android.volley:volley:1.1.1'
-    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:3.12.13'
     //noinspection GradleDependency
     implementation 'com.j256.ormlite:ormlite-core:4.48'
     //noinspection GradleDependency
     implementation 'com.j256.ormlite:ormlite-android:4.48'
     implementation 'org.jsoup:jsoup:1.13.1'
-    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.20'
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.31'
     implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
     //noinspection GradleDependency
     implementation 'de.greenrobot:eventbus:2.4.0'
-    implementation 'org.nibor.autolink:autolink:0.9.0'
+    implementation 'org.nibor.autolink:autolink:0.12.0'
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'me.xdrop:fuzzywuzzy:1.3.1'
+    implementation 'me.xdrop:fuzzywuzzy:1.4.0'
     implementation 'org.codejargon.feather:feather:1.0'
-    implementation 'io.sentry:sentry-android:2.2.2'
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:2.27.0'
 }
