@@ -136,7 +136,7 @@ public class FilesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         @Override
         public void onClick(View v) {
-            FileWatcher.FileItem item = getItem(getBindingAdapterPosition());
+            FileWatcher.FileItem item = getItem(getAdapterPosition());
             onItemClicked(item);
         }
     }

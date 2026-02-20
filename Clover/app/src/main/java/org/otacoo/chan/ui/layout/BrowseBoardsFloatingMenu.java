@@ -426,7 +426,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         public void bind(Site site) {
             this.site = site;
 
-            divider.setVisibility(getBindingAdapterPosition() == 0 ? View.GONE : View.VISIBLE);
+            divider.setVisibility(getAdapterPosition() == 0 ? View.GONE : View.VISIBLE);
 
             icon = site.icon();
 

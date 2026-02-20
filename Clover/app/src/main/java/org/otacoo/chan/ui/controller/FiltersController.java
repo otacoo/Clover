@@ -319,7 +319,7 @@ public class FiltersController extends Controller implements
 
         @Override
         public void onClick(View v) {
-            int position = getBindingAdapterPosition();
+            int position = getAdapterPosition();
             if (!locked && position >= 0 && position < adapter.getItemCount()) {
                 Filter filter = adapter.displayList.get(position);
                 if (v == itemView) {

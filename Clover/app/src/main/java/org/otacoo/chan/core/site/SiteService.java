@@ -21,6 +21,7 @@ package org.otacoo.chan.core.site;
 import org.otacoo.chan.core.model.orm.SiteModel;
 import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.settings.json.JsonSettings;
+import org.otacoo.chan.utils.Logger;
 
 import java.util.List;
 
@@ -125,8 +126,7 @@ public class SiteService {
                 }
             }
 
-            if (!exists) {
-                siteRepository.createFromClass(handler.getSiteClass());
+            if (!exists) {                Logger.d("SiteService", "Adding missing default site: " + handler.getSiteClass().getName());                siteRepository.createFromClass(handler.getSiteClass());
             }
         }
     }

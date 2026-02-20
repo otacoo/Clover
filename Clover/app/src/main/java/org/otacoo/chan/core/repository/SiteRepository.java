@@ -228,6 +228,9 @@ public class SiteRepository {
             databaseManager.getDatabaseSiteManager().deleteSite(site).call();
             return null;
         });
+
+        sitesObservable.remove(site);
+        sitesObservable.notifyObservers();
     }
 
     private void removeThreadHides(Site site) throws Exception {
@@ -331,6 +334,13 @@ public class SiteRepository {
         private void add(Site site) {
             List<Site> copy = new ArrayList<>(sites);
             copy.add(site);
+            resetSites(copy);
+            setChanged();
+        }
+
+        private void remove(Site site) {
+            List<Site> copy = new ArrayList<>(sites);
+            copy.remove(site);
             resetSites(copy);
             setChanged();
         }

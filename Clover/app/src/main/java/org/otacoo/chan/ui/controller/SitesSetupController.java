@@ -84,8 +84,8 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
     ) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            int from = viewHolder.getBindingAdapterPosition();
-            int to = target.getBindingAdapterPosition();
+            int from = viewHolder.getAdapterPosition();
+            int to = target.getAdapterPosition();
 
             presenter.move(from, to);
 
@@ -195,7 +195,7 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
         this.sites.addAll(sites);
         sitesAdapter.notifyDataSetChanged();
 
-        crossfadeView.toggle(true, true);
+        crossfadeView.toggle(!sites.isEmpty(), true);
     }
 
     @Override

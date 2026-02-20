@@ -220,7 +220,7 @@ public class AlbumViewController extends Controller implements
 
         @Override
         public void onClick(View v) {
-            int adapterPosition = getBindingAdapterPosition();
+            int adapterPosition = getAdapterPosition();
             PostImage postImage = postImages.get(adapterPosition);
             openImage(this, postImage);
         }

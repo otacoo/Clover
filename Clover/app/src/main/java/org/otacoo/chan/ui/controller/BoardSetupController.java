@@ -84,8 +84,8 @@ public class BoardSetupController extends Controller implements View.OnClickList
     ) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            int from = viewHolder.getBindingAdapterPosition();
-            int to = target.getBindingAdapterPosition();
+            int from = viewHolder.getAdapterPosition();
+            int to = target.getAdapterPosition();
 
             if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) {
                 return false;
@@ -98,7 +98,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
 
         @Override
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            int position = viewHolder.getBindingAdapterPosition();
+            int position = viewHolder.getAdapterPosition();
 
             presenter.remove(position);
         }

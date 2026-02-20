@@ -92,7 +92,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                boolean pin = getItemViewType(viewHolder.getBindingAdapterPosition()) == TYPE_PIN;
+                boolean pin = getItemViewType(viewHolder.getAdapterPosition()) == TYPE_PIN;
                 int dragFlags = pin ? ItemTouchHelper.UP | ItemTouchHelper.DOWN : 0;
                 int swipeFlags = pin ? ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT : 0;
 
@@ -101,8 +101,8 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                int from = viewHolder.getBindingAdapterPosition();
-                int to = target.getBindingAdapterPosition();
+                int from = viewHolder.getAdapterPosition();
+                int to = target.getAdapterPosition();
 
                 if (getItemViewType(to) == TYPE_PIN) {
                     Pin item = pins.remove(from - PIN_OFFSET);
@@ -118,7 +118,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 // Will call #onPinRemoved, and remove the pin from pins
-                callback.onPinRemoved(pins.get(viewHolder.getBindingAdapterPosition() - PIN_OFFSET));
+                callback.onPinRemoved(pins.get(viewHolder.getAdapterPosition() - PIN_OFFSET));
             }
         };
     }
@@ -292,7 +292,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
+                    int pos = getAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onPinClicked(pins.get(pos));
                     }
@@ -302,7 +302,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             /*itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
+                    int pos = getAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onPinLongClicked(pins.get(pos));
                     }
@@ -314,7 +314,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             watchCountText.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
+                    int pos = getAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onWatchCountClicked(pins.get(pos));
                     }
