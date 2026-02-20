@@ -35,6 +35,7 @@ import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.model.orm.Pin;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.layout.ThreadLayout;
 import org.otacoo.chan.ui.toolbar.Toolbar;
@@ -264,6 +265,26 @@ public abstract class ThreadController extends Controller implements
     @Override
     public void onSearchEntered(String entered) {
         threadLayout.getPresenter().onSearchEntered(entered);
+    }
+
+    @Override
+    public void openSiteAuthentication(Site site, String url, String title) {
+        if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+            title = site.name() + " Verification";
+        }
+        
+        EmailVerificationController c = new EmailVerificationController(context, url, title);
+        if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+            c.setRequiredCookies("TOS20250418", "POW_TOKEN"); 
+        }
+        
+        if (navigationController != null) {
+            navigationController.pushController(c);
+        } else if (doubleNavigationController != null) {
+            doubleNavigationController.pushController(c);
+        } else {
+            presentController(c);
+        }
     }
 
     @Override

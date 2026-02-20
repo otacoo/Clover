@@ -19,15 +19,24 @@ package org.otacoo.chan.ui.controller;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.webkit.WebView;
+import android.os.Handler;
+import android.os.Looper;
+import android.webkit.CookieManager;
+import android.widget.Toast;
 
 import org.otacoo.chan.controller.Controller;
+import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.view.AuthWebView;
+
+import de.greenrobot.event.EventBus;
 
 public class EmailVerificationController extends Controller {
     private AuthWebView webView;
     private String initialUrl;
     private String title = "Email Verification";
+    private String[] requiredCookies;
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable cookieWatcher;
 
     public EmailVerificationController(Context context) {
         this(context, "https://sys.4chan.org/signin");
@@ -44,6 +53,10 @@ public class EmailVerificationController extends Controller {
         this.title = title;
     }
 
+    public void setRequiredCookies(String... cookies) {
+        this.requiredCookies = cookies;
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     public void onCreate() {
@@ -58,11 +71,75 @@ public class EmailVerificationController extends Controller {
         webView.loadUrl(initialUrl);
 
         view = webView;
+
+        if (requiredCookies != null && requiredCookies.length > 0) {
+            Toast.makeText(context, "Please solve the verification challenge to continue.", Toast.LENGTH_LONG).show();
+            startCookieWatcher();
+        }
+    }
+
+    private void startCookieWatcher() {
+        cookieWatcher = new Runnable() {
+            @Override
+            public void run() {
+                if (!alive) return;
+                
+                if (checkCookies()) {
+                    Toast.makeText(context, "Verification successful!", Toast.LENGTH_SHORT).show();
+                    EventBus.getDefault().post(new RefreshUIMessage("Verification successful"));
+                    
+                    if (navigationController != null) {
+                        navigationController.popController();
+                    } else if (presentedByController != null) {
+                        stopPresenting();
+                    }
+                } else {
+                    handler.postDelayed(this, 1000);
+                }
+            }
+        };
+        handler.postDelayed(cookieWatcher, 1000);
+    }
+
+    private boolean checkCookies() {
+        String url = webView.getUrl();
+        if (url == null) url = initialUrl;
+        
+        String cookies = CookieManager.getInstance().getCookie(url);
+        if (cookies == null) return false;
+
+        boolean allFound = true;
+        for (String required : requiredCookies) {
+            if (!cookies.contains(required)) {
+                allFound = false;
+                break;
+            }
+        }
+        
+        if (allFound) return true;
+        
+        // Try initial URL as well if current URL didn't match
+        if (!url.equals(initialUrl)) {
+            cookies = CookieManager.getInstance().getCookie(initialUrl);
+            if (cookies != null) {
+                for (String required : requiredCookies) {
+                    if (!cookies.contains(required)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (cookieWatcher != null) {
+            handler.removeCallbacks(cookieWatcher);
+        }
         if (webView != null) {
             webView.destroy();
         }

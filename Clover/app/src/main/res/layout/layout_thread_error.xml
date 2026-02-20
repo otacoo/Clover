@@ -36,4 +36,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         android:layout_gravity="center"
         android:text="@string/thread_load_failed_retry" />
 
+    <Button
+        android:id="@+id/auth_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:text="Open in Browser (Verification)"
+        android:visibility="gone" />
+
 </LinearLayout>

@@ -58,6 +58,7 @@ import org.otacoo.chan.core.model.PostLinkable;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.model.orm.ThreadHide;
 import org.otacoo.chan.core.presenter.ThreadPresenter;
+import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.ui.adapter.PostsFilter;
@@ -107,6 +108,7 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     private TextView errorText;
     private Button errorRetryButton;
+    private Button errorAuthButton;
     private PostPopupHelper postPopupHelper;
     private ImageOptionsHelper imageReencodingHelper;
     private Visible visible;
@@ -147,6 +149,8 @@ public class ThreadLayout extends CoordinatorLayout implements
                 .inflate(R.layout.layout_thread_error, this, false);
         errorText = errorLayout.findViewById(R.id.text);
         errorRetryButton = errorLayout.findViewById(R.id.button);
+        errorAuthButton = errorLayout.findViewById(R.id.auth_button);
+        errorAuthButton.setOnClickListener(this);
 
         // Inflate thread loading layout
         progressLayout = layoutInflater.inflate(R.layout.layout_thread_progress, this, false);
@@ -182,6 +186,12 @@ public class ThreadLayout extends CoordinatorLayout implements
     public void onClick(View v) {
         if (v == errorRetryButton) {
             presenter.requestData();
+        } else if (v == errorAuthButton) {
+            Loadable loadable = presenter.getLoadable();
+            if (loadable != null) {
+                String webUrl = loadable.getSite().resolvable().desktopUrl(loadable, null);
+                callback.openSiteAuthentication(loadable.getSite(), webUrl, "Site Authentication");
+            }
         } else if (v == replyButton) {
             threadListLayout.openReply(true);
         }
@@ -259,12 +269,31 @@ public class ThreadLayout extends CoordinatorLayout implements
     @Override
     public void showError(ChanLoaderException error) {
         String errorMessage = getString(error.getErrorMessage());
+        boolean verificationRequired = false;
+
+        if (error.getThrowable() != null && error.getThrowable().getMessage() != null) {
+            String msg = error.getThrowable().getMessage();
+            if (msg.contains("Verification") || msg.contains("Login") || msg.contains("HTML instead of JSON") || msg.contains("Terms of Service")) {
+                errorMessage = msg;
+                verificationRequired = true;
+            }
+        }
 
         if (visible == Visible.THREAD) {
             threadListLayout.showError(errorMessage);
         } else {
             switchVisible(Visible.ERROR);
             errorText.setText(errorMessage);
+            errorAuthButton.setVisibility(verificationRequired ? VISIBLE : GONE);
+
+            if (verificationRequired && !refreshedFromSwipe) {
+                Toast.makeText(getContext(), "Verification required. Opening browser...", Toast.LENGTH_SHORT).show();
+                errorAuthButton.postDelayed(() -> {
+                    if (this.visible == Visible.ERROR) {
+                        onClick(errorAuthButton);
+                    }
+                }, 1000);
+            }
         }
     }
 
@@ -672,6 +701,8 @@ public class ThreadLayout extends CoordinatorLayout implements
         Toolbar getToolbar();
 
         boolean shouldToolbarCollapse();
+
+        void openSiteAuthentication(Site site, String url, String title);
 
         void openFilterForTripcode(String tripcode);
     }
