@@ -40,7 +40,8 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -469,8 +470,17 @@ public class AndroidUtils {
     }
 
     public static boolean isConnected(int type) {
-        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(type);
-        return networkInfo != null && networkInfo.isConnected();
+        Network network = connectivityManager.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+        if (capabilities == null) return false;
+        if (type == ConnectivityManager.TYPE_WIFI) {
+            return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
+        } else if (type == ConnectivityManager.TYPE_MOBILE) {
+            return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
+        } else {
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        }
     }
 
     public static boolean enableHighEndAnimations() {

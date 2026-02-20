@@ -31,6 +31,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -258,7 +259,7 @@ public class AlbumDownloadController extends Controller implements View.OnClickL
 
         @Override
         public void onClick(View v) {
-            int adapterPosition = getAdapterPosition();
+            int adapterPosition = getBindingAdapterPosition();
             AlbumDownloadItem item = items.get(adapterPosition);
             item.checked = !item.checked;
             updateAllChecked();
@@ -278,7 +279,7 @@ public class AlbumDownloadController extends Controller implements View.OnClickL
             cell.thumbnailView.setScaleY(scale);
         }
 
-        Drawable drawable = context.getResources().getDrawable(checked ? R.drawable.ic_check_circle_white_24dp :
+        Drawable drawable = ContextCompat.getDrawable(context, checked ? R.drawable.ic_check_circle_white_24dp :
                 R.drawable.ic_radio_button_unchecked_white_24dp);
 
         if (checked) {

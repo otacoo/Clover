@@ -149,7 +149,7 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
 
     @Override
     public void showUpdateAvailableDialog(final UpdateApiRequest.UpdateApiMessage message) {
-        Spanned text = Html.fromHtml(message.messageHtml);
+        Spanned text = Html.fromHtml(message.messageHtml, Html.FROM_HTML_MODE_LEGACY);
 
         TextView textView = new TextView(context);
         textView.setMovementMethod(LinkMovementMethod.getInstance());
@@ -263,7 +263,7 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
     private void showMessage(int version) {
         int resource = context.getResources().getIdentifier("changelog_" + version, "string", context.getPackageName());
         if (resource != 0) {
-            CharSequence message = Html.fromHtml(context.getString(resource));
+            CharSequence message = Html.fromHtml(context.getString(resource), Html.FROM_HTML_MODE_LEGACY);
 
             final AlertDialog dialog = new AlertDialog.Builder(context)
                     .setMessage(message)

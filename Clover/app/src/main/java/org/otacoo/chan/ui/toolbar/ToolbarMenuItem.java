@@ -17,6 +17,7 @@
  */
 package org.otacoo.chan.ui.toolbar;
 
+import static org.otacoo.chan.utils.AndroidUtils.getAppContext;
 import static org.otacoo.chan.utils.AndroidUtils.getRes;
 import static org.otacoo.chan.utils.AndroidUtils.removeFromParentView;
 
@@ -24,6 +25,8 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.view.View;
 import android.widget.ImageView;
+
+import androidx.core.content.ContextCompat;
 
 import org.otacoo.chan.ui.view.FloatingMenu;
 import org.otacoo.chan.ui.view.FloatingMenuItem;
@@ -57,7 +60,7 @@ public class ToolbarMenuItem {
 
     public ToolbarMenuItem(int id, int drawable, ClickCallback clicked) {
         this.id = id;
-        this.drawable = getRes().getDrawable(drawable);
+        this.drawable = ContextCompat.getDrawable(getAppContext(), drawable);
         this.clicked = clicked;
     }
 
@@ -95,7 +98,7 @@ public class ToolbarMenuItem {
     }
 
     public void setImage(int drawable) {
-        setImage(getRes().getDrawable(drawable));
+        setImage(ContextCompat.getDrawable(getAppContext(), drawable));
     }
 
     public void setImage(Drawable drawable) {

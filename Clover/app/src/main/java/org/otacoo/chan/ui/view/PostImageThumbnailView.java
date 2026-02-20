@@ -27,6 +27,8 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -45,12 +47,11 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         this(context, attrs, 0);
     }
 
-    @SuppressWarnings("deprecation")
     public PostImageThumbnailView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         setOnLongClickListener(this);
 
-        playIcon = getResources().getDrawable(R.drawable.ic_play_circle_outline_white_24dp);
+        playIcon = ContextCompat.getDrawable(context, R.drawable.ic_play_circle_outline_white_24dp);
     }
 
     public void setPostImage(PostImage postImage, int width, int height) {

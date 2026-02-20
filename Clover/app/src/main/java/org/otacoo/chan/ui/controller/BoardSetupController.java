@@ -38,7 +38,9 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -81,9 +83,9 @@ public class BoardSetupController extends Controller implements View.OnClickList
             ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT
     ) {
         @Override
-        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-            int from = viewHolder.getAdapterPosition();
-            int to = target.getAdapterPosition();
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            int from = viewHolder.getBindingAdapterPosition();
+            int to = target.getBindingAdapterPosition();
 
             if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) {
                 return false;
@@ -95,8 +97,8 @@ public class BoardSetupController extends Controller implements View.OnClickList
         }
 
         @Override
-        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-            int position = viewHolder.getAdapterPosition();
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            int position = viewHolder.getBindingAdapterPosition();
 
             presenter.remove(position);
         }
@@ -278,7 +280,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
             description = itemView.findViewById(R.id.description);
             reorder = itemView.findViewById(R.id.reorder);
 
-            Drawable drawable = DrawableCompat.wrap(context.getResources().getDrawable(R.drawable.ic_reorder_black_24dp)).mutate();
+            Drawable drawable = DrawableCompat.wrap(ContextCompat.getDrawable(context, R.drawable.ic_reorder_black_24dp)).mutate();
             DrawableCompat.setTint(drawable, getAttrColor(context, R.attr.text_color_hint));
             reorder.setImageDrawable(drawable);
 

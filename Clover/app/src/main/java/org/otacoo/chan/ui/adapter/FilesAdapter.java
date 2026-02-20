@@ -27,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -80,7 +81,7 @@ public class FilesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 } else {
                     fileViewHolder.image.setVisibility(View.VISIBLE);
                     Drawable drawable = DrawableCompat.wrap(
-                            context.getResources().getDrawable(R.drawable.ic_folder_black_24dp));
+                            ContextCompat.getDrawable(context, R.drawable.ic_folder_black_24dp));
                     DrawableCompat.setTint(drawable, getAttrColor(context, R.attr.text_color_secondary));
                     fileViewHolder.image.setImageDrawable(drawable);
                 }
@@ -135,7 +136,7 @@ public class FilesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         @Override
         public void onClick(View v) {
-            FileWatcher.FileItem item = getItem(getAdapterPosition());
+            FileWatcher.FileItem item = getItem(getBindingAdapterPosition());
             onItemClicked(item);
         }
     }

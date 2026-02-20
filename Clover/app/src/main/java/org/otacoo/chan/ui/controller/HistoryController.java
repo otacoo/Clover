@@ -266,7 +266,7 @@ public class HistoryController extends Controller implements
 
         @Override
         public void onClick(View v) {
-            int position = getAdapterPosition();
+            int position = getBindingAdapterPosition();
             if (position >= 0 && position < adapter.getItemCount()) {
                 History history = adapter.displayList.get(position);
                 if (v == itemView) {

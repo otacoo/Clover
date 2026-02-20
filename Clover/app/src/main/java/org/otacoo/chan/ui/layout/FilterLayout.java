@@ -30,6 +30,7 @@ import android.graphics.Typeface;
 import android.text.Editable;
 import android.text.Html;
 import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.BackgroundColorSpan;
@@ -62,6 +63,7 @@ import org.otacoo.chan.ui.view.FloatingMenuItem;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -295,7 +297,8 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
             menu.setItems(menuItems);
             menu.show();
         } else if (v == help) {
-            SpannableStringBuilder message = (SpannableStringBuilder) Html.fromHtml(getString(R.string.filter_help));
+            Spanned text = Html.fromHtml(getString(R.string.filter_help), Html.FROM_HTML_MODE_LEGACY);
+            SpannableStringBuilder message = (SpannableStringBuilder) text;
             TypefaceSpan[] typefaceSpans = message.getSpans(0, message.length(), TypefaceSpan.class);
             for (TypefaceSpan span : typefaceSpans) {
                 if (span.getFamily().equals("monospace")) {
@@ -327,15 +330,12 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
                     .setTitle(R.string.filter_color_pick)
                     .setView(colorPickerView)
                     .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            filter.color = colorPickerView.getColor();
-                            updateFilterAction();
-                        }
+                    .setPositiveButton(R.string.ok, (dialog1, which) -> {
+                        filter.color = colorPickerView.getColor();
+                        updateFilterAction();
                     })
                     .show();
-            dialog.getWindow().setLayout(dp(300), dp(300));
+            Objects.requireNonNull(dialog.getWindow()).setLayout(dp(300), dp(300));
         }
     }
 

@@ -208,7 +208,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             if (buttonView == checkBox) {
-                SelectItem board = adapter.displayList.get(getAdapterPosition());
+                SelectItem board = adapter.displayList.get(getBindingAdapterPosition());
                 board.checked = isChecked;
                 updateAllSelected();
             }

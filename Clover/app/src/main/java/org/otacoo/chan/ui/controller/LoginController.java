@@ -80,7 +80,7 @@ public class LoginController extends Controller implements View.OnClickListener,
         button.setText(loggedIn ? R.string.setting_pass_logout : R.string.setting_pass_login);
         button.setOnClickListener(this);
 
-        bottomDescription.setText(Html.fromHtml(getString(R.string.setting_pass_bottom_description)));
+        bottomDescription.setText(Html.fromHtml(getString(R.string.setting_pass_bottom_description), Html.FROM_HTML_MODE_LEGACY));
         bottomDescription.setMovementMethod(LinkMovementMethod.getInstance());
 
         LoginRequest loginDetails = site.actions().getLoginDetails();

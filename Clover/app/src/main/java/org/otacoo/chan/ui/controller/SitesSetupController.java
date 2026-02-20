@@ -21,7 +21,6 @@ package org.otacoo.chan.ui.controller;
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
-import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -38,6 +37,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -70,23 +70,22 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
     SitesSetupPresenter presenter;
 
     private CrossfadeView crossfadeView;
-    private RecyclerView sitesRecyclerview;
     private FloatingActionButton addButton;
 
     private HintPopup addBoardsHint;
 
     private SitesAdapter sitesAdapter;
     private ItemTouchHelper itemTouchHelper;
-    private List<SiteBoardCount> sites = new ArrayList<>();
+    private final List<SiteBoardCount> sites = new ArrayList<>();
 
-    private ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
+    private final ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP | ItemTouchHelper.DOWN,
             0
     ) {
         @Override
-        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-            int from = viewHolder.getAdapterPosition();
-            int to = target.getAdapterPosition();
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            int from = viewHolder.getBindingAdapterPosition();
+            int to = target.getBindingAdapterPosition();
 
             presenter.move(from, to);
 
@@ -94,7 +93,7 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
         }
 
         @Override
-        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
         }
     };
 
@@ -115,7 +114,7 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
 
         // View binding
         crossfadeView = view.findViewById(R.id.crossfade);
-        sitesRecyclerview = view.findViewById(R.id.sites_recycler);
+        RecyclerView sitesRecyclerview = view.findViewById(R.id.sites_recycler);
         addButton = view.findViewById(R.id.add);
 
         // Adapters
@@ -159,14 +158,6 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
     }
 
     @Override
-    public void showHint() {
-        String s = context.getString(R.string.setup_sites_add_hint);
-        HintPopup popup = new HintPopup(context, addButton, s, 0, 0, true);
-        popup.wiggle();
-        popup.show();
-    }
-
-    @Override
     public void showAddDialog() {
         @SuppressLint("InflateParams") final SiteAddLayout dialogView =
                 (SiteAddLayout) LayoutInflater.from(context)
@@ -204,7 +195,7 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
         this.sites.addAll(sites);
         sitesAdapter.notifyDataSetChanged();
 
-        crossfadeView.toggle(!sites.isEmpty(), true);
+        crossfadeView.toggle(true, true);
     }
 
     @Override
@@ -224,18 +215,6 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
 
     private void onSiteCellSettingsClicked(Site site) {
         presenter.onSiteCellSettingsClicked(site);
-    }
-
-    private void onRemoveSiteSettingClicked(Site site) {
-        new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.delete_site_dialog_title))
-                .setMessage(context.getString(R.string.delete_site_dialog_message, site.name()))
-                .setPositiveButton(R.string.delete, (dialog, which) -> {
-                    presenter.removeSite(site);
-                })
-                .setNegativeButton(R.string.cancel, ((dialog, which) -> dialog.dismiss()))
-                .create()
-                .show();
     }
 
     private class SitesAdapter extends RecyclerView.Adapter<SiteCell> {
@@ -283,11 +262,10 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
     }
 
     private class SiteCell extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private ImageView image;
-        private TextView text;
-        private TextView description;
+        private final ImageView image;
+        private final TextView text;
+        private final TextView description;
         private SiteIcon siteIcon;
-        private ImageView reorder;
 
         private Site site;
 
@@ -300,13 +278,12 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
             text = itemView.findViewById(R.id.text);
             description = itemView.findViewById(R.id.description);
             itemView.findViewById(R.id.remove_site).setVisibility(View.GONE);
-            reorder = itemView.findViewById(R.id.reorder);
+            ImageView reorder = itemView.findViewById(R.id.reorder);
 
             // Setup views
             itemView.setOnClickListener(this);
 
-            Drawable drawable = DrawableCompat.wrap(
-                    context.getResources().getDrawable(R.drawable.ic_reorder_black_24dp)).mutate();
+            Drawable drawable = ContextCompat.getDrawable(context, R.drawable.ic_reorder_black_24dp).mutate();
             DrawableCompat.setTint(drawable, getAttrColor(context, R.attr.text_color_hint));
             reorder.setImageDrawable(drawable);
 

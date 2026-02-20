@@ -60,10 +60,6 @@ public class SitesSetupPresenter implements Observer {
         sitesShown.addAll(sites.getAllInOrder());
 
         updateSitesInUi();
-
-        if (sites.getAll().isEmpty()) {
-            callback.showHint();
-        }
     }
 
     public void destroy() {
@@ -166,8 +162,6 @@ public class SitesSetupPresenter implements Observer {
 
     public interface Callback {
         void setSites(List<SiteBoardCount> sites);
-
-        void showHint();
 
         void showAddDialog();
 

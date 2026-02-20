@@ -29,7 +29,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -315,9 +317,9 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
         }
         pinItemPinned = pinned;
 
-        Drawable outline = context.getResources().getDrawable(
+        Drawable outline = ContextCompat.getDrawable(context,
                 R.drawable.ic_bookmark_outline_white_24dp);
-        Drawable white = context.getResources().getDrawable(
+        Drawable white = ContextCompat.getDrawable(context,
                 R.drawable.ic_bookmark_white_24dp);
 
         Drawable drawable = pinned ? white : outline;

@@ -24,6 +24,8 @@ import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 
+import androidx.core.content.ContextCompat;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.otacoo.chan.R;
@@ -188,8 +190,7 @@ public class Theme {
         }
 
         public Drawable makeDrawable(Context context) {
-            //noinspection deprecation
-            Drawable d = context.getResources().getDrawable(drawable).mutate();
+            Drawable d = ContextCompat.getDrawable(context, drawable).mutate();
             d.setAlpha(intAlpha);
             return d;
         }

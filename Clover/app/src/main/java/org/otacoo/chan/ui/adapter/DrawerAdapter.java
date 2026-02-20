@@ -33,6 +33,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -90,8 +91,8 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public ItemTouchHelper.Callback getItemTouchHelperCallback() {
         return new ItemTouchHelper.Callback() {
             @Override
-            public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-                boolean pin = getItemViewType(viewHolder.getAdapterPosition()) == TYPE_PIN;
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                boolean pin = getItemViewType(viewHolder.getBindingAdapterPosition()) == TYPE_PIN;
                 int dragFlags = pin ? ItemTouchHelper.UP | ItemTouchHelper.DOWN : 0;
                 int swipeFlags = pin ? ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT : 0;
 
@@ -99,9 +100,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             }
 
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-                int from = viewHolder.getAdapterPosition();
-                int to = target.getAdapterPosition();
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                int from = viewHolder.getBindingAdapterPosition();
+                int to = target.getBindingAdapterPosition();
 
                 if (getItemViewType(to) == TYPE_PIN) {
                     Pin item = pins.remove(from - PIN_OFFSET);
@@ -115,9 +116,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             }
 
             @Override
-            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 // Will call #onPinRemoved, and remove the pin from pins
-                callback.onPinRemoved(pins.get(viewHolder.getAdapterPosition() - PIN_OFFSET));
+                callback.onPinRemoved(pins.get(viewHolder.getBindingAdapterPosition() - PIN_OFFSET));
             }
         };
     }
@@ -291,7 +292,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onPinClicked(pins.get(pos));
                     }
@@ -301,7 +302,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             /*itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onPinLongClicked(pins.get(pos));
                     }
@@ -313,7 +314,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             watchCountText.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getAdapterPosition() - PIN_OFFSET;
+                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
                     if (pos >= 0 && pos < pins.size()) {
                         callback.onWatchCountClicked(pins.get(pos));
                     }

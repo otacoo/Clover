@@ -40,6 +40,8 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 
+import androidx.core.content.ContextCompat;
+
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkError;
 import com.android.volley.ParseError;
@@ -145,11 +147,7 @@ public class ThumbnailView extends View implements ImageLoader.ImageListener {
 
             foregroundCalculate = clickable;
             if (clickable) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    foreground = getContext().getDrawable(R.drawable.item_background);
-                } else {
-                    foreground = getResources().getDrawable(R.drawable.item_background);
-                }
+                foreground = ContextCompat.getDrawable(getContext(), R.drawable.item_background);
                 foreground.setCallback(this);
                 if (foreground.isStateful()) {
                     foreground.setState(getDrawableState());
