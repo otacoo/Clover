@@ -18,6 +18,9 @@ Clover/sentry.properties
 # generated files
 bin/
 gen/
+.git
+.gitignore
+.gitatttributes
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -47,3 +50,7 @@ $RECYCLE.BIN/
 # Mac crap
 .DS_Store
 
+#############
+
+# Internal testing stuff
+Clover/app/src/dev
