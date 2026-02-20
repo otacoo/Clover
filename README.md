@@ -37,6 +37,6 @@ Clover is [GPLv3](https://github.com/floens/Clover/blob/dev/COPYING.txt), [licen
 
 ## Contributor chain
 
-floens - original [Clover](https://github.com/floens/Clover)
-nuudev - [Blue Clover](https://github.com/nuudev/BlueClover)
-EmiriUchi - [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/).
+floens - original [Clover](https://github.com/floens/Clover)\
+nuudev - [Blue Clover](https://github.com/nuudev/BlueClover)\
+EmiriUchi - [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/)
