@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<org.floens.chan.ui.layout.PopupControllerContainer xmlns:android="http://schemas.android.com/apk/res/android"
+<org.otacoo.chan.ui.layout.PopupControllerContainer xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/top_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -26,6 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         android:layout_width="600dp"
         android:layout_height="600dp"
         android:layout_gravity="center"
-        android:background="@drawable/dialog_full_light" />
+        android:background="?backcolor" />
 
-</org.floens.chan.ui.layout.PopupControllerContainer>
+</org.otacoo.chan.ui.layout.PopupControllerContainer>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -15,17 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<org.floens.chan.ui.layout.ThreadLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<org.otacoo.chan.ui.layout.ThreadLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <org.floens.chan.ui.view.LoadView
+    <org.otacoo.chan.ui.view.LoadView
         android:id="@+id/loadview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <org.floens.chan.ui.view.HidingFloatingActionButton
+    <org.otacoo.chan.ui.view.HidingFloatingActionButton
         android:id="@+id/reply_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -37,4 +37,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         android:src="@drawable/ic_create_white_24dp"
         tools:ignore="RtlHardcoded" />
 
-</org.floens.chan.ui.layout.ThreadLayout>
+</org.otacoo.chan.ui.layout.ThreadLayout>

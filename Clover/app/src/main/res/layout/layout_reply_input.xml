@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -40,9 +40,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:layout_weight="1"
             android:animateLayoutChanges="true"
             android:orientation="vertical"
-            android:paddingBottom="8dp"
             android:paddingLeft="8dp"
-            android:paddingTop="8dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <TextView
                 android:id="@+id/message"
@@ -57,13 +57,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:visibility="gone">
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <Button
+                    android:id="@+id/flag_button"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="0dp"
+                    android:layout_weight="2"
+                    android:hint="Flag"
+                    android:padding="0dp"
+                    android:textSize="16sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <EditText
                     android:id="@+id/name"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2"
+                    android:layout_weight="8"
                     android:hint="@string/reply_name"
                     android:inputType="textCapSentences|textAutoCorrect"
                     android:singleLine="true"
@@ -73,7 +87,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     android:id="@+id/options"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_weight="4"
                     android:hint="@string/reply_options"
                     android:singleLine="true"
                     android:textSize="16sp" />
@@ -94,7 +108,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <org.floens.chan.ui.view.SelectionListeningEditText
+                <org.otacoo.chan.ui.view.SelectionListeningEditText
                     android:id="@+id/comment"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -109,8 +123,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     android:id="@+id/comment_counter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentRight="true"
                     android:layout_alignParentTop="true"
+                    android:layout_alignParentRight="true"
                     android:paddingRight="8dp"
                     android:textColor="?text_color_secondary"
                     android:textSize="12sp"
@@ -160,12 +174,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 android:textSize="14sp"
                 android:visibility="gone" />
 
-            <ImageView
-                android:id="@+id/preview"
+            <LinearLayout
+                android:id="@+id/preview_holder"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
-                android:scaleType="fitCenter"
-                android:visibility="gone" />
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/preview"
+                    android:layout_width="128dp"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/preview_message"

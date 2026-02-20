@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -15,22 +15,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<org.floens.chan.ui.view.TouchBlockingFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<org.otacoo.chan.ui.view.TouchBlockingFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <org.floens.chan.ui.toolbar.Toolbar
+    <org.otacoo.chan.ui.toolbar.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/toolbar_height"
         android:background="#87000000"
         tools:ignore="UnusedAttribute" />
 
-    <org.floens.chan.controller.ui.NavigationControllerContainerLayout
+    <org.otacoo.chan.controller.ui.NavigationControllerContainerLayout
         android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</org.floens.chan.ui.view.TouchBlockingFrameLayout>
+</org.otacoo.chan.ui.view.TouchBlockingFrameLayout>

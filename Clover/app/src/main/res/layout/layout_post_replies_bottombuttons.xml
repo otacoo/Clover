@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -21,12 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <org.floens.chan.ui.layout.PostRepliesContainer
+    <org.otacoo.chan.ui.layout.PostRepliesContainer
         android:id="@+id/container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@drawable/dialog_full_light"
+        android:layout_margin="10dp"
+        android:background="?backcolor"
+        android:elevation="8dp"
         android:minWidth="320dp"
         android:orientation="vertical"
         tools:ignore="UselessParent">
@@ -87,6 +89,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             </FrameLayout>
         </LinearLayout>
 
-    </org.floens.chan.ui.layout.PostRepliesContainer>
+    </org.otacoo.chan.ui.layout.PostRepliesContainer>
 
 </FrameLayout>

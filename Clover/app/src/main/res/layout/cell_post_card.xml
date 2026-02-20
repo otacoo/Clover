@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
 Clover - 4chan browser https://github.com/Floens/Clover/
 Copyright (C) 2014  Floens
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<org.floens.chan.ui.cell.CardPostCell xmlns:android="http://schemas.android.com/apk/res/android"
+<org.otacoo.chan.ui.cell.CardPostCell xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     card_view:cardCornerRadius="@dimen/grid_card_corner_radius"
     card_view:cardElevation="2dp">
 
-    <org.floens.chan.ui.layout.FixedRatioLinearLayout
+    <org.otacoo.chan.ui.layout.FixedRatioLinearLayout
         android:id="@+id/card_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <org.floens.chan.ui.view.PostImageThumbnailView
+            <org.otacoo.chan.ui.view.PostImageThumbnailView
                 android:id="@+id/thumbnail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -68,7 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:paddingRight="8dp"
             android:paddingTop="8dp" />
 
-        <org.floens.chan.ui.text.FastTextView
+        <org.otacoo.chan.ui.text.FastTextView
             android:id="@+id/comment"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -78,17 +78,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:paddingTop="8dp"
             android:textColor="?attr/text_color_primary" />
 
-        <TextView
-            android:id="@+id/replies"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingBottom="8dp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="4dp"
-            android:singleLine="true"
-            android:textColor="?attr/text_color_secondary" />
+            android:layout_height="wrap_content">
 
-    </org.floens.chan.ui.layout.FixedRatioLinearLayout>
+            <TextView
+                android:id="@+id/replies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                android:singleLine="true"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:textColor="?attr/text_color_secondary" />
 
-</org.floens.chan.ui.cell.CardPostCell>
+            <org.otacoo.chan.ui.cell.PostIcons
+                android:id="@+id/icons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/replies" />
+
+        </RelativeLayout>
+
+    </org.otacoo.chan.ui.layout.FixedRatioLinearLayout>
+
+</org.otacoo.chan.ui.cell.CardPostCell>
