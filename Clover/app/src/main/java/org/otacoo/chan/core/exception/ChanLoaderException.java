@@ -50,6 +50,10 @@ public class ChanLoaderException extends Exception {
         super(cause);
     }
 
+    public Throwable getThrowable() {
+        return volleyError != null ? volleyError : getCause();
+    }
+
     public boolean isNotFound() {
         return volleyError instanceof ServerError && isServerErrorNotFound((ServerError) volleyError);
     }

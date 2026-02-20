@@ -40,6 +40,7 @@ import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.controller.NavigationController;
 import org.otacoo.chan.core.database.DatabaseLoadableManager;
 import org.otacoo.chan.core.database.DatabaseManager;
+import org.otacoo.chan.core.manager.BoardManager;
 import org.otacoo.chan.core.manager.WatchManager;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
@@ -89,6 +90,9 @@ public class StartActivity extends AppCompatActivity implements
 
     @Inject
     DatabaseManager databaseManager;
+
+    @Inject
+    BoardManager boardManager;
 
     @Inject
     WatchManager watchManager;
@@ -178,7 +182,7 @@ public class StartActivity extends AppCompatActivity implements
     }
 
     private void restoreFresh() {
-        if (!siteService.areSitesSetup()) {
+        if (!siteService.areSitesSetup() || !boardManager.hasSavedBoards()) {
             browseController.showSitesNotSetup();
         } else {
             browseController.loadWithDefaultBoard();

@@ -85,6 +85,10 @@ public class BoardManager {
         return boardRepository.getSaved();
     }
 
+    public boolean hasSavedBoards() {
+        return !boardRepository.getSaved().get().isEmpty();
+    }
+
     public void updateBoardOrders(List<Board> boards) {
         boardRepository.updateBoardOrders(boards);
     }
