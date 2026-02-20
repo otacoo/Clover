@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+            background: __C_BG__;
+            color: __C_FG__;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+        }
+        #t-root {
+            width: 100%;
+            max-width: 340px;
+            margin: 10px auto;
+            position: relative;
+            padding-bottom: 16px;
+        }
+
+        #t-challenge {
+            display: none;
+        }
+        #t-warning {
+            font-size: 12px;
+            padding: 10px 12px;
+            background: __C_WARNING_BG__;
+            border-left: 3px solid #ff6b00;
+            color: __C_WARNING_FG__;
+            border-radius: 2px;
+            line-height: 1.6;
+            display: none;
+            margin-bottom: 16px;
+        }
+        #t-msg {
+            width: 100%;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 28px 24px;
+            box-sizing: border-box;
+        }
+        #t-msg.with-warning {
+            position: relative;
+            top: 0;
+            left: 0;
+            transform: none;
+            margin-top: 0;
+        }
+        #t-msg-main {
+            font-size: 18px;
+            line-height: 1.5;
+            font-weight: 600;
+            color: __C_FG__;
+            letter-spacing: 0.02em;
+        }
+        #t-msg-secondary {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-top: 16px;
+            color: #e53935;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            letter-spacing: 0.03em;
+            text-shadow: __C_TIMER_SHADOW__;
+        }
+        #t-msg-main a {
+            color: #4a9eff;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        #t-msg-main a:focus {
+            outline: 2px solid __C_LINK__;
+            outline-offset: 2px;
+        }
+        #t-msg-btn {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin-top: 18px;
+            cursor: pointer;
+            background: __C_BTN_BG__;
+            color: __C_BTN_FG__;
+            border: 1px solid __C_BTN_BORDER__;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        #t-msg-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Native 4chan tasks (challenges) UI */
+        #t-native {
+            display: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        #t-native-header {
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #t-expiry-wrap {
+            font-size: 12px;
+            font-weight: bold;
+            color: __C_MUTED__;
+        }
+        #t-native-instructions {
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            color: __C_MUTED__;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+        #t-native-instructions-text {
+            flex: 1;
+            min-width: 0;
+        }
+        #t-native-pick {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        #t-native-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+            margin-bottom: 16px;
+        }
+        #t-native-target-wrap {
+            flex-shrink: 0;
+            width: 92px;
+            height: 92px;
+            border: 2px solid __C_INPUT_BORDER__;
+            border-radius: 4px;
+            overflow: hidden;
+            background: __C_INPUT_BG__;
+        }
+        #t-native-target-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #t-native-choices-wrap {
+            width: 100%;
+            overflow-x: hidden;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            padding: 4px 0;
+        }
+        #t-native-choices {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 8px;
+            align-items: center;
+        }
+        #t-native-choices .t-choice {
+            width: 100%;
+            max-width: 340px;
+            height: 86px;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            overflow: hidden;
+            background: __C_INPUT_BG__;
+            box-sizing: border-box;
+        }
+        #t-native-choices .t-choice:hover,
+        #t-native-choices .t-choice:focus {
+            border-color: __C_LINK__;
+        }
+        #t-native-choices .t-choice.selected {
+            border-color: #4caf50;
+        }
+        #t-native-choices .t-choice img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #t-native-next {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin-top: 8px;
+            cursor: pointer;
+            background: __C_BTN_BG__;
+            color: __C_BTN_FG__;
+            border: 1px solid __C_BTN_BORDER__;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        #t-native-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div id="t-root">
+    <input id="t-challenge" type="hidden" value="" tabindex="-1" autocomplete="off">
+    <div id="t-warning">⚠️ Do not leave this page or refresh until the cooldown expires or captcha is solved. Leaving will reset your progress.</div>
+    <div id="t-msg">
+        <div id="t-msg-main" style="font-size: 14px;">Loading...</div>
+        <div id="t-msg-secondary" style="font-weight:bold; font-size: 24px;"></div>
+    </div>
+    <div id="t-native">
+        <div id="t-native-header">
+            <span id="t-native-counter"></span>
+            <span id="t-expiry-wrap"></span>
+        </div>
+        <div id="t-native-instructions">
+            <div id="t-native-instructions-text"></div>
+            <div id="t-native-target-wrap"><img id="t-native-target" src="" alt="Target"></div>
+        </div>
+        <div id="t-native-choices-wrap"><div id="t-native-choices"></div></div>
+        <button id="t-native-next" type="button">Next</button>
+    </div>
+</div>
+<script>
+
+function showMsgButton(label, disabled, initialSeconds) {
+    var msg = document.getElementById('t-msg');
+    if (!msg) return;
+    var existing = document.getElementById('t-msg-btn');
+    if (!existing) {
+        existing = document.createElement('button');
+        existing.id = 't-msg-btn';
+        existing.type = 'button';
+        existing.onclick = function() { 
+            if (this.disabled) return;
+            this.disabled = true;
+            this.innerText = 'Loading...';
+            requestCaptcha(); 
+        };
+        msg.appendChild(existing);
+    }
+    
+    if (disabled && initialSeconds !== undefined && initialSeconds > 0) {
+        existing.textContent = (label || 'Get Captcha') + ' (' + initialSeconds + 's)';
+        existing.disabled = true;
+    } else {
+        existing.textContent = label || 'Get Captcha';
+        existing.disabled = !!disabled;
+    }
+}
+
+function hideMsgButton() {
+    var existing = document.getElementById('t-msg-btn');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+}
+
+var expiryInterval = null;
+var expirySeconds = 120;
+function startExpiryTimer() {
+    if (expiryInterval) clearInterval(expiryInterval);
+    expirySeconds = 120;
+    updateExpiryDisplay();
+    expiryInterval = setInterval(function() {
+        expirySeconds--;
+        if (expirySeconds <= 0) {
+            clearInterval(expiryInterval);
+            expirySeconds = 0;
+            document.getElementById('t-native').style.display = 'none';
+            document.getElementById('t-msg').style.display = 'block';
+            document.getElementById('t-msg-main').textContent = 'Captcha expired. Please request a new one.';
+            document.getElementById('t-msg-secondary').textContent = '';
+            showMsgButton('Get Captcha', false);
+        }
+        updateExpiryDisplay();
+    }, 1000);
+}
+
+function updateExpiryDisplay() {
+    var el = document.getElementById('t-expiry-wrap');
+    if (el) {
+        el.textContent = 'Expires: ' + expirySeconds + 's';
+        if (expirySeconds < 30) {
+            el.style.color = '#e53935';
+        } else {
+            el.style.color = ''; // Reset to __C_MUTED__ via CSS
+        }
+    }
+}
+
+function parseCountdown(val) {
+    var n = parseInt(val, 10);
+    return (n >= 0 && !isNaN(n)) ? n : 0;
+}
+
+var SIGNIN_LINK = 'https://sys.4chan.org/signin';
+function cooldownMessage(pcdMsg) {
+    if (!pcdMsg || typeof pcdMsg !== 'string') return 'Please wait a while before making a post or verify your email here.';
+    if (pcdMsg.toLowerCase().indexOf('verify your email') >= 0) {
+        return pcdMsg.replace(/\bverify your email here\.?/gi, '<a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>');
+    }
+    return pcdMsg + ' <a href="' + SIGNIN_LINK + '" target="_blank">Verify your email here.</a>';
+}
+
+function buildFromJson(data) {
+    if (data.twister) data = data.twister;
+    if (data.pcd_msg != null && (data.pcd === undefined || data.pcd === null)) {
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-warning').style.display = 'block';
+        document.getElementById('t-msg-main').innerHTML = cooldownMessage(data.pcd_msg);
+        document.getElementById('t-msg-secondary').textContent = '';
+        showMsgButton('Get Captcha', false);
+        if (data.ticket) {
+            CaptchaCallback.saveTicket(data.ticket);
+            window.savedTicket = data.ticket;
+        }
+        return;
+    }
+    if (data.pcd !== undefined && data.pcd !== null) {
+        var pcd = parseCountdown(data.pcd);
+        if (data.ticket) {
+            CaptchaCallback.saveTicket(data.ticket);
+            window.savedTicket = data.ticket;
+            data.ticket = undefined;
+        }
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-warning').style.display = 'block';
+        document.getElementById('t-msg-main').innerHTML = 'Please wait a while before making a post or <a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>';
+        document.getElementById('t-msg-secondary').textContent = pcd + 's';
+        if (pcd <= 0) {
+            document.getElementById('t-msg-secondary').textContent = '0s';
+            document.getElementById('t-msg-main').textContent = 'You can now request a captcha.';
+            // Match native 4chan: do not auto-request at 0s.
+            showMsgButton('Get Captcha', false);
+            return;
+        }
+        // While cooling down, show button disabled (native shows button but unusable).
+        showMsgButton('Get Captcha', true, pcd);
+        data.pcd = pcd - 1;
+        setTimeout((function() { buildFromJson(data); }), 1000);
+        return;
+    } else if (data.error) {
+        var cd = parseCountdown(data.cd);
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-warning').style.display = 'block';
+        document.getElementById('t-msg-main').textContent = data.error;
+        document.getElementById('t-msg-secondary').textContent = cd + 's';
+        if (cd <= 0) {
+            document.getElementById('t-msg').classList.remove('with-warning');
+            document.getElementById('t-warning').style.display = 'none';
+            showMsgButton('Get Captcha', false);
+            return;
+        }
+        showMsgButton('Get Captcha', true, cd);
+        data.cd = cd - 1;
+        setTimeout((function() { buildFromJson(data); }), 1000);
+        return;
+    }
+
+    document.getElementById('t-msg').style.display = 'none';
+    document.getElementById('t-msg').classList.remove('with-warning');
+    document.getElementById('t-warning').style.display = 'none';
+    hideMsgButton();
+    document.getElementById('t-challenge').value = data.challenge || '';
+
+    if (data.challenge === 'noop') {
+        globalOnCaptchaEntered();
+        return;
+    }
+
+    if (data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0) {
+        buildNativeTasksUI(data);
+        return;
+    }
+
+    CaptchaCallback.onCaptchaLoaded();
+}
+
+function buildNativeTasksUI(data) {
+    var tasks = data.tasks;
+    var total = tasks.length;
+    var currentIndex = 0;
+    var answers = [];
+
+    function looksLikeImageString(s) {
+        if (!s || typeof s !== 'string') return false;
+        var t = s.trim();
+        if (!t) return false;
+        if (t.indexOf('data:image/') === 0) return true;
+        if (t.indexOf('//') === 0) return true;
+        if (t.indexOf('<svg') === 0 || t.indexOf('<?xml') === 0) return true;
+        if (t.indexOf('/') === 0 || t.indexOf('./') === 0) {
+            // relative URL
+            if (/\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(t)) return true;
+        }
+        if (t.length > 20) {
+            var u = t.replace(/\s+/g, '');
+            if (/^[A-Za-z0-9+/=_-]+$/.test(u)) return true;
+        }
+        if (t.indexOf('PHN2Zy') === 0 || t.indexOf('PD94bW') === 0) return true;
+        return false;
+    }
+
+    function normalizeBase64(b64) {
+        if (!b64 || typeof b64 !== 'string') return '';
+        var t = b64.trim();
+        if (!t) return '';
+        // Convert base64url to base64
+        t = t.replace(/-/g, '+').replace(/_/g, '/');
+        // Strip whitespace
+        t = t.replace(/\s+/g, '');
+        // Pad to length multiple of 4
+        while (t.length % 4 !== 0) t += '=';
+        return t;
+    }
+
+    function extractImageLike(v) {
+        if (!v) return '';
+        if (typeof v === 'string') return v;
+        if (typeof v === 'object') {
+            var keys = ['img', 'image', 'svg', 'data', 'src', 'url', 'uri', 'href', 'path', 'b64', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'target_image', 'targetImg', 'target_img'];
+            for (var i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                if (v[k] != null && typeof v[k] === 'string') return v[k];
+            }
+        }
+        return '';
+    }
+
+    var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+    function toImgSrc(imgLike) {
+        if (!imgLike) return '';
+        var s = extractImageLike(imgLike);
+        if (!s) return '';
+        s = s.trim();
+        if (s.indexOf('data:image/') === 0) {
+            var comma = s.indexOf(',');
+            if (comma >= 0) {
+                var prefix = s.substring(0, comma + 1);
+                var b64Part = s.substring(comma + 1).replace(/\s+/g, '');
+                if (b64Part && /^[A-Za-z0-9+/=_-]+$/.test(b64Part)) {
+                    return prefix + normalizeBase64(b64Part);
+                }
+            }
+            return s.replace(/\s+/g, '');
+        }
+
+        // Handle URLs first
+        if (s.indexOf('//') === 0) return 'https:' + s;
+        if (s.indexOf('/') === 0 || s.indexOf('./') === 0) return s;
+        if (s.indexOf('http://') === 0 || s.indexOf('https://') === 0) return s;
+        if (s.indexOf('captcha?') === 0) return '/' + s;
+
+        // Strip whitespace for base64/SVG checks
+        s = s.replace(/\s+/g, '');
+
+        if (s.indexOf('<svg') === 0 || s.indexOf('<?xml') === 0) {
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+        }
+        
+        // If it looks like base64url or raw base64
+        if (/^[A-Za-z0-9+/=_-]+$/.test(s) && s.length > 10) {
+            var b64 = normalizeBase64(s);
+            if (b64) {
+                function mimeFromB64(b) {
+                    if (!b || typeof b !== 'string') return 'image/png';
+                    if (b.indexOf('iVBOR') === 0) return 'image/png';
+                    if (b.indexOf('/9j/') === 0) return 'image/jpeg';
+                    if (b.indexOf('R0lGOD') === 0) return 'image/gif';
+                    if (b.indexOf('UklGR') === 0) return 'image/webp';
+                    if (b.indexOf('PHN2Zy') === 0 || b.indexOf('PD94bW') === 0) return 'image/svg+xml';
+                    return 'image/png';
+                }
+                var mime = mimeFromB64(b64);
+                return 'data:' + mime + ';base64,' + b64;
+            }
+        }
+        
+        return s;
+    }
+
+    document.getElementById('t-native').style.display = 'block';
+    startExpiryTimer();
+
+    function getChoices(task) {
+        if (!task || typeof task !== 'object') return [];
+        var direct = null;
+        var keys = ['choices', 'images', 'imgs', 'tiles', 'options', 'pool', 'items', 'rows', 'list'];
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (task[k] && Array.isArray(task[k])) {
+                direct = task[k];
+                break;
+            }
+        }
+        if (direct && Array.isArray(direct)) {
+            if (direct.length && Array.isArray(direct[0])) {
+                var flat = [];
+                direct.forEach(function(row) { if (Array.isArray(row)) flat = flat.concat(row); });
+                direct = flat;
+            }
+            return direct;
+        }
+
+        // Fallback: pick the largest array that looks like images
+        var best = [];
+        for (var prop in task) {
+            if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
+            var v = task[prop];
+            if (!Array.isArray(v) || !v.length) continue;
+            var count = 0;
+            for (var j = 0; j < v.length; j++) {
+                var img = extractImageLike(v[j]);
+                if (looksLikeImageString(img)) count++;
+            }
+            if (count > best.length) best = v;
+        }
+        return best;
+    }
+
+    function getTarget(task) {
+        if (!task || typeof task !== 'object') return '';
+        var keys = ['target', 'target_image', 'targetImg', 'target_img', 'needle', 'query', 'object', 'prompt', 'pick', 'goal', 'image', 'img', 'pic'];
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            var val = task[k];
+            var img = extractImageLike(val);
+            if (img && looksLikeImageString(img)) return img;
+        }
+        for (var prop in task) {
+            if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
+            var v = task[prop];
+            if (typeof v === 'string' && looksLikeImageString(v)) return v;
+            if (typeof v === 'object' && v) {
+                var vv = extractImageLike(v);
+                if (vv && looksLikeImageString(vv)) return vv;
+            }
+        }
+        return '';
+    }
+
+    function parse4chanTaskHtml(html) {
+        if (!html || typeof html !== 'string') return null;
+        var s = html.trim();
+        var targetSrc = '';
+        var instructionHtml = '';
+        
+        var imgMatch = s.match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i) || s.match(/<img[^>]+src\s*=\s*([^>\s]+)/i);
+        if (imgMatch) targetSrc = imgMatch[1].trim().replace(/^["']|["']$/g, '');
+        
+        var div = document.createElement('div');
+        div.innerHTML = s;
+        
+        // Target extraction from img tags
+        var imgs = div.querySelectorAll('img');
+        if (imgs.length && !targetSrc && imgs[0].src) {
+             targetSrc = imgs[0].getAttribute('src') || imgs[0].src;
+        }
+        if (targetSrc && targetSrc.indexOf('data:') !== 0 && targetSrc.indexOf('http') !== 0) {
+            targetSrc = toImgSrc(targetSrc) || targetSrc;
+        }
+        
+        // Clean HTML: remove images and elements used for bot detection (tiny or hidden)
+        var all = div.querySelectorAll('*');
+        for (var i = 0; i < all.length; i++) {
+            var el = all[i];
+            if (el.tagName === 'IMG') {
+                el.parentNode && el.parentNode.removeChild(el);
+                continue;
+            }
+            var st = window.getComputedStyle ? window.getComputedStyle(el) : (el.style || {});
+            var isHidden = st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0' || (parseInt(st.width) <= 1 && parseInt(st.height) <= 1);
+            if (isHidden) {
+                el.parentNode && el.parentNode.removeChild(el);
+            }
+        }
+        
+        instructionHtml = div.innerHTML.replace(/\s+/g, ' ').trim();
+        if (!instructionHtml && s.indexOf('<') < 0) instructionHtml = s;
+        
+        return (targetSrc || instructionHtml) ? { targetSrc: targetSrc, instruction: instructionHtml } : null;
+    }
+
+    function get4chanTaskParsed(task) {
+        if (!task) return null;
+        if (typeof task === 'string') return parse4chanTaskHtml(task);
+        if (typeof task !== 'object') return null;
+        var keys = ['html', 'content', 'markup', 'body', 'task', 't_task', 'task_html', 'prompt_html', 'str', 's'];
+        for (var i = 0; i < keys.length; i++) {
+            var v = task[keys[i]];
+            if (typeof v === 'string') {
+                var parsed = parse4chanTaskHtml(v);
+                if (parsed) return parsed;
+            }
+        }
+        return null;
+    }
+
+    function getInstructionText(task) {
+        var fallback = 'Select the image containing the object shown on the right.';
+        if (!task || typeof task !== 'object') return fallback;
+        
+        var parsed = get4chanTaskParsed(task);
+        if (parsed && parsed.instruction) return parsed.instruction;
+
+        function extractTextLike(v) {
+            if (!v) return '';
+            if (typeof v === 'string') {
+                var t = v.trim();
+                if (t && t.length > 0 && t.length < 500) return t;
+                return '';
+            }
+            if (Array.isArray(v)) {
+                for (var i = 0; i < v.length; i++) {
+                    var inner = extractTextLike(v[i]);
+                    if (inner) return inner;
+                }
+                return '';
+            }
+            if (typeof v === 'object') {
+                var k2 = ['text', 'msg', 'prompt', 'instruction', 'instructions', 'question', 'title', 'label', 'desc', 'description', 'hint', 'value', 'str', 's'];
+                for (var j = 0; j < k2.length; j++) {
+                    var vv = v[k2[j]];
+                    if (vv) {
+                        var extracted = extractTextLike(vv);
+                        if (extracted) return extracted;
+                    }
+                }
+            }
+            return '';
+        }
+
+        var keys = ['instruction', 'instructions', 'prompt', 'question', 'text', 'msg', 'title', 'label', 'desc', 'description', 'hint', 'query', 'goal', 'pick', 'instruction_text', 'instruction_msg', 'str', 's'];
+        for (var i = 0; i < keys.length; i++) {
+            var v = extractTextLike(task[keys[i]]);
+            if (v && typeof v === 'string') {
+                // Return cleaned text but bold specific patterns if not already HTML
+                if (v.indexOf('<') < 0) {
+                    v = v.replace(/\b(exactly\s+)?(\d+)\s+(stars?|spikes?|points?|sides?|objects?)\b/gi, '<b>$1$2 $3</b>');
+                }
+                return v;
+            }
+        }
+        return fallback;
+    }
+
+    var globalTarget = getTarget(data) || '';
+
+    function renderChallenge() {
+        var task = tasks[currentIndex];
+        var choices = getChoices(task);
+        var parsed = get4chanTaskParsed(task);
+        var target = '';
+        if (parsed && parsed.targetSrc) {
+            target = parsed.targetSrc;
+        } else {
+            target = getTarget(task) || globalTarget;
+            if (!target && task && typeof task === 'object') {
+                var idx = (typeof task.target === 'number') ? task.target : (task.target && typeof task.target.index === 'number' ? task.target.index : null);
+                if (idx !== null && idx >= 0 && idx < choices.length) target = choices[idx];
+            }
+        }
+
+        var headerEl = document.getElementById('t-native-counter');
+        if (headerEl) headerEl.textContent = 'Challenge ' + (currentIndex + 1) + ' of ' + total;
+
+        var instrEl = document.getElementById('t-native-instructions-text');
+        if (instrEl) {
+            var html = getInstructionText(task);
+            if (html.indexOf('<') >= 0) {
+                instrEl.innerHTML = html;
+            } else {
+                instrEl.textContent = html;
+            }
+        }
+
+        var targetWrap = document.getElementById('t-native-target-wrap');
+        var targetImg = document.getElementById('t-native-target');
+        
+        if (!target) {
+            if (targetWrap) targetWrap.style.display = 'none';
+        } else {
+            if (targetWrap) targetWrap.style.display = 'block';
+            var targetSrc = EMPTY_IMG_SRC;
+            if (target.indexOf('data:image/') === 0) {
+                targetSrc = target;
+            } else {
+                var built = toImgSrc(target);
+                if (built) targetSrc = built;
+            }
+            if (targetImg) {
+                var lastSrc = targetImg.getAttribute('data-last-src');
+                if (lastSrc !== targetSrc) {
+                    targetImg.setAttribute('data-last-src', targetSrc);
+                    targetImg.onerror = function() { this.src = EMPTY_IMG_SRC; this.onerror = null; };
+                    targetImg.src = '';
+                    targetImg.src = targetSrc;
+                    targetImg.alt = 'Target';
+                }
+            }
+        }
+
+        var wrap = document.getElementById('t-native-choices');
+        wrap.innerHTML = '';
+        if (!choices || !choices.length) {
+            var msg = document.createElement('div');
+            msg.style.fontSize = '12px';
+            msg.style.color = '__C_MUTED__';
+            msg.textContent = 'No choices received yet. If this persists, press refresh.';
+            wrap.appendChild(msg);
+        }
+        choices.forEach(function(choice, idx) {
+            var div = document.createElement('div');
+            div.className = 't-choice' + (answers[currentIndex] === idx ? ' selected' : '');
+            div.setAttribute('data-index', idx);
+            var img = document.createElement('img');
+            var choiceSrc = toImgSrc(choice);
+            img.src = choiceSrc;
+            img.alt = 'Choice ' + (idx + 1);
+            div.appendChild(img);
+            div.onclick = function() {
+                answers[currentIndex] = idx;
+                var all = wrap.querySelectorAll('.t-choice');
+                for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+                div.classList.add('selected');
+                document.getElementById('t-native-next').disabled = false;
+            };
+            wrap.appendChild(div);
+        });
+
+        var btn = document.getElementById('t-native-next');
+        btn.disabled = answers[currentIndex] === undefined;
+        btn.textContent = (currentIndex === total - 1) ? 'Submit' : 'Next';
+    }
+
+    document.getElementById('t-native-next').onclick = function() {
+        if (answers[currentIndex] === undefined) return;
+        if (currentIndex === total - 1) {
+            var challengeEl = document.getElementById('t-challenge');
+            var challenge = challengeEl ? challengeEl.value : '';
+            var r = answers.join('');
+            
+            // Notify parent page (e.g. signin page) via postMessage
+            var msg = {
+                twister: {
+                    challenge: challenge,
+                    response: r
+                }
+            };
+            // Include ticket if we saved it earlier in this window
+            if (window.savedTicket) msg.twister.ticket = window.savedTicket;
+            
+            try {
+                window.parent.postMessage(msg, '*');
+            } catch (e) {}
+
+            if (expiryInterval) clearInterval(expiryInterval);
+            
+            if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
+                CaptchaCallback.onCaptchaEntered(challenge, r);
+            }
+            return;
+        }
+        currentIndex++;
+        renderChallenge();
+    };
+
+    renderChallenge();
+    CaptchaCallback.onCaptchaLoaded();
+}
+
+function requestCaptcha() {
+    if (expiryInterval) clearInterval(expiryInterval);
+    CaptchaCallback.onRequestCaptcha();
+}
+
+window.globalOnCaptchaEntered = function() {
+    if (expiryInterval) clearInterval(expiryInterval);
+    var c = document.getElementById("t-challenge").value;
+    var msg = { twister: { challenge: c, response: "" } };
+    if (window.savedTicket) msg.twister.ticket = window.savedTicket;
+    try { window.parent.postMessage(msg, '*'); } catch (e) {}
+    
+    if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
+        CaptchaCallback.onCaptchaEntered(c, '');
+    }
+};
+
+(function preventKeyboard() {
+    function blurInput(el) {
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+            el.blur();
+        }
+    }
+    document.addEventListener('focusin', function(e) {
+        blurInput(e.target);
+    });
+    window.addEventListener('load', function() {
+        blurInput(document.activeElement);
+    });
+})();
+window.addEventListener("load", function(event) {
+    try {
+        var jsonStr = '__CLOVER_JSON__';
+        var data = JSON.parse(jsonStr);
+        buildFromJson(data);
+    } catch (e) {
+        CaptchaCallback.onCaptchaLoaded();
+    }
+});
+
+</script>
+</body>
+</html>
