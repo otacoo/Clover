@@ -6,20 +6,18 @@
 ## About this fork
 
 > [!NOTE]
-> This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [](CHANGES_old_nuudev.txt)).\
+> This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [CHANGES_old_nuudev.txt](CHANGES_old_nuudev.txt)).\
 > It retains the Blue Clover icon but changed the app name to **Clover**.
 
-Read the [CHANGES.md](CHANGES.md) file for the changes made in this fork.
+This fork is meant primarily to add support for the new 4chan captcha and 8chan.moe site support.\
+Read the [CHANGES.md](CHANGES.md) file for all the changes made in this fork.
 
 ## About Clover
-
-[![Build Status](https://travis-ci.org/Floens/Clover.svg?branch=dev)](https://travis-ci.org/Floens/Clover)
-[![Crowdin](https://d322cqt584bo4o.cloudfront.net/clover/localized.svg)](https://crowdin.com/project/clover)
 
 Clover is a fast Android app for browsing imageboards, such as 4chan and 8chan. It adds inline replying, thread watching, notifications, themes, pass support, filters and a whole lot more. Clover is licensed under the GPL and will always be free.
 
 ## Issues and features
-Issues can be reported here at the [Issues page](https://github.com/chandevel/Clover/issues).\
+Issues can be reported here at the [Issues page](https://github.com/otacoo/Clover/issues).\
 Please search before reporting an issue to avoid duplicates!
 
 
