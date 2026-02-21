@@ -105,7 +105,20 @@ public class BoardRepository implements Observer {
     public List<Board> getSiteBoards(Site site) {
         for (SiteBoards item : allBoards.siteBoards) {
             if (item.site.id() == site.id()) {
+                Logger.d(TAG, "getSiteBoards: cache hit for site " + site.id() + ", " + item.boards.size() + " boards");
                 return item.boards;
+            }
+        }
+        // In-memory cache not yet populated (e.g. async updateWith hasn't fired yet).
+        // Safe to query the DB directly only from a background thread.
+        Logger.d(TAG, "getSiteBoards: cache miss for site " + site.id() + ", isMainThread=" + (Thread.currentThread() == android.os.Looper.getMainLooper().getThread()));
+        if (Thread.currentThread() != android.os.Looper.getMainLooper().getThread()) {
+            try {
+                List<Board> boards = databaseManager.runTask(databaseBoardManager.getSiteBoards(site));
+                Logger.d(TAG, "getSiteBoards: DB fallback returned " + boards.size() + " boards");
+                return boards;
+            } catch (Exception e) {
+                Logger.e(TAG, "getSiteBoards: DB fallback failed", e);
             }
         }
         return new ArrayList<>();
