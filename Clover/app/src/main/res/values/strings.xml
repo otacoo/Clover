@@ -192,9 +192,12 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="setup_site_boards_description">%s added</string>
 
     <string name="setup_site_group_login">Authentication</string>
+    <string name="setup_site_group_login_4chan">4chan Pass</string>
     <string name="setup_site_login">Login</string>
+    <string name="setup_site_login_8chan">Verification</string>
     <string name="setup_site_login_description_enabled">Logged in</string>
     <string name="setup_site_login_description_disabled">Off</string>
+    <string name="setup_site_login_description_valid">Valid</string>
 
     <string name="setup_board_title">Configure boards of %s</string>
     <string name="setup_board_empty">No boards added</string>
