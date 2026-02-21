@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.settings.BooleanSetting;
 import org.otacoo.chan.core.settings.OptionSettingItem;
 import org.otacoo.chan.core.settings.SettingProvider;
 import org.otacoo.chan.core.settings.SharedPreferencesSettingProvider;
@@ -500,6 +501,7 @@ public class Chan4 extends SiteBase {
     private final StringSetting passUser;
     private final StringSetting passPass;
     private final StringSetting passToken;
+    private final BooleanSetting showCooldownToast;
 
     public Chan4() {
         // we used these before multisite, and lets keep using them.
@@ -509,18 +511,23 @@ public class Chan4 extends SiteBase {
         // token was renamed, before it meant the username, now it means the token returned
         // from the server that the cookie is set to.
         passToken = new StringSetting(p, "preference_pass_id", "");
+        showCooldownToast = new BooleanSetting(p, "preference_4chan_cooldown_toast", true);
     }
 
     @Override
     public void initializeSettings() {
         super.initializeSettings();
-        // No additional settings needed - always use new native captcha
     }
 
     @Override
     public List<SiteSetting> settings() {
-        // No site-specific settings - always use new native captcha
-        return Collections.emptyList();
+        List<SiteSetting> list = new ArrayList<>();
+        list.add(SiteSetting.forBoolean(showCooldownToast, "Cooldown toast notifications"));
+        return list;
+    }
+
+    public BooleanSetting getShowCooldownToast() {
+        return showCooldownToast;
     }
 
     @Override

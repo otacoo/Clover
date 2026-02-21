@@ -23,17 +23,6 @@
         #t-challenge {
             display: none;
         }
-        #t-warning {
-            font-size: 12px;
-            padding: 10px 12px;
-            background: __C_WARNING_BG__;
-            border-left: 3px solid #ff6b00;
-            color: __C_WARNING_FG__;
-            border-radius: 2px;
-            line-height: 1.6;
-            display: none;
-            margin-bottom: 16px;
-        }
         #t-msg {
             width: 100%;
             position: absolute;
@@ -206,7 +195,6 @@
 <body>
 <div id="t-root">
     <input id="t-challenge" type="hidden" value="" tabindex="-1" autocomplete="off">
-    <div id="t-warning">⚠️ Do not leave this page or refresh until the cooldown expires or captcha is solved. Leaving will reset your progress.</div>
     <div id="t-msg">
         <div id="t-msg-main" style="font-size: 14px;">Loading...</div>
         <div id="t-msg-secondary" style="font-weight:bold; font-size: 24px;"></div>
@@ -259,9 +247,9 @@ function hideMsgButton() {
 
 var expiryInterval = null;
 var expirySeconds = 120;
-function startExpiryTimer() {
+function startExpiryTimer(ttl) {
     if (expiryInterval) clearInterval(expiryInterval);
-    expirySeconds = 120;
+    expirySeconds = (ttl && ttl > 0) ? Math.round(ttl) : 120;
     updateExpiryDisplay();
     expiryInterval = setInterval(function() {
         expirySeconds--;
@@ -309,7 +297,6 @@ function buildFromJson(data) {
     if (data.pcd_msg != null && (data.pcd === undefined || data.pcd === null)) {
         document.getElementById('t-msg').style.display = 'block';
         document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-warning').style.display = 'block';
         document.getElementById('t-msg-main').innerHTML = cooldownMessage(data.pcd_msg);
         document.getElementById('t-msg-secondary').textContent = '';
         showMsgButton('Get Captcha', false);
@@ -328,7 +315,6 @@ function buildFromJson(data) {
         }
         document.getElementById('t-msg').style.display = 'block';
         document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-warning').style.display = 'block';
         document.getElementById('t-msg-main').innerHTML = 'Please wait a while before making a post or <a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>';
         document.getElementById('t-msg-secondary').textContent = pcd + 's';
         if (pcd <= 0) {
@@ -347,12 +333,10 @@ function buildFromJson(data) {
         var cd = parseCountdown(data.cd);
         document.getElementById('t-msg').style.display = 'block';
         document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-warning').style.display = 'block';
         document.getElementById('t-msg-main').textContent = data.error;
         document.getElementById('t-msg-secondary').textContent = cd + 's';
         if (cd <= 0) {
             document.getElementById('t-msg').classList.remove('with-warning');
-            document.getElementById('t-warning').style.display = 'none';
             showMsgButton('Get Captcha', false);
             return;
         }
@@ -364,7 +348,6 @@ function buildFromJson(data) {
 
     document.getElementById('t-msg').style.display = 'none';
     document.getElementById('t-msg').classList.remove('with-warning');
-    document.getElementById('t-warning').style.display = 'none';
     hideMsgButton();
     document.getElementById('t-challenge').value = data.challenge || '';
 
@@ -486,7 +469,7 @@ function buildNativeTasksUI(data) {
     }
 
     document.getElementById('t-native').style.display = 'block';
-    startExpiryTimer();
+    startExpiryTimer(data.ttl);
 
     function getChoices(task) {
         if (!task || typeof task !== 'object') return [];

@@ -30,9 +30,11 @@ import androidx.annotation.NonNull;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.presenter.SiteSetupPresenter;
+import org.otacoo.chan.core.settings.BooleanSetting;
 import org.otacoo.chan.core.settings.OptionsSetting;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteSetting;
+import org.otacoo.chan.ui.settings.BooleanSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
@@ -133,6 +135,8 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                 ListSettingView<?> v = getListSettingView(setting, optionsSetting, items);
 
                 group.add(v);
+            } else if (setting.type == SiteSetting.Type.BOOLEAN) {
+                group.add(new BooleanSettingView(this, (BooleanSetting) setting.setting, setting.name, null));
             }
         }
 

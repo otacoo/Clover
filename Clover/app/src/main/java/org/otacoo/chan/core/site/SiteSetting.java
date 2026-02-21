@@ -17,6 +17,7 @@
  */
 package org.otacoo.chan.core.site;
 
+import org.otacoo.chan.core.settings.BooleanSetting;
 import org.otacoo.chan.core.settings.OptionsSetting;
 import org.otacoo.chan.core.settings.Setting;
 
@@ -27,7 +28,8 @@ import java.util.List;
  */
 public class SiteSetting {
     public enum Type {
-        OPTIONS
+        OPTIONS,
+        BOOLEAN
     }
 
     public final String name;
@@ -47,5 +49,9 @@ public class SiteSetting {
         SiteSetting setting = new SiteSetting(name, Type.OPTIONS, options);
         setting.optionNames = optionNames;
         return setting;
+    }
+
+    public static SiteSetting forBoolean(BooleanSetting setting, String name) {
+        return new SiteSetting(name, Type.BOOLEAN, setting);
     }
 }

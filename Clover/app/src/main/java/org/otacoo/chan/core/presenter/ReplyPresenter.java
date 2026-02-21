@@ -471,8 +471,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                 case AUTHENTICATION:
                     SiteAuthentication authentication = loadable.site.actions().postAuthenticate();
 
-                    // cleanup resources tied to the new captcha layout/presenter
-                    callback.destroyCurrentAuthentication();
+                    // callback.initializeAuthentication already handles reuse/destruction based on type
                     callback.initializeAuthentication(loadable, authentication, this);
                     callback.setPage(Page.AUTHENTICATION, true);
 

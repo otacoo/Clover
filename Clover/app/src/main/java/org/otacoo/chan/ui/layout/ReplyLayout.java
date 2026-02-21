@@ -166,6 +166,29 @@ public class ReplyLayout extends LoadView implements
         }
     };
 
+    private final Handler cooldownUpdateHandler = new Handler(Looper.getMainLooper());
+    private final Runnable cooldownUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (authenticationLayout instanceof NewCaptchaLayout) {
+                NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
+                if (ncl != null) {
+                    int seconds = ncl.getCooldownRemainingSeconds();
+                    int requestSeconds = ncl.getRequestCooldownRemainingSeconds();
+                    int displaySeconds = Math.max(seconds, requestSeconds);
+                    
+                    if (displaySeconds > 0) {
+                        String label = seconds >= requestSeconds ? "Post cooldown: " : "Request limit: ";
+                        openMessage(true, true, label + displaySeconds + "s", false);
+                        cooldownUpdateHandler.postDelayed(this, 1000);
+                        return;
+                    }
+                }
+            }
+            openMessage(false, true, "", false);
+        }
+    };
+
     public ReplyLayout(Context context) {
         this(context, null);
     }
@@ -359,19 +382,6 @@ public class ReplyLayout extends LoadView implements
     }
 
     public boolean onBack() {
-        if (authenticationLayout instanceof NewCaptchaLayout) {
-            NewCaptchaLayout newCaptchaLayout = (NewCaptchaLayout) authenticationLayout;
-            if (newCaptchaLayout.shouldConfirmBeforeClosing()) {
-                new AlertDialog.Builder(getContext())
-                        .setTitle(R.string.action_confirm_exit_title)
-                        .setMessage("Leave the captcha? If you go back now, you may lose your current captcha and have to wait the cooldown again.")
-                        .setNegativeButton(R.string.cancel, null)
-                        .setPositiveButton("Leave", (dialog, which) -> presenter.onBack())
-                        .show();
-                return true;
-            }
-        }
-
         return presenter.onBack();
     }
 
@@ -596,9 +606,29 @@ public class ReplyLayout extends LoadView implements
             case INPUT:
                 setView(replyInputLayout);
                 setWrap(!presenter.isExpanded());
+                
+                // Show cooldown remaining persistent message while on INPUT page
+                cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+                if (authenticationLayout instanceof NewCaptchaLayout) {
+                    NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
+                    if (ncl.onCooldownNow()) {
+                        cooldownUpdateHandler.post(cooldownUpdateRunnable);
+                    }
+                }
                 break;
             case AUTHENTICATION:
                 setWrap(false);
+                cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+                openMessage(false, true, "", false);
+                
+                // If the cooldown just ended before Opening authentication, trigger a reset to reload the fresh captcha
+                if (authenticationLayout instanceof NewCaptchaLayout) {
+                    NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
+                    if (!ncl.onCooldownNow() && ncl.isShowingCooldownUI()) {
+                        ncl.reset();
+                    }
+                }
+
                 setView(captchaContainer);
                 View focus = getRootView() != null ? getRootView().findFocus() : null;
                 if (focus != null) focus.clearFocus();
@@ -623,8 +653,10 @@ public class ReplyLayout extends LoadView implements
         }
 
         if (page != ReplyPresenter.Page.AUTHENTICATION && authenticationLayout != null) {
-            AndroidUtils.removeFromParentView((View) authenticationLayout);
-            authenticationLayout = null;
+            if (!(authenticationLayout instanceof NewCaptchaLayout)) {
+                AndroidUtils.removeFromParentView((View) authenticationLayout);
+                authenticationLayout = null;
+            }
         }
     }
 
@@ -684,6 +716,11 @@ public class ReplyLayout extends LoadView implements
 
     @Override
     public void onPosted() {
+        if (authenticationLayout != null) {
+            authenticationLayout.onDestroy();
+            captchaContainer.removeView((View) authenticationLayout);
+            authenticationLayout = null;
+        }
         Snackbar postSuccessfulNotification = Snackbar.make(this, R.string.reply_success, 5000);
         postSuccessfulNotification.setAction(R.string.reply_success_recover, new OnClickListener() {
             @Override
