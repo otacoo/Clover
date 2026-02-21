@@ -801,9 +801,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     isCaptchaRequest = requestUrl.contains("sys.4chan.org/captcha?");
                 }
                 
-                // Only intercept when we have Cloudflare clearance and it's the captcha request
-                // Also respect skipInterceptNextLoad (used for cooldown fallback to native load)
-                if (isCaptchaRequest && hasCf && !skipInterceptNextLoad) {
+                // Only intercept main-frame navigations. JS fetch()/XHR sub-resource requests must
+                // pass through to the real servers so that requestCaptchaViaFetch() receives the
+                // actual 4chan JSON response via onCaptchaPayloadReady — not our asset HTML.
+                if (isCaptchaRequest && hasCf && !skipInterceptNextLoad && isMainFrame) {
                     try {
                         String cookieHeader = get4chanCookieHeader();
                         // If we don't have board/thread, use a generic referer
