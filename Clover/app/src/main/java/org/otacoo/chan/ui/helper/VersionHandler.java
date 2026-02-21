@@ -110,7 +110,7 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
             return;
         }
 
-        if (updateManager.isUpdatingAvailable()) {
+        if (updateManager.isUpdatingAvailable() && ChanSettings.autoCheckUpdates.get()) {
             updateManager.runUpdateApi(false);
         }
     }

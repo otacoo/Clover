@@ -396,9 +396,10 @@ public class MainSettingsController extends SettingsController implements Settin
 
     private void setupUpdateSetting(SettingsGroup about) {
         if (((StartActivity) context).getVersionHandler().isUpdatingAvailable()) {
-            about.add(new LinkSettingView(this,
-                    R.string.settings_update_check, 0,
-                    v -> ((StartActivity) context).getVersionHandler().manualUpdateCheck()));
+            about.add(new BooleanSettingView(this,
+                    ChanSettings.autoCheckUpdates,
+                    R.string.settings_update_check,
+                    R.string.settings_update_check_description));
         }
     }
 
