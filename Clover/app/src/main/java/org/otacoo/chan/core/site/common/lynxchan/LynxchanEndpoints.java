@@ -23,7 +23,7 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
 
     @Override
     public HttpUrl boards() {
-        return root.builder().s("boards.json").url();
+        return root.builder().s("boards.js").url();
     }
 
     @Override
