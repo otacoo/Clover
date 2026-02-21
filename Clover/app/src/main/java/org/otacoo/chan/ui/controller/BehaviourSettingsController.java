@@ -180,7 +180,7 @@ public class BehaviourSettingsController extends SettingsController {
                 SettingsGroup ua = new SettingsGroup(R.string.setting_group_user_agent);
 
                 ua.add(new StringSettingView(this, ChanSettings.customUserAgent,
-                        R.string.setting_group_user_agent_ua, R.string.setting_group_user_agent_ua));
+                        R.string.setting_group_user_agent_ua, R.string.setting_group_user_agent_ua_desc));
                 if (BuildConfig.FLAVOR.equals("dev")) {
                     // please see the note about this setting in NewCaptchaLayout
                     ua.add(new StringSettingView(this, ChanSettings.customCFClearanceCommand,
