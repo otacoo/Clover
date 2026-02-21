@@ -241,16 +241,10 @@ public class FileCacheDownloader implements Runnable {
         }
 
         // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
-        String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
-        
-        // Add mandatory 8chan-specific cookies as fallback
-        if (url.contains("8chan.moe") || url.contains("8chan.st")) {
-            if (cookies == null || cookies.isEmpty()) {
-                cookies = "TOS=1; POW_TOKEN=1"; // Add generic dummy if missing
-            } else if (!cookies.contains("TOS")) {
-                cookies += "; TOS=1";
-            }
-        }
+        // For /.media/ URLs on 8chan, cookies are stored against the root domain.
+        String cookieLookupUrl = (url.contains("8chan.moe") || url.contains("8chan.st")) && url.contains("/.media/")
+                ? getBaseUrl(url) : url;
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
 
         if (cookies != null && !cookies.isEmpty()) {
             requestBuilder.header("Cookie", cookies);
