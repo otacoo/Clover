@@ -19,6 +19,7 @@ package org.otacoo.chan.core.cache;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.CookieManager;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
@@ -226,17 +227,88 @@ public class FileCacheDownloader implements Runnable {
 
     @WorkerThread
     private ResponseBody getBody() throws IOException {
-        Request request = new Request.Builder()
-                .url(url)
-                .header("User-Agent", userAgent)
-                .build();
+        return getBody(false);
+    }
 
-        call = httpClient.newBuilder()
+    @WorkerThread
+    private ResponseBody getBody(boolean isRetry) throws IOException {
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(url)
+                .header("User-Agent", userAgent);
+
+        if (url.contains("8chan.moe") || url.contains("8chan.st")) {
+            requestBuilder.header("Referer", getBaseUrl(url));
+        }
+
+        // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+        
+        // Add mandatory 8chan-specific cookies as fallback
+        if (url.contains("8chan.moe") || url.contains("8chan.st")) {
+            if (cookies == null || cookies.isEmpty()) {
+                cookies = "TOS=1; POW_TOKEN=1"; // Add generic dummy if missing
+            } else if (!cookies.contains("TOS")) {
+                cookies += "; TOS=1";
+            }
+        }
+
+        if (cookies != null && !cookies.isEmpty()) {
+            requestBuilder.header("Cookie", cookies);
+        }
+
+        Request request = requestBuilder.build();
+
+        OkHttpClient client = httpClient.newBuilder()
                 .proxy(ChanSettings.getProxy())
-                .build()
-                .newCall(request);
+                .build();
+        
+        call = client.newCall(request);
 
         Response response = call.execute();
+        
+        // Detect 8chan.moe PoW block on images/media
+        if (response.isSuccessful() && (url.contains("8chan.moe") || url.contains("8chan.st"))) {
+            String age = response.header("Age");
+            String expires = response.header("Expires");
+            String cacheControl = response.header("Cache-Control");
+            String contentType = response.header("Content-Type");
+            
+            boolean isPoWBlock = ("0".equals(age) && "0".equals(expires) && cacheControl != null && cacheControl.contains("no-cache")) ||
+                                (contentType != null && contentType.contains("text/html"));
+            
+            if (isPoWBlock && !isRetry) {
+                log("Detected 8chan.moe PoW block on media (ContentType: " + contentType + "), attempting session refresh...");
+                response.close();
+                
+                // Perform a GET to the root to trigger/refresh session
+                Request rootRequest = new Request.Builder()
+                        .url(getBaseUrl(url))
+                        .header("User-Agent", userAgent)
+                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+                        .header("Referer", getBaseUrl(url))
+                        .header("Cookie", cookies)
+                        .build();
+                try {
+                    Response rootResponse = client.newCall(rootRequest).execute();
+                    // Some sites might set new cookies during this root request
+                    List<String> cookieHeaders = rootResponse.headers("Set-Cookie");
+                    rootResponse.close();
+                    for (String header : cookieHeaders) {
+                        android.webkit.CookieManager.getInstance().setCookie(getBaseUrl(url), header);
+                    }
+                } catch (IOException e) {
+                    log("Session refresh failed", e);
+                }
+                
+                // Retry the original request
+                return getBody(true);
+            } else if (isPoWBlock && isRetry) {
+                log("Failed to bypass PoW block even after retry. ContentType: " + contentType);
+                response.close();
+                throw new IOException("Failed to bypass 8chan.moe PoW block after session refresh retry");
+            }
+        }
+
         if (!response.isSuccessful()) {
             throw new HttpCodeIOException(response.code());
         }
@@ -251,6 +323,15 @@ public class FileCacheDownloader implements Runnable {
         checkCancel();
 
         return body;
+    }
+
+    private String getBaseUrl(String urlString) {
+        try {
+            java.net.URL url = new java.net.URL(urlString);
+            return url.getProtocol() + "://" + url.getHost() + "/";
+        } catch (Exception e) {
+            return urlString;
+        }
     }
 
     @WorkerThread

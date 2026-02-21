@@ -21,6 +21,8 @@ import com.android.volley.toolbox.HurlStack;
 
 import org.otacoo.chan.core.settings.ChanSettings;
 
+import android.webkit.CookieManager;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -52,6 +54,29 @@ public class ProxiedHurlStack extends HurlStack {
         connection.setInstanceFollowRedirects(HttpURLConnection.getFollowRedirects());
 
         connection.setRequestProperty("User-Agent", userAgent);
+
+        // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
+        String urlString = url.toString();
+        
+        // Add Referer for 8chan.moe to help bypass some bot protection variants
+        if (urlString.contains("8chan.moe") || urlString.contains("8chan.st")) {
+            connection.setRequestProperty("Referer", url.getProtocol() + "://" + url.getHost() + "/");
+        }
+
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(urlString);
+
+        // Add mandatory 8chan-specific cookies as fallback
+        if (urlString.contains("8chan.moe") || urlString.contains("8chan.st")) {
+            if (cookies == null || cookies.isEmpty()) {
+                cookies = "TOS=1; POW_TOKEN=1";
+            } else if (!cookies.contains("TOS")) {
+                cookies += "; TOS=1";
+            }
+        }
+
+        if (cookies != null && !cookies.isEmpty()) {
+            connection.setRequestProperty("Cookie", cookies);
+        }
 
         return connection;
     }
