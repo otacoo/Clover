@@ -508,6 +508,26 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             }
         }
 
+        // Handle error+cd cooldown (e.g. {"error":"You have to wait...","cd":26}).
+        // 4chan uses this shape when the user gets a rate-limit instead of the main pcd field.
+        int cdValue = getCdFromPayload(payload);
+        if (cdValue > 0) {
+            pcdLoopCount = 0;
+            manualGetCaptchaClickCount = 0;
+            Logger.i(TAG, "onCaptchaPayloadFromFetch: error/cd=" + cdValue + " — showing error cooldown UI");
+            cooldownActive = true;
+            startCooldownBackgroundTracking(board, thread_id, cdValue);
+            String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+            if (assetHtml != null) {
+                lastResponseWasAsset = true;
+                showingActiveCaptcha = true;
+                String baseUrl = "https://sys.4chan.org/";
+                loadDataWithBaseURL(baseUrl, assetHtml, "text/html", "UTF-8", baseUrl);
+                onCaptchaLoaded();
+                return;
+            }
+        }
+
         // If we get pcd=0 but NO data, or pcd=-1 (invalid), we check if we should retry or show manual UI.
         persistTicketFromPayload(payload);
 
@@ -1009,13 +1029,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     org.json.JSONObject data = obj.optJSONObject("twister");
                     if (data == null) data = obj;
                     
-                    // A valid payload must have pcd, ticket, or captcha-specific data (img/tasks).
-                    // If it only has "challenge" and "response" as strings (mock/template), it is rejected.
+                    // A valid payload must have pcd, ticket, captcha-specific data (img/tasks),
+                    // OR an error+cd cooldown response (e.g. {"error":"...","cd":26}).
                     boolean hasPcd = data.has("pcd");
                     boolean hasTicket = data.has("ticket") && !data.isNull("ticket");
                     boolean hasAssets = data.has("img") || data.has("tasks");
+                    boolean hasErrorCd = data.has("error") || data.has("cd");
                     
-                    if (hasPcd || hasTicket || hasAssets) {
+                    if (hasPcd || hasTicket || hasAssets || hasErrorCd) {
                         // Prefer the one with assets or ticket.
                         if (bestPayload == null || hasAssets || hasTicket) {
                             bestPayload = candidate;
@@ -1186,6 +1207,22 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                             if (pcdValue > 0) {
                                 globalPayloads.put(getGlobalKey(), payload);
                                 startCooldownBackgroundTracking(board, thread_id, pcdValue);
+                                String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
+                                if (assetHtml != null) {
+                                    lastResponseWasAsset = true;
+                                    showingActiveCaptcha = true;
+                                    loadDataWithBaseURL(url, assetHtml, "text/html", "UTF-8", url);
+                                    onCaptchaLoaded();
+                                    return;
+                                }
+                            }
+
+                            // Handle error+cd cooldown (e.g. {"error":"...","cd":26}) from the native page.
+                            int cdValue = getCdFromPayload(payload);
+                            if (cdValue > 0) {
+                                Logger.i(TAG, "extractPayloadFromNativePage: error/cd=" + cdValue + " — showing error cooldown UI");
+                                cooldownActive = true;
+                                startCooldownBackgroundTracking(board, thread_id, cdValue);
                                 String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
                                 if (assetHtml != null) {
                                     lastResponseWasAsset = true;
@@ -1377,6 +1414,17 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             return pcd;
         } catch (Exception e) {
             Logger.w(TAG, "getPcdFromPayload: JSON parse failed for snippet: " + (data.length() > 50 ? data.substring(0, 50) : data));
+            return -1;
+        }
+    }
+
+    private static int getCdFromPayload(String payload) {
+        String data = unwrapTwisterPayload(payload);
+        if (data == null) return -1;
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject(data);
+            return obj.optInt("cd", -1);
+        } catch (Exception e) {
             return -1;
         }
     }
