@@ -8,9 +8,9 @@
 > [!NOTE]
 > This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [CHANGES_old_nuudev.txt](CHANGES_old_nuudev.txt)).\
 >It also contains some changes by [EmiriUchi](https://github.com/EmiriUchi/) in [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/).\
-> It retains the Blue Clover icon but changed the app name to **Clover**.
+> It retains the Blue Clover icon but changes the app name back to **Clover**.
 
-This fork is meant primarily to add support for the new 4chan captcha and 8chan.moe site support.\
+This fork is meant primarily to add support for the new 4chan captcha (implemented) and 8chan.moe site support (work in progress).\
 Read the [CHANGES.md](CHANGES.md) file for all the changes made in this fork.
 
 ## About Clover
