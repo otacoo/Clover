@@ -136,7 +136,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
 
                 group.add(v);
             } else if (setting.type == SiteSetting.Type.BOOLEAN) {
-                group.add(new BooleanSettingView(this, (BooleanSetting) setting.setting, setting.name, null));
+                group.add(new BooleanSettingView(this, (BooleanSetting) setting.setting, setting.name, setting.description));
             }
         }
 

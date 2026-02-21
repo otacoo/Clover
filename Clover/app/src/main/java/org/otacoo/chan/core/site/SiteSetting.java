@@ -33,25 +33,31 @@ public class SiteSetting {
     }
 
     public final String name;
+    public final String description;
     public final Type type;
     public final Setting<?> setting;
 
     public List<String> optionNames;
 
-    private SiteSetting(String name, Type type, Setting<?> setting) {
+    private SiteSetting(String name, String description, Type type, Setting<?> setting) {
         this.name = name;
+        this.description = description;
         this.type = type;
         this.setting = setting;
     }
 
     public static SiteSetting forOption(OptionsSetting<?> options, String name,
                                         List<String> optionNames) {
-        SiteSetting setting = new SiteSetting(name, Type.OPTIONS, options);
+        SiteSetting setting = new SiteSetting(name, null, Type.OPTIONS, options);
         setting.optionNames = optionNames;
         return setting;
     }
 
     public static SiteSetting forBoolean(BooleanSetting setting, String name) {
-        return new SiteSetting(name, Type.BOOLEAN, setting);
+        return new SiteSetting(name, null, Type.BOOLEAN, setting);
+    }
+
+    public static SiteSetting forBoolean(BooleanSetting setting, String name, String description) {
+        return new SiteSetting(name, description, Type.BOOLEAN, setting);
     }
 }
