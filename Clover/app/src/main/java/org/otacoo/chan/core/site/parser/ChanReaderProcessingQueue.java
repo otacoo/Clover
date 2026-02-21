@@ -66,15 +66,15 @@ public class ChanReaderProcessingQueue {
         return loadable;
     }
 
-    List<Post> getToReuse() {
+    public List<Post> getToReuse() {
         return toReuse;
     }
 
-    List<Post.Builder> getToParse() {
+    public List<Post.Builder> getToParse() {
         return toParse;
     }
 
-    Post.Builder getOp() {
+    public Post.Builder getOp() {
         return op;
     }
 }

@@ -17,6 +17,10 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
         root = new CommonSite.SimpleHttpUrl(rootUrl);
     }
 
+    public HttpUrl root() {
+        return root.url();
+    }
+
     @Override
     public HttpUrl boards() {
         return root.builder().s("boards.json").url();
@@ -48,7 +52,7 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
             path = path.substring(1);
         }
         
-        return root.builder().s(path).url();
+        return root.builder().ss(path).url();
     }
 
     @Override
@@ -61,7 +65,7 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
             thumb = thumb.substring(1);
         }
 
-        return root.builder().s(thumb).url();
+        return root.builder().ss(thumb).url();
     }
 
     @Override

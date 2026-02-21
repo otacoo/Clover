@@ -434,6 +434,11 @@ public abstract class CommonSite extends SiteBase {
             return this;
         }
 
+        public SimpleHttpUrl ss(String segments) {
+            url.addPathSegments(segments);
+            return this;
+        }
+
         public HttpUrl url() {
             return url.build();
         }
