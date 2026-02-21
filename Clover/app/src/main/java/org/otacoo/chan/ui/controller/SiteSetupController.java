@@ -40,6 +40,7 @@ import org.otacoo.chan.ui.settings.SettingsGroup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -166,10 +167,10 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                 loginLabel,
                 "",
                 v -> {
-                    if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+                    if (site.name().toLowerCase(Locale.US).contains("8chan")) {
                         HttpUrl loginUrl = site.endpoints().login();
                         EmailVerificationController webController = new EmailVerificationController(context, loginUrl.toString(), site.name() + " Verification");
-                        webController.setRequiredCookies("TOS", "POW_TOKEN");
+                        webController.setRequiredCookies("TOS", "POW_TOKEN", "POW_ID");
                         navigationController.pushController(webController);
                     } else {
                         LoginController loginController = new LoginController(context);
