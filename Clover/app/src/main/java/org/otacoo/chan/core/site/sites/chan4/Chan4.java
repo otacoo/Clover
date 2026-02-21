@@ -522,7 +522,7 @@ public class Chan4 extends SiteBase {
     @Override
     public List<SiteSetting> settings() {
         List<SiteSetting> list = new ArrayList<>();
-        list.add(SiteSetting.forBoolean(showCooldownToast, "Captcha toast notifications"));
+        list.add(SiteSetting.forBoolean(showCooldownToast, "Background cooldown tracking"));
         return list;
     }
 
