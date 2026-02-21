@@ -91,9 +91,14 @@ public class SiteSetupController extends SettingsController implements SiteSetup
 
     @Override
     public void setIsLoggedIn(boolean isLoggedIn) {
-        String text = context.getString(isLoggedIn ?
-                R.string.setup_site_login_description_enabled :
-                R.string.setup_site_login_description_disabled);
+        String text;
+        if ((site.name().equals("8chan.moe") || site.name().equals("8chan")) && isLoggedIn) {
+            text = context.getString(R.string.setup_site_login_description_valid);
+        } else {
+            text = context.getString(isLoggedIn ?
+                    R.string.setup_site_login_description_enabled :
+                    R.string.setup_site_login_description_disabled);
+        }
         loginLink.setDescription(text);
     }
     @Override
@@ -146,16 +151,25 @@ public class SiteSetupController extends SettingsController implements SiteSetup
 
     @Override
     public void showLogin() {
-        SettingsGroup login = new SettingsGroup(R.string.setup_site_group_login);
+        int loginGroupTitle = R.string.setup_site_group_login;
+        String loginLabel = context.getString(R.string.setup_site_login);
+
+        if (site.name().equals("4chan")) {
+            loginGroupTitle = R.string.setup_site_group_login_4chan;
+        } else if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+            loginLabel = context.getString(R.string.setup_site_login_8chan);
+        }
+
+        SettingsGroup login = new SettingsGroup(loginGroupTitle);
         loginLink = new LinkSettingView(
                 this,
-                context.getString(R.string.setup_site_login),
+                loginLabel,
                 "",
                 v -> {
                     if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
                         HttpUrl loginUrl = site.endpoints().login();
                         EmailVerificationController webController = new EmailVerificationController(context, loginUrl.toString(), site.name() + " Verification");
-                        webController.setRequiredCookies("TOS20250418", "POW_TOKEN");
+                        webController.setRequiredCookies("TOS20250418", "POW_TOKEN", "POW_ID");
                         navigationController.pushController(webController);
                     } else {
                         LoginController loginController = new LoginController(context);
