@@ -44,6 +44,8 @@ public class LynxchanApi extends CommonSite.CommonApi {
         opBuilder.id(queue.getLoadable().no);
         opBuilder.setUnixTimestampSeconds(0);
         
+        queue.setOp(opBuilder);
+        
         boolean opAdded = false;
 
         reader.beginObject();
@@ -93,11 +95,52 @@ public class LynxchanApi extends CommonSite.CommonApi {
         builder.opId(isOp ? 0 : queue.getLoadable().no);
         builder.setUnixTimestampSeconds(0); // Default to avoid "Post data not complete"
 
+        if (isOp && queue.getOp() == null) {
+            queue.setOp(builder);
+        }
+
+        String standalonePath = null;
+        String standaloneThumb = null;
+
         reader.beginObject();
         while (reader.hasNext()) {
-            readSinglePostField(reader, reader.nextName(), queue, builder);
+            String key = reader.nextName();
+            if (key.equals("path") && reader.peek() == JsonToken.STRING) {
+                standalonePath = reader.nextString();
+            } else if (key.equals("thumb") && reader.peek() == JsonToken.STRING) {
+                standaloneThumb = reader.nextString();
+            } else {
+                readSinglePostField(reader, key, queue, builder);
+            }
         }
         reader.endObject();
+
+        if ((builder.images == null || builder.images.isEmpty()) && standalonePath != null) {
+            Map<String, String> args = SiteEndpoints.makeArgument("path", standalonePath, "thumb", standaloneThumb);
+            
+            String ext = "";
+            int lastDot = standalonePath.lastIndexOf(".");
+            if (lastDot != -1) {
+                ext = standalonePath.substring(lastDot + 1).toLowerCase(Locale.US);
+            }
+            
+            String filename = standalonePath;
+            int lastSlash = standalonePath.lastIndexOf("/");
+            if (lastSlash != -1) {
+                filename = standalonePath.substring(lastSlash + 1);
+            }
+
+            PostImage.Builder imageBuilder = new PostImage.Builder()
+                .thumbnailUrl(queue.getLoadable().getSite().endpoints().thumbnailUrl(builder, false, args))
+                .imageUrl(queue.getLoadable().getSite().endpoints().imageUrl(builder, args))
+                .extension(ext)
+                .filename(filename)
+                .originalName(filename);
+            
+            List<PostImage> list = new ArrayList<>();
+            list.add(imageBuilder.build());
+            builder.images(list);
+        }
 
         if (builder.id < 0) {
             // Safety: if no ID was found, ensure it's at least 0 to avoid crash.
@@ -159,9 +202,11 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 try {
                     if (reader.peek() == JsonToken.NUMBER) {
                         builder.setUnixTimestampSeconds(reader.nextLong());
-                    } else {
+                    } else if (reader.peek() == JsonToken.STRING) {
                         String dateStr = reader.nextString();
                         builder.setUnixTimestampSeconds(ISO_8601.parse(dateStr).getTime() / 1000L);
+                    } else {
+                        reader.skipValue();
                     }
                 } catch (Exception e) {
                     builder.setUnixTimestampSeconds(0);
@@ -186,7 +231,31 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 }
                 break;
             case "signedRole":
-                builder.moderatorCapcode(reader.nextString());
+                if (reader.peek() != JsonToken.NULL) {
+                    builder.moderatorCapcode(reader.nextString());
+                } else {
+                    reader.skipValue();
+                }
+                break;
+            case "postCount":
+            case "postsCount":
+            case "replyCount":
+            case "totalPosts":
+                if (reader.peek() == JsonToken.NUMBER) {
+                    builder.replies(reader.nextInt());
+                } else {
+                    reader.skipValue();
+                }
+                break;
+            case "fileCount":
+            case "filesCount":
+            case "imageCount":
+            case "totalFiles":
+                if (reader.peek() == JsonToken.NUMBER) {
+                    builder.images(reader.nextInt());
+                } else {
+                    reader.skipValue();
+                }
                 break;
             case "locked":
                 builder.closed(reader.nextBoolean());
@@ -222,25 +291,53 @@ public class LynxchanApi extends CommonSite.CommonApi {
         while (reader.hasNext()) {
             switch (reader.nextName()) {
                 case "path":
-                    path = reader.nextString();
+                    if (reader.peek() != JsonToken.NULL) {
+                        path = reader.nextString();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "thumb":
-                    thumb = reader.nextString();
+                    if (reader.peek() != JsonToken.NULL) {
+                        thumb = reader.nextString();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "originalName":
-                    originalName = reader.nextString();
+                    if (reader.peek() != JsonToken.NULL) {
+                        originalName = reader.nextString();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "size":
-                    size = reader.nextLong();
+                    if (reader.peek() == JsonToken.NUMBER) {
+                        size = reader.nextLong();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "width":
-                    width = reader.nextInt();
+                    if (reader.peek() == JsonToken.NUMBER) {
+                        width = reader.nextInt();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "height":
-                    height = reader.nextInt();
+                    if (reader.peek() == JsonToken.NUMBER) {
+                        height = reader.nextInt();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 case "mime":
-                    mime = reader.nextString();
+                    if (reader.peek() != JsonToken.NULL) {
+                        mime = reader.nextString();
+                    } else {
+                        reader.skipValue();
+                    }
                     break;
                 default:
                     reader.skipValue();
@@ -263,7 +360,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 .originalName(originalName != null ? originalName : "image")
                 .thumbnailUrl(endpoints.thumbnailUrl(builder, false, args))
                 .imageUrl(endpoints.imageUrl(builder, args))
-                .filename(originalName)
+                .filename(originalName != null ? originalName : "image")
                 .extension(ext)
                 .imageWidth(width)
                 .imageHeight(height)
