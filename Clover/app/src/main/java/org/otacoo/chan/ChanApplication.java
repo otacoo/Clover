@@ -17,12 +17,6 @@
  */
 package org.otacoo.chan;
 
-import android.os.Build;
-
-import org.otacoo.chan.utils.TLSSocketFactory;
-
-import javax.net.ssl.HttpsURLConnection;
-
 /**
  * The ChanApplication wrapping our Chan application.
  * For historical reasons the main application class needs to be 'org.otacoo.chan.ChanApplication'.
@@ -34,10 +28,5 @@ public class ChanApplication extends Chan {
 
         initialize();
 
-        if (Build.VERSION.SDK_INT < 22) {
-            try {
-                HttpsURLConnection.setDefaultSSLSocketFactory(TLSSocketFactory.getInstance());
-            } catch (Exception ignored) { }
-        }
     }
 }
