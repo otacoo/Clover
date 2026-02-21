@@ -21,7 +21,6 @@ import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Application;
@@ -43,7 +42,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
@@ -73,7 +71,7 @@ import java.util.Locale;
 public class AndroidUtils {
     private static final String TAG = "AndroidUtils";
 
-    private static HashMap<String, Typeface> typefaceCache = new HashMap<>();
+    private static final HashMap<String, Typeface> typefaceCache = new HashMap<>();
 
     public static Typeface ROBOTO_MEDIUM;
     public static Typeface ROBOTO_MEDIUM_ITALIC;
@@ -114,10 +112,6 @@ public class AndroidUtils {
     }
 
     public static SharedPreferences getPreferences() {
-        return PreferenceManager.getDefaultSharedPreferences(application);
-    }
-
-    public static SharedPreferences getPreferences(Application application) {
         return PreferenceManager.getDefaultSharedPreferences(application);
     }
 
@@ -407,11 +401,7 @@ public class AndroidUtils {
     }
 
     public static void setRoundItemBackground(View view) {
-        if (isLollipop()) {
-            setRoundItemBackgroundLollipop(view);
-        } else {
-            view.setBackgroundResource(R.drawable.item_background);
-        }
+        view.setBackground(getAttrDrawable(view.getContext(), android.R.attr.selectableItemBackgroundBorderless));
     }
 
     public static List<View> findViewsById(ViewGroup root, int id) {
@@ -440,23 +430,7 @@ public class AndroidUtils {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private static void setRoundItemBackgroundLollipop(View view) {
-        view.setBackground(getAttrDrawable(view.getContext(), android.R.attr.selectableItemBackgroundBorderless));
-    }
-
-    public static boolean isLollipop() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
-    }
-
     public static void setElevation(View view, float elevation) {
-        if (isLollipop()) {
-            setElevationLollipop(view, elevation);
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private static void setElevationLollipop(View view, float elevation) {
         view.setElevation(elevation);
     }
 
@@ -484,26 +458,20 @@ public class AndroidUtils {
     }
 
     public static boolean enableHighEndAnimations() {
-        boolean lowRamDevice = ActivityManagerCompat.isLowRamDevice(activityManager);
-        return !lowRamDevice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+        return !ActivityManagerCompat.isLowRamDevice(activityManager);
     }
 
     public static void animateStatusBar(Window window, boolean in, final int originalColor, int duration) {
         ValueAnimator statusBar = ValueAnimator.ofFloat(in ? 0f : 0.5f, in ? 0.5f : 0f);
-        statusBar.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                if (Build.VERSION.SDK_INT >= 21) { // Make lint happy
-                    float progress = (float) animation.getAnimatedValue();
-                    if (progress == 0f) {
-                        window.setStatusBarColor(originalColor);
-                    } else {
-                        int r = (int) ((1f - progress) * Color.red(originalColor));
-                        int g = (int) ((1f - progress) * Color.green(originalColor));
-                        int b = (int) ((1f - progress) * Color.blue(originalColor));
-                        window.setStatusBarColor(Color.argb(255, r, g, b));
-                    }
-                }
+        statusBar.addUpdateListener(animation -> {
+            float progress = (float) animation.getAnimatedValue();
+            if (progress == 0f) {
+                window.setStatusBarColor(originalColor);
+            } else {
+                int r = (int) ((1f - progress) * Color.red(originalColor));
+                int g = (int) ((1f - progress) * Color.green(originalColor));
+                int b = (int) ((1f - progress) * Color.blue(originalColor));
+                window.setStatusBarColor(Color.argb(255, r, g, b));
             }
         });
         statusBar.setDuration(duration).setInterpolator(new LinearInterpolator());
