@@ -1,8 +1,9 @@
 # Changes
 
 > [!NOTE]
-> This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [](CHANGES_old_nuudev.txt)).\
-> It retains the Blue Clover icon but changed the app name to **Clover**.
+> This fork is originally based on **Blue Clover**, the repo of which has been deleted by the author, it also contains some PRs merged by that dev since Clover was abandoned (read the file [CHANGES_old_nuudev.txt](CHANGES_old_nuudev.txt)).\
+>It also contains some changes by [EmiriUchi](https://github.com/EmiriUchi/) in [Gold Clover](https://github.com/EmiriUchi/GoldClover/commits/1a6c19eccfc35b56e22d5b87d04d01117b6bc0d4/).\
+> It retains the Blue Clover icon but changes the app name back to **Clover**.
 
 
 ## Build System & Environment
@@ -34,6 +35,8 @@
 ## Theme & UI Customization
 - Added dedicated settings for Accent and Loading Bar colors.
 - May have broken one or two theme things in the process.
+- Add toggle for checking for updates instead of silently checking.
+- Add button to clear WebView localStorage in dev options.
 
 ## Backup
 - Added a new "Backup & restore" section to main settings.
