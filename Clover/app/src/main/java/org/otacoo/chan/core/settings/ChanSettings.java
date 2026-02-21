@@ -293,7 +293,7 @@ public class ChanSettings {
 
         updateCheckTime = new LongSetting(p, "update_check_time", 0L);
         updateCheckInterval = new LongSetting(p, "update_check_interval", UpdateManager.DEFAULT_UPDATE_CHECK_INTERVAL_MS);
-        autoCheckUpdates = new BooleanSetting(p, "preference_auto_check_updates", true);
+        autoCheckUpdates = new BooleanSetting(p, "preference_auto_check_updates", false);
 
         crashReporting = new BooleanSetting(p, "preference_crash_reporting", true);
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
