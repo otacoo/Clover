@@ -275,7 +275,7 @@ public abstract class ThreadController extends Controller implements
         
         EmailVerificationController c = new EmailVerificationController(context, url, title);
         if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
-            c.setRequiredCookies("TOS20250418", "POW_TOKEN"); 
+            c.setRequiredCookies("TOS", "POW_TOKEN"); 
         }
         
         if (navigationController != null) {

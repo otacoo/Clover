@@ -169,7 +169,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                     if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
                         HttpUrl loginUrl = site.endpoints().login();
                         EmailVerificationController webController = new EmailVerificationController(context, loginUrl.toString(), site.name() + " Verification");
-                        webController.setRequiredCookies("TOS20250418", "POW_TOKEN", "POW_ID");
+                        webController.setRequiredCookies("TOS", "POW_TOKEN");
                         navigationController.pushController(webController);
                     } else {
                         LoginController loginController = new LoginController(context);

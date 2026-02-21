@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.otacoo.chan.core.site.http.ProgressRequestBody;
+import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
+import android.webkit.CookieManager;
 
 public class LynxchanActions extends CommonSite.CommonActions {
     public LynxchanActions(CommonSite commonSite) {
@@ -175,5 +177,16 @@ public class LynxchanActions extends CommonSite.CommonActions {
     @Override
     public SiteAuthentication postAuthenticate() {
         return SiteAuthentication.fromNone();
+    }
+
+    @Override
+    public boolean isLoggedIn() {
+        HttpUrl url = ((LynxchanEndpoints) site.endpoints()).root();
+        String cookies = CookieManager.getInstance().getCookie(url.toString());
+        if (cookies == null) return false;
+        
+        // Match any TOS cookie (e.g., TOS, TOS20250418) and POW_TOKEN
+        boolean hasTOS = cookies.contains("TOS=") || cookies.matches(".*\\bTOS\\d+\\b.*");
+        return hasTOS && cookies.contains("POW_TOKEN");
     }
 }

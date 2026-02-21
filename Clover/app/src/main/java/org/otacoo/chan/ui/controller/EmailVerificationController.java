@@ -66,6 +66,28 @@ public class EmailVerificationController extends Controller {
         navigation.swipeable = false;
 
         webView = new AuthWebView(context);
+        
+        // 8chan.moe specific automation
+        if (initialUrl.contains("8chan.moe") || initialUrl.contains("8chan.st")) {
+            webView.setWebViewClient(new android.webkit.WebViewClient() {
+                @Override
+                public void onPageFinished(android.webkit.WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    // Attempt to run 8chan's validation JS and click redirect links
+                    view.evaluateJavascript(
+                        "(function() {" +
+                        "  if (window.bypassUtils && window.bypassUtils.runValidation) {" +
+                        "    bypassUtils.runValidation(function() { console.log('PoW Validated'); });" +
+                        "  }" +
+                        "  var a = document.querySelector('h1 a, a.button, button');" +
+                        "  if (a && (a.innerText.toLowerCase().includes('click') || " +
+                        "            a.innerText.toLowerCase().includes('here') || " +
+                        "            a.innerText.toLowerCase().includes('verify') || " +
+                        "            a.innerText.toLowerCase().includes('bypass'))) a.click();" +
+                        "})();", null);
+                }
+            });
+        }
 
         // Load the verification page
         webView.loadUrl(initialUrl);
@@ -110,7 +132,18 @@ public class EmailVerificationController extends Controller {
 
         boolean allFound = true;
         for (String required : requiredCookies) {
-            if (!cookies.contains(required)) {
+            boolean found = false;
+            // Handle wildcard/prefix matching for cookies like TOS20250418
+            if (cookies.contains(required)) {
+                found = true;
+            } else if (required.equals("TOS")) {
+                // Look for any cookie starting with TOS (e.g., TOS20250418)
+                if (cookies.matches(".*\\bTOS\\d+\\b.*") || cookies.contains("TOS=")) {
+                    found = true;
+                }
+            }
+            
+            if (!found) {
                 allFound = false;
                 break;
             }
@@ -123,9 +156,15 @@ public class EmailVerificationController extends Controller {
             cookies = CookieManager.getInstance().getCookie(initialUrl);
             if (cookies != null) {
                 for (String required : requiredCookies) {
-                    if (!cookies.contains(required)) {
-                        return false;
+                    boolean found = false;
+                    if (cookies.contains(required)) {
+                        found = true;
+                    } else if (required.equals("TOS")) {
+                        if (cookies.matches(".*\\bTOS\\d+\\b.*") || cookies.contains("TOS=")) {
+                            found = true;
+                        }
                     }
+                    if (!found) return false;
                 }
                 return true;
             }
