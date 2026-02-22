@@ -82,25 +82,31 @@ public class LogsController extends Controller {
         int dp8  = dp(8);
         int dp12 = dp(12);
 
+        int backColor = getAttrColor(context, R.attr.backcolor);
+        int backColor2 = getAttrColor(context, R.attr.backcolor_secondary);
+        int textPrimary = getAttrColor(context, R.attr.text_color_primary);
+        int textSecondary = getAttrColor(context, R.attr.text_color_secondary);
+        int textHint = getAttrColor(context, R.attr.text_color_hint);
+
         // Root
         LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xFF1A1A1A);
+        root.setBackgroundColor(backColor);
 
         // ── Filter bar ──────────────────────────────────────────────────
         LinearLayout filterRow = new LinearLayout(context);
         filterRow.setOrientation(LinearLayout.HORIZONTAL);
         filterRow.setPadding(dp8, dp4, dp8, dp4);
-        filterRow.setBackgroundColor(0xFF222222);
+        filterRow.setBackgroundColor(backColor2);
 
         filterEdit = new EditText(context);
         filterEdit.setHint("Filter…");
         filterEdit.setTextSize(13f);
         filterEdit.setSingleLine(true);
-        filterEdit.setBackgroundColor(0xFF333333);
+        filterEdit.setBackgroundColor(backColor);
         filterEdit.setPadding(dp8, dp4, dp8, dp4);
-        filterEdit.setTextColor(0xFFEEEEEE);
-        filterEdit.setHintTextColor(0xFF777777);
+        filterEdit.setTextColor(textPrimary);
+        filterEdit.setHintTextColor(textHint);
         LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         filterEdit.setLayoutParams(editLp);
@@ -118,7 +124,7 @@ public class LogsController extends Controller {
 
         // ── Quick-filter chips ──────────────────────────────────────────
         HorizontalScrollView chipScroll = new HorizontalScrollView(context);
-        chipScroll.setBackgroundColor(0xFF1E1E1E);
+        chipScroll.setBackgroundColor(backColor2);
         LinearLayout chipRow = new LinearLayout(context);
         chipRow.setOrientation(LinearLayout.HORIZONTAL);
         chipRow.setPadding(dp4, dp4, dp4, dp4);
@@ -143,9 +149,9 @@ public class LogsController extends Controller {
         // ── Line-count bar ──────────────────────────────────────────────
         lineCountView = new TextView(context);
         lineCountView.setTextSize(10f);
-        lineCountView.setTextColor(0xFF666666);
+        lineCountView.setTextColor(textSecondary);
         lineCountView.setPadding(dp8, dp4, dp8, dp4);
-        lineCountView.setBackgroundColor(0xFF1A1A1A);
+        lineCountView.setBackgroundColor(backColor);
         root.addView(lineCountView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -154,6 +160,7 @@ public class LogsController extends Controller {
         logTextView = new TextView(context);
         logTextView.setTypeface(Typeface.MONOSPACE);
         logTextView.setTextSize(11f);
+        logTextView.setTextColor(textPrimary);
         logTextView.setPadding(dp8, dp4, dp8, dp12);
         logTextView.setTextIsSelectable(true);
         scrollView.addView(logTextView, new ViewGroup.LayoutParams(
