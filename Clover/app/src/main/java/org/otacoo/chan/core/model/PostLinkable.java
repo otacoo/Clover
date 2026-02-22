@@ -26,6 +26,7 @@ import androidx.annotation.NonNull;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.cell.PostCell;
 import org.otacoo.chan.ui.theme.Theme;
+import org.otacoo.chan.ui.theme.ThemeHelper;
 
 /**
  * A Clickable span that handles post clicks. These are created in PostParser for post quotes, spoilers etc.<br>
@@ -64,27 +65,29 @@ public class PostLinkable extends ClickableSpan {
 
     @Override
     public void updateDrawState(@NonNull TextPaint ds) {
+        // Force the current theme so posts parsed under a different theme still render correctly after theme change
+        Theme currentTheme = ThemeHelper.theme();
         if (type == Type.QUOTE || type == Type.LINK || type == Type.THREAD || type == Type.DEAD) {
             if (type == Type.QUOTE) {
                 if (value instanceof Integer && ((int) value) == markedNo) {
-                    ds.setColor(theme.highlightQuoteColor);
+                    ds.setColor(currentTheme.highlightQuoteColor);
                 } else {
-                    ds.setColor(theme.quoteColor);
+                    ds.setColor(currentTheme.quoteColor);
                 }
             } else if (type == Type.LINK) {
-                ds.setColor(theme.linkColor);
+                ds.setColor(currentTheme.linkColor);
             } else {
-                ds.setColor(theme.quoteColor);
+                ds.setColor(currentTheme.quoteColor);
             }
 
             ds.setUnderlineText(true);
         } else if (type == Type.SPOILER) {
-            ds.bgColor = theme.spoilerColor;
+            ds.bgColor = currentTheme.spoilerColor;
             ds.setUnderlineText(false);
             if (!spoilerVisible) {
-                ds.setColor(theme.spoilerColor);
+                ds.setColor(currentTheme.spoilerColor);
             } else {
-                ds.setColor(theme.textColorRevealSpoiler);
+                ds.setColor(currentTheme.textColorRevealSpoiler);
             }
         }
     }
