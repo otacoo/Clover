@@ -60,11 +60,7 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
         String thumb = arg.get("thumb");
         if (thumb == null) return imageUrl(post, arg);
         if (thumb.startsWith("http")) return HttpUrl.parse(thumb);
-
-        if (thumb.startsWith("/")) {
-            thumb = thumb.substring(1);
-        }
-
+        if (thumb.startsWith("/")) thumb = thumb.substring(1);
         return root.builder().ss(thumb).url();
     }
 

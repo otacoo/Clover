@@ -25,7 +25,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 import android.webkit.CookieManager;
 
+import org.otacoo.chan.utils.Logger;
+
 public class LynxchanActions extends CommonSite.CommonActions {
+    private static final String TAG = "LynxchanActions";
     public LynxchanActions(CommonSite commonSite) {
         super(commonSite);
     }
@@ -33,6 +36,7 @@ public class LynxchanActions extends CommonSite.CommonActions {
     @Override
     public void boards(BoardsListener boardsListener) {
         if (!site.getStaticBoards().isEmpty()) {
+            Logger.d(TAG, "boards: using " + site.getStaticBoards().size() + " static boards");
             boardsListener.onBoardsReceived(new Boards(site.getStaticBoards()));
             return;
         }
@@ -44,9 +48,32 @@ public class LynxchanActions extends CommonSite.CommonActions {
 
             @Override
             public void process(Response response, String result) throws IOException {
+                Logger.d(TAG, "boards process: HTTP " + response.code()
+                        + " contentType=" + response.header("Content-Type")
+                        + " bodyLen=" + result.length()
+                        + " preview=" + result.substring(0, Math.min(300, result.length())).replace("\n", " "));
                 try {
+                    String trimmed = result.trim();
+                    if (trimmed.startsWith("<")) {
+                        // HTML response from /boards.js
+                        // LynxChan formats board links with text like "/boardCode/ - Board Name"
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/([^/\"\\s]+)/ - ([^<\r\n\"]+)");
+                        java.util.regex.Matcher matcher = pattern.matcher(result);
+                        List<Board> boards = new ArrayList<>();
+                        java.util.Set<String> seen = new java.util.HashSet<>();
+                        while (matcher.find()) {
+                            String uri = matcher.group(1);
+                            String name = matcher.group(2).trim();
+                            if (seen.add(uri)) {
+                                boards.add(Board.fromSiteNameCode(site, name, uri));
+                            }
+                        }
+                        Logger.d(TAG, "boards process: parsed " + boards.size() + " boards from HTML");
+                        boardsListener.onBoardsReceived(new Boards(boards));
+                        return;
+                    }
                     JSONArray arr;
-                    if (result.trim().startsWith("{")) {
+                    if (trimmed.startsWith("{")) {
                         JSONObject obj = new JSONObject(result);
                         arr = obj.getJSONArray("boards");
                     } else {
@@ -59,22 +86,28 @@ public class LynxchanActions extends CommonSite.CommonActions {
                         String name = b.getString("boardName");
                         boards.add(Board.fromSiteNameCode(site, name, uri));
                     }
+                    Logger.d(TAG, "boards process: parsed " + boards.size() + " boards from JSON");
                     boardsListener.onBoardsReceived(new Boards(boards));
                 } catch (Exception e) {
+                    Logger.e(TAG, "boards process: parse error", e);
                     throw new IOException("Failed to parse boards list", e);
                 }
             }
         };
 
-        // Lynxchan boards list is paged. Using page=1 with boards.json
-        call.url(site.endpoints().boards().newBuilder().addQueryParameter("page", "1").build().toString());
+        // LynxChan board list — use the endpoint URL directly (boards.js returns full HTML list)
+        String boardsUrl = site.endpoints().boards().toString();
+        Logger.d(TAG, "boards: fetching " + boardsUrl);
+        call.url(boardsUrl);
         site.getHttpCallManager().makeHttpCall(call, new HttpCall.HttpCallback<HttpCall>() {
             @Override
             public void onHttpSuccess(HttpCall httpCall) {
+                Logger.d(TAG, "boards: onHttpSuccess");
             }
 
             @Override
             public void onHttpFail(HttpCall httpCall, Exception e) {
+                Logger.e(TAG, "boards: onHttpFail", e);
                 boardsListener.onBoardsReceived(new Boards(new ArrayList<>()));
             }
         });
