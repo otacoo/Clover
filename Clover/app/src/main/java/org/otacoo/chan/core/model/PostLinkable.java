@@ -36,7 +36,7 @@ import org.otacoo.chan.ui.theme.ThemeHelper;
 @SuppressWarnings("JavadocReference")
 public class PostLinkable extends ClickableSpan {
     public enum Type {
-        QUOTE, LINK, SPOILER, THREAD, DEAD
+        QUOTE, LINK, SPOILER, THREAD, DEAD, BOARD
     }
 
     public final Theme theme;
@@ -67,7 +67,7 @@ public class PostLinkable extends ClickableSpan {
     public void updateDrawState(@NonNull TextPaint ds) {
         // Force the current theme so posts parsed under a different theme still render correctly after theme change
         Theme currentTheme = ThemeHelper.theme();
-        if (type == Type.QUOTE || type == Type.LINK || type == Type.THREAD || type == Type.DEAD) {
+        if (type == Type.QUOTE || type == Type.LINK || type == Type.THREAD || type == Type.DEAD || type == Type.BOARD) {
             if (type == Type.QUOTE) {
                 if (value instanceof Integer && ((int) value) == markedNo) {
                     ds.setColor(currentTheme.highlightQuoteColor);
@@ -105,6 +105,26 @@ public class PostLinkable extends ClickableSpan {
             this.board = board;
             this.threadId = threadId;
             this.postId = postId;
+        }
+    }
+
+    /**
+     * Represents an intra-board quotelink (>>>/board/ or >>>/board/catalog#s=query).
+     * {@code searchQuery} is null when no catalog search is specified.
+     * {@code originalScheme} and {@code originalHost} are taken from the anchor href so the
+     * browser fallback can reconstruct a clean URL without trusting the full raw href.
+     */
+    public static class BoardLink {
+        public final String board;
+        public final String searchQuery; // nullable
+        public final String originalScheme; // e.g. "https"
+        public final String originalHost;   // e.g. "boards.4chan.org"
+
+        public BoardLink(String board, String searchQuery, String originalScheme, String originalHost) {
+            this.board = board;
+            this.searchQuery = searchQuery;
+            this.originalScheme = originalScheme;
+            this.originalHost = originalHost;
         }
     }
 }

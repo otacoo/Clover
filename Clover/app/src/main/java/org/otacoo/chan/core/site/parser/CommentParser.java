@@ -53,6 +53,10 @@ public class CommentParser {
     private Pattern fullQuotePattern = Pattern.compile("/(\\w+)/\\w+/(\\d+)#p(\\d+)");
     private Pattern quotePattern = Pattern.compile(".*#p(\\d+)");
     private Pattern colorPattern = Pattern.compile("color:#([0-9a-fA-F]+)");
+    // Matches /board/catalog optionally followed by #s=query (intra-board catalog search link)
+    private Pattern boardCatalogPattern = Pattern.compile("/(\\w+)/catalog(?:#s=(.*))?$");
+    // Matches /board/ or /board (bare board link, no thread/post)
+    private Pattern boardPattern = Pattern.compile("/(\\w+)/?$");
 
     private Map<String, List<StyleRule>> rules = new HashMap<>();
     private List<String> internalDomains = new ArrayList<>(0);
@@ -163,7 +167,7 @@ public class CommentParser {
                     handlerLink.key = TextUtils.concat(handlerLink.key, OP_REPLY_SUFFIX);
                 }
 
-                // Append (You) when it's a reply to an saved reply
+                // Append (You) when it's a reply to a saved reply
                 if (callback.isSaved(postNo)) {
                     handlerLink.key = TextUtils.concat(handlerLink.key, SAVED_REPLY_SUFFIX);
                 }
@@ -326,9 +330,34 @@ public class CommentParser {
                 t = PostLinkable.Type.QUOTE;
                 value = Integer.parseInt(quoteMatcher.group(1));
             } else {
-                // normal link, use original href
-                t = PostLinkable.Type.LINK;
-                value = href;
+                // Check for intra-board quotelinks: >>>/board/catalog[#s=query] or >>>/board/
+                Matcher catalogMatcher = boardCatalogPattern.matcher(path);
+                Matcher boardMatcher = boardPattern.matcher(path);
+
+                String normalizedHref = href.startsWith("//") ? "https:" + href : href;
+                String scheme = "https";
+                String host = "";
+                if (normalizedHref.startsWith("https://") || normalizedHref.startsWith("http://")) {
+                    int afterScheme = normalizedHref.indexOf("://") + 3;
+                    int slashAfterHost = normalizedHref.indexOf('/', afterScheme);
+                    scheme = normalizedHref.substring(0, normalizedHref.indexOf("://"));
+                    host = slashAfterHost >= 0 ? normalizedHref.substring(afterScheme, slashAfterHost)
+                                               : normalizedHref.substring(afterScheme);
+                }
+                if (catalogMatcher.find()) {
+                    String board = catalogMatcher.group(1);
+                    String query = catalogMatcher.group(2); // may be null
+                    t = PostLinkable.Type.BOARD;
+                    value = new PostLinkable.BoardLink(board, query, scheme, host);
+                } else if (boardMatcher.matches()) {
+                    String board = boardMatcher.group(1);
+                    t = PostLinkable.Type.BOARD;
+                    value = new PostLinkable.BoardLink(board, null, scheme, host);
+                } else {
+                    // Normal external link — ensure scheme is present (protocol-relative → https)
+                    t = PostLinkable.Type.LINK;
+                    value = normalizedHref;
+                }
             }
         }
 

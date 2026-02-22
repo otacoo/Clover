@@ -599,6 +599,19 @@ public class ThreadPresenter implements
             }
         } else if (linkable.type == PostLinkable.Type.DEAD) {
             threadPresenterCallback.openArchiveForThreadLink((PostLinkable.ThreadLink) linkable.value);
+        } else if (linkable.type == PostLinkable.Type.BOARD) {
+            PostLinkable.BoardLink boardLink = (PostLinkable.BoardLink) linkable.value;
+            Board board = loadable.site.board(boardLink.board);
+            if (board != null) {
+                // Navigate to the board catalog within the app
+                Loadable catalogLoadable = databaseManager.getDatabaseLoadableManager()
+                        .get(Loadable.forCatalog(board));
+                threadPresenterCallback.showThread(catalogLoadable);
+            } else {
+                String fallbackUrl = boardLink.originalScheme + "://"
+                        + boardLink.originalHost + "/" + boardLink.board + "/";
+                threadPresenterCallback.openLink(fallbackUrl);
+            }
         }
     }
 
