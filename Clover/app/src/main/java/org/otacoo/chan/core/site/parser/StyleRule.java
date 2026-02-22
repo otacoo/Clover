@@ -241,7 +241,9 @@ public class StyleRule {
         }
 
         if (linkify) {
-            CommentParserHelper.detectLinks(theme, post, result.toString(), new SpannableString(result));
+            SpannableString linkified = new SpannableString(result);
+            CommentParserHelper.detectLinks(theme, post, result.toString(), linkified);
+            result = linkified;
         }
 
         return result;
