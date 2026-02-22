@@ -56,3 +56,6 @@ $RECYCLE.BIN/
 Clover/app/src/dev
 Clover/app/default/
 Clover/Clover/build
+update_script.js
+package.json
+package-lock.json
