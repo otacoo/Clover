@@ -92,14 +92,7 @@ public abstract class CommonReplyHttpCall extends HttpCall {
             return;
         }
 
-        Matcher errorMessageMatcher = ERROR_MESSAGE.matcher(result);
-        if (errorMessageMatcher.find()) {
-            replyResponse.errorMessage = Jsoup.parse(errorMessageMatcher.group(1)).body().text();
-            replyResponse.probablyBanned = replyResponse.errorMessage.toLowerCase(Locale.ENGLISH)
-                    .contains(PROBABLY_BANNED_TEXT);
-            return;
-        }
-
+        // Check for a successful post first so that a co-occurring errmsg warning doesn't hide it.
         Matcher threadNoMatcher = THREAD_NO_PATTERN.matcher(result);
         if (threadNoMatcher.find()) {
             try {
@@ -110,6 +103,16 @@ public abstract class CommonReplyHttpCall extends HttpCall {
 
             if (replyResponse.threadNo >= 0 && replyResponse.postNo >= 0) {
                 replyResponse.posted = true;
+            }
+        }
+
+        // Only surface the error message if the post did not go through.
+        if (!replyResponse.posted) {
+            Matcher errorMessageMatcher = ERROR_MESSAGE.matcher(result);
+            if (errorMessageMatcher.find()) {
+                replyResponse.errorMessage = Jsoup.parse(errorMessageMatcher.group(1)).body().text();
+                replyResponse.probablyBanned = replyResponse.errorMessage.toLowerCase(Locale.ENGLISH)
+                        .contains(PROBABLY_BANNED_TEXT);
             }
         }
 
