@@ -476,6 +476,8 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_board_grid_span_count_default">Auto</string>
     <string name="setting_board_grid_span_count_item">%1$d columns</string>
     <string name="setting_never_hide_toolbar">Never hide the toolbar</string>
+    <string name="setting_toolbar_bottom">Move toolbar to the bottom</string>
+    <string name="setting_toolbar_bottom_description">Shows the toolbar at the bottom of the screen</string>
     <string name="setting_enable_reply_fab">Enable the reply button</string>
     <string name="setting_enable_reply_fab_description">Disabling replaces the round button with a menu option</string>
     <string name="setting_enable_accessible_post_info">Enable accessible post info</string>

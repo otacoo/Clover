@@ -23,6 +23,7 @@ import android.widget.FrameLayout;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.controller.ControllerTransition;
 import org.otacoo.chan.controller.NavigationController;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.toolbar.NavigationItem;
 import org.otacoo.chan.ui.toolbar.Toolbar;
 
@@ -121,7 +122,13 @@ public abstract class ToolbarNavigationController extends NavigationController i
     protected void updateToolbarCollapse(Controller controller, boolean animate) {
         if (requireSpaceForToolbar && !controller.navigation.handlesToolbarInset) {
             FrameLayout.LayoutParams toViewParams = (FrameLayout.LayoutParams) controller.view.getLayoutParams();
-            toViewParams.topMargin = toolbar.getToolbarHeight();
+            if (ChanSettings.toolbarBottom.get()) {
+                toViewParams.topMargin = 0;
+                toViewParams.bottomMargin = toolbar.getToolbarHeight();
+            } else {
+                toViewParams.topMargin = toolbar.getToolbarHeight();
+                toViewParams.bottomMargin = 0;
+            }
             controller.view.setLayoutParams(toViewParams);
         }
 

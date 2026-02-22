@@ -53,6 +53,7 @@ import org.otacoo.chan.core.presenter.BoardsMenuPresenter;
 import org.otacoo.chan.core.presenter.BoardsMenuPresenter.Item;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteIcon;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.AndroidUtils;
 
@@ -224,7 +225,11 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         anchor.getLocationInWindow(anchorPos);
         recyclerView.getLocationInWindow(recyclerViewPos);
         anchorPos[0] += dp(OFFSET_X_DP);
-        anchorPos[1] += dp(OFFSET_Y_DP);
+        if (ChanSettings.toolbarBottom.get()) {
+            anchorPos[1] -= recyclerView.getHeight() + dp(OFFSET_Y_DP);
+        } else {
+            anchorPos[1] += dp(OFFSET_Y_DP);
+        }
         recyclerViewPos[0] += -recyclerView.getTranslationX() - getTranslationX();
         recyclerViewPos[1] += -recyclerView.getTranslationY() - getTranslationY();
 

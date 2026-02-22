@@ -173,6 +173,12 @@ public class ThreadLayout extends CoordinatorLayout implements
             replyButton.setOnClickListener(this);
             replyButton.setToolbar(callback.getToolbar());
             theme().applyFabColor(replyButton);
+            if (ChanSettings.toolbarBottom.get()) {
+                int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+                CoordinatorLayout.LayoutParams lp = (CoordinatorLayout.LayoutParams) replyButton.getLayoutParams();
+                lp.bottomMargin += toolbarH;
+                replyButton.setLayoutParams(lp);
+            }
         }
 
         presenter.create(this);

@@ -43,6 +43,16 @@ public class StyledToolbarNavigationController extends ToolbarNavigationControll
         toolbar = view.findViewById(R.id.toolbar);
         toolbar.setBackgroundColor(ThemeHelper.getInstance().getTheme().primaryColor.color);
         toolbar.setCallback(this);
+
+        // Optional bottom toolbar repositioning
+        if (ChanSettings.toolbarBottom.get()) {
+            android.widget.FrameLayout.LayoutParams lp =
+                    (android.widget.FrameLayout.LayoutParams) toolbar.getLayoutParams();
+            lp.gravity = android.view.Gravity.BOTTOM;
+            toolbar.setLayoutParams(lp);
+            toolbar.setElevation(0f);
+            toolbar.setAtBottom(true);
+        }
     }
 
     @Override

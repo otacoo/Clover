@@ -71,7 +71,12 @@ public class Toolbar extends LinearLayout implements
     private ToolbarCallback callback;
     private int lastScrollDeltaOffset;
     private int scrollOffset;
+    private boolean atBottom = false;
     private List<ToolbarCollapseCallback> collapseCallbacks = new ArrayList<>();
+
+    public void setAtBottom(boolean atBottom) {
+        this.atBottom = atBottom;
+    }
 
     public Toolbar(Context context) {
         this(context, null);
@@ -157,8 +162,11 @@ public class Toolbar extends LinearLayout implements
         scrollOffset += offset;
         scrollOffset = Math.max(0, Math.min(getHeight(), scrollOffset));
 
+        // When at the bottom the toolbar hides by sliding *down* (+Y), not up.
+        final float translation = atBottom ? scrollOffset : -scrollOffset;
+
         if (animated) {
-            animate().translationY(-scrollOffset)
+            animate().translationY(translation)
                     .setDuration(300)
                     .setInterpolator(new DecelerateInterpolator(2f))
                     .start();
@@ -169,7 +177,7 @@ public class Toolbar extends LinearLayout implements
             }
         } else {
             animate().cancel();
-            setTranslationY(-scrollOffset);
+            setTranslationY(translation);
 
             for (ToolbarCollapseCallback c : collapseCallbacks) {
                 c.onCollapseTranslation(scrollOffset / (float) getHeight());
