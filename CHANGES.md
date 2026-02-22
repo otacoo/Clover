@@ -18,7 +18,7 @@
 - Added support for the new 4chan captcha.
 - Added a Verification section for 4chan to verify email and get the associated token.
 - Added preliminary support for 8chan.moe *(very much bugged, ongoing dev and still broken)*
-- Automated 4chan/8chan setup on first launch 
+- Automated 4chan/8chan setup on first launch.
 - Removed support for Sushichan, Lainchan, Dvach.
 - Improved database cleanup for orphaned sites.
 - Restricted browsing list to sites with at least one added board.
@@ -48,4 +48,5 @@
 - Updated a few variable and parameters to match newer Android Sdk conventions
 
 ## Misc
+- Removed NFC sharing and associated permissions
 - Removed ponies
