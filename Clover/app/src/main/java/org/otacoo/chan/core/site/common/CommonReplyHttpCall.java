@@ -80,6 +80,22 @@ public abstract class CommonReplyHttpCall extends HttpCall {
 
     @Override
     public void process(Response response, String result) throws IOException {
+        // Check for captcha errors first — these require re-authentication, not a generic error
+        String resultLower = result.toLowerCase(Locale.ENGLISH);
+        if (resultLower.contains("forgot to solve the captcha")
+                || resultLower.contains("mistyped the captcha")) {
+            replyResponse.requireAuthentication = true;
+            return;
+        }
+
+        Matcher errorMessageMatcher = ERROR_MESSAGE.matcher(result);
+        if (errorMessageMatcher.find()) {
+            replyResponse.errorMessage = Jsoup.parse(errorMessageMatcher.group(1)).body().text();
+            replyResponse.probablyBanned = replyResponse.errorMessage.toLowerCase(Locale.ENGLISH)
+                    .contains(PROBABLY_BANNED_TEXT);
+            return;
+        }
+
         Matcher threadNoMatcher = THREAD_NO_PATTERN.matcher(result);
         if (threadNoMatcher.find()) {
             try {
@@ -90,14 +106,7 @@ public abstract class CommonReplyHttpCall extends HttpCall {
 
             if (replyResponse.threadNo >= 0 && replyResponse.postNo >= 0) {
                 replyResponse.posted = true;
-                return;
             }
-        }
-
-        Matcher errorMessageMatcher = ERROR_MESSAGE.matcher(result);
-        if (errorMessageMatcher.find()) {
-            replyResponse.errorMessage = Jsoup.parse(errorMessageMatcher.group(1)).body().text();
-            replyResponse.probablyBanned = replyResponse.errorMessage.contains(PROBABLY_BANNED_TEXT);
         }
     }
 
