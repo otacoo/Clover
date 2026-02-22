@@ -12,17 +12,17 @@
 - Upgraded Gradle Wrapper to version 8.0.
 - Fixed lots of small bugs and outdated stuff that made building the app difficult.
 - Target Android version of the app is **Android 10 (Q)**.
-- Only tested working on Android 10 so far.
+- Only tested working on Android 10 and 11 so far.
 
 ## Site Management
 - Added support for the new 4chan captcha.
 - Added a Verification section for 4chan to verify email and get the associated token.
 - Added preliminary support for 8chan.moe *(very much bugged, ongoing dev and still broken)*
 - Automated 4chan/8chan setup on first launch.
-- Removed support for Sushichan, Lainchan, Dvach.
+- Removed support for Lainchan, Dvach.
 - Improved database cleanup for orphaned sites.
 - Restricted browsing list to sites with at least one added board.
-- Simplified setup UI by removing the manual site adding/removing buttons.
+- Simplified setup UI by removing the manual site adding/removing buttons (not planning on Play store).
 
 ## Video Player & Media
 - Switched to Media3 ExoPlayer from the old ExoPlayer AAR.
@@ -36,7 +36,7 @@
 - Added dedicated settings for Accent and Loading Bar colors.
 - May have broken one or two theme things in the process.
 - Add toggle for checking for updates instead of silently checking.
-- Add button to clear WebView localStorage in dev options.
+- Add option to have the toolbar at the bottom.
 
 ## Backup
 - Added a new "Backup & restore" section to main settings.
@@ -49,4 +49,5 @@
 
 ## Misc
 - Removed NFC sharing and associated permissions
+- Add button in dev settings to clear WebView localStorage or cookies.
 - Removed ponies
