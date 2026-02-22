@@ -620,7 +620,6 @@ Tap the toolbar menu to change its color."
     <string name="settings_logs_copy">Copy filtered</string>
     <string name="settings_logs_copied_to_clipboard">Copied to clipboard</string>
     <string name="settings_logs_export">Export app logs</string>
-    <string name="settings_logs_exported">Log saved and ready to share</string>
     <string name="settings_logs_export_failed">Export failed</string>
 
     <string name="settings_screen_pass">4chan pass</string>

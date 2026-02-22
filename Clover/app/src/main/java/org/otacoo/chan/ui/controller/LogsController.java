@@ -24,9 +24,8 @@ import static org.otacoo.chan.utils.AndroidUtils.dp;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Typeface;
-import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
@@ -50,7 +49,6 @@ import org.otacoo.chan.utils.Logger;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -183,7 +181,6 @@ public class LogsController extends Controller {
         Toast.makeText(context, "Collecting app logs…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             try {
-                // Capture only this process's own log entries for privacy
                 Process proc = new ProcessBuilder()
                         .command("logcat", "-d", "-v", "time",
                                 "--pid=" + android.os.Process.myPid())
@@ -191,10 +188,17 @@ public class LogsController extends Controller {
                         .start();
                 String output = IOUtils.readString(proc.getInputStream());
 
-                File logsDir = new File(context.getCacheDir(), "logs");
+                java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US);
+                String timestamp = sdf.format(new java.util.Date());
+                String fileName = "clover_log_" + timestamp + ".txt";
+
+                File downloadsDir = Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DOWNLOADS);
                 //noinspection ResultOfMethodCallIgnored
-                logsDir.mkdirs();
-                File logFile = new File(logsDir, "clover_log.txt");
+                downloadsDir.mkdirs();
+                File logFile = new File(downloadsDir, fileName);
+
                 try (FileWriter fw = new FileWriter(logFile, false)) {
                     fw.write("Clover log export — PID " + android.os.Process.myPid() + "\n");
                     fw.write("Device: " + android.os.Build.MANUFACTURER
@@ -203,21 +207,11 @@ public class LogsController extends Controller {
                     fw.write(output);
                 }
 
-                Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        context.getPackageName() + ".fileprovider",
-                        logFile);
-
-                Intent share = new Intent(Intent.ACTION_SEND);
-                share.setType("text/plain");
-                share.putExtra(Intent.EXTRA_STREAM, uri);
-                share.putExtra(Intent.EXTRA_SUBJECT, "Clover app log");
-                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(context, R.string.settings_logs_exported, Toast.LENGTH_SHORT).show();
-                    context.startActivity(Intent.createChooser(share, "Share log file"));
-                });
+                final String savedPath = logFile.getAbsolutePath();
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Log saved to Downloads/" + fileName,
+                                Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 Logger.e(TAG, "Export failed", e);
                 new Handler(Looper.getMainLooper()).post(() ->
