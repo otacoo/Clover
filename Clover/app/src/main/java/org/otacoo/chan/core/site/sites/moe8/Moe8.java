@@ -34,11 +34,18 @@ import org.otacoo.chan.core.site.http.HttpCall;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 
+import org.otacoo.chan.core.net.Chan8RateLimit;
+
+import java.util.Map;
+
 /**
  * Compatibility for 8chan.moe.
  * Note: Main site has strong bot protections.
  */
 public class Moe8 extends CommonSite {
+
+    private static final String ROOT = "https://8chan.moe/";
+
     public static final CommonSiteUrlHandler URL_HANDLER = new CommonSiteUrlHandler() {
         @Override
         public Class<? extends Site> getSiteClass() {
@@ -47,7 +54,7 @@ public class Moe8 extends CommonSite {
 
         @Override
         public HttpUrl getUrl() {
-            return HttpUrl.parse("https://8chan.moe/");
+            return HttpUrl.parse(ROOT);
         }
 
         @Override
@@ -89,12 +96,50 @@ public class Moe8 extends CommonSite {
         setConfig(new CommonConfig() {
             @Override
             public boolean feature(Feature feature) {
-                // Enabled LOGIN to allow user to solve PoWBlock and TOS verification in WebView via site settings.
                 return feature == Feature.POSTING || feature == Feature.POST_DELETE || feature == Feature.POST_REPORT || feature == Feature.LOGIN;
             }
         });
 
-        setEndpoints(new LynxchanEndpoints(this, "https://8chan.moe/"));
+        setEndpoints(new LynxchanEndpoints(this, ROOT) {
+            @Override
+            public HttpUrl login() {
+                return root.url();
+            }
+
+            // Build URLs against the currently active domain so requests
+            // automatically switch to 8chan.st if 8chan.moe is unreachable.
+            private HttpUrl base() {
+                return HttpUrl.parse("https://" + Chan8RateLimit.getActiveDomain() + "/");
+            }
+
+            @Override
+            public HttpUrl catalog(Board board) {
+                return base().newBuilder().addPathSegments(board.code + "/catalog.json").build();
+            }
+
+            @Override
+            public HttpUrl thread(Board board, Loadable loadable) {
+                return base().newBuilder().addPathSegments(board.code + "/res/" + loadable.no + ".json").build();
+            }
+
+            @Override
+            public HttpUrl imageUrl(Post.Builder post, Map<String, String> arg) {
+                String path = arg.get("path");
+                if (path == null) return null;
+                if (path.startsWith("http")) return HttpUrl.parse(path);
+                if (path.startsWith("/")) path = path.substring(1);
+                return base().newBuilder().addPathSegments(path).build();
+            }
+
+            @Override
+            public HttpUrl thumbnailUrl(Post.Builder post, boolean spoiler, Map<String, String> arg) {
+                String thumb = arg.get("thumb");
+                if (thumb == null) return imageUrl(post, arg);
+                if (thumb.startsWith("http")) return HttpUrl.parse(thumb);
+                if (thumb.startsWith("/")) thumb = thumb.substring(1);
+                return base().newBuilder().addPathSegments(thumb).build();
+            }
+        });
         
         setActions(new Moe8Actions(this));
         setApi(new LynxchanApi(this));
@@ -103,78 +148,65 @@ public class Moe8 extends CommonSite {
         setRequestModifier(new CommonRequestModifier() {
             @Override
             public void modifyHttpCall(HttpCall httpCall, Request.Builder requestBuilder) {
-                // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
                 String url = requestBuilder.build().url().toString();
-                // For /.media/ URLs use the root URL so we get all domain-wide cookies.
-                String cookieLookupUrl = url.contains("/.media/") ? "https://8chan.moe/" : url;
-                String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
-                
+                String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
                 if (cookies != null && !cookies.isEmpty()) {
                     requestBuilder.header("Cookie", cookies);
                 }
-                
+
                 requestBuilder.header("Accept", "application/json, text/javascript, */*; q=0.01");
                 requestBuilder.header("X-Requested-With", "XMLHttpRequest");
 
-                // For media (/.media/) and API requests use site root as Referer.
                 String referer;
-                if (url.contains("/.media/")) {
-                    referer = "https://8chan.moe/";
-                } else if (url.contains(".json")) {
+                if (url.contains(".json")) {
                     int lastSlash = url.lastIndexOf('/');
-                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : "https://8chan.moe/";
+                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : ROOT;
                 } else {
-                    referer = "https://8chan.moe/";
+                    referer = ROOT;
                 }
                 requestBuilder.header("Referer", referer);
                 requestBuilder.header("Origin", "https://8chan.moe");
-                
                 requestBuilder.header("Sec-Fetch-Dest", "empty");
                 requestBuilder.header("Sec-Fetch-Mode", "cors");
                 requestBuilder.header("Sec-Fetch-Site", "same-origin");
-                
-                requestBuilder.header("Sec-Ch-Ua", "\"Chromium\";v=\"133\", \"Google Chrome\";v=\"133\", \"Not;A=Brand\";v=\"99\"");
-                requestBuilder.header("Sec-Ch-Ua-Mobile", "?1");
-                requestBuilder.header("Sec-Ch-Ua-Platform", "\"Android\"");
             }
 
             @Override
             public void modifyVolleyHeaders(java.util.Map<String, String> headers, String url) {
-                // For /.media/ URLs use the root URL for cookie lookup so we get all
-                // domain-wide cookies (date-based TOS, PoW tokens) set by the WebView flow.
-                String cookieLookupUrl = url.contains("/.media/") ? "https://8chan.moe/" : url;
-                String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
-                
+                String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
                 if (cookies != null && !cookies.isEmpty()) {
                     headers.put("Cookie", cookies);
                 }
-                
-                // Set browser-like headers
-                headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
-                headers.put("X-Requested-With", "XMLHttpRequest");
-                
-                // For media (/.media/) and API requests, use the site root as Referer.
+
+                boolean isMedia = url.contains("/.media/");
+                if (isMedia) {
+                    String lower = url.toLowerCase();
+                    boolean isVideo = lower.endsWith(".webm") || lower.endsWith(".mp4")
+                            || lower.endsWith(".mov") || lower.endsWith(".ogg");
+                    headers.put("Accept", isVideo
+                            ? "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.5"
+                            : "image/webp,image/apng,image/*,*/*;q=0.8");
+                    headers.put("Sec-Fetch-Dest", isVideo ? "video" : "image");
+                    headers.put("Sec-Fetch-Mode", "no-cors");
+                    headers.put("Accept-Language", "en-US,en;q=0.9");
+                } else {
+                    headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    headers.put("X-Requested-With", "XMLHttpRequest");
+                    headers.put("Sec-Fetch-Dest", "empty");
+                    headers.put("Sec-Fetch-Mode", "cors");
+                }
+
                 String referer;
-                if (url.contains("/.media/")) {
-                    referer = "https://8chan.moe/";
+                if (isMedia) {
+                    referer = ROOT;
                 } else if (url.contains(".json")) {
                     int lastSlash = url.lastIndexOf('/');
-                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : "https://8chan.moe/";
+                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : ROOT;
                 } else {
-                    referer = "https://8chan.moe/";
+                    referer = ROOT;
                 }
                 headers.put("Referer", referer);
-                headers.put("Origin", "https://8chan.moe");
-                
-                // Add some fetch metadata
-                headers.put("Sec-Fetch-Dest", "empty");
-                headers.put("Sec-Fetch-Mode", "cors");
                 headers.put("Sec-Fetch-Site", "same-origin");
-                
-                // Add mobile platform hints
-                headers.put("Sec-Ch-Ua", "\"Chromium\";v=\"133\", \"Google Chrome\";v=\"133\", \"Not;A=Brand\";v=\"99\"");
-                headers.put("Sec-Ch-Ua-Mobile", "?1");
-                headers.put("Sec-Ch-Ua-Platform", "\"Android\"");
             }
         });
     }
