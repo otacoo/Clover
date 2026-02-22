@@ -1,6 +1,7 @@
 /*
  * Clover - 4chan browser https://github.com/Floens/Clover/
  * Copyright (C) 2014  Floens
+ * Copyright (C) 2026  otacoo https://github.com/otacoo/Clover
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -200,24 +201,13 @@ public class LogsController extends Controller {
                 String timestamp = sdf.format(new java.util.Date());
                 String fileName = "clover_log_" + timestamp + ".txt";
 
-                File downloadsDir = Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_DOWNLOADS);
-                //noinspection ResultOfMethodCallIgnored
-                downloadsDir.mkdirs();
-                File logFile = new File(downloadsDir, fileName);
-
-                try (FileWriter fw = new FileWriter(logFile, false)) {
-                    fw.write("Clover log export — PID " + android.os.Process.myPid() + "\n");
-                    fw.write("Device: " + android.os.Build.MANUFACTURER
-                            + " " + android.os.Build.MODEL
-                            + ", Android " + android.os.Build.VERSION.RELEASE + "\n\n");
-                    fw.write(output);
-                }
+                // Log exports always go to Downloads. If that fails (e.g. due to permissions), they fall back to app-private storage.
+                File logFile = writeLog(fileName, output);
 
                 final String savedPath = logFile.getAbsolutePath();
                 new Handler(Looper.getMainLooper()).post(() ->
                         Toast.makeText(context,
-                                "Log saved to Downloads/" + fileName,
+                                "Log saved to " + savedPath,
                                 Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 Logger.e(TAG, "Export failed", e);
@@ -226,6 +216,42 @@ public class LogsController extends Controller {
                                 Toast.LENGTH_SHORT).show());
             }
         }, "log-export").start();
+    }
+
+    private File writeLog(String fileName, String logOutput) throws IOException {
+        String header = "Clover log export — PID " + android.os.Process.myPid() + "\n"
+                + "Device: " + android.os.Build.MANUFACTURER
+                + " " + android.os.Build.MODEL
+                + ", Android " + android.os.Build.VERSION.RELEASE + "\n\n";
+
+        // Primary: public Downloads folder
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS);
+        //noinspection ResultOfMethodCallIgnored
+        downloadsDir.mkdirs();
+        File primary = new File(downloadsDir, fileName);
+        try (FileWriter fw = new FileWriter(primary, false)) {
+            fw.write(header);
+            fw.write(logOutput);
+            return primary;
+        } catch (SecurityException | IOException e) {
+            Logger.w(TAG, "Could not write to Downloads, falling back to app-private dir", e);
+        }
+
+        // Fallback: app-private external files directory (no permissions required)
+        File fallbackDir = context.getExternalFilesDir(null);
+        if (fallbackDir == null) {
+            // Last resort: app-private internal files directory
+            fallbackDir = context.getFilesDir();
+        }
+        //noinspection ResultOfMethodCallIgnored
+        fallbackDir.mkdirs();
+        File fallback = new File(fallbackDir, fileName);
+        try (FileWriter fw = new FileWriter(fallback, false)) {
+            fw.write(header);
+            fw.write(logOutput);
+        }
+        return fallback;
     }
 
     private void copyLogsClicked(ToolbarMenuSubItem item) {
