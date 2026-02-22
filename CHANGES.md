@@ -1,3 +1,8 @@
+## 2026-02-22 – v3.0.25
+
+- Fix bug with user's posts not being marked
+- Add more toast feedback during 4chan captcha fetching
+
 ## 2026-02-22 – v3.0.24
 
 - Initial otacoo release
