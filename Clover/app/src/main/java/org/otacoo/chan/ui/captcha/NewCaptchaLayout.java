@@ -1,6 +1,7 @@
 /*
- * BlueClover - 4chan browser https://github.com/nnuudev/BlueClover
- * Copyright (C) 2021 nnuudev
+ * Clover - 4chan browser https://github.com/otacoo/Clover
+ * Copyright (C) 2025 nuudev https://github.com/nuudev/BlueClover
+ * Copyright (C) 2026 otacoo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
