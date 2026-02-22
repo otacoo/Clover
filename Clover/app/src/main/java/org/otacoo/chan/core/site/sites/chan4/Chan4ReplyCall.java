@@ -19,11 +19,9 @@ package org.otacoo.chan.core.site.sites.chan4;
 
 import android.text.TextUtils;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 
 import androidx.annotation.Nullable;
 
-import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.common.CommonReplyHttpCall;
 import org.otacoo.chan.core.site.http.ProgressRequestBody;
@@ -33,14 +31,39 @@ import java.util.Locale;
 
 import okhttp3.Call;
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Chan4ReplyCall extends CommonReplyHttpCall {
     public Chan4ReplyCall(Site site, Reply reply) {
         super(site, reply);
+    }
+
+    @Override
+    public void setup(
+            Request.Builder requestBuilder,
+            @Nullable ProgressRequestBody.ProgressRequestListener progressListener
+    ) {
+        super.setup(requestBuilder, progressListener);
+
+        HttpUrl replyUrl = site.endpoints().reply(this.reply.loadable);
+        // Set browser-like headers that sys.4chan.org expects for multipart POST
+        requestBuilder.header("Host", "sys.4chan.org");
+        requestBuilder.header("Origin", "https://boards.4chan.org");
+        requestBuilder.header("Referer", replyUrl.toString());
+        requestBuilder.header("Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+        requestBuilder.header("Accept-Language", "en-US,en;q=0.5");
+        requestBuilder.header("Accept-Encoding", "gzip");
+        requestBuilder.header("Connection", "keep-alive");
+        requestBuilder.header("Sec-Fetch-Dest", "document");
+        requestBuilder.header("Sec-Fetch-Mode", "navigate");
+        requestBuilder.header("Sec-Fetch-Site", "same-site");
+        requestBuilder.header("Sec-Fetch-User", "?1");
     }
 
     @Override
@@ -114,16 +137,16 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
     @Override
     public void onResponse(Call call, Response response) {
         super.onResponse(call, response);
-        // jesus christ how horrifying
         CookieManager cookieManager = CookieManager.getInstance();
         Headers headers = response.headers();
         for (int i = 0; i < headers.size(); i++) {
             if (headers.name(i).toLowerCase(Locale.ENGLISH).equals("set-cookie")) {
                 String val = headers.value(i).split(";")[0];
+                // Forward reply-response cookies to both sys and boards domains
                 cookieManager.setCookie("https://sys.4chan.org", val);
+                cookieManager.setCookie("https://boards.4chan.org", val);
             }
         }
-        CookieSyncManager.createInstance(Chan.getInstance());
-        CookieSyncManager.getInstance().sync();
+        cookieManager.flush();
     }
 }
