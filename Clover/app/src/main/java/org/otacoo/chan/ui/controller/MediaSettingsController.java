@@ -179,6 +179,11 @@ public class MediaSettingsController extends SettingsController implements
                     R.string.setting_video_timeout,
                     R.string.setting_video_timeout_description));
 
+            video.add(new BooleanSettingView(this,
+                    ChanSettings.videoAutoLoop,
+                    R.string.setting_video_auto_loop,
+                    R.string.setting_video_auto_loop_description));
+
             groups.add(video);
         }
 
@@ -187,11 +192,6 @@ public class MediaSettingsController extends SettingsController implements
             SettingsGroup loading = new SettingsGroup(R.string.settings_group_media_loading);
 
             setupMediaLoadTypesSetting(loading);
-
-            loading.add(new BooleanSettingView(this,
-                    ChanSettings.videoAutoLoop,
-                    R.string.setting_video_auto_loop,
-                    R.string.setting_video_auto_loop_description));
 
             groups.add(loading);
         }
