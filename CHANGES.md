@@ -13,16 +13,18 @@
 - Fixed lots of small bugs and outdated stuff that made building the app difficult.
 - Target Android version of the app is **Android 10 (Q)**.
 - Only tested working on Android 10 and 11 so far.
+- Revert versioning back to its original three digits 3.22 -> 3.0.22
 
 ## Site Management
 - Added support for the new 4chan captcha.
 - Added a Verification section for 4chan to verify email and get the associated token.
-- Added preliminary support for 8chan.moe *(very much bugged, ongoing dev and still broken)*
 - Automated 4chan/8chan setup on first launch.
 - Removed support for Lainchan, Dvach.
 - Improved database cleanup for orphaned sites.
 - Restricted browsing list to sites with at least one added board.
 - Simplified setup UI by removing the manual site adding/removing buttons (not planning on Play store).
+- Add full support for 8chan and its POWBlock.
+- Modify dialog for how boards are added for infinite dynamic boards like 8chan.
 
 ## Video Player & Media
 - Switched to Media3 ExoPlayer from the old ExoPlayer AAR.
@@ -45,9 +47,11 @@
 ## Bug Fixes & Stability
 - Fixed launch crashes caused by missing site class mappings during initial setup.
 - Resolved compilation errors related to `R` package references.
-- Updated a few variable and parameters to match newer Android Sdk conventions
+- Updated a few variable and parameters to match newer Android Sdk conventions.
+- Fix bug with theming not applying correctly on certain threads after a theme switch.
+- Fix bug with certain links in quotes, particular for vichan, not being linkified.
 
 ## Misc
-- Removed NFC sharing and associated permissions
+- Removed NFC sharing and associated permissions.
 - Add button in dev settings to clear WebView localStorage or cookies.
-- Removed ponies
+- Removed ponies.
