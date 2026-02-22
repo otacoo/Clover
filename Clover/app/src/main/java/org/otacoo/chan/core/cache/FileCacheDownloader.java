@@ -25,6 +25,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.WorkerThread;
 
+import org.otacoo.chan.core.net.Chan8RateLimit;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.Logger;
 
@@ -66,6 +67,8 @@ public class FileCacheDownloader implements Runnable {
     // Main and worker thread.
     private AtomicBoolean running = new AtomicBoolean(false);
     private AtomicBoolean cancel = new AtomicBoolean(false);
+    // Set to true when we hold a Chan8RateLimit permit for this download.
+    private volatile boolean acquiredChan8Semaphore = false;
     private Future<?> future;
 
     // Worker thread.
@@ -146,6 +149,14 @@ public class FileCacheDownloader implements Runnable {
     public void run() {
         log("start");
         running.set(true);
+        if (Chan8RateLimit.is8chan(url)) {
+            try {
+                Chan8RateLimit.acquire();
+                acquiredChan8Semaphore = true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         execute();
     }
 
@@ -222,6 +233,12 @@ public class FileCacheDownloader implements Runnable {
             if (body != null) {
                 Util.closeQuietly(body);
             }
+
+            // Release the 8chan rate-limit permit.
+            if (acquiredChan8Semaphore) {
+                Chan8RateLimit.release();
+                acquiredChan8Semaphore = false;
+            }
         }
     }
 
@@ -232,20 +249,39 @@ public class FileCacheDownloader implements Runnable {
 
     @WorkerThread
     private ResponseBody getBody(boolean isRetry) throws IOException {
+        // Rewrite to active domain in case 8chan.moe went down and we failed over to 8chan.st.
+        String reqUrl = Chan8RateLimit.rewriteToActiveDomain(url);
+
         Request.Builder requestBuilder = new Request.Builder()
-                .url(url)
+                .url(reqUrl)
                 .header("User-Agent", userAgent);
 
-        if (url.contains("8chan.moe") || url.contains("8chan.st")) {
-            requestBuilder.header("Referer", getBaseUrl(url));
+        if (Chan8RateLimit.is8chan(reqUrl)) {
+            requestBuilder.header("Referer", getBaseUrl(reqUrl));
+            String v = userAgent.replaceAll(".*Chrome/(\\d+).*", "$1");
+            if (!v.equals(userAgent)) {
+                requestBuilder.header("Sec-Ch-Ua",
+                        "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"" + v
+                        + "\", \"Google Chrome\";v=\"" + v + "\"");
+            }
+            requestBuilder.header("Sec-Ch-Ua-Mobile", "?1");
+            requestBuilder.header("Sec-Ch-Ua-Platform", "\"Android\"");
+            requestBuilder.header("Accept-Language", "en-US,en;q=0.9");
+            String lower = reqUrl.toLowerCase();
+            boolean isVideo = lower.endsWith(".webm") || lower.endsWith(".mp4")
+                    || lower.endsWith(".mov") || lower.endsWith(".ogg");
+            if (isVideo) {
+                requestBuilder.header("Accept", "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.5");
+                requestBuilder.header("Sec-Fetch-Dest", "video");
+            } else {
+                requestBuilder.header("Accept", "image/webp,image/avif,image/*,*/*;q=0.8");
+                requestBuilder.header("Sec-Fetch-Dest", "image");
+            }
+            requestBuilder.header("Sec-Fetch-Mode", "no-cors");
+            requestBuilder.header("Sec-Fetch-Site", "same-origin");
         }
 
-        // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
-        // For /.media/ URLs on 8chan, cookies are stored against the root domain.
-        String cookieLookupUrl = (url.contains("8chan.moe") || url.contains("8chan.st")) && url.contains("/.media/")
-                ? getBaseUrl(url) : url;
-        String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
-
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(reqUrl);
         if (cookies != null && !cookies.isEmpty()) {
             requestBuilder.header("Cookie", cookies);
         }
@@ -255,13 +291,28 @@ public class FileCacheDownloader implements Runnable {
         OkHttpClient client = httpClient.newBuilder()
                 .proxy(ChanSettings.getProxy())
                 .build();
-        
+
         call = client.newCall(request);
 
-        Response response = call.execute();
-        
-        // Detect 8chan.moe PoW block on images/media
-        if (response.isSuccessful() && (url.contains("8chan.moe") || url.contains("8chan.st"))) {
+        Response response;
+        try {
+            response = call.execute();
+        } catch (java.net.UnknownHostException e) {
+            if (Chan8RateLimit.is8chan(url)) {
+                Chan8RateLimit.notifyDomainUnreachable(new java.net.URL(reqUrl).getHost());
+            }
+            throw e;
+        }
+
+        // For 8chan, log the response code and clear PoW cookies on non-200.
+        if (Chan8RateLimit.is8chan(reqUrl)) {
+            log("8chan response: HTTP " + response.code());
+            if (!response.isSuccessful()) {
+                log("  headers: " + response.headers());
+            }
+        }
+
+        if (response.isSuccessful() && Chan8RateLimit.is8chan(reqUrl)) {
             String age = response.header("Age");
             String expires = response.header("Expires");
             String cacheControl = response.header("Cache-Control");
@@ -276,19 +327,18 @@ public class FileCacheDownloader implements Runnable {
                 
                 // Perform a GET to the root to trigger/refresh session
                 Request rootRequest = new Request.Builder()
-                        .url(getBaseUrl(url))
+                        .url(getBaseUrl(reqUrl))
                         .header("User-Agent", userAgent)
                         .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
-                        .header("Referer", getBaseUrl(url))
+                        .header("Referer", getBaseUrl(reqUrl))
                         .header("Cookie", cookies)
                         .build();
                 try {
                     Response rootResponse = client.newCall(rootRequest).execute();
-                    // Some sites might set new cookies during this root request
                     List<String> cookieHeaders = rootResponse.headers("Set-Cookie");
                     rootResponse.close();
                     for (String header : cookieHeaders) {
-                        android.webkit.CookieManager.getInstance().setCookie(getBaseUrl(url), header);
+                        android.webkit.CookieManager.getInstance().setCookie(getBaseUrl(reqUrl), header);
                     }
                 } catch (IOException e) {
                     log("Session refresh failed", e);
