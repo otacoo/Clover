@@ -75,7 +75,8 @@ public class LynxchanEndpoints extends CommonSite.CommonEndpoints {
 
     @Override
     public HttpUrl reply(Loadable loadable) {
-        return root.builder().s(loadable.boardCode).s("newPost").url();
+        String path = loadable.isThreadMode() ? "replyThread.js" : "newThread.js";
+        return root.builder().s(path).url().newBuilder().addQueryParameter("json", "1").build();
     }
 
     @Override
