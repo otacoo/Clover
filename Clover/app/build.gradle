@@ -95,7 +95,7 @@ android {
             resValue "string", "app_name", "Clover"
             resValue "string", "app_flavor_name", "(build $timestamp)"
             buildConfigField "String", "BUILD_HASH", "\"$timestamp\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://otacoo.github.io/Clover/api/update.json\""
+            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://raw.githubusercontent.com/otacoo/Clover/main/docs/update_api.json\""
         }
 
         dev {
@@ -127,10 +127,11 @@ android {
     applicationVariants.all { variant ->
         if (variant.buildType.name == "release") {
             variant.outputs.all {
+                String ver = variant.mergedFlavor.versionName
                 if (variant.flavorName == "default") {
-                    outputFileName = new File("Clover-" + timestamp + ".apk")
+                    outputFileName = new File("Clover-" + ver + ".apk")
                 } else {
-                    outputFileName = new File("Clover-" + timestamp + "-" + variant.flavorName + ".apk")
+                    outputFileName = new File("Clover-" + ver + "-" + variant.flavorName + ".apk")
                 }
             }
         }

@@ -3,17 +3,12 @@
     "messages": [
         {
             "type": "update",
-
-            "code": 56,
-            "date": "2017-03-18T13:23:06.614104",
-            "message_html": "<h2>Clover v2.2.0 is available</h2>A new version of Clover is available.<br><br>This release fixes stuff.<br>- aaa<br>- bbb",
-
+            "code": 30022,
+            "date": "2026-02-22T00:00:00",
+            "message_html": "<h2>Clover v3.0.22 is available</h2>A new version of Clover is available.<br><br>See the <a href=\"https://github.com/otacoo/Clover/releases/tag/v3.0.22\">release notes</a> for details.",
             "apk": {
                 "default": {
-                    "url": "https://github.com/Floens/Clover/releases/download/v2.2.0/Clover_v2.2.0.apk"
-                },
-                "fdroid": {
-                    "url": "https://f-droid.org/repo/org.floens.chan_56.apk"
+                    "url": "https://github.com/otacoo/Clover/releases/download/v3.0.22/Clover-v3.0.22.apk"
                 }
             }
         }
