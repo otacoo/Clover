@@ -5,6 +5,9 @@
     <cache-path
         name="fc"
         path="filecache/" />
+    <cache-path
+        name="logs"
+        path="logs/" />
     <external-cache-path
         name="exfc"
         path="filecache/" />

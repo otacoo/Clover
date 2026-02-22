@@ -19,10 +19,23 @@ package org.otacoo.chan.ui.controller;
 
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
+import static org.otacoo.chan.utils.AndroidUtils.dp;
+
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,15 +47,24 @@ import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.IOUtils;
 import org.otacoo.chan.utils.Logger;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LogsController extends Controller {
     private static final String TAG = "LogsController";
 
-    private TextView logTextView;
+    private static final String[] QUICK_FILTERS = {"Clover", "otacoo", "E/", "W/", "chan4", "Captcha"};
 
-    private String logText;
+    private TextView logTextView;
+    private TextView lineCountView;
+    private EditText filterEdit;
+
+    private List<String> allLines = new ArrayList<>();
+    private String activeFilter = "";
 
     public LogsController(Context context) {
         super(context);
@@ -52,26 +74,164 @@ public class LogsController extends Controller {
     public void onCreate() {
         super.onCreate();
 
-        navigation.setTitle(org.otacoo.chan.R.string.settings_logs_screen);
-
+        navigation.setTitle(R.string.settings_logs_screen);
         navigation.buildMenu().withOverflow()
                 .withSubItem(R.string.settings_logs_copy, this::copyLogsClicked)
+                .withSubItem(R.string.settings_logs_export, this::exportLogsClicked)
                 .build().build();
 
-        ScrollView container = new ScrollView(context);
-        container.setBackgroundColor(getAttrColor(context, org.otacoo.chan.R.attr.backcolor));
+        int dp4  = dp(4);
+        int dp8  = dp(8);
+        int dp12 = dp(12);
+
+        // Root
+        LinearLayout root = new LinearLayout(context);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(0xFF1A1A1A);
+
+        // ── Filter bar ──────────────────────────────────────────────────
+        LinearLayout filterRow = new LinearLayout(context);
+        filterRow.setOrientation(LinearLayout.HORIZONTAL);
+        filterRow.setPadding(dp8, dp4, dp8, dp4);
+        filterRow.setBackgroundColor(0xFF222222);
+
+        filterEdit = new EditText(context);
+        filterEdit.setHint("Filter…");
+        filterEdit.setTextSize(13f);
+        filterEdit.setSingleLine(true);
+        filterEdit.setBackgroundColor(0xFF333333);
+        filterEdit.setPadding(dp8, dp4, dp8, dp4);
+        filterEdit.setTextColor(0xFFEEEEEE);
+        filterEdit.setHintTextColor(0xFF777777);
+        LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        filterEdit.setLayoutParams(editLp);
+        filterRow.addView(filterEdit);
+
+        Button clearBtn = new Button(context);
+        clearBtn.setText("✕");
+        clearBtn.setTextSize(13f);
+        clearBtn.setPadding(dp8, 0, dp8, 0);
+        clearBtn.setOnClickListener(v -> filterEdit.setText(""));
+        filterRow.addView(clearBtn);
+
+        root.addView(filterRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // ── Quick-filter chips ──────────────────────────────────────────
+        HorizontalScrollView chipScroll = new HorizontalScrollView(context);
+        chipScroll.setBackgroundColor(0xFF1E1E1E);
+        LinearLayout chipRow = new LinearLayout(context);
+        chipRow.setOrientation(LinearLayout.HORIZONTAL);
+        chipRow.setPadding(dp4, dp4, dp4, dp4);
+
+        for (String preset : QUICK_FILTERS) {
+            Button chip = new Button(context);
+            chip.setText(preset);
+            chip.setTextSize(11f);
+            chip.setPadding(dp8, 0, dp8, 0);
+            LinearLayout.LayoutParams chipLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, dp(32));
+            chipLp.setMargins(dp4, 0, dp4, 0);
+            chip.setLayoutParams(chipLp);
+            chip.setOnClickListener(v -> filterEdit.setText(preset));
+            chipRow.addView(chip);
+        }
+
+        chipScroll.addView(chipRow);
+        root.addView(chipScroll, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // ── Line-count bar ──────────────────────────────────────────────
+        lineCountView = new TextView(context);
+        lineCountView.setTextSize(10f);
+        lineCountView.setTextColor(0xFF666666);
+        lineCountView.setPadding(dp8, dp4, dp8, dp4);
+        lineCountView.setBackgroundColor(0xFF1A1A1A);
+        root.addView(lineCountView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // ── Log text ────────────────────────────────────────────────────
+        ScrollView scrollView = new ScrollView(context);
         logTextView = new TextView(context);
-        container.addView(logTextView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        logTextView.setTypeface(Typeface.MONOSPACE);
+        logTextView.setTextSize(11f);
+        logTextView.setPadding(dp8, dp4, dp8, dp12);
+        logTextView.setTextIsSelectable(true);
+        scrollView.addView(logTextView, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        view = container;
+        root.addView(scrollView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        loadLogs();
+        view = root;
+
+        // ── Wire filter ─────────────────────────────────────────────────
+        filterEdit.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                activeFilter = s.toString().toLowerCase();
+                applyFilter();
+            }
+        });
+
+        new Thread(this::loadLogs, "log-load").start();
+    }
+
+    private void exportLogsClicked(ToolbarMenuSubItem item) {
+        Toast.makeText(context, "Collecting app logs…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                // Capture only this process's own log entries for privacy
+                Process proc = new ProcessBuilder()
+                        .command("logcat", "-d", "-v", "time",
+                                "--pid=" + android.os.Process.myPid())
+                        .redirectErrorStream(true)
+                        .start();
+                String output = IOUtils.readString(proc.getInputStream());
+
+                File logsDir = new File(context.getCacheDir(), "logs");
+                //noinspection ResultOfMethodCallIgnored
+                logsDir.mkdirs();
+                File logFile = new File(logsDir, "clover_log.txt");
+                try (FileWriter fw = new FileWriter(logFile, false)) {
+                    fw.write("Clover log export — PID " + android.os.Process.myPid() + "\n");
+                    fw.write("Device: " + android.os.Build.MANUFACTURER
+                            + " " + android.os.Build.MODEL
+                            + ", Android " + android.os.Build.VERSION.RELEASE + "\n\n");
+                    fw.write(output);
+                }
+
+                Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        context.getPackageName() + ".fileprovider",
+                        logFile);
+
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/plain");
+                share.putExtra(Intent.EXTRA_STREAM, uri);
+                share.putExtra(Intent.EXTRA_SUBJECT, "Clover app log");
+                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(context, R.string.settings_logs_exported, Toast.LENGTH_SHORT).show();
+                    context.startActivity(Intent.createChooser(share, "Share log file"));
+                });
+            } catch (Exception e) {
+                Logger.e(TAG, "Export failed", e);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context, R.string.settings_logs_export_failed,
+                                Toast.LENGTH_SHORT).show());
+            }
+        }, "log-export").start();
     }
 
     private void copyLogsClicked(ToolbarMenuSubItem item) {
-        ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("Logs", logText);
-        clipboard.setPrimaryClip(clip);
+        String text = logTextView.getText().toString();
+        ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext()
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboard.setPrimaryClip(ClipData.newPlainText("Logs", text));
         Toast.makeText(context, R.string.settings_logs_copied_to_clipboard, Toast.LENGTH_SHORT).show();
     }
 
@@ -86,8 +246,33 @@ public class LogsController extends Controller {
             return;
         }
 
-        InputStream outputStream = process.getInputStream();
-        logText = IOUtils.readString(outputStream);
-        logTextView.setText(logText);
+        String raw = IOUtils.readString(process.getInputStream());
+        List<String> lines = new ArrayList<>();
+        for (String line : raw.split("\n")) {
+            lines.add(line);
+        }
+
+        new Handler(Looper.getMainLooper()).post(() -> {
+            allLines.clear();
+            allLines.addAll(lines);
+            applyFilter();
+        });
+    }
+
+    private void applyFilter() {
+        List<String> matched = new ArrayList<>();
+        for (String line : allLines) {
+            if (activeFilter.isEmpty() || line.toLowerCase().contains(activeFilter)) {
+                matched.add(line);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (String line : matched) {
+            sb.append(line).append('\n');
+        }
+
+        logTextView.setText(sb.toString());
+        lineCountView.setText(matched.size() + " / " + allLines.size() + " lines");
     }
 }

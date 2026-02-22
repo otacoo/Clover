@@ -18,6 +18,7 @@
 package org.otacoo.chan.core.database;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
 import android.os.Looper;
@@ -173,6 +174,75 @@ public class DatabaseManager {
         }
 
         return o;
+    }
+
+    /**
+     * Run a series of SQLite PRAGMA and logical integrity checks on all tables.
+     * Returns a multi-line human-readable report for display in the developer settings screen.
+     */
+    public Callable<String> checkIntegrity() {
+        return () -> {
+            StringBuilder sb = new StringBuilder();
+            SQLiteDatabase db = helper.getWritableDatabase();
+
+            // 1. SQLite built-in integrity check
+            sb.append("=== PRAGMA integrity_check ===\n");
+            try (Cursor c = db.rawQuery("PRAGMA integrity_check", null)) {
+                int n = 0;
+                while (c.moveToNext()) {
+                    sb.append(c.getString(0)).append("\n");
+                    if (++n >= 50) { sb.append("  … (truncated)\n"); break; }
+                }
+            }
+
+            // 2. Row counts
+            sb.append("\n=== Row counts ===\n");
+            sb.append(getSummary());
+
+            // 3. Saved replies with no=0 (symptom of a failed post that still got saved)
+            sb.append("\n=== Saved replies with no=0 ===\n");
+            try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM savedreply WHERE no=0", null)) {
+                if (c.moveToFirst()) sb.append("Count: ").append(c.getInt(0)).append("\n");
+            }
+
+            // 4. Saved replies whose siteId doesn't match any site row
+            sb.append("\n=== Orphaned saved replies (unknown siteId) ===\n");
+            try (Cursor c = db.rawQuery(
+                    "SELECT COUNT(*) FROM savedreply WHERE site NOT IN (SELECT id FROM site)", null)) {
+                if (c.moveToFirst()) sb.append("Count: ").append(c.getInt(0)).append("\n");
+            }
+
+            // 5. Duplicate saved replies (same site+board+no)
+            sb.append("\n=== Duplicate saved replies (same site+board+no) ===\n");
+            try (Cursor c = db.rawQuery(
+                    "SELECT site,board,no,COUNT(*) AS cnt FROM savedreply GROUP BY site,board,no HAVING cnt>1", null)) {
+                int n = 0;
+                while (c.moveToNext()) {
+                    sb.append("  site=").append(c.getInt(0))
+                      .append(" board=").append(c.getString(1))
+                      .append(" no=").append(c.getInt(2))
+                      .append(" count=").append(c.getInt(3)).append("\n");
+                    if (++n >= 20) { sb.append("  … (truncated)\n"); break; }
+                }
+                if (n == 0) sb.append("None\n");
+            }
+
+            // 6. Pins referencing a non-existent loadable
+            sb.append("\n=== Orphaned pins (missing loadable) ===\n");
+            try (Cursor c = db.rawQuery(
+                    "SELECT COUNT(*) FROM pin WHERE loadable_id NOT IN (SELECT id FROM loadable)", null)) {
+                if (c.moveToFirst()) sb.append("Count: ").append(c.getInt(0)).append("\n");
+            }
+
+            // 7. Loadables with no site row
+            sb.append("\n=== Orphaned loadables (unknown siteId) ===\n");
+            try (Cursor c = db.rawQuery(
+                    "SELECT COUNT(*) FROM loadable WHERE site NOT IN (SELECT id FROM site)", null)) {
+                if (c.moveToFirst()) sb.append("Count: ").append(c.getInt(0)).append("\n");
+            }
+
+            return sb.toString();
+        };
     }
 
     /**

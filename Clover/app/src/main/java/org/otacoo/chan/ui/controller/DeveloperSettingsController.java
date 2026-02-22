@@ -114,6 +114,30 @@ public class DeveloperSettingsController extends Controller {
 
         setDbSummary();
 
+        Button checkDbButton = new Button(context);
+        checkDbButton.setText("Check database integrity");
+        checkDbButton.setOnClickListener(v -> {
+            checkDbButton.setEnabled(false);
+            Toast.makeText(context, "Running integrity check…", Toast.LENGTH_SHORT).show();
+            databaseManager.runTaskAsync(databaseManager.checkIntegrity(), report -> {
+                checkDbButton.setEnabled(true);
+                TextView tv = new TextView(context);
+                int p = (int) (context.getResources().getDisplayMetrics().density * 12);
+                tv.setPadding(p, p, p, p);
+                tv.setText(report);
+                tv.setTextSize(12f);
+                tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+                ScrollView sv = new ScrollView(context);
+                sv.addView(tv);
+                new AlertDialog.Builder(context)
+                        .setTitle("DB Integrity Report")
+                        .setView(sv)
+                        .setPositiveButton("Close", null)
+                        .show();
+            });
+        });
+        wrapper.addView(checkDbButton);
+
         Button resetDbButton = new Button(context);
         resetDbButton.setOnClickListener(new View.OnClickListener() {
             @Override
