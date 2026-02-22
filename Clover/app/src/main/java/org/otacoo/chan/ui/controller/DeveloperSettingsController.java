@@ -91,6 +91,15 @@ public class DeveloperSettingsController extends Controller {
         clearWebStorageButton.setText("Clear WebView localStorage");
         wrapper.addView(clearWebStorageButton);
 
+        Button clearCookiesButton = new Button(context);
+        clearCookiesButton.setOnClickListener(v -> {
+            android.webkit.CookieManager.getInstance().removeAllCookies(null);
+            android.webkit.CookieManager.getInstance().flush();
+            Toast.makeText(context, "WebView cookies cleared", Toast.LENGTH_SHORT).show();
+        });
+        clearCookiesButton.setText("Clear WebView cookies");
+        wrapper.addView(clearCookiesButton);
+
         summaryText = new TextView(context);
         summaryText.setPadding(0, dp(25), 0, 0);
         wrapper.addView(summaryText);
