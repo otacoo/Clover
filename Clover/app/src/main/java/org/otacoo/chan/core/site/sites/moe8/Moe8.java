@@ -26,15 +26,10 @@ import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteIcon;
 import org.otacoo.chan.core.site.SiteRequestModifier;
 import org.otacoo.chan.core.site.common.CommonSite;
-import org.otacoo.chan.core.site.common.lynxchan.LynxchanActions;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanApi;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanCommentParser;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanEndpoints;
 import org.otacoo.chan.core.site.http.HttpCall;
-
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import okhttp3.HttpUrl;
 import okhttp3.Request;
@@ -83,20 +78,12 @@ public class Moe8 extends CommonSite {
 
     @Override
     public void setup() {
-        setName("8chan.moe");
+        setName("8chan");
         setIcon(SiteIcon.fromAssets("icons/8moe.png"));
 
-        // 8chan.moe uses dynamic boards, but we can provide some default/seed boards if necessary.
-        // For now, setting it to DYNAMIC so board list can be fetched via API.
+        // Only the top boards from the 8chan.moe frontpage are loaded automatically;
+        // users can navigate to any board by entering its code directly.
         setBoardsType(BoardsType.DYNAMIC);
-
-        // Since we don't have a static list yet and it's dynamic, we'll let it fetch them.
-        // For testing, user can add boards manually or we can add some here.
-        setBoards(
-            Board.fromSiteNameCode(this, "Random", "b"),
-            Board.fromSiteNameCode(this, "Anime", "a"),
-            Board.fromSiteNameCode(this, "Technology", "tech")
-        );
 
         setResolvable(URL_HANDLER);
 
@@ -110,7 +97,7 @@ public class Moe8 extends CommonSite {
 
         setEndpoints(new LynxchanEndpoints(this, "https://8chan.moe/"));
         
-        setActions(new LynxchanActions(this));
+        setActions(new Moe8Actions(this));
         setApi(new LynxchanApi(this));
         setParser(new LynxchanCommentParser());
 
@@ -119,25 +106,26 @@ public class Moe8 extends CommonSite {
             public void modifyHttpCall(HttpCall httpCall, Request.Builder requestBuilder) {
                 // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
                 String url = requestBuilder.build().url().toString();
-                String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+                // For /.media/ URLs use the root URL so we get all domain-wide cookies.
+                String cookieLookupUrl = url.contains("/.media/") ? "https://8chan.moe/" : url;
+                String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
                 
-                if (cookies == null || cookies.isEmpty()) {
-                    cookies = "TOS20250418=1";
-                } else if (!cookies.contains("TOS")) {
-                    cookies += "; TOS20250418=1";
+                if (cookies != null && !cookies.isEmpty()) {
+                    requestBuilder.header("Cookie", cookies);
                 }
-                
-                requestBuilder.header("Cookie", cookies);
                 
                 requestBuilder.header("Accept", "application/json, text/javascript, */*; q=0.01");
                 requestBuilder.header("X-Requested-With", "XMLHttpRequest");
 
-                String referer = url;
-                if (url.contains(".json")) {
+                // For media (/.media/) and API requests use site root as Referer.
+                String referer;
+                if (url.contains("/.media/")) {
+                    referer = "https://8chan.moe/";
+                } else if (url.contains(".json")) {
                     int lastSlash = url.lastIndexOf('/');
-                    if (lastSlash != -1) {
-                        referer = url.substring(0, lastSlash) + "/";
-                    }
+                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : "https://8chan.moe/";
+                } else {
+                    referer = "https://8chan.moe/";
                 }
                 requestBuilder.header("Referer", referer);
                 requestBuilder.header("Origin", "https://8chan.moe");
@@ -153,29 +141,28 @@ public class Moe8 extends CommonSite {
 
             @Override
             public void modifyVolleyHeaders(java.util.Map<String, String> headers, String url) {
-                // Copy cookies from CookieManager for bot protection (PoWBlock, TOS cookies, etc)
-                String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+                // For /.media/ URLs use the root URL for cookie lookup so we get all
+                // domain-wide cookies (date-based TOS, PoW tokens) set by the WebView flow.
+                String cookieLookupUrl = url.contains("/.media/") ? "https://8chan.moe/" : url;
+                String cookies = android.webkit.CookieManager.getInstance().getCookie(cookieLookupUrl);
                 
-                // Add mandatory 8chan-specific cookies, usually these are set by the WebView after passing the splash page.
-                // If they are missing, we add a fallback, though solving in WebView is preferred.
-                if (cookies == null || cookies.isEmpty()) {
-                    cookies = "TOS20250418=1";
-                } else if (!cookies.contains("TOS")) {
-                    cookies += "; TOS20250418=1";
+                if (cookies != null && !cookies.isEmpty()) {
+                    headers.put("Cookie", cookies);
                 }
-                
-                headers.put("Cookie", cookies);
                 
                 // Set browser-like headers
                 headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
                 headers.put("X-Requested-With", "XMLHttpRequest");
                 
-                String referer = url;
-                if (url.contains(".json")) {
+                // For media (/.media/) and API requests, use the site root as Referer.
+                String referer;
+                if (url.contains("/.media/")) {
+                    referer = "https://8chan.moe/";
+                } else if (url.contains(".json")) {
                     int lastSlash = url.lastIndexOf('/');
-                    if (lastSlash != -1) {
-                        referer = url.substring(0, lastSlash) + "/";
-                    }
+                    referer = lastSlash != -1 ? url.substring(0, lastSlash) + "/" : "https://8chan.moe/";
+                } else {
+                    referer = "https://8chan.moe/";
                 }
                 headers.put("Referer", referer);
                 headers.put("Origin", "https://8chan.moe");
