@@ -353,6 +353,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             if (failedFetchAttempts >= 5) {
                 Logger.i(TAG, "onCaptchaPayloadFromFetch: after " + failedFetchAttempts + " failed attempts, falling back to native page load");
                 failedFetchAttempts = 0;
+                Toast.makeText(getContext(), "Captcha not loading. Switching to native mode...", Toast.LENGTH_LONG).show();
                 skipInterceptNextLoad = true;
                 hardReset(true, true);
                 return;
@@ -375,6 +376,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 Logger.w(TAG, "onCaptchaPayloadFromFetch: payload looks like HTML but no postMessage found (attempt " + failedFetchAttempts + "/5). HTML start: " + (payload.length() > 200 ? payload.substring(0, 200) : payload));
                 if (failedFetchAttempts >= 5) {
                     failedFetchAttempts = 0;
+                    Toast.makeText(getContext(), "Captcha not loading. Switching to native mode...", Toast.LENGTH_LONG).show();
                     skipInterceptNextLoad = true;
                     hardReset(true, true);
                 } else {
@@ -542,6 +544,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 Logger.i(TAG, "onGetCaptchaPressed: ignoring request, too soon (" + remaining + "s left)");
                 boolean darkTheme = !ThemeHelper.theme().isLightTheme;
                 injectOverlayUI(darkTheme, "Please wait " + remaining + "s before requesting another captcha.", true);
+                Toast.makeText(getContext(), "Please wait " + remaining + "s before requesting another captcha.", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -580,6 +583,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     }
                 } catch (Exception e) {
                     Logger.e(TAG, "requestCaptchaViaOkHttp failed", e);
+                    final String errMsg = e.getMessage();
+                    new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(AndroidUtils.getAppContext(), "Captcha request error: " + (errMsg != null ? errMsg : "network failure"), Toast.LENGTH_LONG).show());
                 }
                 final String payloadFinal = payload;
                 new Handler(Looper.getMainLooper()).post(() -> {
@@ -589,6 +595,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         if (failedFetchAttempts >= 5) {
                             failedFetchAttempts = 0;
                             Logger.w(TAG, "requestCaptchaViaOkHttp: Too many failures. Fallback to native load (no intercept).");
+                            Toast.makeText(getContext(), "Captcha request failed after multiple attempts. Retrying...", Toast.LENGTH_LONG).show();
                             skipInterceptNextLoad = true;
                             hardReset(true, true);
                             return;
@@ -804,6 +811,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                                     startCooldownBackgroundTracking(board, thread_id, pcdValue);
                                     cooldownActive = true;
                                 }
+
+                                // If pcd==0 but we have no captcha data, avoid getting stuck in a loop of
+                                // intercept -> load asset with no data -> pcd=0 -> intercept
+                                if (pcdValue == 0 && !payloadHasCaptchaData(payload)) {
+                                    return null;
+                                }
                                 
                                 String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
                                 if (assetHtml != null) {
@@ -1011,12 +1024,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             InputStream is = getContext().getAssets().open("captcha/new_captcha.html");
             String html = new java.util.Scanner(is, StandardCharsets.UTF_8.name()).useDelimiter("\\A").next();
             is.close();
-            String escaped = jsonPayload
-                    .replace("\\", "\\\\")
-                    .replace("'", "\\'")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("</", "<\\/");
+            // JSON lives in a <script type="application/json"> tag, so only </script> needs escaping.
+            String escaped = jsonPayload.replace("</script>", "<\\/script>");
             html = html.replace("__CLOVER_JSON__", escaped);
             if (darkTheme) {
                 html = html.replace("__C_BG__", "#0d0d0d");
@@ -1293,6 +1302,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
                             // Still nothing after retries. Provide a manual retry button.
                             Logger.w(TAG, "extractPayloadFromNativePage: giving up after retries; injecting manual retry UI");
+                            Toast.makeText(getContext(), "Captcha failed to load. Tap \"Get Captcha\" to try again.", Toast.LENGTH_LONG).show();
                             injectRequestCaptchaUI(darkTheme, haveGetCaptchaNavigationDone);
                             onCaptchaLoaded();
                     });

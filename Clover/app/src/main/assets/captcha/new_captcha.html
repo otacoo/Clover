@@ -193,6 +193,7 @@
     </style>
 </head>
 <body>
+<script type="application/json" id="clover-payload">__CLOVER_JSON__</script>
 <div id="t-root">
     <input id="t-challenge" type="hidden" value="" tabindex="-1" autocomplete="off">
     <div id="t-msg">
@@ -790,11 +791,18 @@ window.globalOnCaptchaEntered = function() {
 })();
 window.addEventListener("load", function(event) {
     try {
-        var jsonStr = '__CLOVER_JSON__';
+        var el = document.getElementById('clover-payload');
+        var jsonStr = el ? el.textContent : '';
         var data = JSON.parse(jsonStr);
         buildFromJson(data);
     } catch (e) {
-        CaptchaCallback.onCaptchaLoaded();
+        // Don't leave the UI stuck at "Loading..." — show the error and a retry button.
+        var mainEl = document.getElementById('t-msg-main');
+        if (mainEl) mainEl.textContent = 'Error loading captcha. Please try again.';
+        var secEl = document.getElementById('t-msg-secondary');
+        if (secEl) secEl.textContent = '';
+        showMsgButton('Retry', false);
+        try { CaptchaCallback.onCaptchaLoaded(); } catch (ex) {}
     }
 });
 
