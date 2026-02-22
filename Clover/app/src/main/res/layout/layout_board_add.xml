@@ -46,6 +46,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/board_add_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:paddingTop="4dp"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/suggestions"
         android:layout_width="match_parent"

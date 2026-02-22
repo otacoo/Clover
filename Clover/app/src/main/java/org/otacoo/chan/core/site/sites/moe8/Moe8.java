@@ -81,9 +81,8 @@ public class Moe8 extends CommonSite {
         setName("8chan");
         setIcon(SiteIcon.fromAssets("icons/8moe.png"));
 
-        // Only the top boards from the 8chan.moe frontpage are loaded automatically;
-        // users can navigate to any board by entering its code directly.
-        setBoardsType(BoardsType.DYNAMIC);
+        // Boards are not fetched at startup. Users add boards by entering their code directly.
+        setBoardsType(BoardsType.INFINITE);
 
         setResolvable(URL_HANDLER);
 

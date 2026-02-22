@@ -127,6 +127,18 @@ public class BoardSetupPresenter implements Observer {
         return suggestions;
     }
 
+    /**
+     * Returns a hint string to display in the add-boards dialog, or {@code null} if no hint
+     * is needed. A hint is shown for sites where boards cannot be listed (e.g. INFINITE sites)
+     * so the user knows they must type a board code manually.
+     */
+    public String getAddDialogHint() {
+        if (!site.boardsType().canList) {
+            return "Type a board code (e.g. \"v\") and press Add.";
+        }
+        return null;
+    }
+
     public void onAddDialogPositiveClicked() {
         int count = 0;
 
@@ -245,6 +257,13 @@ public class BoardSetupPresenter implements Observer {
 
     private void updateSuggestions(List<BoardSuggestion> suggestions) {
         this.suggestions = suggestions;
+        if (!site.boardsType().canList) {
+            // For INFINITE sites there is no list to tick — auto-select whatever the user typed.
+            selectedSuggestions.clear();
+            for (BoardSuggestion suggestion : this.suggestions) {
+                selectedSuggestions.add(suggestion.getCode());
+            }
+        }
         for (BoardSuggestion suggestion : this.suggestions) {
             suggestion.checked = selectedSuggestions.contains(suggestion.getCode());
         }

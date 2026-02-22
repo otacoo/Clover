@@ -43,6 +43,7 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
     private SearchLayout search;
     private Button checkAllButton;
     private RecyclerView suggestionsRecycler;
+    private TextView hintText;
 
     private AlertDialog dialog;
 
@@ -66,6 +67,7 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
         search = findViewById(R.id.search);
         suggestionsRecycler = findViewById(R.id.suggestions);
         checkAllButton = findViewById(R.id.select_all);
+        hintText = findViewById(R.id.board_add_hint);
 
         // Adapters
         suggestionsAdapter = new SuggestionsAdapter();
@@ -111,6 +113,21 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
 
     public void setPresenter(BoardSetupPresenter presenter) {
         this.presenter = presenter;
+
+        // Show a hint for sites where boards can't be listed (e.g. INFINITE).
+        String hint = presenter.getAddDialogHint();
+        if (hint != null) {
+            hintText.setText(hint);
+            hintText.setVisibility(VISIBLE);
+            checkAllButton.setVisibility(GONE);
+            suggestionsRecycler.setVisibility(GONE);
+            setMinimumHeight(0);
+            setMinimumWidth(0);
+        } else {
+            hintText.setVisibility(GONE);
+            checkAllButton.setVisibility(VISIBLE);
+            suggestionsRecycler.setVisibility(VISIBLE);
+        }
     }
 
     public void setDialog(AlertDialog dialog) {
