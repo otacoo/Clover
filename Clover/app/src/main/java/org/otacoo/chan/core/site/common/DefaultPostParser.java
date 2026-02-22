@@ -156,6 +156,13 @@ public class DefaultPostParser implements PostParser {
             capcodeSpan.setSpan(new AbsoluteSizeSpanHashed(detailsSizePx), 0, capcodeSpan.length(), 0);
         }
 
+        // Append (You) to the name when this is one of the user's own posts.
+        if (builder.isSavedReply) {
+            String youLabel = (nameSpan != null ? nameSpan.toString().trim() : "Anonymous") + CommentParser.SAVED_REPLY_SUFFIX;
+            nameSpan = new SpannableString(youLabel);
+            nameSpan.setSpan(new ForegroundColorSpanHashed(theme.nameColor), 0, nameSpan.length(), 0);
+        }
+
         CharSequence nameTripcodeIdCapcodeSpan = new SpannableString("");
         if (nameSpan != null) {
             nameTripcodeIdCapcodeSpan = TextUtils.concat(nameTripcodeIdCapcodeSpan, nameSpan, " ");

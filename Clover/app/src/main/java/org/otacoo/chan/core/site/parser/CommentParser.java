@@ -46,9 +46,9 @@ import java.util.regex.Pattern;
 
 @AnyThread
 public class CommentParser {
-    private static final String SAVED_REPLY_SUFFIX = " (You)";
-    private static final String OP_REPLY_SUFFIX = " (OP)";
-    private static final String EXTERN_THREAD_LINK_SUFFIX = " \u2192"; // arrow to the right
+    public static final String SAVED_REPLY_SUFFIX = " (You)";
+    public static final String OP_REPLY_SUFFIX = " (OP)";
+    public static final String EXTERN_THREAD_LINK_SUFFIX = " \u2192"; // arrow to the right
 
     private Pattern fullQuotePattern = Pattern.compile("/(\\w+)/\\w+/(\\d+)#p(\\d+)");
     private Pattern quotePattern = Pattern.compile(".*#p(\\d+)");

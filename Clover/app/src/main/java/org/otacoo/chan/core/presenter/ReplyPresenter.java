@@ -234,7 +234,9 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
             SavedReply savedReply = SavedReply.fromSiteBoardNoPassword(
                     loadable.site, loadable.board, replyResponse.postNo, replyResponse.password);
-            databaseManager.runTaskAsync(databaseManager.getDatabaseSavedReplyManager()
+            // Use runTask (synchronous) so savedRepliesByNo is populated before the thread
+            // refresh below triggers post parsing — otherwise isSavedReply stays false.
+            databaseManager.runTask(databaseManager.getDatabaseSavedReplyManager()
                     .saveReply(savedReply));
 
             switchPage(Page.INPUT, false);
