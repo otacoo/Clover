@@ -12,10 +12,6 @@ import org.otacoo.chan.core.site.common.CommonSite;
 import org.otacoo.chan.core.site.parser.ChanReaderProcessingQueue;
 import org.jsoup.parser.Parser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +89,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
         builder.board(queue.getLoadable().board);
         builder.op(isOp);
         builder.opId(isOp ? 0 : queue.getLoadable().no);
-        builder.setUnixTimestampSeconds(0); // Default to avoid "Post data not complete"
+        builder.setUnixTimestampSeconds(0);
+        builder.replies(0);
+        builder.images(0);
 
         if (isOp && queue.getOp() == null) {
             queue.setOp(builder);
@@ -101,6 +99,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
 
         String standalonePath = null;
         String standaloneThumb = null;
+        String standaloneMime  = null;
 
         reader.beginObject();
         while (reader.hasNext()) {
@@ -109,26 +108,71 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 standalonePath = reader.nextString();
             } else if (key.equals("thumb") && reader.peek() == JsonToken.STRING) {
                 standaloneThumb = reader.nextString();
+            } else if (key.equals("mime") && reader.peek() == JsonToken.STRING) {
+                standaloneMime = reader.nextString();
             } else {
                 readSinglePostField(reader, key, queue, builder);
             }
         }
         reader.endObject();
 
-        if ((builder.images == null || builder.images.isEmpty()) && standalonePath != null) {
-            Map<String, String> args = SiteEndpoints.makeArgument("path", standalonePath, "thumb", standaloneThumb);
-            
+        if ((builder.images == null || builder.images.isEmpty())
+                && (standalonePath != null || standaloneThumb != null)) {
+
+            // Catalog entries supply only "thumb" (no "path"). Derive the full image path by
+            // stripping the "t_" thumbnail prefix.  e.g. /.media/t_fd97ac… → /.media/fd97ac…
+            String imagePath = standalonePath;
+            if (imagePath == null && standaloneThumb != null) {
+                int lastSlash = standaloneThumb.lastIndexOf('/');
+                if (lastSlash != -1) {
+                    String name = standaloneThumb.substring(lastSlash + 1);
+                    if (name.startsWith("t_")) name = name.substring(2);
+                    imagePath = standaloneThumb.substring(0, lastSlash + 1) + name;
+                } else {
+                    imagePath = standaloneThumb;
+                }
+            }
+
+            // Extension: prefer explicit dot-extension in the path, fall back to mime type.
             String ext = "";
-            int lastDot = standalonePath.lastIndexOf(".");
-            if (lastDot != -1) {
-                ext = standalonePath.substring(lastDot + 1).toLowerCase(Locale.US);
+            if (imagePath != null) {
+                int lastDot  = imagePath.lastIndexOf('.');
+                int lastSlash = imagePath.lastIndexOf('/');
+                if (lastDot != -1 && lastDot > lastSlash) {
+                    ext = imagePath.substring(lastDot + 1).toLowerCase(Locale.US);
+                }
             }
-            
-            String filename = standalonePath;
-            int lastSlash = standalonePath.lastIndexOf("/");
-            if (lastSlash != -1) {
-                filename = standalonePath.substring(lastSlash + 1);
+            if (ext.isEmpty() && standaloneMime != null) {
+                switch (standaloneMime) {
+                    case "image/jpeg":  ext = "jpg";  break;
+                    case "image/jpg":   ext = "jpg";  break;
+                    case "image/jxl":   ext = "jxl";  break;
+                    case "image/png":   ext = "png";  break;
+                    case "image/apng":  ext = "png";  break;
+                    case "image/gif":   ext = "gif";  break;
+                    case "image/avif":  ext = "avif"; break;
+                    case "image/webp":  ext = "webp"; break;
+                    case "image/bmp":   ext = "bmp";  break;
+                    case "video/mp4":   ext = "mp4";  break;
+                    case "video/webm":  ext = "webm"; break;
+                    case "video/x-m4v": ext = "m4v";  break;
+                    case "audio/ogg":   ext = "ogg";  break;
+                    case "audio/mpeg":  ext = "mp3";  break;
+                    case "audio/x-m4a": ext = "m4a";  break;
+                    case "audio/x-wav": ext = "wav";  break;
+                    default:
+                        int slash = standaloneMime.indexOf('/');
+                        if (slash != -1) ext = standaloneMime.substring(slash + 1);
+                        break;
+                }
             }
+
+            String usePath = imagePath != null ? imagePath : standaloneThumb;
+            String filename = usePath;
+            int lastSlash = usePath.lastIndexOf('/');
+            if (lastSlash != -1) filename = usePath.substring(lastSlash + 1);
+
+            Map<String, String> args = SiteEndpoints.makeArgument("path", imagePath, "thumb", standaloneThumb);
 
             PostImage.Builder imageBuilder = new PostImage.Builder()
                 .thumbnailUrl(queue.getLoadable().getSite().endpoints().thumbnailUrl(builder, false, args))
@@ -136,7 +180,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 .extension(ext)
                 .filename(filename)
                 .originalName(filename);
-            
+
             List<PostImage> list = new ArrayList<>();
             list.add(imageBuilder.build());
             builder.images(list);
