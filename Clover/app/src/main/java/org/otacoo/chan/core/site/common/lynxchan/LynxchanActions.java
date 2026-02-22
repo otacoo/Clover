@@ -160,8 +160,8 @@ public class LynxchanActions extends CommonSite.CommonActions {
                 replyResponse.posted = true;
                 // Lynxchan typically returns the thread/post ID in the "data" field
                 Object data = json.opt("data");
-                if (data instanceof Integer) {
-                    replyResponse.postNo = (Integer) data;
+                if (data instanceof Number) {
+                    replyResponse.postNo = ((Number) data).intValue();
                     if (replyResponse.threadNo == 0) {
                         replyResponse.threadNo = replyResponse.postNo;
                     }
