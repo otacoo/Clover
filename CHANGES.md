@@ -23,7 +23,7 @@
 - Improved database cleanup for orphaned sites.
 - Restricted browsing list to sites with at least one added board.
 - Simplified setup UI by removing the manual site adding/removing buttons (not planning on Play store).
-- Add full support for 8chan and its POWBlock.
+- Add support to load and read 8chan and its POWBlock *(still working on posting and captchas and multi-image upload)*.
 - Modify dialog for how boards are added for infinite dynamic boards like 8chan.
 
 ## Video Player & Media
