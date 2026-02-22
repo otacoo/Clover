@@ -21,10 +21,13 @@ import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.WebStorage;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -100,6 +103,11 @@ public class DeveloperSettingsController extends Controller {
         clearCookiesButton.setText("Clear WebView cookies");
         wrapper.addView(clearCookiesButton);
 
+        Button viewCookiesButton = new Button(context);
+        viewCookiesButton.setText("View/Edit 4chan Cookies");
+        viewCookiesButton.setOnClickListener(v -> showCookieManagerDialog());
+        wrapper.addView(viewCookiesButton);
+
         summaryText = new TextView(context);
         summaryText.setPadding(0, dp(25), 0, 0);
         wrapper.addView(summaryText);
@@ -128,5 +136,132 @@ public class DeveloperSettingsController extends Controller {
         dbSummary += "Database summary:\n";
         dbSummary += databaseManager.getSummary();
         summaryText.setText(dbSummary);
+    }
+
+    private void showCookieManagerDialog() {
+        final String[] DOMAINS = {"https://sys.4chan.org", "https://boards.4chan.org", "https://www.4chan.org"};
+        CookieManager cm = CookieManager.getInstance();
+        cm.flush();
+
+        // Collect all cookies from 4chan domains; later domains overwrite earlier for same name.
+        java.util.LinkedHashMap<String, String> cookieMap = new java.util.LinkedHashMap<>();
+        for (String domain : DOMAINS) {
+            String raw = cm.getCookie(domain);
+            if (raw == null || raw.isEmpty()) continue;
+            for (String part : raw.split(";\\s*")) {
+                int eq = part.indexOf('=');
+                String name = (eq >= 0 ? part.substring(0, eq) : part).trim();
+                String val  = eq >= 0 ? part.substring(eq + 1).trim() : "";
+                if (!name.isEmpty()) cookieMap.put(name, val);
+            }
+        }
+
+        LinearLayout root = new LinearLayout(context);
+        root.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(12);
+        root.setPadding(pad, pad, pad, pad);
+
+        if (cookieMap.isEmpty()) {
+            TextView empty = new TextView(context);
+            empty.setText("No cookies found for 4chan domains.");
+            root.addView(empty);
+        } else {
+            for (java.util.Map.Entry<String, String> entry : cookieMap.entrySet()) {
+                final String cookieName = entry.getKey();
+                final String cookieVal  = entry.getValue();
+
+                LinearLayout row = new LinearLayout(context);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setPadding(0, dp(4), 0, dp(4));
+
+                // Name + value column
+                LinearLayout info = new LinearLayout(context);
+                info.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams infoLp = new LinearLayout.LayoutParams(0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                info.setLayoutParams(infoLp);
+
+                TextView nameView = new TextView(context);
+                nameView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+                nameView.setTextSize(13f);
+                nameView.setText(cookieName);
+                info.addView(nameView);
+
+                TextView valView = new TextView(context);
+                valView.setTextSize(11f);
+                String displayVal = cookieVal.length() > 60
+                        ? cookieVal.substring(0, 60) + "…" : cookieVal;
+                valView.setText(displayVal.isEmpty() ? "(empty)" : displayVal);
+                info.addView(valView);
+
+                row.addView(info);
+
+                // Edit button
+                Button editBtn = new Button(context);
+                editBtn.setText("Edit");
+                editBtn.setTextSize(11f);
+                editBtn.setOnClickListener(ev -> {
+                    EditText et = new EditText(context);
+                    et.setText(cookieVal);
+                    et.setSelection(et.getText().length());
+                    et.setSingleLine(false);
+                    et.setMinLines(2);
+                    int etPad = dp(12);
+                    et.setPadding(etPad, etPad, etPad, etPad);
+                    new AlertDialog.Builder(context)
+                            .setTitle("Edit \"" + cookieName + "\"")
+                            .setView(et)
+                            .setPositiveButton("Save", (dlg, which) -> {
+                                String newVal = et.getText().toString();
+                                for (String domain : DOMAINS)
+                                    cm.setCookie(domain, cookieName + "=" + newVal);
+                                cm.flush();
+                                Toast.makeText(context, "Saved " + cookieName, Toast.LENGTH_SHORT).show();
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+                row.addView(editBtn);
+
+                // Delete button
+                Button delBtn = new Button(context);
+                delBtn.setText("Del");
+                delBtn.setTextSize(11f);
+                delBtn.setOnClickListener(ev -> {
+                    new AlertDialog.Builder(context)
+                            .setTitle("Delete \"" + cookieName + "\"?")
+                            .setPositiveButton("Delete", (dlg, which) -> {
+                                String expired = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+                                for (String domain : DOMAINS)
+                                    cm.setCookie(domain, expired);
+                                cm.flush();
+                                Toast.makeText(context, "Deleted " + cookieName, Toast.LENGTH_SHORT).show();
+                                showCookieManagerDialog(); // refresh
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+                row.addView(delBtn);
+
+                root.addView(row);
+
+                // Divider
+                View divider = new View(context);
+                divider.setBackgroundColor(0x22000000);
+                divider.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                root.addView(divider);
+            }
+        }
+
+        ScrollView sv = new ScrollView(context);
+        sv.addView(root);
+
+        new AlertDialog.Builder(context)
+                .setTitle("4chan Cookies (" + cookieMap.size() + " entries)")
+                .setView(sv)
+                .setPositiveButton("Refresh", (dlg, which) -> showCookieManagerDialog())
+                .setNegativeButton("Close", null)
+                .show();
     }
 }
