@@ -174,15 +174,15 @@ public class MediaSettingsController extends SettingsController implements
                     R.string.setting_video_open_external,
                     R.string.setting_video_open_external_description));
 
-            video.add(new IntegerSettingView(this,
-                    ChanSettings.videoExoPlayerTimeout,
-                    R.string.setting_video_timeout,
-                    R.string.setting_video_timeout_description));
-
             video.add(new BooleanSettingView(this,
                     ChanSettings.videoAutoLoop,
                     R.string.setting_video_auto_loop,
                     R.string.setting_video_auto_loop_description));
+
+            video.add(new IntegerSettingView(this,
+                    ChanSettings.videoExoPlayerTimeout,
+                    R.string.setting_video_timeout,
+                    R.string.setting_video_timeout_description));
 
             groups.add(video);
         }
