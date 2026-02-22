@@ -33,6 +33,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.otacoo.chan.utils.Logger;
+
 import okhttp3.HttpUrl;
 import okhttp3.MultipartBody;
 import okhttp3.Request;
@@ -80,6 +82,8 @@ public abstract class CommonReplyHttpCall extends HttpCall {
 
     @Override
     public void process(Response response, String result) throws IOException {
+        Logger.i(TAG, "process: HTTP " + response.code() + " body(500)=" + (result != null ? result.substring(0, Math.min(result.length(), 500)).replace("\n", " ") : "null"));
+
         // Check for captcha errors first — these require re-authentication, not a generic error
         String resultLower = result.toLowerCase(Locale.ENGLISH);
         if (resultLower.contains("forgot to solve the captcha")
@@ -108,6 +112,11 @@ public abstract class CommonReplyHttpCall extends HttpCall {
                 replyResponse.posted = true;
             }
         }
+
+        Logger.i(TAG, "process: result — posted=" + replyResponse.posted
+                + " requireAuth=" + replyResponse.requireAuthentication
+                + " errorMessage=" + replyResponse.errorMessage
+                + " postNo=" + replyResponse.postNo);
     }
 
     public abstract void addParameters(
