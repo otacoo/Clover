@@ -24,6 +24,8 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.text.TextUtils;
 
+import android.widget.Toast;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.manager.ReplyManager;
@@ -288,8 +290,13 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                 }
             }
 
-            Logger.e(TAG, "onPostComplete error", errorMessage);
+            Logger.e(TAG, "onPostComplete error — posted=" + replyResponse.posted
+                    + " requireAuth=" + replyResponse.requireAuthentication
+                    + " rawError=" + replyResponse.errorMessage
+                    + " probablyBanned=" + replyResponse.probablyBanned
+                    + " displayMessage=" + errorMessage);
             switchPage(Page.INPUT, true);
+            Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
             callback.openMessage(true, false, errorMessage, true);
         }
     }
@@ -315,6 +322,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             }
         }
 
+        Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
         callback.openMessage(true, false, errorMessage, true);
     }
 
