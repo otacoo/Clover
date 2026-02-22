@@ -1,3 +1,7 @@
+## 2026-02-22 – v3.0.24
+
+- Initial otacoo release
+
 # Changes
 
 ## Build System & Environment

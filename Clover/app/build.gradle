@@ -31,10 +31,10 @@ android {
         //noinspection ExpiredTargetSdkVersion
         multiDexEnabled true
 
-        versionName "v3.0.22"
+        versionName "v3.0.24"
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
-        versionCode 30022
+        versionCode 30024
     }
 
     compileOptions {
@@ -113,6 +113,7 @@ android {
                 signingConfig signingConfigs.release
             }
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
             buildConfigField "boolean", "DEVELOPER_MODE", "false"
         }
