@@ -39,7 +39,6 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.ValueCallback;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -120,27 +119,15 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private boolean haveGetCaptchaNavigationDone;
     /** Counter for consecutive failed fetch attempts - after too many failures, fall back to native page load */
     private int failedFetchAttempts = 0;
-    /** Tracks how many times we've seen pcd=0 but no data in a single sequence of fetches. */
-    private int pcdLoopCount = 0;
-    /** Tracks how many times user pressed "Get Captcha" manually. If it persists, forceful reload is better. */
-    private int manualGetCaptchaClickCount = 0;
     /** Track whether we had cf_clearance before the current page load started, to detect when Cloudflare challenge completes */
     private boolean hadCloudflareClearanceBeforePageLoad = false;
-    /**
-     * How many times we have auto-triggered requestCaptchaViaFetch() from inside the native 4chan
-     * captcha page in a single flow. Capped at 1 to prevent an infinite loop: when fetch() from
-     * the native page returns pcd=-1/no data, onCaptchaPayloadFromFetch calls hardReset which
-     * reloads the native page, which would otherwise auto-fetch again indefinitely.
-     * Reset on manual "Get Captcha" press and on initialize().
-     */
+    /** Auto-fetch attempts per native page load, capped at 1 to prevent reload loops on pcd=-1. */
     private int nativeAutoFetchCount = 0;
 
     /** Retry state for extracting payload from the native captcha page without clobbering its DOM (needed for JS challenges). */
     private int nativePayloadRetryAttempts = 0;
     private String nativePayloadRetryUrl = null;
 
-    /** If true, the WebView is being used as a standalone captcha challenge (no keyboard needed). */
-    private boolean isCaptchaOnlyMode = true;
 
     public NewCaptchaLayout(Context context) {
         super(context);
@@ -186,7 +173,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     @Override
     public void initialize(Loadable loadable, AuthenticationLayoutCallback callback) {
         this.callback = callback;
-        this.isCaptchaOnlyMode = true;
         this.reportedCompletion = false;
 
         this.site = loadable.site;
@@ -198,19 +184,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         this.thread_id = loadable.no;
 
         failedFetchAttempts = 0;
-        pcdLoopCount = 0;
-        manualGetCaptchaClickCount = 0;
         nativeAutoFetchCount = 0;
 
         // initialize() is for the captcha placement in the reply layout.
         // Restoration is now handled in the reset() method to avoid duplication.
         setFocusable(true);
         setFocusableInTouchMode(true);
-    }
-
-    @Override
-    public boolean onCheckIsTextEditor() {
-        return !isCaptchaOnlyMode && super.onCheckIsTextEditor();
     }
 
     public boolean onCooldownNow() {
@@ -260,9 +239,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             if (savedPayload != null) {
                 try {
                     org.json.JSONObject obj = new org.json.JSONObject(savedPayload);
-                    // The payload may be wrapped as {"twister": {"pcd": ...}}.
-                    // buildFromJson() in new_captcha.html does `if (data.twister) data = data.twister`
-                    // so we must update pcd at whichever level the JS will actually read it from.
+                    // Update pcd at whichever level the JS will read it from.
                     org.json.JSONObject inner = obj.optJSONObject("twister");
                     if (inner != null) {
                         inner.put("pcd", displayRemaining);
@@ -404,8 +381,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         int pcdValue = getPcdFromPayload(payload);
 
         if (pcdValue > 0) {
-            pcdLoopCount = 0;
-            manualGetCaptchaClickCount = 0;
             Logger.i(TAG, "onCaptchaPayloadFromFetch: pcd=" + pcdValue + " — caching and loading asset with cooldown payload");
             
             // Start the global tracker
@@ -427,8 +402,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
 
         if (pcdValue == 0 && payloadHasCaptchaData(payload)) {
-            pcdLoopCount = 0;
-            manualGetCaptchaClickCount = 0;
             showingActiveCaptcha = true;
             String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
             if (assetHtml == null) {
@@ -457,8 +430,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         if (siteError != null) {
             Logger.i(TAG, "onCaptchaPayloadFromFetch: site error detected: " + siteError);
             failedFetchAttempts = 0;
-            pcdLoopCount = 0;
-            manualGetCaptchaClickCount = 0;
+            Toast.makeText(getContext(), siteError, Toast.LENGTH_LONG).show();
             injectOverlayUI(!ThemeHelper.theme().isLightTheme, siteError, true);
             onCaptchaLoaded();
             return;
@@ -468,8 +440,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         // 4chan uses this shape when the user gets a rate-limit instead of the main pcd field.
         int cdValue = getCdFromPayload(payload);
         if (cdValue > 0) {
-            pcdLoopCount = 0;
-            manualGetCaptchaClickCount = 0;
             Logger.i(TAG, "onCaptchaPayloadFromFetch: error/cd=" + cdValue + " — showing error cooldown UI");
             cooldownActive = true;
             startCooldownBackgroundTracking(board, thread_id, cdValue);
@@ -489,8 +459,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         // pcd field absent entirely but captcha data is present: 4chan returned a ready challenge without
         // a pcd wrapper (common when cooldown just expired). Treat identically to pcd==0 with data.
         if (pcdValue == -1 && payloadHasCaptchaData(payload)) {
-            pcdLoopCount = 0;
-            manualGetCaptchaClickCount = 0;
             showingActiveCaptcha = true;
             String assetHtml = loadAssetWithCaptchaData(payload, darkTheme);
             if (assetHtml == null) {
@@ -517,24 +485,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             return;
         }
 
-        // Otherwise (called from our JS fetch inside an asset page): our JS fetch is not a real
-        // page-visit from 4chan's perspective so it returns nothing useful.
-        // Skip the intercept and let the WebView load 4chan's actual captcha page natively —
-        // no OkHttp request, no burst, 4chan serves whatever it wants (challenge or real cooldown).
+        // JS fetch inside our asset page is not counted as a real 4chan page visit — skip intercept and native reload.
         Logger.i(TAG, "onCaptchaPayloadFromFetch: pcd=-1 no data, doing native reload (skip intercept)");
-        pcdLoopCount = 0;
         failedFetchAttempts = 0;
-        manualGetCaptchaClickCount = 0;
         skipInterceptNextLoad = true;
         hardReset(true, true);
     }
 
-    /**
-     * User tapped "Get Captcha" (or a cooldown expired).
-     * Always do a clean native WebView load — no OkHttp intercept, no JS fetch.
-     * 4chan serves whatever it wants (challenge or cooldown), and we handle the result
-     * in onPageFinished / extractPayloadFromNativePageAndLoadAsset.
-     */
+    /** User tapped "Get Captcha" (or cooldown expired). Does a clean native WebView load — no OkHttp intercept, no JS fetch. */
     private void onGetCaptchaPressed() {
         long now = System.currentTimeMillis();
         Long lastRequest = globalCooldowns.get(LAST_REQUEST_KEY);
@@ -551,7 +509,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
         Logger.i(TAG, "onGetCaptchaPressed: native reload (with ticket if available)");
         globalCooldowns.put(LAST_REQUEST_KEY, now);
-        manualGetCaptchaClickCount = 0;
         nativeAutoFetchCount = 0;  // Allow one auto-fetch attempt for the new native page load
         haveGetCaptchaNavigationDone = true;
         skipInterceptNextLoad = true;
@@ -568,6 +525,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         final String referer = "https://boards.4chan.org/" + board + "/thread/" + thread_id;
         new Thread(() -> {
             String payload = null;
+            String rawBody = null;
                 try {
                     Request.Builder rb = new Request.Builder().url(captchaUrl);
                     if (cookieHeader != null) rb.header("Cookie", cookieHeader);
@@ -578,6 +536,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     String body = response.body() != null ? response.body().string() : null;
                     copyResponseCookiesToWebView(response, "https://sys.4chan.org");
                     response.close();
+                    rawBody = body;
                     if (response.isSuccessful() && body != null && !body.isEmpty()) {
                         payload = extractTwisterPayload(body);
                     }
@@ -588,8 +547,34 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         Toast.makeText(AndroidUtils.getAppContext(), "Captcha request error: " + (errMsg != null ? errMsg : "network failure"), Toast.LENGTH_LONG).show());
                 }
                 final String payloadFinal = payload;
+                final String rawBodyFinal = rawBody;
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (payloadFinal == null || payloadFinal.isEmpty()) {
+                        // Before retrying, check whether 4chan returned a direct JSON error (ban, block, etc.).
+                        if (rawBodyFinal != null) {
+                            String rawErr = extractRawJsonError(rawBodyFinal);
+                            if (rawErr == null) rawErr = extract4chanErrorMessage(rawBodyFinal);
+                            if (rawErr == null) rawErr = extractHtmlPageError(rawBodyFinal);
+                            if (rawErr != null) {
+                                if (isFingerprintGateError(rawErr)) {
+                                    // 4chan requires fingerprinting (spur.us/mcl.io) before issuing __session.
+                                    // OkHttp cannot run JS, so fall back to a native WebView load where
+                                    // the fingerprinting scripts will execute and __session will be stored.
+                                    Logger.w(TAG, "requestCaptchaViaOkHttp: fingerprint gate detected, falling back to native load: " + rawErr);
+                                    failedFetchAttempts = 0;
+                                    skipInterceptNextLoad = true;
+                                    hardReset(true, true);
+                                    return;
+                                }
+                                Logger.w(TAG, "requestCaptchaViaOkHttp: site returned an error: " + rawErr);
+                                failedFetchAttempts = 0;
+                                final String errFinal = rawErr;
+                                Toast.makeText(getContext(), errFinal, Toast.LENGTH_LONG).show();
+                                injectOverlayUI(!ThemeHelper.theme().isLightTheme, errFinal, true);
+                                onCaptchaLoaded();
+                                return;
+                            }
+                        }
                         failedFetchAttempts++;
                         Logger.w(TAG, "requestCaptchaViaOkHttp: no payload (attempt " + failedFetchAttempts + "/5)");
                         if (failedFetchAttempts >= 5) {
@@ -703,16 +688,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         evaluateJavascript(js, null);
     }
 
-    /** @param afterCooldown true when user tapped "Get Captcha" after cooldown so we skip intercept and use cache-busting */
     private void hardReset(boolean afterCooldown) {
         hardReset(afterCooldown, false);
     }
 
-    /**
-     * Hard reload the native captcha page.
-     * @param afterCooldown adds cache-busting query param
-     * @param includeTicketParam appends &ticket=... when available
-     */
+    // Hard reload the native captcha page.
     private void hardReset(boolean afterCooldown, boolean includeTicketParam) {
         showingActiveCaptcha = false;
         String ticketParam = (includeTicketParam && ticket != null && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
@@ -730,13 +710,20 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         loadUrl(captchaUrl, headers);
     }
 
-    /** WebViewClient: intercept captcha HTML, extract payload, serve new_captcha.html asset. */
+    // WebViewClient: intercept captcha HTML, extract payload, serve new_captcha.html asset.
     private WebViewClient captchaPageClient(final String captchaUrl, final String userAgent) {
         return new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 String requestUrl = request.getUrl().toString();
                 boolean isMainFrame = request.isForMainFrame();
+
+                // Allow fingerprinting service scripts to load and execute.
+                // mcl.spur.us/mcl.js needs to run to set __session before 4chan can serves captchas.
+                if (requestUrl.contains("spur.us") || requestUrl.contains("mcl.io")) {
+                    Logger.i(TAG, "shouldInterceptRequest: allowing fingerprint service request: " + requestUrl);
+                    return null;
+                }
                 
                 // Track cf_clearance state at start of main frame requests to sys.4chan.org
                 boolean hasCf = hasCloudflareClearance();
@@ -768,12 +755,26 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     showingActiveCaptcha = false;
                     nativeAutoFetchCount = 0;
                     lastResponseWasAsset = false;
-                    skipInterceptNextLoad = false;
+                    // Keep skipInterceptNextLoad=true so this re-navigation (triggered by mcl.js /
+                    // fingerprinting completing) also loads natively. This gives the JS time to work.
+                    skipInterceptNextLoad = true;
                     return null;
                 }
                 if (isCaptchaRequest && hasCf && !skipInterceptNextLoad && isMainFrame) {
                     try {
                         String cookieHeader = get4chanCookieHeader();
+                        // Debug: log which session-critical cookies are present
+                        boolean hasSession = cookieHeader != null && cookieHeader.contains("__session");
+                        boolean hasCfBm    = cookieHeader != null && cookieHeader.contains("__cf_bm");
+                        boolean hasCfuvid  = cookieHeader != null && cookieHeader.contains("_cfuvid");
+                        Logger.i(TAG, "shouldInterceptRequest: OkHttp captcha fetch — __session=" + hasSession
+                                + " __cf_bm=" + hasCfBm + " _cfuvid=" + hasCfuvid);
+                        // If fingerprinting cookies are still absent, skip OkHttp and let the
+                        // WebView load natively so mcl.js can run and set them first.
+                        if (!hasSession) {
+                            Logger.w(TAG, "shouldInterceptRequest: __session not yet set — deferring to native load");
+                            return null;
+                        }
                         // If we don't have board/thread, use a generic referer
                         String referer = (board != null && thread_id > 0) 
                             ? "https://boards.4chan.org/" + board + "/thread/" + thread_id
@@ -825,6 +826,28 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                                     return new WebResourceResponse("text/html", "UTF-8",
                                             new ByteArrayInputStream(assetHtml.getBytes(StandardCharsets.UTF_8)));
                                 }
+                            } else {
+                                // No twister payload found — check if body is a direct JSON error or HTML error page (ban, blocked, fingerprint check, etc.).
+                                String rawErr = extractRawJsonError(body);
+                                if (rawErr == null) rawErr = extractHtmlPageError(body);
+                                if (rawErr != null) {
+                                    if (isFingerprintGateError(rawErr)) {
+                                        // 4chan is requiring fingerprinting via spur.us/mcl.io.
+                                        Logger.w(TAG, "shouldInterceptRequest: fingerprint gate detected, falling back to native load: " + rawErr);
+                                        return null;
+                                    }
+                                    Logger.w(TAG, "shouldInterceptRequest: 4chan returned an error: " + rawErr);
+                                    final String errFinal = rawErr;
+                                    final boolean dark = !ThemeHelper.theme().isLightTheme;
+                                    new Handler(Looper.getMainLooper()).post(() -> {
+                                        Toast.makeText(AndroidUtils.getAppContext(), errFinal, Toast.LENGTH_LONG).show();
+                                        injectOverlayUI(dark, errFinal, true);
+                                        onCaptchaLoaded();
+                                    });
+                                    // Serve a blank page so the WebView does not load the raw JSON again.
+                                    return new WebResourceResponse("text/html", "UTF-8",
+                                            new ByteArrayInputStream("<html><body></body></html>".getBytes(StandardCharsets.UTF_8)));
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -845,12 +868,47 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 if (url == null || !url.contains("sys.4chan.org")) return;
-                
+
+                // Post submission result page: e.g. https://sys.4chan.org/b/post
+                // 4chan puts an error message in #errmsg when the post fails (wrong captcha, ban, etc.).
+                Uri parsedForPost = Uri.parse(url);
+                String postPath = parsedForPost.getPath() != null ? parsedForPost.getPath() : "";
+                if (postPath.endsWith("/post")) {
+                    view.evaluateJavascript(
+                        "(function(){" +
+                        "  var el = document.getElementById('errmsg');" +
+                        "  return el ? (el.textContent || el.innerText || '').trim() : '';" +
+                        "})()",
+                        result -> {
+                            if (result == null) return;
+                            // evaluateJavascript returns a JSON-encoded string literal.
+                            String msg = result.replaceAll("^\"|\"$", "").trim();
+                            if (!msg.isEmpty() && !msg.equals("null")) {
+                                Logger.w(TAG, "onPageFinished: post page #errmsg: " + msg);
+                                AndroidUtils.runOnUiThread(() -> {
+                                    Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                                    if (getWindowToken() != null) {
+                                        injectOverlayUI(!ThemeHelper.theme().isLightTheme, msg, true);
+                                        onCaptchaLoaded();
+                                    }
+                                });
+                            } else {
+                                // No specific error - go back to captcha so the user can retry.
+                                AndroidUtils.runOnUiThread(() -> { if (getWindowToken() != null) hardReset(false, false); });
+                            }
+                        }
+                    );
+                    return;
+                }
+
                 boolean isCaptchaUrl = url.contains("/captcha");
-                Logger.i(TAG, "onPageFinished: url=" + url + " isCaptchaUrl=" + isCaptchaUrl + " lastResponseWasAsset=" + lastResponseWasAsset);
+                Logger.i(TAG, "onPageFinished: url=" + url + " isCaptchaUrl=" + isCaptchaUrl
+                        + " lastResponseWasAsset=" + lastResponseWasAsset
+                        + " showingActiveCaptcha=" + showingActiveCaptcha
+                        + " skipInterceptNextLoad=" + skipInterceptNextLoad);
                 
                 // NOTE: do NOT clear lastResponseWasAsset unconditionally here; we need it
-                // below to distinguish our own loadDataWithBaseURL("https://sys.4chan.org/",…)
+                // below to distinguish our own loadDataWithBaseURL("https://sys.4chan.org/", asset)
                 // from a real navigation to the 4chan home page.
                 
                 CookieManager.getInstance().flush();
@@ -870,7 +928,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 }
                 
                 // Don't interfere with verification pages, but if we somehow landed on the home page,
-                // redirect back to captcha — UNLESS we are showing our own asset (loaded via
+                // redirect back to captcha - UNLESS we are showing our own asset (loaded via
                 // loadDataWithBaseURL with baseUrl="https://sys.4chan.org/") which fires
                 // onPageFinished with this same root URL.
                 if (!isCaptchaUrl) {
@@ -928,9 +986,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return hasClearance;
     }
 
-    /** Build Cookie header from WebView's CookieManager for 4chan domains. */
+    // Build Cookie header from WebView's CookieManager for 4chan domains.
     private String get4chanCookieHeader() {
         CookieManager cm = CookieManager.getInstance();
+        cm.flush(); // Ensure __session, __cf_bm, _cfuvid written by JS are readable
         Set<String> parts = new LinkedHashSet<>();
         for (String base : new String[]{"https://sys.4chan.org", "https://boards.4chan.org", "https://www.4chan.org"}) {
             String c = cm.getCookie(base);
@@ -941,7 +1000,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return parts.isEmpty() ? null : android.text.TextUtils.join("; ", parts);
     }
 
-    /** Copy Set-Cookie headers from OkHttp response into WebView CookieManager so reply POST sends same session. */
+    // Copy Set-Cookie headers from OkHttp response into WebView CookieManager so reply POST sends same session.
     private static void copyResponseCookiesToWebView(Response response, String cookieUrl) {
         try {
             CookieManager cm = CookieManager.getInstance();
@@ -960,12 +1019,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    /** Extract the twister/captcha JSON from 4chan HTML (window.parent.postMessage({...}, '*')). */
+    // Extract the twister/captcha JSON from 4chan HTML
     private static String extractTwisterPayload(String html) {
         if (html == null) return null;
         
         // If the HTML clearly contains a Cloudflare/Turnstile challenge, we should NOT extract a partial payload.
-        // Doing so might lead us to serve a "pcd:0" asset that covers the actual challenge widget.
+        // Doing so might lead us to serve a "pcd:0" asset that covers the actual challenge widget
         if (html.contains("cf-turnstile") || html.contains("challenges.cloudflare.com") || html.contains("cf-browser-verification")) {
             return null;
         }
@@ -1018,7 +1077,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return bestPayload;
     }
 
-    /** Load asset captcha/new_captcha.html with __CLOVER_JSON__ and __C_*__ color placeholders replaced (valid CSS; ternary in CSS is invalid). */
+    // Load asset captcha/new_captcha.html with __CLOVER_JSON__ and __C_*__ color placeholders replaced (valid CSS; ternary in CSS is invalid).
     private String loadAssetWithCaptchaData(String jsonPayload, boolean darkTheme) {
         try {
             InputStream is = getContext().getAssets().open("captcha/new_captcha.html");
@@ -1059,9 +1118,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    /** Native 4chan page often renders blank in WebView. Extract twister payload from document and load our asset. */
+    // Native 4chan page often renders blank in WebView. Extract twister payload from document and load our asset.
     private void extractPayloadFromNativePageAndLoadAsset(final WebView view, final String url) {
-        // Always install the hook: some flows only deliver payload via postMessage after JS runs.
         installPostMessageHook();
 
         // Reset retry counter if URL changed.
@@ -1079,8 +1137,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         evaluateJavascript("(function(){ try { var t = localStorage.getItem('4chan-tc-ticket'); return t ? 'set' : 'not set'; } catch(e) { return 'error'; } })();",
                 ticketStatus -> Logger.i(TAG, "localStorage 4chan-tc-ticket: " + ticketStatus));
 
-        // Use a more comprehensive check for both HTML and potential JS-side payload
-        // We return the object directly instead of JSON.stringify to avoid double-escaping
+        // Collect HTML, any JS-side payload, the solved captcha response (if already filled by
+        // 4chan's own JS in #t-resp), and any error message already on the page in #errmsg.
         String checkJs = "(function(){" +
                 "  var res = { html: document.documentElement.outerHTML };" +
                 "  try {" +
@@ -1091,6 +1149,34 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 "      var m = txt.match(/(\\d+)\\s*(s|seconds|sec)/i);" +
                 "      if (m) res.inferredPcd = parseInt(m[1]);" +
                 "    }" +
+                "  } catch(e) {}" +
+                "  try {" +
+                "    var tRespEl = document.getElementById('t-resp');" +
+                "    if (tRespEl) {" +
+                "      if (tRespEl.value) {" +
+                "        res.tResp = tRespEl.value;" +
+                "        var challEl = document.getElementById('t-challenge') || document.querySelector('[name=\"t-challenge\"]');" +
+                "        res.tChall = challEl ? challEl.value : '';" +
+                "      } else {" +
+                "        var p = tRespEl.parentElement;" +
+                "        if (p) {" +
+                "          var errParts = [];" +
+                "          for (var c = p.firstChild; c; c = c.nextSibling) {" +
+                "            if (c === tRespEl) continue;" +
+                "            var tag = (c.tagName || '').toUpperCase();" +
+                "            if (tag === 'INPUT' || tag === 'SCRIPT' || tag === 'STYLE') continue;" +
+                "            var t = (c.textContent || c.innerText || '').trim();" +
+                "            if (t) errParts.push(t);" +
+                "          }" +
+                "          var tRespAreaText = errParts.join(' ').trim();" +
+                "          if (tRespAreaText) res.tRespArea = tRespAreaText;" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  } catch(e) {}" +
+                "  try {" +
+                "    var errEl = document.getElementById('errmsg');" +
+                "    if (errEl) res.errMsg = (errEl.textContent || errEl.innerText || '').trim();" +
                 "  } catch(e) {}" +
                 "  return res;" +
                 "})()";
@@ -1106,6 +1192,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         String html = null;
                         String payload = null;
                         int inferredPcd = -1;
+                        String tResp = null;
+                        String tChall = null;
+                        String pageErrMsg = null;
+                        String tRespArea = null;
 
                         try {
                             org.json.JSONObject res = new org.json.JSONObject(rawResult);
@@ -1119,10 +1209,56 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                                 }
                             }
                             inferredPcd = res.optInt("inferredPcd", -1);
+                            String tr = res.optString("tResp", "");
+                            if (!tr.isEmpty()) tResp = tr;
+                            String tc = res.optString("tChall", "");
+                            if (!tc.isEmpty()) tChall = tc;
+                            String em = res.optString("errMsg", "");
+                            if (!em.isEmpty()) pageErrMsg = em;
+                            String ta = res.optString("tRespArea", "");
+                            if (!ta.isEmpty()) tRespArea = ta;
                         } catch (Exception e) {
                             Logger.e(TAG, "extractPayloadFromNativePage: failed to parse JS result. Length: " + rawResult.length(), e);
                             // Fallback if it's just raw HTML returned somehow
                             html = rawResult;
+                        }
+
+                        // If 4chan's own JS already solved/filled the captcha response, grab it now.
+                        if (tResp != null && !tResp.isEmpty()) {
+                            Logger.i(TAG, "extractPayloadFromNativePage: #t-resp filled, calling onCaptchaEntered");
+                            onCaptchaEntered(tChall != null ? tChall : "", tResp);
+                            return;
+                        }
+
+                        // #t-resp is present but empty with text alongside it: 4chan is blocking
+                        // posting (IP range ban, anti-spam, etc.). Show the message as-is.
+                        if (tRespArea != null && !tRespArea.isEmpty()) {
+                            String cleanTRespArea = stripHtml(tRespArea);
+                            Logger.w(TAG, "extractPayloadFromNativePage: blocking message near #t-resp: " + cleanTRespArea);
+                            nativePayloadRetryAttempts = 0;
+                            nativePayloadRetryUrl = null;
+                            if (isFingerprintGateError(cleanTRespArea)) {
+                                // The fingerprinting JS (spur.us/mcl.io) is still running.
+                                Logger.i(TAG, "extractPayloadFromNativePage: fingerprint gate in #t-resp area, keeping page alive for JS to complete");
+                                showingActiveCaptcha = true;
+                                onCaptchaLoaded();
+                                return;
+                            }
+                            Toast.makeText(getContext(), cleanTRespArea, Toast.LENGTH_LONG).show();
+                            injectOverlayUI(darkTheme, cleanTRespArea, false);
+                            onCaptchaLoaded();
+                            return;
+                        }
+
+                        // If an error message is already displayed on the captcha page, show it.
+                        if (pageErrMsg != null && !pageErrMsg.isEmpty()) {
+                            Logger.w(TAG, "extractPayloadFromNativePage: #errmsg on captcha page: " + pageErrMsg);
+                            nativePayloadRetryAttempts = 0;
+                            nativePayloadRetryUrl = null;
+                            Toast.makeText(getContext(), pageErrMsg, Toast.LENGTH_LONG).show();
+                            injectOverlayUI(darkTheme, pageErrMsg, true);
+                            onCaptchaLoaded();
+                            return;
                         }
 
                         if (html == null || html.isEmpty()) {
@@ -1141,10 +1277,20 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         // Detect explicitly messaged errors in either payload or the raw HTML.
                         String siteError = extract4chanErrorMessage(payload != null ? payload : html);
                         if (siteError != null) {
-                            Logger.i(TAG, "extractPayloadFromNativePage: site error detected: " + siteError);
+                            String cleanSiteError = stripHtml(siteError);
+                            Logger.i(TAG, "extractPayloadFromNativePage: site error detected: " + cleanSiteError);
+                            if (isFingerprintGateError(cleanSiteError)) {
+                                // The page itself is the fingerprinting gate. mcl.js has not run yet.
+                                Logger.i(TAG, "extractPayloadFromNativePage: fingerprint gate page — keeping alive for JS to complete");
+                                showingActiveCaptcha = true;
+                                skipInterceptNextLoad = true;
+                                onCaptchaLoaded();
+                                return;
+                            }
                             nativePayloadRetryAttempts = 0;
                             nativePayloadRetryUrl = null;
-                            injectOverlayUI(!ThemeHelper.theme().isLightTheme, siteError, true);
+                            Toast.makeText(getContext(), cleanSiteError, Toast.LENGTH_LONG).show();
+                            injectOverlayUI(!ThemeHelper.theme().isLightTheme, cleanSiteError, true);
                             onCaptchaLoaded();
                             return;
                         }
@@ -1206,11 +1352,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                                 }
                             }
 
-                            // If we have a ticket but no captcha data, try to auto-trigger fetch
-                            // ONCE from the native page. This is capped at 1 attempt to prevent an
-                            // infinite loop: requestCaptchaViaFetch() from inside the native 4chan
-                            // page often returns pcd=-1 / no data, which causes onCaptchaPayloadFromFetch
-                            // to call hardReset → native reload → this code again → fetch again → loop.
+                            // Auto-trigger fetch once if we have a ticket; capped at 1 to prevent reload loops.
                             if (ticket != null && !ticket.isEmpty() && nativeAutoFetchCount < 1) {
                                 nativeAutoFetchCount++;
                                 Logger.i(TAG, "extractPayloadFromNativePage: pcd=0/-1 and have ticket, auto-triggering fetch (attempt " + nativeAutoFetchCount + ")");
@@ -1218,10 +1360,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                                 return;
                             }
 
-                            // Auto-fetch was already attempted (or no ticket). If the native page looks
-                            // like an active JS challenge (twister / spur / cloudflare), preserve the
-                            // page so the user can interact with it — clobbering it would destroy the
-                            // challenge widget. Otherwise fall back to the "Get Captcha" request UI.
+                            // Auto-fetch exhausted (or no ticket). Preserve live JS challenges; otherwise show "Get Captcha" UI.
                             boolean isLiveChallenge = html != null && (
                                     html.contains("id=\"t-root\"") ||
                                     html.contains("id=\"t-msg\"") ||
@@ -1232,11 +1371,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                             if (isLiveChallenge) {
                                 Logger.i(TAG, "extractPayloadFromNativePage: live challenge page detected after exhausting auto-fetch, showing for user interaction");
                                 showingActiveCaptcha = true;
-                                // Allow the 4chan page's own subsequent navigation (to load the
-                                // actual puzzle) to pass through the interceptor unmodified.
-                                // shouldInterceptRequest will also guard on showingActiveCaptcha,
-                                // but setting this flag here handles the bg-thread race window.
-                                skipInterceptNextLoad = true;
+                                skipInterceptNextLoad = true; // let 4chan's own navigation through the interceptor
                                 onCaptchaLoaded();
                                 return;
                             }
@@ -1250,13 +1385,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                             cooldownActive = true;
                             startCooldownBackgroundTracking(board, thread_id, inferredPcd);
                             
-                            // Create a minimal payload so it can be restored visually in our improved UI
+                            // Create a minimal payload for visual cooldown display.
                             try {
                                 String mockPayload = "{\"pcd\":" + inferredPcd + "}";
                                 globalPayloads.put(getGlobalKey(), mockPayload);
                                 
-                                // Since we have an inferred cooldown, let's also load our asset now to provide better UI
-                                // than the native page which might behave poorly in WebView.
                                 String assetHtml = loadAssetWithCaptchaData(mockPayload, darkTheme);
                                 if (assetHtml != null) {
                                     lastResponseWasAsset = true;
@@ -1309,12 +1442,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             });
     }
 
-    /** True if payload contains actual captcha (image or tasks), not just cooldown/request message. */
+    // True if payload contains actual captcha (image or tasks), not just cooldown/request message.
     private static boolean payloadHasCaptchaData(String payload) {
         return payload != null && (payload.contains("\"img\"") || payload.contains("\"tasks\""));
     }
 
-    /** 4chan wraps captcha data in postMessage( { twister: { pcd, pcd_msg, ... } } ). Return inner object JSON string for pcd/captcha, or full payload if no twister. */
+    // Extract 4chan error message from payload or HTML, which may be wrapped in a twister object or be raw HTML.
     private static String unwrapTwisterPayload(String payload) {
         if (payload == null || payload.isEmpty()) return payload;
         try {
@@ -1341,7 +1474,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
         globalCooldowns.put(key, scheduledEndTime);
         if (!isNewCooldown) {
-            // Already tracking this. Map updated, but exit to avoid duplicate initial toasts or redundant ready-check Runnables.
             return;
         }
 
@@ -1390,7 +1522,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }, seconds * 1000L);
     }
 
-    /** Read pcd from payload, using twister object if present. Returns -1 if payload is invalid or pcd is missing. */
     private static int getPcdFromPayload(String payload) {
         String data = unwrapTwisterPayload(payload);
         if (data == null) {
@@ -1433,22 +1564,75 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    /** Extracts explicit site errors (e.g. "Your IP address is blocked.") from the response payload. */
+    // Extract error message from 4chan's payload, which may be wrapped in HTML or a twister object. Suppress pure cooldown messages since the UI already shows them.
     private String extract4chanErrorMessage(String payload) {
         if (payload == null || payload.isEmpty()) return null;
+
+        // If the input looks like HTML, try to extract JSON from a <pre> tag first.
+        // The Android WebView wraps raw JSON responses in <html><body><pre>…</pre></body></html>.
+        String jsonStr = payload.trim();
+        if (jsonStr.startsWith("<") || jsonStr.toLowerCase().contains("<html")) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                    "<pre[^>]*>(.*?)</pre>", java.util.regex.Pattern.DOTALL | java.util.regex.Pattern.CASE_INSENSITIVE
+            ).matcher(jsonStr);
+            jsonStr = m.find() ? m.group(1).trim() : null;
+        }
+
+        if (jsonStr != null && !jsonStr.isEmpty()) {
+            try {
+                org.json.JSONObject data = new org.json.JSONObject(jsonStr);
+                // Unwrap twister wrapper if present.
+                org.json.JSONObject inner = data.optJSONObject("twister");
+                if (inner != null) data = inner;
+                String err = data.optString("error", null);
+                if (err != null && !err.isEmpty()) {
+                    // Suppress only genuine timer-backed cooldowns; the countdown UI already
+                    // shows them. Any other error (ban, IP restriction, etc.) is surfaced as-is.
+                    boolean isPureCooldown = data.optInt("pcd", -1) > 0 || data.optInt("cd", -1) > 0;
+                    if (!isPureCooldown) {
+                        return err;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    // If the above fails, try to extract any error message from the raw HTML body (e.g. if 4chan's server returns an error page instead of JSON).
+    private static String extractRawJsonError(String body) {
+        if (body == null || body.isEmpty()) return null;
         try {
-            org.json.JSONObject data = new org.json.JSONObject(payload);
-            String err = data.optString("error", null);
-            if (err != null && !err.isEmpty() && (!err.contains("wait") || err.contains("blocked") || err.contains("banned") || err.contains("limit"))) {
-                return err;
-            }
+            String trimmed = body.trim();
+            if (!trimmed.startsWith("{")) return null;
+            org.json.JSONObject obj = new org.json.JSONObject(trimmed);
+            String err = obj.optString("error", null);
+            if (err != null && !err.isEmpty()) return err;
         } catch (Exception ignored) {}
-        
-        String lower = payload.toLowerCase();
-        if (lower.contains("banned") || lower.contains("blocked") || lower.contains("access denied") || lower.contains("blacklisted")) {
-            if (lower.contains("ip address is blocked") || lower.contains("banned from this board")) {
-                return "4chan message: " + payload.replaceAll("<[^>]*>", "").trim();
-            }
+        return null;
+    }
+
+    // Returns true if the error message is 4chan's fingerprinting gate (spur.us / mcl.io).
+    private static boolean isFingerprintGateError(String err) {
+        if (err == null) return false;
+        String lower = err.toLowerCase(java.util.Locale.ENGLISH);
+        return lower.contains("spur.us") || lower.contains("mcl.io") || lower.contains("unblock");
+    }
+
+    // Strip HTML tags and excessive whitespace for cleaner display of error messages that may contain formatting.
+    static String stripHtml(String text) {
+        if (text == null || text.isEmpty()) return text;
+        return text.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
+    }
+
+    private static String extractHtmlPageError(String body) {
+        if (body == null || body.isEmpty()) return null;
+        String trimmed = body.trim();
+        if (!trimmed.startsWith("<")) return null;
+
+        String text = trimmed.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
+
+        if (!text.isEmpty() && text.length() < 400) {
+            return text;
         }
         return null;
     }
@@ -1551,13 +1735,39 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         String hookCode = "(function() {" +
                 "  if (window.__postMessageHookInstalled) return;" +
                 "  window.__postMessageHookInstalled = true;" +
+                // Poll #t-resp so we catch it when 4chan's JS fills the hidden input with the solved captcha response.
+                "  if (!window.__tRespPollStarted) {" +
+                "    window.__tRespPollStarted = true;" +
+                "    (function poll() {" +
+                "      var el = document.getElementById('t-resp');" +
+                "      if (el) {" +
+                "        if (el.value) {" +
+                "          var challEl = document.getElementById('t-challenge') || document.querySelector('[name=\"t-challenge\"]');" +
+                "          try { CaptchaCallback.onCaptchaEntered(challEl ? challEl.value : '', el.value); } catch(e) {}" +
+                "          return;" +
+                "        }" +
+                "        var p = el.parentElement;" +
+                "        if (p) {" +
+                "          var parts = [];" +
+                "          for (var c = p.firstChild; c; c = c.nextSibling) {" +
+                "            if (c === el) continue;" +
+                "            var tag = (c.tagName || '').toUpperCase();" +
+                "            if (tag === 'INPUT' || tag === 'SCRIPT' || tag === 'STYLE') continue;" +
+                "            var t = (c.textContent || c.innerText || '').trim();" +
+                "            if (t) parts.push(t);" +
+                "          }" +
+                "          var errText = parts.join(' ').trim();" +
+                "          if (errText) { try { CaptchaCallback.onSiteError(errText); } catch(e) {} return; }" +
+                "        }" +
+                "        setTimeout(poll, 300);" +
+                "      }" +
+                "    })();" +
+                "  }" +
                 "  var original = window.parent.postMessage.bind(window.parent);" +
                 "  window.parent.postMessage = function(msg, origin) {" +
                 "    if (msg && typeof msg === 'object' && msg.twister) {" +
-                "      var t = msg.twister;" +
-            // Only call onCaptchaEntered when a real challenge was solved (non-empty challenge AND
-            // non-empty response). A plain pcd:−1 status ping has neither, so we must not fire it
-            // — doing so would prematurely submit an empty captcha and break the flow.
+                "      var t = msg.twister;"+
+            // Only call onCaptchaEntered when a real challenge was solved (non-empty challenge AND non-empty response).
             "      try { if (t.challenge && t.response) { CaptchaCallback.onCaptchaEntered(t.challenge, t.response); } } catch (e) {}" +
             "      try {" +
             "        var hasPayload = (t && (t.tasks !== undefined || t.img !== undefined || t.pcd !== undefined || t.ticket !== undefined));" +
@@ -1603,29 +1813,17 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     public void onDestroy() {
         showingActiveCaptcha = false;
         visibleInstances.remove(this);
-        
-        // Final state preservation check before destruction
-        if (cooldownActive && board != null) {
-            String key = getGlobalKey();
-            if (!globalCooldowns.containsKey(key)) {
-                // State is tracked globally by static Map, this is just a reminder
-            }
-        }
-        
         try {
             CookieManager.getInstance().flush();
         } catch (Exception ignored) {}
     }
 
-    /** Return null so the IME is never shown: captcha only needs taps (buttons/images), no text input. */
+    /** IME is never shown: captcha only needs taps, no text input. */
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        if (isCaptchaOnlyMode) {
-            return null;
-        }
-        return super.onCreateInputConnection(outAttrs);
+        return null;
     }
-
+    // Stale for new captc
     @Override
     public boolean onTouchEvent(MotionEvent event){
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -1696,6 +1894,26 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         @JavascriptInterface
         public void onCaptchaPayloadReady(final String payloadBase64) {
             AndroidUtils.runOnUiThread(() -> layout.onCaptchaPayloadFromFetch(payloadBase64));
+        }
+
+        @JavascriptInterface
+        public void onSiteError(final String message) {
+            AndroidUtils.runOnUiThread(() -> {
+                if (message == null || message.isEmpty()) return;
+                String cleanMsg = stripHtml(message);
+                Logger.w(NewCaptchaLayout.TAG, "CaptchaInterface.onSiteError: " + cleanMsg);
+                if (isFingerprintGateError(cleanMsg)) {
+                    // Fingerprinting JS is still running and will set __session on its own.
+                    // Keep the page alive so it can complete; do not show a fatal overlay.
+                    Logger.i(NewCaptchaLayout.TAG, "CaptchaInterface.onSiteError: fingerprint gate, keeping page alive");
+                    layout.showingActiveCaptcha = true;
+                    layout.onCaptchaLoaded();
+                    return;
+                }
+                Toast.makeText(layout.getContext(), cleanMsg, Toast.LENGTH_LONG).show();
+                layout.injectOverlayUI(!ThemeHelper.theme().isLightTheme, cleanMsg, false);
+                layout.onCaptchaLoaded();
+            });
         }
 
         @JavascriptInterface
