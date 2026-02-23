@@ -199,6 +199,8 @@ public class ChanSettings {
     public static final BooleanSetting reencodeHintShown;
     public static final BooleanSetting setupSitesBoardsHintShown;
 
+    public static final BooleanSetting showCooldownCountdown;
+
     public static final BooleanSetting dnsOverHttps;
 
     public static final StringSetting customUserAgent;
@@ -300,6 +302,8 @@ public class ChanSettings {
         crashReporting = new BooleanSetting(p, "preference_crash_reporting", true);
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
+
+        showCooldownCountdown = new BooleanSetting(p, "preference_show_cooldown_countdown", false);
 
         dnsOverHttps = new BooleanSetting(p, "dns_over_https", false);
 

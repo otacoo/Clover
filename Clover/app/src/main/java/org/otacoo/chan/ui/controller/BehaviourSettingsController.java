@@ -95,6 +95,9 @@ public class BehaviourSettingsController extends SettingsController {
             reply.add(new BooleanSettingView(this, ChanSettings.postPinThread,
                     R.string.setting_post_pin, 0));
 
+            reply.add(new BooleanSettingView(this, ChanSettings.showCooldownCountdown,
+                    R.string.setting_show_cooldown_countdown, R.string.setting_show_cooldown_countdown_description));
+
             reply.add(new StringSettingView(this, ChanSettings.postDefaultName,
                     R.string.setting_post_default_name, R.string.setting_post_default_name));
 

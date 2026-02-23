@@ -609,7 +609,7 @@ public class ReplyLayout extends LoadView implements
                 
                 // Show cooldown remaining persistent message while on INPUT page
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
-                if (authenticationLayout instanceof NewCaptchaLayout) {
+                if (ChanSettings.showCooldownCountdown.get() && authenticationLayout instanceof NewCaptchaLayout) {
                     NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
                     if (ncl.onCooldownNow()) {
                         cooldownUpdateHandler.post(cooldownUpdateRunnable);
