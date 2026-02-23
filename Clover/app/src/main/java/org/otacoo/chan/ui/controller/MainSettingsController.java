@@ -376,7 +376,6 @@ public class MainSettingsController extends SettingsController implements Settin
                         developerView.view.setVisibility(developer ? View.VISIBLE : View.GONE);
                     }
                     final GifImageView iv = new GifImageView(context);
-                    iv.setImageResource(R.drawable.trotcycle_rainbow_right);
                     iv.setX(-iv.getDrawable().getIntrinsicWidth());
                     iv.setY(navigationController.view.getHeight() - iv.getDrawable().getIntrinsicHeight());
                     navigationController.view.addView(iv);
