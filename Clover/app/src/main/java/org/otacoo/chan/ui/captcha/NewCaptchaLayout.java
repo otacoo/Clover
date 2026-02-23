@@ -1509,7 +1509,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 globalExpiries.remove(key);
                 globalPayloads.remove(key);
                 ticket = "";
-                if (visibleInstances.isEmpty()) {
+                if (visibleInstances.isEmpty()
+                        && AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
                     Toast.makeText(AndroidUtils.getAppContext(), "4chan: Captcha session expired.", Toast.LENGTH_LONG).show();
                 }
             }
