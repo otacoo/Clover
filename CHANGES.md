@@ -1,3 +1,17 @@
+## 2026-02-22 – v3.0.26
+
+- :warning: Allow spur.us and mcl.io to set cookie on 4chan so the captcha challenges can load (read /g/thread/108210452)
+- Add full support for cross-board catalog links
+- Fix issue with user's posts not being marked (2x)
+- Fix issue with Mark as my post (same problem as above, proguard issue)
+- Fix a pesky bug with the storage permissions
+- Improve log viewing and filtering in the dev options
+- Allow to export logs
+- Add option to view and edit 4chan cookies (dev settings)
+- Add button to check for app database integrity (dev settings)
+
+*Note: To access dev settings requires touching the Clover build number 3 times*
+
 ## 2026-02-22 – v3.0.25
 
 - Fix bug with user's posts not being marked
