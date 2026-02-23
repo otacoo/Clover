@@ -149,9 +149,13 @@ public class Storage {
             }
             case STORAGE_ACCESS_FRAMEWORK: {
                 String uriString = saveLocationTreeUri.get();
+                if (uriString == null || uriString.isEmpty()) {
+                    return saveLocation.get();
+                }
                 Uri treeUri = Uri.parse(uriString);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) { // lint
-                    return queryTreeName(treeUri);
+                    String name = queryTreeName(treeUri);
+                    return name != null ? name : saveLocation.get();
                 }
             }
         }
@@ -223,31 +227,6 @@ public class Storage {
                     }
                     callback.onPrepared();
                 }
-
-//                if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                    StorageManager sm = (StorageManager)
-//                            applicationContext.getSystemService(Context.STORAGE_SERVICE);
-//                    StorageVolume primaryStorageVolume = sm.getPrimaryStorageVolume();
-//                    Intent accessIntent =
-//                            primaryStorageVolume.createAccessIntent(Environment.DIRECTORY_PICTURES);
-//
-//                    Logger.i(TAG, "Requesting access to pictures with scoped saf");
-//
-//                    results.getResultFromIntent(accessIntent, (resultCode, result) -> {
-//                        if (resultCode == Activity.RESULT_OK) {
-//                            String uri = handleOpenTreeIntent(result);
-//                            if (uri != null) {
-//
-//                            }
-//                        } else {
-//                            Logger.e(TAG, "Failed to access storage, code: %d", resultCode);
-//                            startOpenTreeIntentAndHandle(callback);
-//                        }
-//                    });
-//                } else {
-//                    // Api 21-23 SAF can't have such a popup, open the normal selection screen.
-////                    startOpenTreeIntentAndHandle(null);
-//                }
             }
         }
     }
@@ -295,19 +274,14 @@ public class Storage {
 
         Logger.i(TAG, "handle open (" + uri.toString() + ")");
 
-        String documentId = DocumentsContract.getTreeDocumentId(uri);
-        Uri treeDocumentUri = DocumentsContract.buildDocumentUriUsingTree(uri, documentId);
-
-        Logger.i(TAG, "documentId = " + documentId);
-        Logger.i(TAG, "treeDocumentUri = " + treeDocumentUri.toString());
+        Uri docUri = rootDocUri(uri);
+        Logger.i(TAG, "docUri = " + docUri);
 
         ContentResolver contentResolver = applicationContext.getContentResolver();
-
         int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
         contentResolver.takePersistableUriPermission(uri, flags);
 
-        Logger.i(TAG, "saving as " + treeDocumentUri.toString());
-        return treeDocumentUri.toString();
+        return docUri.toString();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -382,25 +356,27 @@ public class Storage {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public StorageFile obtainStorageFileForName(String[] folders, String name) {
-        String uriString = (folders != null && folders.length > 0) ? saveLocationTreeUriFolder : saveLocationTreeUri.get();
-        if (uriString.isEmpty()) {
+        boolean hasSubfolder = (folders != null && folders.length > 0);
+        String uriString = hasSubfolder ? saveLocationTreeUriFolder : saveLocationTreeUri.get();
+        if (uriString == null || uriString.isEmpty()) {
             return null;
         }
 
-        Uri treeUri = Uri.parse(uriString);
-
         ContentResolver contentResolver = applicationContext.getContentResolver();
 
-        String documentId = DocumentsContract.getDocumentId(treeUri);
-        Uri treeDocumentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
+        // saveLocationTreeUriFolder is an exact document URI of the subdirectory.
+        // saveLocationTreeUri may be a raw tree URI or a root document URI; rootDocUri() normalises both.
+        Uri targetDocUri = hasSubfolder
+                ? Uri.parse(uriString)
+                : rootDocUri(Uri.parse(uriString));
 
-        Logger.i(TAG, "saving, documentId = " + documentId + ", treeDocumentUri = " + treeDocumentUri);
+        Logger.i(TAG, "saving to " + targetDocUri);
 
-        Uri docUri;
         String finalName = name;
+        Uri docUri;
         try {
             int fileNumberSuffix = 0;
-            List<Pair<String, String>> list = listTree(treeDocumentUri);
+            List<Pair<String, String>> list = listTree(targetDocUri);
             out:
             while (true) {
                 for (Pair<String, String> file : list) {
@@ -412,9 +388,14 @@ public class Storage {
                 break;
             }
 
-            docUri = DocumentsContract.createDocument(contentResolver, treeDocumentUri, "text", finalName);
+            docUri = DocumentsContract.createDocument(contentResolver, targetDocUri, "text", finalName);
         } catch (FileNotFoundException e) {
             Logger.e(TAG, "obtainStorageFileForName createDocument", e);
+            return null;
+        }
+
+        if (docUri == null) {
+            Logger.e(TAG, "obtainStorageFileForName: createDocument returned null for " + finalName);
             return null;
         }
 
@@ -434,14 +415,29 @@ public class Storage {
         }
     }
 
+    /**
+     * Builds the root document URI from either a raw tree URI ({@code tree/X}) or a document URI
+     * already rooted at that tree ({@code tree/X/document/Y}). {@code getTreeDocumentId} extracts
+     * {@code X} from both formats, so this normalises the two representations.
+     */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private String queryTreeName(Uri uri) {
+    private static Uri rootDocUri(Uri treeOrDocUri) {
+        return DocumentsContract.buildDocumentUriUsingTree(
+                treeOrDocUri, DocumentsContract.getTreeDocumentId(treeOrDocUri));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private String queryTreeName(Uri treeUri) {
         ContentResolver contentResolver = applicationContext.getContentResolver();
+
+        // Must query the document URI, not the raw tree URI — querying the tree URI directly
+        // causes a SecurityException ("obtain access using ACTION_OPEN_DOCUMENT or related APIs").
+        Uri docUri = rootDocUri(treeUri);
 
         Cursor c = null;
         String name = null;
         try {
-            c = contentResolver.query(uri, new String[]{
+            c = contentResolver.query(docUri, new String[]{
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME,
                     DocumentsContract.Document.COLUMN_MIME_TYPE
             }, null, null, null);
