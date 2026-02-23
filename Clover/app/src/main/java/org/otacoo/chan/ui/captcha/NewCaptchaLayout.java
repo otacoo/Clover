@@ -1477,7 +1477,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             return;
         }
 
-        final boolean toastsEnabled = ChanSettings.showCooldownCountdown.get();
+        final boolean toastsEnabled = AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false);
 
         if (toastsEnabled && is4chan) {
             new Handler(Looper.getMainLooper()).post(() ->

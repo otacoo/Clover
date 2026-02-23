@@ -514,8 +514,6 @@ Crash reports do not collect any personally identifiable information."
     <!-- Behavior reply group -->
     <string name="settings_group_reply">Reply</string>
     <string name="setting_post_pin">Bookmark thread on post</string>
-    <string name="setting_show_cooldown_countdown">Show post cooldown timer</string>
-    <string name="setting_show_cooldown_countdown_description">Display a countdown in the reply box while the post cooldown is active</string>
     <string name="setting_post_default_name">Default post name</string>
 
     <!-- Behavior post group -->

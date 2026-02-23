@@ -511,7 +511,7 @@ public class Chan4 extends SiteBase {
         // token was renamed, before it meant the username, now it means the token returned
         // from the server that the cookie is set to.
         passToken = new StringSetting(p, "preference_pass_id", "");
-        showCooldownToast = new BooleanSetting(p, "preference_4chan_cooldown_toast", true);
+        showCooldownToast = new BooleanSetting(p, "preference_4chan_cooldown_toast", false);
     }
 
     @Override
