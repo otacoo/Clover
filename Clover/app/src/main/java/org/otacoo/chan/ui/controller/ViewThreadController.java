@@ -23,7 +23,6 @@ import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -214,16 +213,31 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
 
     @Override
     public void showThread(final Loadable threadLoadable) {
+        Loadable currentLoadable = threadLayout.getPresenter().getLoadable();
+        if (currentLoadable != null && currentLoadable.isCatalogMode() && !threadLoadable.isCatalogMode()) {
+            loadThread(threadLoadable);
+            return;
+        }
+        boolean isCatalog = threadLoadable.isCatalogMode();
+        String title = context.getString(isCatalog
+                ? R.string.open_board_link_confirmation
+                : R.string.open_thread_confirmation);
+        String message;
+        if (isCatalog) {
+            String sq = threadLoadable.searchQuery;
+            message = (sq != null && !sq.isEmpty())
+                    ? ">>>/" + threadLoadable.boardCode + "/" + sq
+                    : ">>>/" + threadLoadable.boardCode + "/";
+        } else {
+            // Show the specific post being linked to (markedNo) if set, otherwise the thread OP (no).
+            int displayNo = threadLoadable.markedNo >= 0 ? threadLoadable.markedNo : threadLoadable.no;
+            message = "/" + threadLoadable.boardCode + "/" + displayNo;
+        }
         new AlertDialog.Builder(context)
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        loadThread(threadLoadable);
-                    }
-                })
-                .setTitle(R.string.open_thread_confirmation)
-                .setMessage("/" + threadLoadable.boardCode + "/" + threadLoadable.no)
+                .setPositiveButton(R.string.ok, (dialog, which) -> loadThread(threadLoadable))
+                .setTitle(title)
+                .setMessage(message)
                 .show();
     }
 
@@ -238,6 +252,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
             updateDrawerHighlighting(loadable);
             updateLeftPaneHighlighting(loadable);
             presenter.requestInitialData();
+            // Search (if any) is applied in ThreadPresenter.onChanLoaderData() once data arrives.
 
             showHints();
         }

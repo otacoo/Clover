@@ -51,6 +51,8 @@ public class CommentParser {
     public static final String EXTERN_THREAD_LINK_SUFFIX = " \u2192"; // arrow to the right
 
     private Pattern fullQuotePattern = Pattern.compile("/(\\w+)/\\w+/(\\d+)#p(\\d+)");
+    // Cross-board thread link with no #p anchor: /board/thread/threadNo or /board/res/threadNo
+    private Pattern crossBoardThreadPattern = Pattern.compile("/(\\w+)/(?:thread|res)/(\\d+)$");
     private Pattern quotePattern = Pattern.compile(".*#p(\\d+)");
     private Pattern colorPattern = Pattern.compile("color:#([0-9a-fA-F]+)");
     // Matches /board/catalog optionally followed by #s=query (intra-board catalog search link)
@@ -312,6 +314,7 @@ public class CommentParser {
         Object value;
 
         Matcher externalMatcher = fullQuotePattern.matcher(path);
+        Matcher crossBoardThreadMatcher = crossBoardThreadPattern.matcher(path);
         if (externalMatcher.matches()) {
             String board = externalMatcher.group(1);
             int threadId = Integer.parseInt(externalMatcher.group(2));
@@ -323,6 +326,18 @@ public class CommentParser {
             } else {
                 t = PostLinkable.Type.THREAD;
                 value = new PostLinkable.ThreadLink(board, threadId, postId);
+            }
+        } else if (crossBoardThreadMatcher.matches()) {
+            // Cross-board thread link without a specific post anchor (e.g. >>>/g/1208196)
+            String board = crossBoardThreadMatcher.group(1);
+            int threadId = Integer.parseInt(crossBoardThreadMatcher.group(2));
+            if (board.equals(post.board.code) && callback.isInternal(threadId)) {
+                t = PostLinkable.Type.QUOTE;
+                value = threadId;
+            } else {
+                t = PostLinkable.Type.THREAD;
+                // postId = threadId so the viewer scrolls to the OP on open
+                value = new PostLinkable.ThreadLink(board, threadId, threadId);
             }
         } else {
             Matcher quoteMatcher = quotePattern.matcher(path);

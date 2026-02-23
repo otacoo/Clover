@@ -82,6 +82,9 @@ public class Loadable implements SiteReference, BoardReference {
 
     public int markedNo = -1;
 
+    /** Transient: when non-null, the board catalog should automatically be searched for this term on open. Not persisted. */
+    public String searchQuery = null;
+
     // when the title, listViewTop, listViewIndex or lastViewed were changed
     public boolean dirty = false;
 

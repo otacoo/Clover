@@ -120,6 +120,11 @@ public class ThreadPresenter implements
                 unbindLoadable();
             }
 
+            // Reset search state so a catalog search filter doesn't bleed into threads
+            searchOpen = false;
+            searchQuery = null;
+            threadPresenterCallback.showSearch(false);
+
             Pin pin = watchManager.findPinByLoadable(loadable);
             // TODO this isn't true anymore, because all loadables come from one location.
             if (pin != null) {
@@ -272,6 +277,17 @@ public class ThreadPresenter implements
     public void onChanLoaderData(ChanThread result) {
         if (isWatching()) {
             chanLoader.setTimer();
+        }
+
+        // Apply auto-search carried by cross-board catalog links (e.g. >>>/aco/sdg).
+        // Must be done here, not in loadThread(), because onSearchEntered() requires
+        // chanLoader.getThread() to be non-null to have any effect.
+        if (loadable.searchQuery != null && searchQuery == null) {
+            searchOpen = true;
+            searchQuery = loadable.searchQuery;
+            threadPresenterCallback.showSearch(true);
+            threadPresenterCallback.setSearchStatus(loadable.searchQuery, false, false);
+            loadable.searchQuery = null; // consume so a later refresh doesn't re-apply it
         }
 
         showPosts();
@@ -606,6 +622,9 @@ public class ThreadPresenter implements
                 // Navigate to the board catalog within the app
                 Loadable catalogLoadable = databaseManager.getDatabaseLoadableManager()
                         .get(Loadable.forCatalog(board));
+                // Carry the catalog search term (e.g. "sdg" from >>>/aco/sdg) so the
+                // destination board automatically applies the search on arrival.
+                catalogLoadable.searchQuery = boardLink.searchQuery;
                 threadPresenterCallback.showThread(catalogLoadable);
             } else {
                 String fallbackUrl = boardLink.originalScheme + "://"
