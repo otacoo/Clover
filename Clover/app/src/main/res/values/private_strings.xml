@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- No need to update the changelog, we can't get it translated in time. -->
-    <string name="changelog_300021" translatable="false">
-        <![CDATA[
-            <h3>Clover was updated</h3>
-            Clover was updated to v3.21<br>
-            <br>
-            <b>New in this version:</b><br>
-            Clover is now <i>20% more gross</i>.
-        ]]>
-    </string>
-
     <string-array name="extra_abouts">
         <item>Find Clover on GitHub</item>
         <item>View the source code</item>
