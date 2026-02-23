@@ -1,3 +1,7 @@
+## 2026-02-23 – v3.0.27
+
+- Fix for an omission where captcha toasts weren't being gated by the "Cooldown toasts" toggle
+
 ## 2026-02-22 – v3.0.26
 
 - :warning: Allow spur.us and mcl.io to set cookie on 4chan so the captcha challenges can load (read /g/thread/108210452)
