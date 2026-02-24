@@ -18,7 +18,6 @@
 package org.otacoo.chan.ui.controller;
 
 import static org.otacoo.chan.Chan.inject;
-import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
@@ -45,7 +44,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
-import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.manager.FilterEngine;
 import org.otacoo.chan.core.manager.FilterType;
 import org.otacoo.chan.core.model.orm.Filter;
@@ -65,8 +63,6 @@ import de.greenrobot.event.EventBus;
 public class FiltersController extends Controller implements
         ToolbarNavigationController.ToolbarSearchCallback,
         View.OnClickListener {
-    @Inject
-    DatabaseManager databaseManager;
 
     @Inject
     FilterEngine filterEngine;
@@ -81,35 +77,23 @@ public class FiltersController extends Controller implements
     }
 
     public static String filterTypeName(FilterType type) {
-        switch (type) {
-            case TRIPCODE:
-                return getString(R.string.filter_tripcode);
-            case NAME:
-                return getString(R.string.filter_name);
-            case COMMENT:
-                return getString(R.string.filter_comment);
-            case ID:
-                return getString(R.string.filter_id);
-            case SUBJECT:
-                return getString(R.string.filter_subject);
-            case FILENAME:
-                return getString(R.string.filter_filename);
-            case COUNTRY:
-                return getString(R.string.filter_country);
-        }
-        return null;
+        return switch (type) {
+            case TRIPCODE -> getString(R.string.filter_tripcode);
+            case NAME -> getString(R.string.filter_name);
+            case COMMENT -> getString(R.string.filter_comment);
+            case ID -> getString(R.string.filter_id);
+            case SUBJECT -> getString(R.string.filter_subject);
+            case FILENAME -> getString(R.string.filter_filename);
+            case COUNTRY -> getString(R.string.filter_country);
+        };
     }
 
     public static String actionName(FilterEngine.FilterAction action) {
-        switch (action) {
-            case HIDE:
-                return getString(R.string.filter_hide);
-            case COLOR:
-                return getString(R.string.filter_color);
-            case REMOVE:
-                return getString(R.string.filter_remove);
-        }
-        return null;
+        return switch (action) {
+            case HIDE -> getString(R.string.filter_hide);
+            case COLOR -> getString(R.string.filter_color);
+            case REMOVE -> getString(R.string.filter_remove);
+        };
     }
 
     @Override
@@ -153,11 +137,7 @@ public class FiltersController extends Controller implements
             locked = true;
             List<Filter> enabledFilters = filterEngine.getEnabledFilters();
             List<Filter> allFilters = filterEngine.getAllFilters();
-            if (enabledFilters.isEmpty()) {
-                setFilters(allFilters, true);
-            } else {
-                setFilters(allFilters, false);
-            }
+            setFilters(allFilters, enabledFilters.isEmpty());
         }
     }
 
@@ -239,7 +219,11 @@ public class FiltersController extends Controller implements
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
             int position = viewHolder.getBindingAdapterPosition();
             if (position >= 0 && position < adapter.displayList.size()) {
-                deleteFilter(adapter.displayList.get(position));
+                Filter filter = adapter.displayList.get(position);
+                adapter.sourceList.remove(filter);
+                adapter.displayList.remove(position);
+                adapter.notifyItemRemoved(position);
+                deleteFilterFromDatabase(filter);
             }
         }
 
@@ -254,6 +238,12 @@ public class FiltersController extends Controller implements
             return false;
         }
     };
+
+    private void deleteFilterFromDatabase(Filter filter) {
+        filterEngine.deleteFilter(filter);
+        updateEnableButton();
+        EventBus.getDefault().post(new RefreshUIMessage("filters"));
+    }
 
     private class FilterAdapter extends RecyclerView.Adapter<FilterCell> {
         private final List<Filter> sourceList = new ArrayList<>();
