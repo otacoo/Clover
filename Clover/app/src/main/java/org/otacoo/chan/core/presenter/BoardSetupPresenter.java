@@ -26,6 +26,7 @@ import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.BackgroundUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -224,13 +225,8 @@ public class BoardSetupPresenter implements Observer {
 
                 List<Board> toSuggest;
                 if (query == null || query.equals("")) {
-                    toSuggest = new ArrayList<>(allUnsavedBoards.size());
-                    for (Board b : allUnsavedBoards) {
-                        if (b.workSafe) toSuggest.add(b);
-                    }
-                    for (Board b : allUnsavedBoards) {
-                        if (!b.workSafe) toSuggest.add(b);
-                    }
+                    toSuggest = new ArrayList<>(allUnsavedBoards);
+                    Collections.sort(toSuggest, (a, b) -> a.code.compareToIgnoreCase(b.code));
                 } else {
                     toSuggest = BoardHelper.search(allUnsavedBoards, query);
                 }
