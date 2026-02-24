@@ -116,6 +116,23 @@ public class ChanSettings {
         }
     }
 
+    public enum AppIconMode implements OptionSettingItem {
+        BLUE("blue"),
+        GREEN("green"),
+        GOLD("gold");
+
+        String name;
+
+        AppIconMode(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getKey() {
+            return name;
+        }
+    }
+
     private static Proxy proxy;
 
     private static final StringSetting theme;
@@ -203,6 +220,8 @@ public class ChanSettings {
 
     public static final StringSetting customUserAgent;
     public static final StringSetting customCFClearanceCommand;
+
+    public static final OptionsSetting<AppIconMode> appIconMode;
 
     static {
         SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
@@ -305,6 +324,8 @@ public class ChanSettings {
 
         customUserAgent = new StringSetting(p, "custom_user_agent", "");
         customCFClearanceCommand = new StringSetting(p, "custom_cfclearance_command", "");
+
+        appIconMode = new OptionsSetting<>(p, "preference_app_icon_mode", AppIconMode.class, AppIconMode.BLUE);
 
         // Old (but possibly still in some users phone)
         // preference_board_view_mode default "list"

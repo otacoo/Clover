@@ -20,13 +20,17 @@ package org.otacoo.chan.ui.controller;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.widget.Toast;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.settings.BooleanSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.ListSettingView;
+import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
 
@@ -60,6 +64,8 @@ public class AppearanceSettingsController extends SettingsController {
                     getString(R.string.setting_theme), theme().displayName,
                     v -> navigationController.pushController(
                             new ThemeSettingsController(context))));
+
+            setupAppIconSetting(appearance);
 
             groups.add(appearance);
         }
@@ -130,6 +136,58 @@ public class AppearanceSettingsController extends SettingsController {
 
             groups.add(post);
         }
+    }
+
+    private void setupAppIconSetting(SettingsGroup appearance) {
+        List<ListSettingView.Item> appIcons = new ArrayList<>();
+        appIcons.add(new ListSettingView.Item<>("Blue", ChanSettings.AppIconMode.BLUE));
+        appIcons.add(new ListSettingView.Item<>("Green", ChanSettings.AppIconMode.GREEN));
+        appIcons.add(new ListSettingView.Item<>("Gold", ChanSettings.AppIconMode.GOLD));
+
+        appearance.add(new ListSettingView<>(this,
+                ChanSettings.appIconMode,
+                "Clover Icon", appIcons));
+    }
+
+    @Override
+    public void onPreferenceChange(SettingView item) {
+        super.onPreferenceChange(item);
+
+        if (item.name.equals("Clover Icon")) {
+            updateAppIcon();
+        }
+    }
+
+    private void updateAppIcon() {
+        ChanSettings.AppIconMode mode = ChanSettings.appIconMode.get();
+        String packageName = context.getPackageName();
+        PackageManager pm = context.getPackageManager();
+
+        String[] aliasNames = {
+                ".LauncherBlue",
+                ".LauncherGreen",
+                ".LauncherGold"
+        };
+
+        String activeAlias = ".LauncherBlue";
+        switch (mode) {
+            case GREEN: activeAlias = ".LauncherGreen"; break;
+            case GOLD: activeAlias = ".LauncherGold"; break;
+        }
+
+        for (String alias : aliasNames) {
+            int state = alias.equals(activeAlias) 
+                    ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED 
+                    : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            
+            pm.setComponentEnabledSetting(
+                    new ComponentName(packageName, packageName + alias),
+                    state,
+                    PackageManager.DONT_KILL_APP
+            );
+        }
+        
+        Toast.makeText(context, "App icon updated. Change may take a few seconds.", Toast.LENGTH_SHORT).show();
     }
 
     private void setupLayoutModeSetting(SettingsGroup layout) {
