@@ -293,14 +293,26 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     hadCloudflareClearanceBeforePageLoad = hasCloudflareClearance();
                 }
 
+                // Only intercept main-frame navigations. JS fetch()/XHR sub-resource requests must
+                // pass through to the real servers so that requestCaptchaViaFetch() receives the
+                // actual 4chan JSON response via onCaptchaPayloadReady — not our asset HTML.
+                //
+                // IMPORTANT: when showingActiveCaptcha=true the native 4chan challenge page is
+                // live and running its own JS. Any navigation it triggers (self-refresh to load
+                // the actual puzzle) must NOT be intercepted — doing so would replace the challenge
+                // page with our asset and loop back to "0s" state. Let it load natively and let
+                // onPageFinished / extractPayloadFromNativePageAndLoadAsset handle the result.
                 boolean isCaptchaRequest = (board != null && !board.isEmpty()) 
                         ? url.startsWith("https://sys.4chan.org/captcha?board=" + board)
                         : url.contains("sys.4chan.org/captcha?");
 
                 if (isMainFrame && isCaptchaRequest && showingActiveCaptcha) {
+                    // Reset per-page state so that the incoming page is evaluated fresh.
                     showingActiveCaptcha = false;
                     nativeAutoFetchCount = 0;
                     lastResponseWasAsset = false;
+                    // Keep skipInterceptNextLoad=true so this re-navigation (triggered by mcl.js /
+                    // fingerprinting completing) also loads natively. This gives the JS time to work.
                     skipInterceptNextLoad = true;
                     return null;
                 }
@@ -443,6 +455,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             
             if (ttl > 0) {
                 globalExpiries.put(getGlobalKey(), System.currentTimeMillis() + (ttl * 1000L));
+                scheduleExpiryNotice(getGlobalKey(), ttl);
             }
 
             if (pcd > 0 || cd > 0) {
@@ -467,6 +480,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 return;
             }
 
+            // If the user has good standing or verified email, 4chan may skip the captcha challenges.
             String lower = payload.toLowerCase();
             if (lower.contains("verified") || lower.contains("not required")) {
                 if (onCooldownNow()) {
@@ -484,6 +498,20 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         } catch (Exception e) {
             Logger.e(TAG, "applyPayload failed", e);
         }
+    }
+
+    // Schedules a toast notification for when the current captcha session expires
+    private void scheduleExpiryNotice(final String key, int seconds) {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            Long expiryTime = globalExpiries.get(key);
+            if (expiryTime != null && expiryTime <= System.currentTimeMillis() + 1000) {
+                globalExpiries.remove(key);
+                globalPayloads.remove(key);
+                if (visibleInstances.contains(this) && AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
+                    Toast.makeText(AndroidUtils.getAppContext(), "4chan: Captcha session expired.", Toast.LENGTH_LONG).show();
+                }
+            }
+        }, seconds * 1000L);
     }
 
     // Checks for submission errors on the post-reply page
