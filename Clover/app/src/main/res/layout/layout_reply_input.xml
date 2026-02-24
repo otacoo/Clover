@@ -78,6 +78,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="8"
+                    android:autofillHints=""
                     android:hint="@string/reply_name"
                     android:inputType="textCapSentences|textAutoCorrect"
                     android:singleLine="true"
@@ -88,7 +89,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="4"
+                    android:autofillHints=""
                     android:hint="@string/reply_options"
+                    android:inputType="textNoSuggestions"
                     android:singleLine="true"
                     android:textSize="16sp" />
 
@@ -98,6 +101,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 android:id="@+id/subject"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/reply_subject"
                 android:inputType="textCapSentences|textAutoCorrect"
                 android:singleLine="true"
@@ -164,6 +168,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     android:textSize="15dp"
                     android:visibility="gone" />
 
+                <Button
+                    android:id="@+id/comment_code"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="0dp"
+                    android:padding="0dp"
+                    android:text="@string/reply_comment_button_code"
+                    android:textAllCaps="false"
+                    android:textSize="15dp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/comment_math"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="0dp"
+                    android:padding="0dp"
+                    android:text="@string/reply_comment_button_math"
+                    android:textAllCaps="false"
+                    android:textSize="15dp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/comment_eqn"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="0dp"
+                    android:padding="0dp"
+                    android:text="@string/reply_comment_button_eqn"
+                    android:textAllCaps="false"
+                    android:textSize="15dp"
+                    android:visibility="gone" />
+
             </LinearLayout>
 
             <CheckBox
@@ -210,7 +250,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 android:id="@+id/file_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints=""
                 android:hint="@string/reply_file_name"
+                android:inputType="textNoSuggestions"
                 android:singleLine="true"
                 android:textSize="16sp"
                 android:visibility="gone" />

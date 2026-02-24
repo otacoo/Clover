@@ -124,6 +124,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         }
 
         switchPage(Page.INPUT, false);
+        updateButtons();
     }
 
     public void unbindLoadable() {
@@ -166,15 +167,27 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         if (!loadable.isThreadMode()) {
             callback.openSubject(moreOpen);
         }
-        callback.openCommentQuoteButton(moreOpen);
-        if (board.spoilers) {
-            callback.openCommentSpoilerButton(moreOpen);
-        }
+        updateButtons();
         if (previewOpen) {
             callback.openFileName(moreOpen);
             if (board.spoilers) {
                 callback.openSpoiler(moreOpen, false);
             }
+        }
+    }
+
+    private void updateButtons() {
+        boolean alwaysShow = ChanSettings.alwaysShowReplyTags.get();
+        callback.openCommentQuoteButton(moreOpen || alwaysShow);
+        if (board.spoilers) {
+            callback.openCommentSpoilerButton(moreOpen || alwaysShow);
+        }
+        if (board.codeTags) {
+            callback.openCommentCodeButton(moreOpen || alwaysShow);
+        }
+        if (board.mathTags) {
+            callback.openCommentMathButton(moreOpen || alwaysShow);
+            callback.openCommentEqnButton(moreOpen || alwaysShow);
         }
     }
 
@@ -366,6 +379,18 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         commentInsert("[spoiler]", "[/spoiler]");
     }
 
+    public void commentCodeClicked() {
+        commentInsert("[code]", "[/code]");
+    }
+
+    public void commentMathClicked() {
+        commentInsert("[math]", "[/math]");
+    }
+
+    public void commentEqnClicked() {
+        commentInsert("[eqn]", "[/eqn]");
+    }
+
     public void quote(Post post, boolean withText) {
         handleQuote(post, withText ? post.comment.toString() : null);
     }
@@ -453,8 +478,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         callback.openMessage(false, true, "", false);
         callback.setExpanded(false);
         callback.openSubject(false);
-        callback.openCommentQuoteButton(false);
-        callback.openCommentSpoilerButton(false);
+        updateButtons();
         callback.openNameOptions(false);
         callback.openFileName(false);
         callback.openSpoiler(false, false);
@@ -592,6 +616,12 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         void openCommentQuoteButton(boolean open);
 
         void openCommentSpoilerButton(boolean open);
+
+        void openCommentCodeButton(boolean open);
+
+        void openCommentMathButton(boolean open);
+
+        void openCommentEqnButton(boolean open);
 
         void openFileName(boolean open);
 

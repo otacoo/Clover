@@ -156,6 +156,7 @@ public class ChanSettings {
 
     public static final StringSetting postDefaultName;
     public static final BooleanSetting postPinThread;
+    public static final BooleanSetting alwaysShowReplyTags;
 
     public static final BooleanSetting developer;
 
@@ -251,6 +252,7 @@ public class ChanSettings {
 
         postDefaultName = new StringSetting(p, "preference_default_name", "");
         postPinThread = new BooleanSetting(p, "preference_pin_on_post", true);
+        alwaysShowReplyTags = new BooleanSetting(p, "preference_always_show_reply_tags", false);
 
         developer = new BooleanSetting(p, "preference_developer", false);
 

@@ -144,6 +144,9 @@ public class ReplyLayout extends LoadView implements
     private ViewGroup commentButtons;
     private Button commentQuoteButton;
     private Button commentSpoilerButton;
+    private Button commentCodeButton;
+    private Button commentMathButton;
+    private Button commentEqnButton;
     private SelectionListeningEditText comment;
     private TextView commentCounter;
     private CheckBox spoiler;
@@ -220,6 +223,9 @@ public class ReplyLayout extends LoadView implements
         commentButtons = replyInputLayout.findViewById(R.id.comment_buttons);
         commentQuoteButton = replyInputLayout.findViewById(R.id.comment_quote);
         commentSpoilerButton = replyInputLayout.findViewById(R.id.comment_spoiler);
+        commentCodeButton = replyInputLayout.findViewById(R.id.comment_code);
+        commentMathButton = replyInputLayout.findViewById(R.id.comment_math);
+        commentEqnButton = replyInputLayout.findViewById(R.id.comment_eqn);
         comment = replyInputLayout.findViewById(R.id.comment);
         commentCounter = replyInputLayout.findViewById(R.id.comment_counter);
         spoiler = replyInputLayout.findViewById(R.id.spoiler);
@@ -321,6 +327,9 @@ public class ReplyLayout extends LoadView implements
         });
         commentQuoteButton.setOnClickListener(this);
         commentSpoilerButton.setOnClickListener(this);
+        commentCodeButton.setOnClickListener(this);
+        commentMathButton.setOnClickListener(this);
+        commentEqnButton.setOnClickListener(this);
 
         comment.addTextChangedListener(this);
         comment.setSelectionChangedListener(this);
@@ -411,6 +420,12 @@ public class ReplyLayout extends LoadView implements
             presenter.commentQuoteClicked();
         } else if (v == commentSpoilerButton) {
             presenter.commentSpoilerClicked();
+        } else if (v == commentCodeButton) {
+            presenter.commentCodeClicked();
+        } else if (v == commentMathButton) {
+            presenter.commentMathClicked();
+        } else if (v == commentEqnButton) {
+            presenter.commentEqnClicked();
         }
     }
 
@@ -790,6 +805,21 @@ public class ReplyLayout extends LoadView implements
     }
 
     @Override
+    public void openCommentCodeButton(boolean open) {
+        commentCodeButton.setVisibility(open ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    public void openCommentMathButton(boolean open) {
+        commentMathButton.setVisibility(open ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    public void openCommentEqnButton(boolean open) {
+        commentEqnButton.setVisibility(open ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
     public void openFileName(boolean open) {
         fileName.setVisibility(open ? View.VISIBLE : View.GONE);
     }
@@ -899,16 +929,6 @@ public class ReplyLayout extends LoadView implements
     }
 
     @Override
-    public ImagePickDelegate getImagePickDelegate() {
-        return ((StartActivity) getContext()).getImagePickDelegate();
-    }
-
-    @Override
-    public ChanThread getThread() {
-        return callback.getThread();
-    }
-
-    @Override
     public void onUploadingProgress(int percent) {
         if (currentProgress != null) {
             if (percent <= 0) {
@@ -917,6 +937,16 @@ public class ReplyLayout extends LoadView implements
 
             currentProgress.setText(String.format(Locale.getDefault(), "%d", percent));
         }
+    }
+
+    @Override
+    public ImagePickDelegate getImagePickDelegate() {
+        return ((StartActivity) getContext()).getImagePickDelegate();
+    }
+
+    @Override
+    public ChanThread getThread() {
+        return callback.getThread();
     }
 
     public void onImageOptionsApplied(Reply reply) {

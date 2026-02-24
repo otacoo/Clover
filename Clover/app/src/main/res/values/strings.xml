@@ -523,6 +523,7 @@ Crash reports do not collect any personally identifiable information."
     <string name="settings_group_reply">Reply</string>
     <string name="setting_post_pin">Bookmark thread on post</string>
     <string name="setting_post_default_name">Default post name</string>
+    <string name="setting_always_show_reply_tags">Always show formatting tags</string>
 
     <!-- Behavior post group -->
     <string name="setting_text_only">Text only mode</string>

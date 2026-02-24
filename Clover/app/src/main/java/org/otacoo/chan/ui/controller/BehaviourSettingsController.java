@@ -98,6 +98,9 @@ public class BehaviourSettingsController extends SettingsController {
             reply.add(new StringSettingView(this, ChanSettings.postDefaultName,
                     R.string.setting_post_default_name, R.string.setting_post_default_name));
 
+            reply.add(new BooleanSettingView(this, ChanSettings.alwaysShowReplyTags,
+                    R.string.setting_always_show_reply_tags, 0));
+
             groups.add(reply);
         }
 
