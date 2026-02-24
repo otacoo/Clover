@@ -118,7 +118,6 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filter.pattern = s.toString();
                 updateFilterValidity();
-                updatePatternPreview();
             }
 
             @Override
