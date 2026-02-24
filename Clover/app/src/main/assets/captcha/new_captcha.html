@@ -153,16 +153,20 @@
             gap: 8px;
             align-items: center;
         }
+
+        /* Choice styling - shared by both UI modes */
         .t-choice {
             width: 100%;
             max-width: 340px;
             height: 86px;
-            border: 2px solid transparent;
+            border: 3px solid transparent;
             border-radius: 4px;
             cursor: pointer;
             overflow: hidden;
             background: __C_INPUT_BG__;
             box-sizing: border-box;
+            margin-bottom: 8px;
+            display: flex;
         }
         .t-choice:hover,
         .t-choice:focus {
@@ -174,8 +178,9 @@
         .t-choice img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: fill;
         }
+
         #t-native-next {
             font-size: 16px;
             padding: 10px 20px;
@@ -216,8 +221,8 @@
             <span id="t-native-counter"></span>
             <span id="t-expiry-wrap"></span>
         </div>
-        <!-- This container is used for the traditional stepped UI -->
-        <div id="t-stepped-ui">
+        <!-- Traditional stepped UI -->
+        <div id="t-stepped-ui" style="display:none;">
             <div id="t-native-instructions">
                 <div id="t-native-instructions-text"></div>
                 <div id="t-native-target-wrap"><img id="t-native-target" src="" alt="Target"></div>
@@ -225,7 +230,7 @@
             <div id="t-native-choices-wrap"><div id="t-native-choices"></div></div>
             <button id="t-native-next" type="button">Next</button>
         </div>
-        <!-- This container is used for the "Single view captchas" option -->
+        <!-- Single view UI -->
         <div id="t-single-ui" style="display:none;">
             <div id="t-single-tasks-container"></div>
             <button id="t-native-submit" type="button" class="t-msg-btn" style="width:100%; font-size:16px; padding:10px 20px; margin-top:8px; cursor:pointer; background:__C_BTN_BG__; color:__C_BTN_FG__; border:1px solid __C_BTN_BORDER__; border-radius:6px; font-weight:500;">Submit</button>
@@ -234,165 +239,10 @@
 </div>
 <script>
 
-var isSingleView = false; // Set by Java side injection or payload
+var isSingleView = false;
+var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
-function showMsgButton(label, disabled, initialSeconds) {
-    var msg = document.getElementById('t-msg');
-    if (!msg) return;
-    var existing = document.getElementById('t-msg-btn');
-    if (!existing) {
-        existing = document.createElement('button');
-        existing.id = 't-msg-btn';
-        existing.type = 'button';
-        existing.onclick = function() { 
-            if (this.disabled) return;
-            this.disabled = true;
-            this.innerText = 'Loading...';
-            requestCaptcha(); 
-        };
-        msg.appendChild(existing);
-    }
-    
-    if (disabled && initialSeconds !== undefined && initialSeconds > 0) {
-        existing.textContent = (label || 'Get Captcha') + ' (' + initialSeconds + 's)';
-        existing.disabled = true;
-    } else {
-        existing.textContent = label || 'Get Captcha';
-        existing.disabled = !!disabled;
-    }
-}
-
-function hideMsgButton() {
-    var existing = document.getElementById('t-msg-btn');
-    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-}
-
-var expiryInterval = null;
-var expirySeconds = 120;
-function startExpiryTimer(ttl) {
-    if (expiryInterval) clearInterval(expiryInterval);
-    expirySeconds = (ttl && ttl > 0) ? Math.round(ttl) : 120;
-    updateExpiryDisplay();
-    expiryInterval = setInterval(function() {
-        expirySeconds--;
-        if (expirySeconds <= 0) {
-            clearInterval(expiryInterval);
-            expirySeconds = 0;
-            document.getElementById('t-native').style.display = 'none';
-            document.getElementById('t-msg').style.display = 'block';
-            document.getElementById('t-msg-main').textContent = 'Captcha expired. Please request a new one.';
-            document.getElementById('t-msg-secondary').textContent = '';
-            showMsgButton('Get Captcha', false);
-        }
-        updateExpiryDisplay();
-    }, 1000);
-}
-
-function updateExpiryDisplay() {
-    var el = document.getElementById('t-expiry-wrap');
-    if (el) {
-        el.textContent = 'Expires: ' + expirySeconds + 's';
-        if (expirySeconds < 30) {
-            el.style.color = '#e53935';
-        } else {
-            el.style.color = ''; // Reset to __C_MUTED__ via CSS
-        }
-    }
-}
-
-function parseCountdown(val) {
-    var n = parseInt(val, 10);
-    return (n >= 0 && !isNaN(n)) ? n : 0;
-}
-
-var SIGNIN_LINK = 'https://sys.4chan.org/signin';
-function cooldownMessage(pcdMsg) {
-    if (!pcdMsg || typeof pcdMsg !== 'string') return 'Please wait a while before making a post or verify your email here.';
-    if (pcdMsg.toLowerCase().indexOf('verify your email') >= 0) {
-        return pcdMsg.replace(/\bverify your email here\.?/gi, '<a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>');
-    }
-    return pcdMsg + ' <a href="' + SIGNIN_LINK + '" target="_blank">Verify your email here.</a>';
-}
-
-function buildFromJson(data) {
-    if (data.twister) data = data.twister;
-
-    // Check for single view option in payload or injected state
-    if (data.single_view !== undefined) isSingleView = !!data.single_view;
-
-    if (data.pcd_msg != null && (data.pcd === undefined || data.pcd === null)) {
-        document.getElementById('t-msg').style.display = 'block';
-        document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-msg-main').innerHTML = cooldownMessage(data.pcd_msg);
-        document.getElementById('t-msg-secondary').textContent = '';
-        showMsgButton('Get Captcha', false);
-        if (data.ticket) {
-            CaptchaCallback.saveTicket(data.ticket);
-            window.savedTicket = data.ticket;
-        }
-        return;
-    }
-    if (data.pcd !== undefined && data.pcd !== null) {
-        var pcd = parseCountdown(data.pcd);
-        if (data.ticket) {
-            CaptchaCallback.saveTicket(data.ticket);
-            window.savedTicket = data.ticket;
-            data.ticket = undefined;
-        }
-        document.getElementById('t-msg').style.display = 'block';
-        document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-msg-main').innerHTML = 'Please wait a while before making a post or <a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>';
-        document.getElementById('t-msg-secondary').textContent = pcd + 's';
-        if (pcd <= 0) {
-            document.getElementById('t-msg-secondary').textContent = '0s';
-            document.getElementById('t-msg-main').textContent = 'You can now request a captcha.';
-            // Match native 4chan: do not auto-request at 0s.
-            showMsgButton('Get Captcha', false);
-            return;
-        }
-        // While cooling down, show button disabled (native shows button but unusable).
-        showMsgButton('Get Captcha', true, pcd);
-        data.pcd = pcd - 1;
-        setTimeout((function() { buildFromJson(data); }), 1000);
-        return;
-    } else if (data.error) {
-        var cd = parseCountdown(data.cd);
-        document.getElementById('t-msg').style.display = 'block';
-        document.getElementById('t-msg').classList.add('with-warning');
-        document.getElementById('t-msg-main').textContent = data.error;
-        document.getElementById('t-msg-secondary').textContent = cd + 's';
-        if (cd <= 0) {
-            document.getElementById('t-msg').classList.remove('with-warning');
-            showMsgButton('Get Captcha', false);
-            return;
-        }
-        showMsgButton('Get Captcha', true, cd);
-        data.cd = cd - 1;
-        setTimeout((function() { buildFromJson(data); }), 1000);
-        return;
-    }
-
-    document.getElementById('t-msg').style.display = 'none';
-    document.getElementById('t-msg').classList.remove('with-warning');
-    hideMsgButton();
-    document.getElementById('t-challenge').value = data.challenge || '';
-
-    if (data.challenge === 'noop') {
-        globalOnCaptchaEntered();
-        return;
-    }
-
-    if (data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0) {
-        if (isSingleView) {
-            buildSingleViewTasksUI(data);
-        } else {
-            buildNativeTasksUI(data);
-        }
-        return;
-    }
-
-    CaptchaCallback.onCaptchaLoaded();
-}
+// --- Utility Functions ---
 
 function looksLikeImageString(s) {
     if (!s || typeof s !== 'string') return false;
@@ -434,8 +284,6 @@ function extractImageLike(v) {
     }
     return '';
 }
-
-var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 function toImgSrc(imgLike) {
     if (!imgLike) return '';
@@ -537,7 +385,6 @@ function parse4chanTaskHtml(html) {
     if (!html || typeof html !== 'string') return null;
     var s = html.trim();
     var targetSrc = '';
-    var instructionHtml = '';
 
     var imgMatch = s.match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i) || s.match(/<img[^>]+src\s*=\s*([^>\s]+)/i);
     if (imgMatch) targetSrc = imgMatch[1].trim().replace(/^["']|["']$/g, '');
@@ -545,7 +392,6 @@ function parse4chanTaskHtml(html) {
     var div = document.createElement('div');
     div.innerHTML = s;
 
-    // Target extraction from img tags
     var imgs = div.querySelectorAll('img');
     if (imgs.length && !targetSrc && imgs[0].src) {
          targetSrc = imgs[0].getAttribute('src') || imgs[0].src;
@@ -554,7 +400,6 @@ function parse4chanTaskHtml(html) {
         targetSrc = toImgSrc(targetSrc) || targetSrc;
     }
 
-    // Clean HTML: remove images and elements used for bot detection (tiny or hidden)
     var all = div.querySelectorAll('*');
     for (var i = 0; i < all.length; i++) {
         var el = all[i];
@@ -569,7 +414,7 @@ function parse4chanTaskHtml(html) {
         }
     }
 
-    instructionHtml = div.innerHTML.replace(/\s+/g, ' ').trim();
+    var instructionHtml = div.innerHTML.replace(/\s+/g, ' ').trim();
     if (!instructionHtml && s.indexOf('<') < 0) instructionHtml = s;
 
     return (targetSrc || instructionHtml) ? { targetSrc: targetSrc, instruction: instructionHtml } : null;
@@ -628,7 +473,6 @@ function getInstructionText(task) {
     for (var i = 0; i < keys.length; i++) {
         var v = extractTextLike(task[keys[i]]);
         if (v && typeof v === 'string') {
-            // Return cleaned text but bold specific patterns if not already HTML
             if (v.indexOf('<') < 0) {
                 v = v.replace(/\b(exactly\s+)?(\d+)\s+(stars?|spikes?|points?|sides?|objects?)\b/gi, '<b>$1$2 $3</b>');
             }
@@ -636,6 +480,162 @@ function getInstructionText(task) {
         }
     }
     return fallback;
+}
+
+// --- App Functions ---
+
+function showMsgButton(label, disabled, initialSeconds) {
+    var msg = document.getElementById('t-msg');
+    if (!msg) return;
+    var existing = document.getElementById('t-msg-btn');
+    if (!existing) {
+        existing = document.createElement('button');
+        existing.id = 't-msg-btn';
+        existing.type = 'button';
+        existing.onclick = function() {
+            if (this.disabled) return;
+            this.disabled = true;
+            this.innerText = 'Loading...';
+            requestCaptcha();
+        };
+        msg.appendChild(existing);
+    }
+
+    if (disabled && initialSeconds !== undefined && initialSeconds > 0) {
+        existing.textContent = (label || 'Get Captcha') + ' (' + initialSeconds + 's)';
+        existing.disabled = true;
+    } else {
+        existing.textContent = label || 'Get Captcha';
+        existing.disabled = !!disabled;
+    }
+}
+
+function hideMsgButton() {
+    var existing = document.getElementById('t-msg-btn');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+}
+
+var expiryInterval = null;
+var expirySeconds = 120;
+function startExpiryTimer(ttl) {
+    if (expiryInterval) clearInterval(expiryInterval);
+    expirySeconds = (ttl && ttl > 0) ? Math.round(ttl) : 120;
+    updateExpiryDisplay();
+    expiryInterval = setInterval(function() {
+        expirySeconds--;
+        if (expirySeconds <= 0) {
+            clearInterval(expiryInterval);
+            expirySeconds = 0;
+            document.getElementById('t-native').style.display = 'none';
+            document.getElementById('t-msg').style.display = 'block';
+            document.getElementById('t-msg-main').textContent = 'Captcha expired. Please request a new one.';
+            document.getElementById('t-msg-secondary').textContent = '';
+            showMsgButton('Get Captcha', false);
+        }
+        updateExpiryDisplay();
+    }, 1000);
+}
+
+function updateExpiryDisplay() {
+    var el = document.getElementById('t-expiry-wrap');
+    if (el) {
+        el.textContent = 'Expires: ' + expirySeconds + 's';
+        if (expirySeconds < 30) {
+            el.style.color = '#e53935';
+        } else {
+            el.style.color = '';
+        }
+    }
+}
+
+function parseCountdown(val) {
+    var n = parseInt(val, 10);
+    return (n >= 0 && !isNaN(n)) ? n : 0;
+}
+
+var SIGNIN_LINK = 'https://sys.4chan.org/signin';
+function cooldownMessage(pcdMsg) {
+    if (!pcdMsg || typeof pcdMsg !== 'string') return 'Please wait a while before making a post or verify your email here.';
+    if (pcdMsg.toLowerCase().indexOf('verify your email') >= 0) {
+        return pcdMsg.replace(/\bverify your email here\.?/gi, '<a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>');
+    }
+    return pcdMsg + ' <a href="' + SIGNIN_LINK + '" target="_blank">Verify your email here.</a>';
+}
+
+function buildFromJson(data) {
+    if (data.twister) data = data.twister;
+    if (data.single_view !== undefined) isSingleView = !!data.single_view;
+
+    if (data.pcd_msg != null && (data.pcd === undefined || data.pcd === null)) {
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-msg-main').innerHTML = cooldownMessage(data.pcd_msg);
+        document.getElementById('t-msg-secondary').textContent = '';
+        showMsgButton('Get Captcha', false);
+        if (data.ticket) {
+            CaptchaCallback.saveTicket(data.ticket);
+            window.savedTicket = data.ticket;
+        }
+        return;
+    }
+    if (data.pcd !== undefined && data.pcd !== null) {
+        var pcd = parseCountdown(data.pcd);
+        if (data.ticket) {
+            CaptchaCallback.saveTicket(data.ticket);
+            window.savedTicket = data.ticket;
+            data.ticket = undefined;
+        }
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-msg-main').innerHTML = 'Please wait a while before making a post or <a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>';
+        document.getElementById('t-msg-secondary').textContent = pcd + 's';
+        if (pcd <= 0) {
+            document.getElementById('t-msg-secondary').textContent = '0s';
+            document.getElementById('t-msg-main').textContent = 'You can now request a captcha.';
+            showMsgButton('Get Captcha', false);
+            return;
+        }
+        showMsgButton('Get Captcha', true, pcd);
+        data.pcd = pcd - 1;
+        setTimeout((function() { buildFromJson(data); }), 1000);
+        return;
+    } else if (data.error) {
+        var cd = parseCountdown(data.cd);
+        document.getElementById('t-msg').style.display = 'block';
+        document.getElementById('t-msg').classList.add('with-warning');
+        document.getElementById('t-msg-main').textContent = data.error;
+        document.getElementById('t-msg-secondary').textContent = cd + 's';
+        if (cd <= 0) {
+            document.getElementById('t-msg').classList.remove('with-warning');
+            showMsgButton('Get Captcha', false);
+            return;
+        }
+        showMsgButton('Get Captcha', true, cd);
+        data.cd = cd - 1;
+        setTimeout((function() { buildFromJson(data); }), 1000);
+        return;
+    }
+
+    document.getElementById('t-msg').style.display = 'none';
+    document.getElementById('t-msg').classList.remove('with-warning');
+    hideMsgButton();
+    document.getElementById('t-challenge').value = data.challenge || '';
+
+    if (data.challenge === 'noop') {
+        globalOnCaptchaEntered();
+        return;
+    }
+
+    if (data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0) {
+        if (isSingleView) {
+            buildSingleViewTasksUI(data);
+        } else {
+            buildNativeTasksUI(data);
+        }
+        return;
+    }
+
+    CaptchaCallback.onCaptchaLoaded();
 }
 
 function buildNativeTasksUI(data) {
@@ -656,15 +656,10 @@ function buildNativeTasksUI(data) {
         var task = tasks[currentIndex];
         var choices = getChoices(task);
         var parsed = get4chanTaskParsed(task);
-        var target = '';
-        if (parsed && parsed.targetSrc) {
-            target = parsed.targetSrc;
-        } else {
-            target = getTarget(task) || globalTarget;
-            if (!target && task && typeof task === 'object') {
-                var idx = (typeof task.target === 'number') ? task.target : (task.target && typeof task.target.index === 'number' ? task.target.index : null);
-                if (idx !== null && idx >= 0 && idx < choices.length) target = choices[idx];
-            }
+        var target = (parsed && parsed.targetSrc) ? parsed.targetSrc : (getTarget(task) || globalTarget);
+        if (!target && task && typeof task === 'object') {
+            var idx = (typeof task.target === 'number') ? task.target : (task.target && typeof task.target.index === 'number' ? task.target.index : null);
+            if (idx !== null && idx >= 0 && idx < choices.length) target = choices[idx];
         }
 
         var headerEl = document.getElementById('t-native-counter');
@@ -673,11 +668,8 @@ function buildNativeTasksUI(data) {
         var instrEl = document.getElementById('t-native-instructions-text');
         if (instrEl) {
             var html = getInstructionText(task);
-            if (html.indexOf('<') >= 0) {
-                instrEl.innerHTML = html;
-            } else {
-                instrEl.textContent = html;
-            }
+            if (html.indexOf('<') >= 0) instrEl.innerHTML = html;
+            else instrEl.textContent = html;
         }
 
         var targetWrap = document.getElementById('t-native-target-wrap');
@@ -687,42 +679,20 @@ function buildNativeTasksUI(data) {
             if (targetWrap) targetWrap.style.display = 'none';
         } else {
             if (targetWrap) targetWrap.style.display = 'block';
-            var targetSrc = EMPTY_IMG_SRC;
-            if (target.indexOf('data:image/') === 0) {
-                targetSrc = target;
-            } else {
-                var built = toImgSrc(target);
-                if (built) targetSrc = built;
-            }
+            var targetSrc = toImgSrc(target) || EMPTY_IMG_SRC;
             if (targetImg) {
-                var lastSrc = targetImg.getAttribute('data-last-src');
-                if (lastSrc !== targetSrc) {
-                    targetImg.setAttribute('data-last-src', targetSrc);
-                    targetImg.onerror = function() { this.src = EMPTY_IMG_SRC; this.onerror = null; };
-                    targetImg.src = '';
-                    targetImg.src = targetSrc;
-                    targetImg.alt = 'Target';
-                }
+                targetImg.src = targetSrc;
+                targetImg.alt = 'Target';
             }
         }
 
         var wrap = document.getElementById('t-native-choices');
         wrap.innerHTML = '';
-        if (!choices || !choices.length) {
-            var msg = document.createElement('div');
-            msg.style.fontSize = '12px';
-            msg.style.color = '__C_MUTED__';
-            msg.textContent = 'No choices received yet. If this persists, press refresh.';
-            wrap.appendChild(msg);
-        }
         choices.forEach(function(choice, idx) {
             var div = document.createElement('div');
             div.className = 't-choice' + (answers[currentIndex] === idx ? ' selected' : '');
-            div.setAttribute('data-index', idx);
             var img = document.createElement('img');
-            var choiceSrc = toImgSrc(choice);
-            img.src = choiceSrc;
-            img.alt = 'Choice ' + (idx + 1);
+            img.src = toImgSrc(choice);
             div.appendChild(img);
             div.onclick = function() {
                 answers[currentIndex] = idx;
@@ -745,23 +715,10 @@ function buildNativeTasksUI(data) {
             var challengeEl = document.getElementById('t-challenge');
             var challenge = challengeEl ? challengeEl.value : '';
             var r = answers.join('');
-            
-            // Notify parent page (e.g. signin page) via postMessage
-            var msg = {
-                twister: {
-                    challenge: challenge,
-                    response: r
-                }
-            };
-            // Include ticket if we saved it earlier in this window
+            var msg = { twister: { challenge: challenge, response: r } };
             if (window.savedTicket) msg.twister.ticket = window.savedTicket;
-            
-            try {
-                window.parent.postMessage(msg, '*');
-            } catch (e) {}
-
+            try { window.parent.postMessage(msg, '*'); } catch (e) {}
             if (expiryInterval) clearInterval(expiryInterval);
-            
             if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
                 CaptchaCallback.onCaptchaEntered(challenge, r);
             }
@@ -803,7 +760,7 @@ function buildSingleViewTasksUI(data) {
         taskDiv.appendChild(header);
 
         var instrDiv = document.createElement('div');
-        instrDiv.style.fontSize = '13px';
+        instrDiv.style.fontSize = '14px';
         instrDiv.style.lineHeight = '1.4';
         instrDiv.style.marginBottom = '12px';
         instrDiv.style.color = '__C_MUTED__';
@@ -857,20 +814,7 @@ function buildSingleViewTasksUI(data) {
         choices.forEach(function(choice, choiceIdx) {
             var choiceDiv = document.createElement('div');
             choiceDiv.className = 't-choice';
-            choiceDiv.style.width = '100%';
-            choiceDiv.style.maxWidth = '340px';
-            choiceDiv.style.height = '86px';
-            choiceDiv.style.border = '2px solid transparent';
-            choiceDiv.style.borderRadius = '4px';
-            choiceDiv.style.cursor = 'pointer';
-            choiceDiv.style.overflow = 'hidden';
-            choiceDiv.style.background = '__C_INPUT_BG__';
-            choiceDiv.style.boxSizing = 'border-box';
-
             var img = document.createElement('img');
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
             img.src = toImgSrc(choice);
             choiceDiv.appendChild(img);
 
@@ -893,15 +837,12 @@ function buildSingleViewTasksUI(data) {
     document.getElementById('t-native-submit').onclick = function() {
         var allAnswered = answers.every(function(a) { return a !== undefined; });
         if (!allAnswered) return;
-
         var challengeEl = document.getElementById('t-challenge');
         var challenge = challengeEl ? challengeEl.value : '';
         var r = answers.join('');
-
         var msg = { twister: { challenge: challenge, response: r } };
         if (window.savedTicket) msg.twister.ticket = window.savedTicket;
         try { window.parent.postMessage(msg, '*'); } catch (e) {}
-
         if (expiryInterval) clearInterval(expiryInterval);
         if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
             CaptchaCallback.onCaptchaEntered(challenge, r);
@@ -922,7 +863,6 @@ window.globalOnCaptchaEntered = function() {
     var msg = { twister: { challenge: c, response: "" } };
     if (window.savedTicket) msg.twister.ticket = window.savedTicket;
     try { window.parent.postMessage(msg, '*'); } catch (e) {}
-    
     if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
         CaptchaCallback.onCaptchaEntered(c, '');
     }
@@ -930,17 +870,12 @@ window.globalOnCaptchaEntered = function() {
 
 (function preventKeyboard() {
     function blurInput(el) {
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-            el.blur();
-        }
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.blur();
     }
-    document.addEventListener('focusin', function(e) {
-        blurInput(e.target);
-    });
-    window.addEventListener('load', function() {
-        blurInput(document.activeElement);
-    });
+    document.addEventListener('focusin', function(e) { blurInput(e.target); });
+    window.addEventListener('load', function() { blurInput(document.activeElement); });
 })();
+
 window.addEventListener("load", function(event) {
     try {
         var el = document.getElementById('clover-payload');
@@ -948,7 +883,6 @@ window.addEventListener("load", function(event) {
         var data = JSON.parse(jsonStr);
         buildFromJson(data);
     } catch (e) {
-        // Don't leave the UI stuck at "Loading..." — show the error and a retry button.
         var mainEl = document.getElementById('t-msg-main');
         if (mainEl) mainEl.textContent = 'Error loading captcha. Please try again.';
         var secEl = document.getElementById('t-msg-secondary');
