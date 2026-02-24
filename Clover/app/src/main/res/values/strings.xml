@@ -261,6 +261,10 @@ If the pattern matches then the post can be hidden or highlighted.<br>
     <string name="filter_subject">Subject</string>
     <string name="filter_filename">Filename</string>
     <string name="filter_country">Country name</string>
+    <string name="filter_precedence_hint">Filters at the top take precedence.\nSwipe left on a filter to delete.</string>
+    <string name="filter_add_button">Add filter</string>
+    <string name="filter_enable_all">Enable all</string>
+    <string name="filter_disable_all">Disable all</string>
 
     <string name="board_select_all">Select all</string>
     <string name="board_select_none">Select none</string>

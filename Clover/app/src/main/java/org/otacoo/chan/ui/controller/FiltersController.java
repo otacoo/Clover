@@ -22,20 +22,26 @@ import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -48,6 +54,7 @@ import org.otacoo.chan.ui.layout.FilterLayout;
 import org.otacoo.chan.ui.toolbar.ToolbarMenuItem;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -64,10 +71,9 @@ public class FiltersController extends Controller implements
     @Inject
     FilterEngine filterEngine;
 
-    private RecyclerView recyclerView;
-    private FloatingActionButton add;
-    private FloatingActionButton enable;
+    private Button enableButton;
     private FilterAdapter adapter;
+    private ItemTouchHelper itemTouchHelper;
     private boolean locked;
 
     public FiltersController(Context context) {
@@ -119,45 +125,48 @@ public class FiltersController extends Controller implements
 
         view = inflateRes(R.layout.controller_filters);
 
-        recyclerView = view.findViewById(R.id.recycler_view);
+        RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
 
-        add = view.findViewById(R.id.add);
-        add.setOnClickListener(this);
-        theme().applyFabColor(add);
+        Button addButton = view.findViewById(R.id.add_button);
+        addButton.setOnClickListener(this);
 
-        enable = view.findViewById(R.id.enable);
-        enable.setOnClickListener(this);
-        theme().applyFabColor(enable);
+        enableButton = view.findViewById(R.id.enable_button);
+        enableButton.setOnClickListener(this);
 
         adapter = new FilterAdapter();
         recyclerView.setAdapter(adapter);
+
+        itemTouchHelper = new ItemTouchHelper(touchHelperCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+
         adapter.load();
+        updateEnableButton();
     }
 
     @Override
     public void onClick(View v) {
-        if (v == add) {
+        if (v.getId() == R.id.add_button) {
             showFilterDialog(new Filter());
-        } else if (v == enable && !locked) {
-            FloatingActionButton enableButton = (FloatingActionButton) v;
+        } else if (v.getId() == R.id.enable_button && !locked) {
             locked = true;
-            //if every filter is disabled, enable all of them and set the drawable to be an x
-            //if every filter is enabled, disable all of them and set the drawable to be a checkmark
-            //if some filters are enabled, disable them and set the drawable to be a checkmark
             List<Filter> enabledFilters = filterEngine.getEnabledFilters();
             List<Filter> allFilters = filterEngine.getAllFilters();
             if (enabledFilters.isEmpty()) {
                 setFilters(allFilters, true);
-                enableButton.setImageResource(R.drawable.ic_clear_white_24dp);
-            } else if (enabledFilters.size() == allFilters.size()) {
-                setFilters(allFilters, false);
-                enableButton.setImageResource(R.drawable.ic_done_white_24dp);
             } else {
-                setFilters(enabledFilters, false);
-                enableButton.setImageResource(R.drawable.ic_done_white_24dp);
+                setFilters(allFilters, false);
             }
+        }
+    }
+
+    private void updateEnableButton() {
+        List<Filter> enabledFilters = filterEngine.getEnabledFilters();
+        if (enabledFilters.isEmpty()) {
+            enableButton.setText(R.string.filter_enable_all);
+        } else {
+            enableButton.setText(R.string.filter_disable_all);
         }
     }
 
@@ -167,6 +176,7 @@ public class FiltersController extends Controller implements
             filterEngine.createOrUpdateFilter(filter);
         }
         adapter.load();
+        updateEnableButton();
     }
 
     private void searchClicked(ToolbarMenuItem item) {
@@ -174,40 +184,35 @@ public class FiltersController extends Controller implements
     }
 
     public void showFilterDialog(final Filter filter) {
-        final FilterLayout filterLayout = (FilterLayout) LayoutInflater.from(context).inflate(R.layout.layout_filter, null);
+        @SuppressLint("InflateParams")
+        final ScrollView root = (ScrollView) LayoutInflater.from(context).inflate(R.layout.layout_filter, null);
+        final FilterLayout filterLayout = (FilterLayout) root.getChildAt(0);
 
         final AlertDialog alertDialog = new AlertDialog.Builder(context)
-                .setView(filterLayout)
-                .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        filterEngine.createOrUpdateFilter(filterLayout.getFilter());
-                        if (filterEngine.getEnabledFilters().isEmpty()) {
-                            enable.setImageResource(R.drawable.ic_done_white_24dp);
-                        } else {
-                            enable.setImageResource(R.drawable.ic_clear_white_24dp);
-                        }
-                        EventBus.getDefault().post(new RefreshUIMessage("filters"));
-                        adapter.load();
+                .setView(root)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    filterEngine.createOrUpdateFilter(filterLayout.getFilter());
+                    updateEnableButton();
+                    EventBus.getDefault().post(new RefreshUIMessage("filters"));
+                    adapter.load();
+                })
+                .setNegativeButton(R.string.delete, (dialog, which) -> {
+                    if (filter.id != 0) {
+                        deleteFilter(filter);
                     }
                 })
                 .show();
 
-        filterLayout.setCallback(new FilterLayout.FilterLayoutCallback() {
-            @Override
-            public void setSaveButtonEnabled(boolean enabled) {
-                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enabled);
-            }
-        });
+        filterLayout.setCallback(enabled -> alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enabled));
 
         filterLayout.setFilter(filter);
     }
 
     private void deleteFilter(Filter filter) {
         filterEngine.deleteFilter(filter);
+        updateEnableButton();
         EventBus.getDefault().post(new RefreshUIMessage("filters"));
         adapter.load();
-        //TODO: undo
     }
 
     @Override
@@ -222,15 +227,44 @@ public class FiltersController extends Controller implements
         adapter.search(entered);
     }
 
+    private final ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            adapter.onItemMove(viewHolder.getBindingAdapterPosition(), target.getBindingAdapterPosition());
+            return true;
+        }
+
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            int position = viewHolder.getBindingAdapterPosition();
+            if (position >= 0 && position < adapter.displayList.size()) {
+                deleteFilter(adapter.displayList.get(position));
+            }
+        }
+
+        @Override
+        public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+            super.clearView(recyclerView, viewHolder);
+            adapter.saveOrders();
+        }
+
+        @Override
+        public boolean isLongPressDragEnabled() {
+            return false;
+        }
+    };
+
     private class FilterAdapter extends RecyclerView.Adapter<FilterCell> {
-        private List<Filter> sourceList = new ArrayList<>();
-        private List<Filter> displayList = new ArrayList<>();
+        private final List<Filter> sourceList = new ArrayList<>();
+        private final List<Filter> displayList = new ArrayList<>();
         private String searchQuery;
 
         public FilterAdapter() {
             setHasStableIds(true);
         }
 
+        @NonNull
         @Override
         public FilterCell onCreateViewHolder(ViewGroup parent, int viewType) {
             return new FilterCell(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_filter, parent, false));
@@ -245,7 +279,7 @@ public class FiltersController extends Controller implements
             int types = FilterType.forFlags(filter.type).size();
             String subText = context.getResources().getQuantityString(R.plurals.type, types, types);
 
-            subText += " \u2013 ";
+            subText += " – ";
             if (filter.allBoards) {
                 subText += context.getString(R.string.filter_summary_all_boards);
             } else {
@@ -253,7 +287,7 @@ public class FiltersController extends Controller implements
                 subText += context.getResources().getQuantityString(R.plurals.board, size, size);
             }
 
-            subText += " \u2013 " + FiltersController.actionName(FilterEngine.FilterAction.forId(filter.action));
+            subText += " – " + FiltersController.actionName(FilterEngine.FilterAction.forId(filter.action));
 
             holder.subtext.setText(subText);
         }
@@ -275,11 +309,12 @@ public class FiltersController extends Controller implements
 
         private void load() {
             sourceList.clear();
-            sourceList.addAll(databaseManager.runTask(databaseManager.getDatabaseFilterManager().getFilters()));
+            sourceList.addAll(filterEngine.getAllFilters());
 
             filter();
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         private void filter() {
             displayList.clear();
             if (!TextUtils.isEmpty(searchQuery)) {
@@ -296,39 +331,76 @@ public class FiltersController extends Controller implements
             notifyDataSetChanged();
             locked = false;
         }
+
+        public void onItemMove(int fromPosition, int toPosition) {
+            if (fromPosition < toPosition) {
+                for (int i = fromPosition; i < toPosition; i++) {
+                    Collections.swap(displayList, i, i + 1);
+                }
+            } else {
+                for (int i = fromPosition; i > toPosition; i--) {
+                    Collections.swap(displayList, i, i - 1);
+                }
+            }
+            notifyItemMoved(fromPosition, toPosition);
+        }
+
+        public void saveOrders() {
+            for (int i = 0; i < displayList.size(); i++) {
+                Filter filter = displayList.get(i);
+                filter.order = i;
+                filterEngine.createOrUpdateFilter(filter);
+            }
+            load();
+        }
     }
 
-    private class FilterCell extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private TextView text;
-        private TextView subtext;
-        private ImageView delete;
+    private class FilterCell extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnTouchListener {
+        private final TextView text;
+        private final TextView subtext;
+        private final ImageView dragHandle;
 
+        @SuppressLint("ClickableViewAccessibility")
         public FilterCell(View itemView) {
             super(itemView);
 
             text = itemView.findViewById(R.id.text);
             subtext = itemView.findViewById(R.id.subtext);
-            delete = itemView.findViewById(R.id.delete);
+            dragHandle = itemView.findViewById(R.id.drag_handle);
 
-            theme().clearDrawable.apply(delete);
+            Drawable drawable = ContextCompat.getDrawable(context, R.drawable.ic_reorder_black_24dp);
+            if (drawable != null) {
+                drawable = drawable.mutate();
+                DrawableCompat.setTint(drawable, getAttrColor(context, R.attr.text_color_hint));
+                dragHandle.setImageDrawable(drawable);
+            }
 
-            delete.setOnClickListener(this);
+            dragHandle.setOnTouchListener(this);
 
             itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
-            int position = getAdapterPosition();
+            int position = getBindingAdapterPosition();
             if (!locked && position >= 0 && position < adapter.getItemCount()) {
                 Filter filter = adapter.displayList.get(position);
                 if (v == itemView) {
                     showFilterDialog(filter);
-                } else if (v == delete) {
-                    deleteFilter(filter);
                 }
             }
+        }
 
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (v == dragHandle && event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                if (TextUtils.isEmpty(adapter.searchQuery)) {
+                    itemTouchHelper.startDrag(this);
+                }
+                return true;
+            }
+            return false;
         }
     }
 }

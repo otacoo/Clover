@@ -49,6 +49,9 @@ public class Filter {
     @DatabaseField(canBeNull = false)
     public int color;
 
+    @DatabaseField(canBeNull = false)
+    public int order;
+
     public boolean hasFilter(FilterType filterType) {
         return (type & filterType.flag) != 0;
     }
@@ -65,6 +68,7 @@ public class Filter {
         boards = filter.boards;
         action = filter.action;
         color = filter.color;
+        order = filter.order;
     }
 
     public Filter copy() {
@@ -76,6 +80,7 @@ public class Filter {
         copy.boards = boards;
         copy.action = action;
         copy.color = color;
+        copy.order = order;
         return copy;
     }
 }

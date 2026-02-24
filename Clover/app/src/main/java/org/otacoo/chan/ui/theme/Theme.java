@@ -75,6 +75,7 @@ public class Theme {
     public ThemeDrawable listAddDrawable;
     public ThemeDrawable helpDrawable;
     public ThemeDrawable refreshDrawable;
+    public ThemeDrawable reorderDrawable;
 
     public Theme(String displayName, String name, int resValue, ThemeHelper.PrimaryColor primaryColor) {
         this.displayName = displayName;
@@ -99,6 +100,7 @@ public class Theme {
         listAddDrawable = new ThemeDrawable(R.drawable.ic_playlist_add_black_24dp, 0.54f);
         helpDrawable = new ThemeDrawable(R.drawable.ic_help_outline_black_24dp, 0.54f);
         refreshDrawable = new ThemeDrawable(R.drawable.ic_refresh_black_24dp, 0.54f);
+        reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 0.54f);
     }
 
     public void applyFabColor(FloatingActionButton fab) {

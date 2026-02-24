@@ -32,6 +32,7 @@ import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +99,7 @@ public class FilterEngine {
 
     public List<Filter> getEnabledFilters() {
         List<Filter> filters = databaseManager.runTask(databaseFilterManager.getFilters());
+        Collections.sort(filters, (a, b) -> Integer.compare(a.order, b.order));
         List<Filter> enabled = new ArrayList<>();
         for (Filter filter : filters) {
             if (filter.enabled) {
@@ -110,7 +112,9 @@ public class FilterEngine {
 
     public List<Filter> getAllFilters() {
         try {
-            return databaseFilterManager.getFilters().call();
+            List<Filter> filters = databaseFilterManager.getFilters().call();
+            Collections.sort(filters, (a, b) -> Integer.compare(a.order, b.order));
+            return filters;
         } catch (Exception e) {
             Logger.wtf(TAG, "Couldn't get all filters for some reason.");
             return new ArrayList<>();
