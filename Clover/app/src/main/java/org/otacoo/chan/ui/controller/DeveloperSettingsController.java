@@ -163,11 +163,18 @@ public class DeveloperSettingsController extends Controller {
     }
 
     private void showCookieManagerDialog() {
-        final String[] DOMAINS = {"https://sys.4chan.org", "https://boards.4chan.org", "https://www.4chan.org"};
+        final String[] DOMAINS = {
+            "https://sys.4chan.org", 
+            "https://boards.4chan.org", 
+            "https://www.4chan.org",
+            "https://sys.4channel.org",
+            "https://boards.4channel.org",
+            "https://www.4channel.org"
+        };
         CookieManager cm = CookieManager.getInstance();
         cm.flush();
 
-        // Collect all cookies from 4chan domains; later domains overwrite earlier for same name.
+        // Collect all cookies from 4chan domains
         java.util.LinkedHashMap<String, String> cookieMap = new java.util.LinkedHashMap<>();
         for (String domain : DOMAINS) {
             String raw = cm.getCookie(domain);
@@ -237,10 +244,14 @@ public class DeveloperSettingsController extends Controller {
                             .setView(et)
                             .setPositiveButton("Save", (dlg, which) -> {
                                 String newVal = et.getText().toString();
-                                for (String domain : DOMAINS)
-                                    cm.setCookie(domain, cookieName + "=" + newVal);
+                                for (String domain : DOMAINS) {
+                                    String host = android.net.Uri.parse(domain).getHost();
+                                    String cookieString = cookieName + "=" + newVal + "; Domain=" + host + "; Path=/; Secure; SameSite=Lax";
+                                    cm.setCookie(domain, cookieString);
+                                }
                                 cm.flush();
                                 Toast.makeText(context, "Saved " + cookieName, Toast.LENGTH_SHORT).show();
+                                showCookieManagerDialog(); // refresh UI
                             })
                             .setNegativeButton("Cancel", null)
                             .show();
@@ -255,12 +266,14 @@ public class DeveloperSettingsController extends Controller {
                     new AlertDialog.Builder(context)
                             .setTitle("Delete \"" + cookieName + "\"?")
                             .setPositiveButton("Delete", (dlg, which) -> {
-                                String expired = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-                                for (String domain : DOMAINS)
+                                for (String domain : DOMAINS) {
+                                    String host = android.net.Uri.parse(domain).getHost();
+                                    String expired = cookieName + "=; Domain=" + host + "; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax";
                                     cm.setCookie(domain, expired);
+                                }
                                 cm.flush();
                                 Toast.makeText(context, "Deleted " + cookieName, Toast.LENGTH_SHORT).show();
-                                showCookieManagerDialog(); // refresh
+                                showCookieManagerDialog(); // refresh UI
                             })
                             .setNegativeButton("Cancel", null)
                             .show();
@@ -285,6 +298,42 @@ public class DeveloperSettingsController extends Controller {
                 .setTitle("4chan Cookies (" + cookieMap.size() + " entries)")
                 .setView(sv)
                 .setPositiveButton("Refresh", (dlg, which) -> showCookieManagerDialog())
+                .setNeutralButton("Add", (dlg, which) -> {
+                    LinearLayout addLayout = new LinearLayout(context);
+                    addLayout.setOrientation(LinearLayout.VERTICAL);
+                    int addPad = dp(16);
+                    addLayout.setPadding(addPad, addPad, addPad, addPad);
+
+                    EditText nameEt = new EditText(context);
+                    nameEt.setHint("Cookie Name (e.g. pass_id)");
+                    addLayout.addView(nameEt);
+
+                    EditText valEt = new EditText(context);
+                    valEt.setHint("Cookie Value");
+                    addLayout.addView(valEt);
+
+                    new AlertDialog.Builder(context)
+                            .setTitle("Add New 4chan Cookie")
+                            .setView(addLayout)
+                            .setPositiveButton("Save", (dlg2, which2) -> {
+                                String name = nameEt.getText().toString().trim();
+                                String val = valEt.getText().toString().trim();
+                                if (name.isEmpty()) {
+                                    Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                for (String domain : DOMAINS) {
+                                    String host = android.net.Uri.parse(domain).getHost();
+                                    String cookieString = name + "=" + val + "; Domain=" + host + "; Path=/; Secure; SameSite=Lax";
+                                    cm.setCookie(domain, cookieString);
+                                }
+                                cm.flush();
+                                Toast.makeText(context, "Added " + name, Toast.LENGTH_SHORT).show();
+                                showCookieManagerDialog();
+                            })
+                            .setNegativeButton("Cancel", (dlg2, which2) -> showCookieManagerDialog())
+                            .show();
+                })
                 .setNegativeButton("Close", null)
                 .show();
     }
