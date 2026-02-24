@@ -377,18 +377,21 @@ public class MainSettingsController extends SettingsController implements Settin
                         developerView.view.setVisibility(developer ? View.VISIBLE : View.GONE);
                     }
                     final GifImageView iv = new GifImageView(context);
-                    iv.setX(-iv.getDrawable().getIntrinsicWidth());
-                    iv.setY(navigationController.view.getHeight() - iv.getDrawable().getIntrinsicHeight());
-                    navigationController.view.addView(iv);
-                    iv.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-                    iv.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                    iv.setLayoutParams(iv.getLayoutParams());
-                    ValueAnimator animator = ValueAnimator.ofFloat(iv.getX() - 100, navigationController.view.getWidth() + 100);
-                    animator.setDuration(7500);
-                    animator.addUpdateListener(animation ->
-                            iv.setX((float) animation.getAnimatedValue()));
-                    animator.setRepeatCount(ValueAnimator.INFINITE);
-                    animator.start();
+                    iv.setImageResource(R.drawable.ic_task_description);
+                    if (iv.getDrawable() != null) {
+                        iv.setX(-iv.getDrawable().getIntrinsicWidth());
+                        iv.setY(navigationController.view.getHeight() - iv.getDrawable().getIntrinsicHeight());
+                        navigationController.view.addView(iv);
+                        iv.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        iv.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                        iv.setLayoutParams(iv.getLayoutParams());
+                        ValueAnimator animator = ValueAnimator.ofFloat(iv.getX() - 100, navigationController.view.getWidth() + 100);
+                        animator.setDuration(7500);
+                        animator.addUpdateListener(animation ->
+                                iv.setX((float) animation.getAnimatedValue()));
+                        animator.setRepeatCount(ValueAnimator.INFINITE);
+                        animator.start();
+                    }
                 }));
 
         return version;
