@@ -317,6 +317,8 @@ public class WatchManager {
         }
 
         updatePin(pin);
+        // Immediately notify of the change
+        EventBus.getDefault().post(new PinChangedMessage(pin));
     }
 
     // Called when the app changes foreground state
