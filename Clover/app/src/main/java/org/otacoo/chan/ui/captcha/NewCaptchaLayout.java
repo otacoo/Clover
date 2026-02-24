@@ -293,26 +293,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     hadCloudflareClearanceBeforePageLoad = hasCloudflareClearance();
                 }
 
-                // Only intercept main-frame navigations. JS fetch()/XHR sub-resource requests must
-                // pass through to the real servers so that requestCaptchaViaFetch() receives the
-                // actual 4chan JSON response via onCaptchaPayloadReady — not our asset HTML.
-                //
-                // IMPORTANT: when showingActiveCaptcha=true the native 4chan challenge page is
-                // live and running its own JS. Any navigation it triggers (self-refresh to load
-                // the actual puzzle) must NOT be intercepted — doing so would replace the challenge
-                // page with our asset and loop back to "0s" state. Let it load natively and let
-                // onPageFinished / extractPayloadFromNativePageAndLoadAsset handle the result.
                 boolean isCaptchaRequest = (board != null && !board.isEmpty()) 
                         ? url.startsWith("https://sys.4chan.org/captcha?board=" + board)
                         : url.contains("sys.4chan.org/captcha?");
 
                 if (isMainFrame && isCaptchaRequest && showingActiveCaptcha) {
-                    // Reset per-page state so that the incoming page is evaluated fresh.
                     showingActiveCaptcha = false;
                     nativeAutoFetchCount = 0;
                     lastResponseWasAsset = false;
-                    // Keep skipInterceptNextLoad=true so this re-navigation (triggered by mcl.js /
-                    // fingerprinting completing) also loads natively. This gives the JS time to work.
                     skipInterceptNextLoad = true;
                     return null;
                 }
