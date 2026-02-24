@@ -524,8 +524,8 @@ public class Chan4 extends SiteBase {
     @Override
     public List<SiteSetting> settings() {
         List<SiteSetting> list = new ArrayList<>();
+        list.add(SiteSetting.forBoolean(singleViewCaptchas, "Single view captchas", "Show all captcha challenges in a single page"));
         list.add(SiteSetting.forBoolean(showCooldownToast, "Cooldown toasts", "Informs about captcha state"));
-        list.add(SiteSetting.forBoolean(singleViewCaptchas, "Single view captchas", "Show all captchas challenges in a single page"));
         return list;
     }
 
