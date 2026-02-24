@@ -153,7 +153,7 @@
             gap: 8px;
             align-items: center;
         }
-        #t-native-choices .t-choice {
+        .t-choice {
             width: 100%;
             max-width: 340px;
             height: 86px;
@@ -164,14 +164,14 @@
             background: __C_INPUT_BG__;
             box-sizing: border-box;
         }
-        #t-native-choices .t-choice:hover,
-        #t-native-choices .t-choice:focus {
+        .t-choice:hover,
+        .t-choice:focus {
             border-color: __C_LINK__;
         }
-        #t-native-choices .t-choice.selected {
+        .t-choice.selected {
             border-color: #4caf50;
         }
-        #t-native-choices .t-choice img {
+        .t-choice img {
             width: 100%;
             height: 100%;
             object-fit: contain;
@@ -191,6 +191,16 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* Single view captchas styling */
+        .t-single-task {
+            border-bottom: 1px solid __C_INPUT_BORDER__;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        .t-single-task:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -206,15 +216,25 @@
             <span id="t-native-counter"></span>
             <span id="t-expiry-wrap"></span>
         </div>
-        <div id="t-native-instructions">
-            <div id="t-native-instructions-text"></div>
-            <div id="t-native-target-wrap"><img id="t-native-target" src="" alt="Target"></div>
+        <!-- This container is used for the traditional stepped UI -->
+        <div id="t-stepped-ui">
+            <div id="t-native-instructions">
+                <div id="t-native-instructions-text"></div>
+                <div id="t-native-target-wrap"><img id="t-native-target" src="" alt="Target"></div>
+            </div>
+            <div id="t-native-choices-wrap"><div id="t-native-choices"></div></div>
+            <button id="t-native-next" type="button">Next</button>
         </div>
-        <div id="t-native-choices-wrap"><div id="t-native-choices"></div></div>
-        <button id="t-native-next" type="button">Next</button>
+        <!-- This container is used for the "Single view captchas" option -->
+        <div id="t-single-ui" style="display:none;">
+            <div id="t-single-tasks-container"></div>
+            <button id="t-native-submit" type="button" class="t-msg-btn" style="width:100%; font-size:16px; padding:10px 20px; margin-top:8px; cursor:pointer; background:__C_BTN_BG__; color:__C_BTN_FG__; border:1px solid __C_BTN_BORDER__; border-radius:6px; font-weight:500;">Submit</button>
+        </div>
     </div>
 </div>
 <script>
+
+var isSingleView = false; // Set by Java side injection or payload
 
 function showMsgButton(label, disabled, initialSeconds) {
     var msg = document.getElementById('t-msg');
@@ -296,6 +316,10 @@ function cooldownMessage(pcdMsg) {
 
 function buildFromJson(data) {
     if (data.twister) data = data.twister;
+
+    // Check for single view option in payload or injected state
+    if (data.single_view !== undefined) isSingleView = !!data.single_view;
+
     if (data.pcd_msg != null && (data.pcd === undefined || data.pcd === null)) {
         document.getElementById('t-msg').style.display = 'block';
         document.getElementById('t-msg').classList.add('with-warning');
@@ -359,281 +383,272 @@ function buildFromJson(data) {
     }
 
     if (data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0) {
-        buildNativeTasksUI(data);
+        if (isSingleView) {
+            buildSingleViewTasksUI(data);
+        } else {
+            buildNativeTasksUI(data);
+        }
         return;
     }
 
     CaptchaCallback.onCaptchaLoaded();
 }
 
+function looksLikeImageString(s) {
+    if (!s || typeof s !== 'string') return false;
+    var t = s.trim();
+    if (!t) return false;
+    if (t.indexOf('data:image/') === 0) return true;
+    if (t.indexOf('//') === 0) return true;
+    if (t.indexOf('<svg') === 0 || t.indexOf('<?xml') === 0) return true;
+    if (t.indexOf('/') === 0 || t.indexOf('./') === 0) {
+        if (/\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(t)) return true;
+    }
+    if (t.length > 20) {
+        var u = t.replace(/\s+/g, '');
+        if (/^[A-Za-z0-9+/=_-]+$/.test(u)) return true;
+    }
+    if (t.indexOf('PHN2Zy') === 0 || t.indexOf('PD94bW') === 0) return true;
+    return false;
+}
+
+function normalizeBase64(b64) {
+    if (!b64 || typeof b64 !== 'string') return '';
+    var t = b64.trim();
+    if (!t) return '';
+    t = t.replace(/-/g, '+').replace(/_/g, '/');
+    t = t.replace(/\s+/g, '');
+    while (t.length % 4 !== 0) t += '=';
+    return t;
+}
+
+function extractImageLike(v) {
+    if (!v) return '';
+    if (typeof v === 'string') return v;
+    if (typeof v === 'object') {
+        var keys = ['img', 'image', 'svg', 'data', 'src', 'url', 'uri', 'href', 'path', 'b64', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'target_image', 'targetImg', 'target_img'];
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (v[k] != null && typeof v[k] === 'string') return v[k];
+        }
+    }
+    return '';
+}
+
+var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function toImgSrc(imgLike) {
+    if (!imgLike) return '';
+    var s = extractImageLike(imgLike);
+    if (!s) return '';
+    s = s.trim();
+    if (s.indexOf('data:image/') === 0) {
+        var comma = s.indexOf(',');
+        if (comma >= 0) {
+            var prefix = s.substring(0, comma + 1);
+            var b64Part = s.substring(comma + 1).replace(/\s+/g, '');
+            if (b64Part && /^[A-Za-z0-9+/=_-]+$/.test(b64Part)) {
+                return prefix + normalizeBase64(b64Part);
+            }
+        }
+        return s.replace(/\s+/g, '');
+    }
+    if (s.indexOf('//') === 0) return 'https:' + s;
+    if (s.indexOf('/') === 0 || s.indexOf('./') === 0) return s;
+    if (s.indexOf('http://') === 0 || s.indexOf('https://') === 0) return s;
+    if (s.indexOf('captcha?') === 0) return '/' + s;
+    s = s.replace(/\s+/g, '');
+    if (s.indexOf('<svg') === 0 || s.indexOf('<?xml') === 0) {
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+    }
+    if (/^[A-Za-z0-9+/=_-]+$/.test(s) && s.length > 10) {
+        var b64 = normalizeBase64(s);
+        if (b64) {
+            function mimeFromB64(b) {
+                if (b.indexOf('iVBOR') === 0) return 'image/png';
+                if (b.indexOf('/9j/') === 0) return 'image/jpeg';
+                if (b.indexOf('R0lGOD') === 0) return 'image/gif';
+                if (b.indexOf('UklGR') === 0) return 'image/webp';
+                if (b.indexOf('PHN2Zy') === 0 || b.indexOf('PD94bW') === 0) return 'image/svg+xml';
+                return 'image/png';
+            }
+            return 'data:' + mimeFromB64(b64) + ';base64,' + b64;
+        }
+    }
+    return s;
+}
+
+function getChoices(task) {
+    if (!task || typeof task !== 'object') return [];
+    var direct = null;
+    var keys = ['choices', 'images', 'imgs', 'tiles', 'options', 'pool', 'items', 'rows', 'list'];
+    for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        if (task[k] && Array.isArray(task[k])) {
+            direct = task[k];
+            break;
+        }
+    }
+    if (direct && Array.isArray(direct)) {
+        if (direct.length && Array.isArray(direct[0])) {
+            var flat = [];
+            direct.forEach(function(row) { if (Array.isArray(row)) flat = flat.concat(row); });
+            direct = flat;
+        }
+        return direct;
+    }
+    var best = [];
+    for (var prop in task) {
+        if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
+        var v = task[prop];
+        if (!Array.isArray(v) || !v.length) continue;
+        var count = 0;
+        for (var j = 0; j < v.length; j++) {
+            var img = extractImageLike(v[j]);
+            if (looksLikeImageString(img)) count++;
+        }
+        if (count > best.length) best = v;
+    }
+    return best;
+}
+
+function getTarget(task) {
+    if (!task || typeof task !== 'object') return '';
+    var keys = ['target', 'target_image', 'targetImg', 'target_img', 'needle', 'query', 'object', 'prompt', 'pick', 'goal', 'image', 'img', 'pic'];
+    for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var val = task[k];
+        var img = extractImageLike(val);
+        if (img && looksLikeImageString(img)) return img;
+    }
+    for (var prop in task) {
+        if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
+        var v = task[prop];
+        if (typeof v === 'string' && looksLikeImageString(v)) return v;
+        if (typeof v === 'object' && v) {
+            var vv = extractImageLike(v);
+            if (vv && looksLikeImageString(vv)) return vv;
+        }
+    }
+    return '';
+}
+
+function parse4chanTaskHtml(html) {
+    if (!html || typeof html !== 'string') return null;
+    var s = html.trim();
+    var targetSrc = '';
+    var instructionHtml = '';
+
+    var imgMatch = s.match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i) || s.match(/<img[^>]+src\s*=\s*([^>\s]+)/i);
+    if (imgMatch) targetSrc = imgMatch[1].trim().replace(/^["']|["']$/g, '');
+
+    var div = document.createElement('div');
+    div.innerHTML = s;
+
+    // Target extraction from img tags
+    var imgs = div.querySelectorAll('img');
+    if (imgs.length && !targetSrc && imgs[0].src) {
+         targetSrc = imgs[0].getAttribute('src') || imgs[0].src;
+    }
+    if (targetSrc && targetSrc.indexOf('data:') !== 0 && targetSrc.indexOf('http') !== 0) {
+        targetSrc = toImgSrc(targetSrc) || targetSrc;
+    }
+
+    // Clean HTML: remove images and elements used for bot detection (tiny or hidden)
+    var all = div.querySelectorAll('*');
+    for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        if (el.tagName === 'IMG') {
+            el.parentNode && el.parentNode.removeChild(el);
+            continue;
+        }
+        var st = window.getComputedStyle ? window.getComputedStyle(el) : (el.style || {});
+        var isHidden = st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0' || (parseInt(st.width) <= 1 && parseInt(st.height) <= 1);
+        if (isHidden) {
+            el.parentNode && el.parentNode.removeChild(el);
+        }
+    }
+
+    instructionHtml = div.innerHTML.replace(/\s+/g, ' ').trim();
+    if (!instructionHtml && s.indexOf('<') < 0) instructionHtml = s;
+
+    return (targetSrc || instructionHtml) ? { targetSrc: targetSrc, instruction: instructionHtml } : null;
+}
+
+function get4chanTaskParsed(task) {
+    if (!task) return null;
+    if (typeof task === 'string') return parse4chanTaskHtml(task);
+    if (typeof task !== 'object') return null;
+    var keys = ['html', 'content', 'markup', 'body', 'task', 't_task', 'task_html', 'prompt_html', 'str', 's'];
+    for (var i = 0; i < keys.length; i++) {
+        var v = task[keys[i]];
+        if (typeof v === 'string') {
+            var parsed = parse4chanTaskHtml(v);
+            if (parsed) return parsed;
+        }
+    }
+    return null;
+}
+
+function getInstructionText(task) {
+    var fallback = 'Select the image containing the object shown on the right.';
+    if (!task || typeof task !== 'object') return fallback;
+
+    var parsed = get4chanTaskParsed(task);
+    if (parsed && parsed.instruction) return parsed.instruction;
+
+    function extractTextLike(v) {
+        if (!v) return '';
+        if (typeof v === 'string') {
+            var t = v.trim();
+            if (t && t.length > 0 && t.length < 500) return t;
+            return '';
+        }
+        if (Array.isArray(v)) {
+            for (var i = 0; i < v.length; i++) {
+                var inner = extractTextLike(v[i]);
+                if (inner) return inner;
+            }
+            return '';
+        }
+        if (typeof v === 'object') {
+            var k2 = ['text', 'msg', 'prompt', 'instruction', 'instructions', 'question', 'title', 'label', 'desc', 'description', 'hint', 'value', 'str', 's'];
+            for (var j = 0; j < k2.length; j++) {
+                var vv = v[k2[j]];
+                if (vv) {
+                    var extracted = extractTextLike(vv);
+                    if (extracted) return extracted;
+                }
+            }
+        }
+        return '';
+    }
+
+    var keys = ['instruction', 'instructions', 'prompt', 'question', 'text', 'msg', 'title', 'label', 'desc', 'description', 'hint', 'query', 'goal', 'pick', 'instruction_text', 'instruction_msg', 'str', 's'];
+    for (var i = 0; i < keys.length; i++) {
+        var v = extractTextLike(task[keys[i]]);
+        if (v && typeof v === 'string') {
+            // Return cleaned text but bold specific patterns if not already HTML
+            if (v.indexOf('<') < 0) {
+                v = v.replace(/\b(exactly\s+)?(\d+)\s+(stars?|spikes?|points?|sides?|objects?)\b/gi, '<b>$1$2 $3</b>');
+            }
+            return v;
+        }
+    }
+    return fallback;
+}
+
 function buildNativeTasksUI(data) {
+    document.getElementById('t-stepped-ui').style.display = 'block';
+    document.getElementById('t-single-ui').style.display = 'none';
+
     var tasks = data.tasks;
     var total = tasks.length;
     var currentIndex = 0;
     var answers = [];
 
-    function looksLikeImageString(s) {
-        if (!s || typeof s !== 'string') return false;
-        var t = s.trim();
-        if (!t) return false;
-        if (t.indexOf('data:image/') === 0) return true;
-        if (t.indexOf('//') === 0) return true;
-        if (t.indexOf('<svg') === 0 || t.indexOf('<?xml') === 0) return true;
-        if (t.indexOf('/') === 0 || t.indexOf('./') === 0) {
-            // relative URL
-            if (/\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(t)) return true;
-        }
-        if (t.length > 20) {
-            var u = t.replace(/\s+/g, '');
-            if (/^[A-Za-z0-9+/=_-]+$/.test(u)) return true;
-        }
-        if (t.indexOf('PHN2Zy') === 0 || t.indexOf('PD94bW') === 0) return true;
-        return false;
-    }
-
-    function normalizeBase64(b64) {
-        if (!b64 || typeof b64 !== 'string') return '';
-        var t = b64.trim();
-        if (!t) return '';
-        // Convert base64url to base64
-        t = t.replace(/-/g, '+').replace(/_/g, '/');
-        // Strip whitespace
-        t = t.replace(/\s+/g, '');
-        // Pad to length multiple of 4
-        while (t.length % 4 !== 0) t += '=';
-        return t;
-    }
-
-    function extractImageLike(v) {
-        if (!v) return '';
-        if (typeof v === 'string') return v;
-        if (typeof v === 'object') {
-            var keys = ['img', 'image', 'svg', 'data', 'src', 'url', 'uri', 'href', 'path', 'b64', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'target_image', 'targetImg', 'target_img'];
-            for (var i = 0; i < keys.length; i++) {
-                var k = keys[i];
-                if (v[k] != null && typeof v[k] === 'string') return v[k];
-            }
-        }
-        return '';
-    }
-
-    var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
-    function toImgSrc(imgLike) {
-        if (!imgLike) return '';
-        var s = extractImageLike(imgLike);
-        if (!s) return '';
-        s = s.trim();
-        if (s.indexOf('data:image/') === 0) {
-            var comma = s.indexOf(',');
-            if (comma >= 0) {
-                var prefix = s.substring(0, comma + 1);
-                var b64Part = s.substring(comma + 1).replace(/\s+/g, '');
-                if (b64Part && /^[A-Za-z0-9+/=_-]+$/.test(b64Part)) {
-                    return prefix + normalizeBase64(b64Part);
-                }
-            }
-            return s.replace(/\s+/g, '');
-        }
-
-        // Handle URLs first
-        if (s.indexOf('//') === 0) return 'https:' + s;
-        if (s.indexOf('/') === 0 || s.indexOf('./') === 0) return s;
-        if (s.indexOf('http://') === 0 || s.indexOf('https://') === 0) return s;
-        if (s.indexOf('captcha?') === 0) return '/' + s;
-
-        // Strip whitespace for base64/SVG checks
-        s = s.replace(/\s+/g, '');
-
-        if (s.indexOf('<svg') === 0 || s.indexOf('<?xml') === 0) {
-            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
-        }
-        
-        // If it looks like base64url or raw base64
-        if (/^[A-Za-z0-9+/=_-]+$/.test(s) && s.length > 10) {
-            var b64 = normalizeBase64(s);
-            if (b64) {
-                function mimeFromB64(b) {
-                    if (!b || typeof b !== 'string') return 'image/png';
-                    if (b.indexOf('iVBOR') === 0) return 'image/png';
-                    if (b.indexOf('/9j/') === 0) return 'image/jpeg';
-                    if (b.indexOf('R0lGOD') === 0) return 'image/gif';
-                    if (b.indexOf('UklGR') === 0) return 'image/webp';
-                    if (b.indexOf('PHN2Zy') === 0 || b.indexOf('PD94bW') === 0) return 'image/svg+xml';
-                    return 'image/png';
-                }
-                var mime = mimeFromB64(b64);
-                return 'data:' + mime + ';base64,' + b64;
-            }
-        }
-        
-        return s;
-    }
-
     document.getElementById('t-native').style.display = 'block';
     startExpiryTimer(data.ttl);
-
-    function getChoices(task) {
-        if (!task || typeof task !== 'object') return [];
-        var direct = null;
-        var keys = ['choices', 'images', 'imgs', 'tiles', 'options', 'pool', 'items', 'rows', 'list'];
-        for (var i = 0; i < keys.length; i++) {
-            var k = keys[i];
-            if (task[k] && Array.isArray(task[k])) {
-                direct = task[k];
-                break;
-            }
-        }
-        if (direct && Array.isArray(direct)) {
-            if (direct.length && Array.isArray(direct[0])) {
-                var flat = [];
-                direct.forEach(function(row) { if (Array.isArray(row)) flat = flat.concat(row); });
-                direct = flat;
-            }
-            return direct;
-        }
-
-        // Fallback: pick the largest array that looks like images
-        var best = [];
-        for (var prop in task) {
-            if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
-            var v = task[prop];
-            if (!Array.isArray(v) || !v.length) continue;
-            var count = 0;
-            for (var j = 0; j < v.length; j++) {
-                var img = extractImageLike(v[j]);
-                if (looksLikeImageString(img)) count++;
-            }
-            if (count > best.length) best = v;
-        }
-        return best;
-    }
-
-    function getTarget(task) {
-        if (!task || typeof task !== 'object') return '';
-        var keys = ['target', 'target_image', 'targetImg', 'target_img', 'needle', 'query', 'object', 'prompt', 'pick', 'goal', 'image', 'img', 'pic'];
-        for (var i = 0; i < keys.length; i++) {
-            var k = keys[i];
-            var val = task[k];
-            var img = extractImageLike(val);
-            if (img && looksLikeImageString(img)) return img;
-        }
-        for (var prop in task) {
-            if (!Object.prototype.hasOwnProperty.call(task, prop)) continue;
-            var v = task[prop];
-            if (typeof v === 'string' && looksLikeImageString(v)) return v;
-            if (typeof v === 'object' && v) {
-                var vv = extractImageLike(v);
-                if (vv && looksLikeImageString(vv)) return vv;
-            }
-        }
-        return '';
-    }
-
-    function parse4chanTaskHtml(html) {
-        if (!html || typeof html !== 'string') return null;
-        var s = html.trim();
-        var targetSrc = '';
-        var instructionHtml = '';
-        
-        var imgMatch = s.match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i) || s.match(/<img[^>]+src\s*=\s*([^>\s]+)/i);
-        if (imgMatch) targetSrc = imgMatch[1].trim().replace(/^["']|["']$/g, '');
-        
-        var div = document.createElement('div');
-        div.innerHTML = s;
-        
-        // Target extraction from img tags
-        var imgs = div.querySelectorAll('img');
-        if (imgs.length && !targetSrc && imgs[0].src) {
-             targetSrc = imgs[0].getAttribute('src') || imgs[0].src;
-        }
-        if (targetSrc && targetSrc.indexOf('data:') !== 0 && targetSrc.indexOf('http') !== 0) {
-            targetSrc = toImgSrc(targetSrc) || targetSrc;
-        }
-        
-        // Clean HTML: remove images and elements used for bot detection (tiny or hidden)
-        var all = div.querySelectorAll('*');
-        for (var i = 0; i < all.length; i++) {
-            var el = all[i];
-            if (el.tagName === 'IMG') {
-                el.parentNode && el.parentNode.removeChild(el);
-                continue;
-            }
-            var st = window.getComputedStyle ? window.getComputedStyle(el) : (el.style || {});
-            var isHidden = st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0' || (parseInt(st.width) <= 1 && parseInt(st.height) <= 1);
-            if (isHidden) {
-                el.parentNode && el.parentNode.removeChild(el);
-            }
-        }
-        
-        instructionHtml = div.innerHTML.replace(/\s+/g, ' ').trim();
-        if (!instructionHtml && s.indexOf('<') < 0) instructionHtml = s;
-        
-        return (targetSrc || instructionHtml) ? { targetSrc: targetSrc, instruction: instructionHtml } : null;
-    }
-
-    function get4chanTaskParsed(task) {
-        if (!task) return null;
-        if (typeof task === 'string') return parse4chanTaskHtml(task);
-        if (typeof task !== 'object') return null;
-        var keys = ['html', 'content', 'markup', 'body', 'task', 't_task', 'task_html', 'prompt_html', 'str', 's'];
-        for (var i = 0; i < keys.length; i++) {
-            var v = task[keys[i]];
-            if (typeof v === 'string') {
-                var parsed = parse4chanTaskHtml(v);
-                if (parsed) return parsed;
-            }
-        }
-        return null;
-    }
-
-    function getInstructionText(task) {
-        var fallback = 'Select the image containing the object shown on the right.';
-        if (!task || typeof task !== 'object') return fallback;
-        
-        var parsed = get4chanTaskParsed(task);
-        if (parsed && parsed.instruction) return parsed.instruction;
-
-        function extractTextLike(v) {
-            if (!v) return '';
-            if (typeof v === 'string') {
-                var t = v.trim();
-                if (t && t.length > 0 && t.length < 500) return t;
-                return '';
-            }
-            if (Array.isArray(v)) {
-                for (var i = 0; i < v.length; i++) {
-                    var inner = extractTextLike(v[i]);
-                    if (inner) return inner;
-                }
-                return '';
-            }
-            if (typeof v === 'object') {
-                var k2 = ['text', 'msg', 'prompt', 'instruction', 'instructions', 'question', 'title', 'label', 'desc', 'description', 'hint', 'value', 'str', 's'];
-                for (var j = 0; j < k2.length; j++) {
-                    var vv = v[k2[j]];
-                    if (vv) {
-                        var extracted = extractTextLike(vv);
-                        if (extracted) return extracted;
-                    }
-                }
-            }
-            return '';
-        }
-
-        var keys = ['instruction', 'instructions', 'prompt', 'question', 'text', 'msg', 'title', 'label', 'desc', 'description', 'hint', 'query', 'goal', 'pick', 'instruction_text', 'instruction_msg', 'str', 's'];
-        for (var i = 0; i < keys.length; i++) {
-            var v = extractTextLike(task[keys[i]]);
-            if (v && typeof v === 'string') {
-                // Return cleaned text but bold specific patterns if not already HTML
-                if (v.indexOf('<') < 0) {
-                    v = v.replace(/\b(exactly\s+)?(\d+)\s+(stars?|spikes?|points?|sides?|objects?)\b/gi, '<b>$1$2 $3</b>');
-                }
-                return v;
-            }
-        }
-        return fallback;
-    }
 
     var globalTarget = getTarget(data) || '';
 
@@ -757,6 +772,142 @@ function buildNativeTasksUI(data) {
     };
 
     renderChallenge();
+    CaptchaCallback.onCaptchaLoaded();
+}
+
+function buildSingleViewTasksUI(data) {
+    document.getElementById('t-stepped-ui').style.display = 'none';
+    document.getElementById('t-single-ui').style.display = 'block';
+    document.getElementById('t-native').style.display = 'block';
+
+    var container = document.getElementById('t-single-tasks-container');
+    container.innerHTML = '';
+
+    var tasks = data.tasks;
+    var total = tasks.length;
+    var answers = new Array(total).fill(undefined);
+
+    startExpiryTimer(data.ttl);
+
+    var globalTarget = getTarget(data) || '';
+
+    tasks.forEach(function(task, taskIdx) {
+        var taskDiv = document.createElement('div');
+        taskDiv.className = 't-single-task';
+
+        var header = document.createElement('div');
+        header.style.fontSize = '14px';
+        header.style.marginBottom = '8px';
+        header.style.fontWeight = 'bold';
+        header.textContent = 'Task ' + (taskIdx + 1) + ' of ' + total;
+        taskDiv.appendChild(header);
+
+        var instrDiv = document.createElement('div');
+        instrDiv.style.fontSize = '13px';
+        instrDiv.style.lineHeight = '1.4';
+        instrDiv.style.marginBottom = '12px';
+        instrDiv.style.color = '__C_MUTED__';
+        instrDiv.style.display = 'flex';
+        instrDiv.style.gap = '12px';
+        instrDiv.style.alignItems = 'flex-start';
+        instrDiv.style.justifyContent = 'space-between';
+
+        var instrText = document.createElement('div');
+        instrText.style.flex = '1';
+        instrText.style.minWidth = '0';
+        var html = getInstructionText(task);
+        if (html.indexOf('<') >= 0) instrText.innerHTML = html;
+        else instrText.textContent = html;
+        instrDiv.appendChild(instrText);
+
+        var choices = getChoices(task);
+        var parsed = get4chanTaskParsed(task);
+        var target = (parsed && parsed.targetSrc) ? parsed.targetSrc : (getTarget(task) || globalTarget);
+        if (!target && task && typeof task === 'object') {
+            var idx = (typeof task.target === 'number') ? task.target : (task.target && typeof task.target.index === 'number' ? task.target.index : null);
+            if (idx !== null && idx >= 0 && idx < choices.length) target = choices[idx];
+        }
+
+        if (target) {
+            var targetWrap = document.createElement('div');
+            targetWrap.style.flexShrink = '0';
+            targetWrap.style.width = '80px';
+            targetWrap.style.height = '80px';
+            targetWrap.style.border = '2px solid __C_INPUT_BORDER__';
+            targetWrap.style.borderRadius = '4px';
+            targetWrap.style.overflow = 'hidden';
+            targetWrap.style.background = '__C_INPUT_BG__';
+
+            var targetImg = document.createElement('img');
+            targetImg.style.width = '100%';
+            targetImg.style.height = '100%';
+            targetImg.style.objectFit = 'contain';
+            targetImg.src = toImgSrc(target) || EMPTY_IMG_SRC;
+            targetWrap.appendChild(targetImg);
+            instrDiv.appendChild(targetWrap);
+        }
+        taskDiv.appendChild(instrDiv);
+
+        var choicesGrid = document.createElement('div');
+        choicesGrid.style.display = 'flex';
+        choicesGrid.style.flexDirection = 'column';
+        choicesGrid.style.gap = '8px';
+        choicesGrid.style.alignItems = 'center';
+
+        choices.forEach(function(choice, choiceIdx) {
+            var choiceDiv = document.createElement('div');
+            choiceDiv.className = 't-choice';
+            choiceDiv.style.width = '100%';
+            choiceDiv.style.maxWidth = '340px';
+            choiceDiv.style.height = '86px';
+            choiceDiv.style.border = '2px solid transparent';
+            choiceDiv.style.borderRadius = '4px';
+            choiceDiv.style.cursor = 'pointer';
+            choiceDiv.style.overflow = 'hidden';
+            choiceDiv.style.background = '__C_INPUT_BG__';
+            choiceDiv.style.boxSizing = 'border-box';
+
+            var img = document.createElement('img');
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.src = toImgSrc(choice);
+            choiceDiv.appendChild(img);
+
+            choiceDiv.onclick = function() {
+                answers[taskIdx] = choiceIdx;
+                var all = choicesGrid.querySelectorAll('.t-choice');
+                for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+                choiceDiv.classList.add('selected');
+
+                var allAnswered = answers.every(function(a) { return a !== undefined; });
+                document.getElementById('t-native-submit').disabled = !allAnswered;
+            };
+            choicesGrid.appendChild(choiceDiv);
+        });
+        taskDiv.appendChild(choicesGrid);
+        container.appendChild(taskDiv);
+    });
+
+    document.getElementById('t-native-submit').disabled = true;
+    document.getElementById('t-native-submit').onclick = function() {
+        var allAnswered = answers.every(function(a) { return a !== undefined; });
+        if (!allAnswered) return;
+
+        var challengeEl = document.getElementById('t-challenge');
+        var challenge = challengeEl ? challengeEl.value : '';
+        var r = answers.join('');
+
+        var msg = { twister: { challenge: challenge, response: r } };
+        if (window.savedTicket) msg.twister.ticket = window.savedTicket;
+        try { window.parent.postMessage(msg, '*'); } catch (e) {}
+
+        if (expiryInterval) clearInterval(expiryInterval);
+        if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onCaptchaEntered === 'function') {
+            CaptchaCallback.onCaptchaEntered(challenge, r);
+        }
+    };
+
     CaptchaCallback.onCaptchaLoaded();
 }
 

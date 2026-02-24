@@ -502,6 +502,7 @@ public class Chan4 extends SiteBase {
     private final StringSetting passPass;
     private final StringSetting passToken;
     private final BooleanSetting showCooldownToast;
+    private final BooleanSetting singleViewCaptchas;
 
     public Chan4() {
         // we used these before multisite, and lets keep using them.
@@ -512,6 +513,7 @@ public class Chan4 extends SiteBase {
         // from the server that the cookie is set to.
         passToken = new StringSetting(p, "preference_pass_id", "");
         showCooldownToast = new BooleanSetting(p, "preference_4chan_cooldown_toast", false);
+        singleViewCaptchas = new BooleanSetting(p, "preference_4chan_single_view_captchas", false);
     }
 
     @Override
@@ -523,11 +525,16 @@ public class Chan4 extends SiteBase {
     public List<SiteSetting> settings() {
         List<SiteSetting> list = new ArrayList<>();
         list.add(SiteSetting.forBoolean(showCooldownToast, "Cooldown toasts", "Informs about captcha state"));
+        list.add(SiteSetting.forBoolean(singleViewCaptchas, "Single view captchas", "Show all captchas challenges in a single page"));
         return list;
     }
 
     public BooleanSetting getShowCooldownToast() {
         return showCooldownToast;
+    }
+
+    public BooleanSetting getSingleViewCaptchas() {
+        return singleViewCaptchas;
     }
 
     @Override

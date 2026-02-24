@@ -369,8 +369,18 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     // Injects dark mode styles and JS message listeners into the page
     private void injectThemingAndHooks() {
         boolean isDark = !ThemeHelper.theme().isLightTheme;
+        boolean singleView = false;
+        if (site != null && site.name().equalsIgnoreCase("4chan")) {
+            // SitesSetupController uses the site to find settings
+            org.otacoo.chan.core.site.sites.chan4.Chan4 chan4 = (org.otacoo.chan.core.site.sites.chan4.Chan4) site;
+            singleView = chan4.getSingleViewCaptchas().get();
+        }
+        
+        final boolean finalSingleView = singleView;
+
         String js = "(function() {" +
                 "  var isDark = " + isDark + ";" +
+                "  var isSingleView = " + finalSingleView + ";" +
                 "  var meta = document.createElement('meta');" +
                 "  meta.name = 'color-scheme';" +
                 "  meta.content = isDark ? 'dark' : 'light';" +
@@ -383,6 +393,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 "    var original = window.parent.postMessage.bind(window.parent);" +
                 "    window.parent.postMessage = function(msg, origin) {" +
                 "      if (msg && msg.twister) {" +
+                "        msg.twister.single_view = isSingleView;" +
                 "        try { CaptchaCallback.onCaptchaPayloadReady(encodeURIComponent(JSON.stringify(msg))); } catch(e) {}" +
                 "        if (msg.twister.challenge && msg.twister.response) {" +
                 "          try { CaptchaCallback.onCaptchaEntered(msg.twister.challenge, msg.twister.response); } catch(e) {}" +
@@ -621,6 +632,28 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
              Scanner scanner = new Scanner(is, StandardCharsets.UTF_8.name())) {
             String html = scanner.useDelimiter("\\A").next();
             boolean isDark = !ThemeHelper.theme().isLightTheme;
+            
+            boolean singleView = false;
+            if (site != null && site.name().equalsIgnoreCase("4chan")) {
+                org.otacoo.chan.core.site.sites.chan4.Chan4 chan4 = (org.otacoo.chan.core.site.sites.chan4.Chan4) site;
+                singleView = chan4.getSingleViewCaptchas().get();
+            }
+            
+            // Add single_view flag to JSON if not present
+            if (singleView) {
+                try {
+                    JSONObject obj = new JSONObject(json);
+                    JSONObject inner = obj.optJSONObject("twister");
+                    if (inner != null) {
+                        inner.put("single_view", true);
+                        json = obj.toString();
+                    } else if (obj.has("tasks")) {
+                        obj.put("single_view", true);
+                        json = obj.toString();
+                    }
+                } catch (Exception ignored) {}
+            }
+
             return html.replace("__CLOVER_JSON__", json.replace("</script>", "<\\/script>"))
                     .replace("__C_BG__", isDark ? "#0d0d0d" : "#ffffff")
                     .replace("__C_FG__", isDark ? "#e8e8e8" : "#1a1a1a")
