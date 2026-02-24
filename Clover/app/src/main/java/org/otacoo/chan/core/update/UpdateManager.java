@@ -19,11 +19,13 @@ package org.otacoo.chan.core.update;
 
 import static org.otacoo.chan.Chan.inject;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.StrictMode;
 import android.text.TextUtils;
+
+import androidx.core.content.FileProvider;
 
 import com.android.volley.RequestQueue;
 
@@ -32,12 +34,11 @@ import org.otacoo.chan.core.cache.FileCache;
 import org.otacoo.chan.core.cache.FileCacheListener;
 import org.otacoo.chan.core.net.UpdateApiRequest;
 import org.otacoo.chan.core.settings.ChanSettings;
-import org.otacoo.chan.utils.IOUtils;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 import org.otacoo.chan.utils.Time;
 
 import java.io.File;
-import java.io.IOException;
 
 import javax.inject.Inject;
 
@@ -45,15 +46,13 @@ import okhttp3.HttpUrl;
 
 /**
  * Calls the update API and downloads and requests installs of APK files.
- * <p>The APK files are downloaded to the public Download directory, and the default APK install
+ * <p>The APK files are downloaded to the internal cache directory, and the default APK install
  * screen is launched after downloading.
  */
 public class UpdateManager {
     public static final long DEFAULT_UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 
     private static final String TAG = "UpdateManager";
-
-    private static final String DOWNLOAD_FILE = "Clover_update.apk";
 
     @Inject
     RequestQueue volleyRequestQueue;
@@ -173,7 +172,7 @@ public class UpdateManager {
             @Override
             public void onSuccess(File file) {
                 callback.onUpdateDownloadSuccess();
-                copyToPublicDirectory(file);
+                installApk(new Install(file));
             }
 
             @Override
@@ -192,29 +191,20 @@ public class UpdateManager {
         installApk(install);
     }
 
-    private void copyToPublicDirectory(File cacheFile) {
-        File out = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS),
-                DOWNLOAD_FILE);
-        try {
-            IOUtils.copyFile(cacheFile, out);
-        } catch (IOException e) {
-            Logger.e(TAG, "requestApkInstall", e);
-            callback.onUpdateDownloadMoveFailed();
-            return;
-        }
-        installApk(new Install(out));
-    }
-
     private void installApk(Install install) {
         // First open the dialog that asks to retry and calls this method again.
         callback.openUpdateRetryDialog(install);
 
+        Context context = AndroidUtils.getAppContext();
+        Uri contentUri = FileProvider.getUriForFile(context,
+                BuildConfig.APPLICATION_ID + ".fileprovider",
+                install.installFile);
+
         // Then launch the APK install intent.
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.setDataAndType(Uri.fromFile(install.installFile),
-                "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
 
         // The installer wants a content scheme from android N and up,
         // but I don't feel like implementing a content provider just for this feature.
