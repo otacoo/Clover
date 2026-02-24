@@ -7,6 +7,14 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.otacoo.chan.ui.captcha;
 
@@ -208,9 +216,15 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     // Restores the last known UI state or reloads the captcha page
     @Override
     public void reset() {
-        showingActiveCaptcha = false;
         reportedCompletion = false;
         
+        // Preserve active challenge if user returns to it before it expires.
+        if (showingActiveCaptcha) {
+            Logger.i(TAG, "reset: preserving active captcha challenge view");
+            onCaptchaLoaded();
+            return;
+        }
+
         String key = getGlobalKey();
         int displayRemaining = Math.max(getCooldownRemainingSeconds(), getRequestCooldownRemainingSeconds());
 
@@ -307,7 +321,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     return interceptCaptchaRequest(url);
                 }
                 
-                // If we get here it means we are loading natively or intercept failed
                 if (isMainFrame && isCaptchaRequest) {
                     skipInterceptNextLoad = false;
                     lastResponseWasAsset = false;
@@ -468,6 +481,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
             String lower = payload.toLowerCase();
             if (lower.contains("verified") || lower.contains("not required")) {
+                if (onCooldownNow()) {
+                    globalCooldowns.remove(getGlobalKey());
+                    cooldownActive = false;
+                    if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
+                        Toast.makeText(AndroidUtils.getAppContext(), "4chan: Cooldown finished. You can now request a captcha.", Toast.LENGTH_LONG).show();
+                    }
+                }
                 onCaptchaEntered("", "");
                 return;
             }
