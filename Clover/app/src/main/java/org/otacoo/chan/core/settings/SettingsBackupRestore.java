@@ -111,20 +111,6 @@ public final class SettingsBackupRestore {
         }
     }
 
-    /**
-     * Export preferences only (legacy). Use {@link #exportFull} for full backup.
-     */
-    public static String exportToJson(SharedPreferences prefs) throws Exception {
-        JSONObject out = new JSONObject();
-        out.put(KEY_VERSION, BACKUP_VERSION_1);
-        putPreferencesInto(out, prefs);
-        return out.toString(2);
-    }
-
-    /**
-     * Export preferences, watched threads (pins), and saved replies to a JSON string.
-     * Must be called from a thread that can block on database tasks.
-     */
     public static String exportFull(DatabaseManager databaseManager, SharedPreferences prefs) throws Exception {
         List<Pin> pins = databaseManager.runTask(databaseManager.getDatabasePinManager().getPins());
         List<SavedReply> savedReplies = databaseManager.runTask(
@@ -164,9 +150,7 @@ public final class SettingsBackupRestore {
                         s.put("boards", boardsArr);
                     }
                 }
-            } catch (Exception e) {
-                // Site not in repository or DB error, skip boards for this site
-            }
+            } catch (Exception ignored) {}
 
             sitesArr.put(s);
         }
@@ -221,12 +205,17 @@ public final class SettingsBackupRestore {
                 "https://www.4chan.org",
                 "https://boards.4chan.org",
                 "https://sys.4chan.org",
+                "https://www.4channel.org",
+                "https://boards.4channel.org",
+                "https://sys.4channel.org",
                 "https://8chan.moe",
-                "https://8chan.st"
+                "https://8chan.st",
+                "https//sushigirl.us",
+                "https://sushigirl.cafe"
         };
         for (String domain : domains) {
             String c = cookieManager.getCookie(domain);
-            if (c != null) {
+            if (c != null && !c.isEmpty()) {
                 cookiesObj.put(domain, c);
             }
         }
@@ -249,23 +238,6 @@ public final class SettingsBackupRestore {
         }
     }
 
-    /**
-     * Import preferences only. Merges with existing; reload proxy after. Use {@link #importFull} for full restore.
-     */
-    public static void importFromJson(SharedPreferences prefs, String json) throws Exception {
-        JSONObject obj = new JSONObject(json);
-        int version = obj.optInt(KEY_VERSION, BACKUP_VERSION_1);
-        if (version >= BACKUP_VERSION_FULL && obj.has(KEY_PREFERENCES)) {
-            applyPreferences(prefs, obj.getJSONObject(KEY_PREFERENCES));
-        } else {
-            applyPreferencesFromRoot(prefs, obj);
-        }
-    }
-
-    /**
-     * Import preferences, saved replies, and pins from a full backup JSON.
-     * Must be called from a thread that can block on database tasks.
-     */
     public static void importFull(DatabaseManager databaseManager, SharedPreferences prefs, String json) throws Exception {
         JSONObject obj = new JSONObject(json);
         int version = obj.optInt(KEY_VERSION, BACKUP_VERSION_1);
@@ -297,7 +269,6 @@ public final class SettingsBackupRestore {
                     if (o.has("boards")) {
                         SiteModel temp = new SiteModel();
                         temp.configuration = o.getString("configuration");
-                        temp.userSettings = o.optString("userSettings", "{\"settings\":{}}");
                         int classId = temp.loadConfigFields().first.classId;
                         int currentId = resolveSiteClassIdToCurrentId(databaseManager, classId);
                         if (currentId >= 0) {

@@ -210,7 +210,7 @@ public class MainSettingsController extends SettingsController implements Settin
             try {
                 String json = SettingsBackupRestore.exportFull(databaseManager, AndroidUtils.getPreferences());
                 ContentResolver cr = context.getContentResolver();
-                try (OutputStream os = cr.openOutputStream(uri)) {
+                try (OutputStream os = cr.openOutputStream(uri, "wt")) {
                     if (os != null) {
                         os.write(json.getBytes(StandardCharsets.UTF_8));
                     }
