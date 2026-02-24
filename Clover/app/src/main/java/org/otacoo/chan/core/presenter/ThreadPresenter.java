@@ -96,6 +96,7 @@ public class ThreadPresenter implements
     private String searchQuery;
     private PostsFilter.Order order = PostsFilter.Order.BUMP;
     private boolean historyAdded;
+    private boolean ignoreLastViewedUpdates = false;
 
     @Inject
     public ThreadPresenter(WatchManager watchManager,
@@ -334,7 +335,7 @@ public class ThreadPresenter implements
      */
     @Override
     public void onListScrolledToBottom() {
-        if (loadable.isThreadMode()) {
+        if (loadable.isThreadMode() && !ignoreLastViewedUpdates) {
             List<Post> posts = chanLoader.getThread().posts;
             loadable.setLastViewed(posts.get(posts.size() - 1).no);
         }
@@ -829,6 +830,10 @@ public class ThreadPresenter implements
             history.thumbnailUrl = image == null ? "" : image.getThumbnailUrl().toString();
             databaseManager.runTaskAsync(databaseManager.getDatabaseHistoryManager().addHistory(history));
         }
+    }
+
+    public void setIgnoreLastViewedUpdates(boolean ignore) {
+        this.ignoreLastViewedUpdates = ignore;
     }
 
     public void showImageReencodingWindow() {
