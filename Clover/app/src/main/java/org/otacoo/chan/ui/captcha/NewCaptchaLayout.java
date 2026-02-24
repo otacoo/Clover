@@ -750,6 +750,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 // the actual puzzle) must NOT be intercepted — doing so would replace the challenge
                 // page with our asset and loop back to "0s" state. Let it load natively and let
                 // onPageFinished / extractPayloadFromNativePageAndLoadAsset handle the result.
+                boolean isCaptchaRequest = (board != null && !board.isEmpty()) 
+                        ? url.startsWith("https://sys.4chan.org/captcha?board=" + board)
                 if (isMainFrame && isCaptchaRequest && showingActiveCaptcha) {
                     // Reset per-page state so that the incoming page is evaluated fresh.
                     showingActiveCaptcha = false;
