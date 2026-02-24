@@ -167,6 +167,8 @@ public class SettingsController extends Controller implements AndroidUtils.OnMea
                     preferenceView = (ViewGroup) inf.inflate(R.layout.setting_link, groupLayout, false);
                 } else if (settingView instanceof BooleanSettingView) {
                     preferenceView = (ViewGroup) inf.inflate(R.layout.setting_boolean, groupLayout, false);
+                } else if (settingView instanceof SplitBooleanSettingView) {
+                    preferenceView = (ViewGroup) inf.inflate(R.layout.setting_split_boolean, groupLayout, false);
                 }
 
                 setDescriptionText(preferenceView, topValue, bottomValue);

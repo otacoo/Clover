@@ -47,6 +47,7 @@ import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
+import org.otacoo.chan.ui.settings.SplitBooleanSettingView;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.io.InputStream;
@@ -395,10 +396,11 @@ public class MainSettingsController extends SettingsController implements Settin
 
     private void setupUpdateSetting(SettingsGroup about) {
         if (((StartActivity) context).getVersionHandler().isUpdatingAvailable()) {
-            about.add(new BooleanSettingView(this,
+            about.add(new SplitBooleanSettingView(this,
                     ChanSettings.autoCheckUpdates,
                     R.string.settings_update_check,
-                    R.string.settings_update_check_description));
+                    R.string.settings_update_check_description,
+                    v -> ((StartActivity) context).getVersionHandler().manualUpdateCheck()));
         }
     }
 

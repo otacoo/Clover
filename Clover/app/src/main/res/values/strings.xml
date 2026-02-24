@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-Clover - 4chan browser https://github.com/Floens/Clover/
-Copyright (C) 2014  Floens
+Clover - 4chan browser https://github.com/otacoo/Clover
+Copyright (C) 2014 Floens
+Copyright (C) 2026 otacoo
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -447,7 +448,7 @@ Enable \"Play videos with external player\" in the settings to play videos with 
     <!-- Main About group -->
     <string name="settings_group_about">About</string>
     <string name="settings_update_check">Check for updates</string>
-    <string name="settings_update_check_description">Check for Clover updates on startup</string>
+    <string name="settings_update_check_description">Tap to check updates now • Toggle for startup check</string>
     <string name="settings_crash_reporting">Report crashes</string>
     <string name="settings_crash_reporting_description">
 "Crash reporting creates reports of errors in Clover.
@@ -571,8 +572,8 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_video_default_muted_description">If a video has audio, mute it by default.</string>
     <string name="setting_video_open_external">Play videos with external player</string>
     <string name="setting_video_open_external_description">Play videos in an external media player app</string>
-    <string name="setting_video_exoplayer">Enable new ExoPlayer</string>
-    <string name="setting_video_exoplayer_description">Use the new ExoPlayer for internal media player</string>
+    <string name="setting_video_auto_loop">Enable automatic video-looping</string>
+    <string name="setting_video_auto_loop_description">Automatically loop video content</string>
     <string name="setting_share_url">Share URL to image</string>
     <string name="setting_share_url_description">Share the URL to the image instead of the image itself</string>
     <string name="settings_reveal_image_spoilers">Reveal image spoilers</string>
@@ -587,9 +588,6 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_image_auto_load_none">Never</string>
 
     <string name="setting_video_auto_load">Automatically load videos</string>
-
-    <string name="setting_video_auto_loop">Enable automatic video-looping</string>
-    <string name="setting_video_auto_loop_description">Automatically loop video content</string>
 
     <!-- Media Video section -->
     <string name="settings_group_media_video">Video Player</string>
