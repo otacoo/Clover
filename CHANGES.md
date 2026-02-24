@@ -1,3 +1,16 @@
+## 2026-02-24 – v3.0.28
+
+- 4chan: Add option to view all captcha challenges in a single view
+- 4chan: Fix Expiry cooldown margin
+- 4chan: Slightly increased captcha instruction font size
+- Pressing "Back" during captcha will no longer lose the captcha
+- Dev options: Add option to add cookies for 4chan
+- Dev options: Fixed a bug where deleting or updating cookies wasn't being correctly applied
+- Clover update button now is both an update trigger and a toggle
+- Reduced APK size
+- Updated WebView and OkHttp packages to newer more stable versions
+- Rainbow went home
+
 ## 2026-02-23 – v3.0.27
 
 - Fix for an omission where captcha toasts weren't being gated by the "Cooldown toasts" toggle
