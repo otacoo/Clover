@@ -233,14 +233,6 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
     }
 
     @Override
-    public void onUpdateDownloadMoveFailed() {
-        new AlertDialog.Builder(context)
-                .setTitle(R.string.update_install_download_move_failed)
-                .setPositiveButton(R.string.ok, null)
-                .show();
-    }
-
-    @Override
     public void onUpdateOpenInstallScreen(Intent intent) {
         AndroidUtils.openIntent(intent);
     }

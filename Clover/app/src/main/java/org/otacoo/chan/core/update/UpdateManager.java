@@ -22,7 +22,6 @@ import static org.otacoo.chan.Chan.inject;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.StrictMode;
 import android.text.TextUtils;
 
 import androidx.core.content.FileProvider;
@@ -158,11 +157,19 @@ public class UpdateManager {
     }
 
     /**
-     * Install the APK file specified in {@code update}. This methods needs the storage permission.
+     * Install the APK file specified in {@code update}. These methods need the storage permission.
      *
      * @param update update with apk details.
      */
     public void doUpdate(Update update) {
+        // Delete old cached update if exists to ensure a fresh download
+        File oldFile = fileCache.get(update.apkUrl.toString());
+        if (oldFile.exists()) {
+            if (oldFile.delete()) {
+                Logger.i(TAG, "Deleted existing cached update file");
+            }
+        }
+
         fileCache.downloadFile(update.apkUrl.toString(), new FileCacheListener() {
             @Override
             public void onProgress(long downloaded, long total) {
@@ -196,6 +203,11 @@ public class UpdateManager {
         callback.openUpdateRetryDialog(install);
 
         Context context = AndroidUtils.getAppContext();
+        if (install.installFile == null || !install.installFile.exists()) {
+            Logger.e(TAG, "installApk: file does not exist");
+            return;
+        }
+
         Uri contentUri = FileProvider.getUriForFile(context,
                 BuildConfig.APPLICATION_ID + ".fileprovider",
                 install.installFile);
@@ -206,15 +218,7 @@ public class UpdateManager {
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
 
-        // The installer wants a content scheme from android N and up,
-        // but I don't feel like implementing a content provider just for this feature.
-        // Temporary change the strictmode policy while starting the intent.
-        StrictMode.VmPolicy vmPolicy = StrictMode.getVmPolicy();
-        StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX);
-
         callback.onUpdateOpenInstallScreen(intent);
-
-        StrictMode.setVmPolicy(vmPolicy);
     }
 
     public static class Update {
@@ -245,8 +249,6 @@ public class UpdateManager {
         void onUpdateDownloadSuccess();
 
         void onUpdateDownloadFailed();
-
-        void onUpdateDownloadMoveFailed();
 
         void onUpdateOpenInstallScreen(Intent intent);
 
