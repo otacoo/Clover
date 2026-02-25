@@ -22,6 +22,7 @@ import static org.otacoo.chan.Chan.inject;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.text.TextUtils;
 
 import androidx.core.content.FileProvider;
@@ -34,10 +35,12 @@ import org.otacoo.chan.core.cache.FileCacheListener;
 import org.otacoo.chan.core.net.UpdateApiRequest;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.IOUtils;
 import org.otacoo.chan.utils.Logger;
 import org.otacoo.chan.utils.Time;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.inject.Inject;
 
@@ -45,13 +48,15 @@ import okhttp3.HttpUrl;
 
 /**
  * Calls the update API and downloads and requests installs of APK files.
- * <p>The APK files are downloaded to the internal cache directory, and the default APK install
+ * <p>The APK files are downloaded to a dedicated updates directory, and the default APK install
  * screen is launched after downloading.
  */
 public class UpdateManager {
     public static final long DEFAULT_UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 
     private static final String TAG = "UpdateManager";
+    private static final String UPDATE_FILENAME = "update.apk";
+    private static final String LEGACY_UPDATE_FILENAME = "Clover_update.apk";
 
     @Inject
     RequestQueue volleyRequestQueue;
@@ -157,17 +162,15 @@ public class UpdateManager {
     }
 
     /**
-     * Install the APK file specified in {@code update}. These methods need the storage permission.
+     * Install the APK file specified in {@code update}.
      *
      * @param update update with apk details.
      */
     public void doUpdate(Update update) {
-        // Delete old cached update if exists to ensure a fresh download
-        File oldFile = fileCache.get(update.apkUrl.toString());
-        if (oldFile.exists()) {
-            if (oldFile.delete()) {
-                Logger.i(TAG, "Deleted existing cached update file");
-            }
+        // Clean up legacy update file if it exists in Downloads
+        File legacyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), LEGACY_UPDATE_FILENAME);
+        if (legacyFile.exists()) {
+            legacyFile.delete();
         }
 
         fileCache.downloadFile(update.apkUrl.toString(), new FileCacheListener() {
@@ -179,7 +182,7 @@ public class UpdateManager {
             @Override
             public void onSuccess(File file) {
                 callback.onUpdateDownloadSuccess();
-                installApk(new Install(file));
+                prepareAndInstall(file);
             }
 
             @Override
@@ -196,6 +199,29 @@ public class UpdateManager {
 
     public void retry(Install install) {
         installApk(install);
+    }
+
+    private void prepareAndInstall(File downloadedFile) {
+        Context context = AndroidUtils.getAppContext();
+        File updatesDir = new File(context.getCacheDir(), "updates");
+        if (!updatesDir.exists()) {
+            updatesDir.mkdirs();
+        }
+
+        File installFile = new File(updatesDir, UPDATE_FILENAME);
+        if (installFile.exists()) {
+            installFile.delete();
+        }
+
+        try {
+            IOUtils.copyFile(downloadedFile, installFile);
+        } catch (IOException e) {
+            Logger.e(TAG, "Failed to copy APK to updates directory", e);
+            callback.onUpdateDownloadMoveFailed();
+            return;
+        }
+
+        installApk(new Install(installFile));
     }
 
     private void installApk(Install install) {
@@ -249,6 +275,8 @@ public class UpdateManager {
         void onUpdateDownloadSuccess();
 
         void onUpdateDownloadFailed();
+
+        void onUpdateDownloadMoveFailed();
 
         void onUpdateOpenInstallScreen(Intent intent);
 

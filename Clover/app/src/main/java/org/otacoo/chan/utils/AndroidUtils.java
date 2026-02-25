@@ -202,9 +202,19 @@ public class AndroidUtils {
 
     public static void openIntent(Intent intent) {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        
+        // Special case for APK installation to ensure it's handled by the package installer
+        if ("application/vnd.android.package-archive".equals(intent.getType())) {
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+
         try {
             getAppContext().startActivity(intent);
         } catch (ActivityNotFoundException e) {
+            Logger.e(TAG, "No activity found to handle intent: " + intent, e);
+            openIntentFailed();
+        } catch (SecurityException e) {
+            Logger.e(TAG, "Security exception while starting intent: " + intent, e);
             openIntentFailed();
         }
     }

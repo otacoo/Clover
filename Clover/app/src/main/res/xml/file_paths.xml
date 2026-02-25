@@ -8,6 +8,9 @@
     <cache-path
         name="logs"
         path="logs/" />
+    <cache-path
+        name="updates"
+        path="updates/" />
     <external-cache-path
         name="exfc"
         path="filecache/" />
