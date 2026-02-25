@@ -116,6 +116,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <data android:host="8chan.st" />
                 <data android:host="sushigirl.us" />
                 <data android:host="sushigirl.cafe" />
+                <data android:host="lainchan.org" />
             </intent-filter>
 
         </activity>
