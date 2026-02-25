@@ -19,7 +19,6 @@ package org.otacoo.chan.ui.helper;
 
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 
-import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -180,25 +179,8 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
     }
 
     private void updateInstallRequested(final UpdateApiRequest.UpdateApiMessage message) {
-        runtimePermissionsHelper.requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, new RuntimePermissionsHelper.Callback() {
-            @Override
-            public void onRuntimePermissionResult(boolean granted) {
-                if (granted) {
-                    createDownloadProgressDialog();
-                    updateManager.doUpdate(new UpdateManager.Update(message.apkUrl));
-                } else {
-                    runtimePermissionsHelper.showPermissionRequiredDialog(context,
-                            context.getString(R.string.update_storage_permission_required_title),
-                            context.getString(R.string.update_storage_permission_required),
-                            new RuntimePermissionsHelper.PermissionRequiredDialogCallback() {
-                                @Override
-                                public void retryPermissionRequest() {
-                                    updateInstallRequested(message);
-                                }
-                            });
-                }
-            }
-        });
+        createDownloadProgressDialog();
+        updateManager.doUpdate(new UpdateManager.Update(message.apkUrl));
     }
 
     private void createDownloadProgressDialog() {
