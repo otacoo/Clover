@@ -95,7 +95,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-            onRecyclerViewScrolled();
+            onRecyclerViewScrolled(dy);
         }
     };
 
@@ -144,7 +144,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         }
     }
 
-    private void onRecyclerViewScrolled() {
+    private void onRecyclerViewScrolled(int dy) {
         // onScrolled can be called after cleanup()
         if (showingThread != null) {
             int[] indexTop = getIndexAndTop();
@@ -160,6 +160,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 // while in a layout pass. Postpone to the next frame.
                 mainHandler.post(() -> ThreadListLayout.this.callback.onListScrolledToBottom());
             }
+            
+            threadListLayoutCallback.onScrolling(dy);
         }
     }
 
@@ -681,7 +683,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         return toolbar.getToolbarHeight();
     }
 
-    private int getTopAdapterPosition() {
+    public int getTopAdapterPosition() {
         switch (postViewMode) {
             case LIST:
                 return ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
@@ -759,5 +761,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         boolean shouldToolbarCollapse();
 
         void showImageReencodingWindow();
+
+        void onScrolling(int dy);
     }
 }

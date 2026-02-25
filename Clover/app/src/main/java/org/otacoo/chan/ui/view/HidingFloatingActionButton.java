@@ -19,7 +19,8 @@ package org.otacoo.chan.ui.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.ViewGroup;
+import android.view.View;
+import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -62,11 +63,14 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
         super.onAttachedToWindow();
         attachedToWindow = true;
 
-        if (!(getParent() instanceof CoordinatorLayout)) {
-            throw new IllegalArgumentException("HidingFloatingActionButton must be a parent of CoordinatorLayout");
+        ViewParent parent = getParent();
+        while (parent != null && !(parent instanceof CoordinatorLayout)) {
+            parent = parent.getParent();
         }
 
-        coordinatorLayout = (CoordinatorLayout) getParent();
+        if (parent instanceof CoordinatorLayout) {
+            coordinatorLayout = (CoordinatorLayout) parent;
+        }
 
         if (toolbar != null && !attachedToToolbar) {
             toolbar.addCollapseCallback(this);
@@ -123,10 +127,15 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     }
 
     private int getTotalHeight() {
-        return getHeight() + ((ViewGroup.MarginLayoutParams) getLayoutParams()).bottomMargin;
+        return getHeight() + dp(16); // Fallback to 16dp if layout params are not available or nested
+    }
+
+    private int dp(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
     }
 
     private boolean isSnackbarShowing() {
+        if (coordinatorLayout == null) return false;
         for (int i = 0; i < coordinatorLayout.getChildCount(); i++) {
             if (coordinatorLayout.getChildAt(i) instanceof Snackbar.SnackbarLayout) {
                 return true;

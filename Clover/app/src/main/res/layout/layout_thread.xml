@@ -16,25 +16,68 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <org.otacoo.chan.ui.layout.ThreadLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <org.otacoo.chan.ui.view.LoadView
         android:id="@+id/loadview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <org.otacoo.chan.ui.view.HidingFloatingActionButton
-        android:id="@+id/reply_button"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right|bottom"
-        android:layout_margin="16dp"
-        android:alpha="0"
-        android:scaleX="0"
-        android:scaleY="0"
-        android:src="@drawable/ic_create_white_24dp"
-        tools:ignore="RtlHardcoded" />
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        tools:ignore="RtlHardcoded">
+
+        <org.otacoo.chan.ui.view.HidingFloatingActionButton
+            android:id="@+id/top_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            app:borderWidth="0dp"
+            app:elevation="4dp"
+            app:pressedTranslationZ="8dp"
+            app:useCompatPadding="true"
+            android:scaleX="0"
+            android:scaleY="0"
+            android:src="@drawable/ic_expand_less_white_24dp"
+            android:visibility="gone" />
+
+        <org.otacoo.chan.ui.view.HidingFloatingActionButton
+            android:id="@+id/bottom_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            app:borderWidth="0dp"
+            app:elevation="4dp"
+            app:pressedTranslationZ="8dp"
+            app:useCompatPadding="true"
+            android:scaleX="0"
+            android:scaleY="0"
+            android:src="@drawable/ic_expand_more_white_24dp"
+            android:visibility="gone" />
+
+        <org.otacoo.chan.ui.view.HidingFloatingActionButton
+            android:id="@+id/reply_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            app:borderWidth="0dp"
+            app:elevation="4dp"
+            app:pressedTranslationZ="8dp"
+            app:useCompatPadding="true"
+            android:scaleX="0"
+            android:scaleY="0"
+            android:src="@drawable/ic_create_white_24dp" />
+
+    </LinearLayout>
 
 </org.otacoo.chan.ui.layout.ThreadLayout>

@@ -19,6 +19,7 @@ package org.otacoo.chan.ui.layout;
 
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
+import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
@@ -91,6 +92,10 @@ public class ThreadLayout extends CoordinatorLayout implements
         ERROR
     }
 
+    // Top and Bottom FAB
+    private static final int SCROLL_THRESHOLD = 260;
+    private static final int TOP_BOTTOM_DIRECTION_DELAY_MS = 300;
+
     @Inject
     DatabaseManager databaseManager;
 
@@ -103,6 +108,8 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     private LoadView loadView;
     private HidingFloatingActionButton replyButton;
+    private HidingFloatingActionButton topButton;
+    private HidingFloatingActionButton bottomButton;
     private ThreadListLayout threadListLayout;
     private LinearLayout errorLayout;
 
@@ -115,8 +122,15 @@ public class ThreadLayout extends CoordinatorLayout implements
     private ProgressDialog deletingDialog;
     private boolean refreshedFromSwipe;
     private boolean replyButtonEnabled;
+    private boolean topBottomButtonEnabled;
     private boolean showingReplyButton = false;
+    private boolean showingTopBottomButtons = false;
+    private int accumulatedScroll = 0;
     private Snackbar newPostsNotification;
+
+    private final Runnable hideTopBottomRunnable = () -> showTopBottomButtons(false, false);
+    private Runnable updateTopBottomDirectionRunnable = null;
+    private Boolean scheduledScrollingUp = null;
 
     public ThreadLayout(Context context) {
         this(context, null);
@@ -137,6 +151,8 @@ public class ThreadLayout extends CoordinatorLayout implements
         // View binding
         loadView = findViewById(R.id.loadview);
         replyButton = findViewById(R.id.reply_button);
+        topButton = findViewById(R.id.top_button);
+        bottomButton = findViewById(R.id.bottom_button);
 
         LayoutInflater layoutInflater = LayoutInflater.from(getContext());
 
@@ -154,9 +170,6 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         // Inflate thread loading layout
         progressLayout = layoutInflater.inflate(R.layout.layout_thread_progress, this, false);
-
-        // Inflate empty layout
-
 
         // View setup
         threadListLayout.setCallbacks(presenter, presenter, presenter, presenter, this);
@@ -181,11 +194,45 @@ public class ThreadLayout extends CoordinatorLayout implements
             }
         }
 
+        // Setup Top/Bottom FABs
+        topBottomButtonEnabled = ChanSettings.enableTopBottomFab.get();
+        if (!topBottomButtonEnabled) {
+            AndroidUtils.removeFromParentView(topButton);
+            AndroidUtils.removeFromParentView(bottomButton);
+        } else {
+            topButton.setOnClickListener(this);
+            topButton.setToolbar(callback.getToolbar());
+            
+            bottomButton.setOnClickListener(this);
+            bottomButton.setToolbar(callback.getToolbar());
+            
+            updateTopBottomDrawables();
+
+            if (ChanSettings.toolbarBottom.get()) {
+                int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+                CoordinatorLayout.LayoutParams lpTop = (CoordinatorLayout.LayoutParams) topButton.getLayoutParams();
+                lpTop.bottomMargin += toolbarH;
+                topButton.setLayoutParams(lpTop);
+
+                CoordinatorLayout.LayoutParams lpBottom = (CoordinatorLayout.LayoutParams) bottomButton.getLayoutParams();
+                lpBottom.bottomMargin += toolbarH;
+                bottomButton.setLayoutParams(lpBottom);
+            }
+        }
+
         presenter.create(this);
+    }
+
+    private void updateTopBottomDrawables() {
+        topButton.setImageResource(R.drawable.ic_expand_less_white_24dp);
+        bottomButton.setImageResource(R.drawable.ic_expand_more_white_24dp);
+        theme().applyFabColor(topButton);
+        theme().applyFabColor(bottomButton);
     }
 
     public void destroy() {
         presenter.unbindLoadable();
+        removeCallbacks(hideTopBottomRunnable);
     }
 
     @Override
@@ -200,6 +247,12 @@ public class ThreadLayout extends CoordinatorLayout implements
             }
         } else if (v == replyButton) {
             threadListLayout.openReply(true);
+        } else if (v == topButton) {
+            threadListLayout.scrollTo(0, false);
+            showTopBottomButtons(false, false);
+        } else if (v == bottomButton) {
+            threadListLayout.scrollTo(-1, false);
+            showTopBottomButtons(false, false);
         }
     }
 
@@ -239,8 +292,90 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     @Override
+    public void onScrolling(int dy) {
+        if (topBottomButtonEnabled && visible == Visible.THREAD) {
+            boolean scrollingUp = dy < 0;
+            boolean scrollingDown = dy > 0;
+
+            // Ignore finger jitter
+            int minDelta = dp(4);
+            if (Math.abs(dy) < minDelta) {
+                return;
+            }
+
+            if ((scrollingDown && accumulatedScroll < 0) || (scrollingUp && accumulatedScroll > 0)) {
+                accumulatedScroll = 0;
+            }
+            
+            accumulatedScroll += dy;
+            
+            if (showingTopBottomButtons) {
+                scheduleTopBottomDirectionUpdate(scrollingUp);
+                removeCallbacks(hideTopBottomRunnable);
+                postDelayed(hideTopBottomRunnable, 2000);
+            } else if (Math.abs(accumulatedScroll) >= dp(SCROLL_THRESHOLD)) {
+                // Delay the direction update to give the user a short leeway
+                showTopBottomButtons(true, scrollingUp);
+                scheduleTopBottomDirectionUpdate(scrollingUp);
+                removeCallbacks(hideTopBottomRunnable);
+                postDelayed(hideTopBottomRunnable, 2000);
+                accumulatedScroll = 0;
+            }
+        }
+    }
+
+    private void scheduleTopBottomDirectionUpdate(final boolean scrollingUp) {
+        if (updateTopBottomDirectionRunnable != null) {
+            if (scheduledScrollingUp != null && scheduledScrollingUp == scrollingUp) {
+                return;
+            }
+            removeCallbacks(updateTopBottomDirectionRunnable);
+        }
+
+        scheduledScrollingUp = scrollingUp;
+        updateTopBottomDirectionRunnable = new Runnable() {
+            @Override
+            public void run() {
+                setTopBottomDirection(scheduledScrollingUp);
+                updateTopBottomDirectionRunnable = null;
+                scheduledScrollingUp = null;
+            }
+        };
+        postDelayed(updateTopBottomDirectionRunnable, TOP_BOTTOM_DIRECTION_DELAY_MS);
+    }
+
+    private void setTopBottomDirection(final boolean scrollingUp) {
+        if (!topBottomButtonEnabled || visible != Visible.THREAD) return;
+
+        boolean atTop = threadListLayout.getTopAdapterPosition() <= 0;
+        boolean atBottom = threadListLayout.scrolledToBottom();
+
+        if (atTop) {
+            topButton.setVisibility(View.GONE);
+            bottomButton.setVisibility(View.VISIBLE);
+        } else if (atBottom) {
+            topButton.setVisibility(View.VISIBLE);
+            bottomButton.setVisibility(View.GONE);
+        } else {
+            if (scrollingUp) {
+                topButton.setVisibility(View.VISIBLE);
+                bottomButton.setVisibility(View.GONE);
+            } else {
+                topButton.setVisibility(View.GONE);
+                bottomButton.setVisibility(View.VISIBLE);
+            }
+        }
+
+        animateFab(topButton, topButton.getVisibility() == View.VISIBLE);
+        animateFab(bottomButton, bottomButton.getVisibility() == View.VISIBLE);
+    }
+
+    @Override
     public void replyLayoutOpen(boolean open) {
         showReplyButton(!open);
+        if (open) {
+            showTopBottomButtons(false, false);
+        }
     }
 
     @Override
@@ -620,6 +755,74 @@ public class ThreadLayout extends CoordinatorLayout implements
         }
     }
 
+    private void showTopBottomButtons(final boolean show, final boolean scrollingUp) {
+        if (!topBottomButtonEnabled || (show == showingTopBottomButtons && !show)) {
+            return;
+        }
+
+        // Cancel any pending direction update when we hide the buttons
+        if (!show && updateTopBottomDirectionRunnable != null) {
+            removeCallbacks(updateTopBottomDirectionRunnable);
+            updateTopBottomDirectionRunnable = null;
+            scheduledScrollingUp = null;
+        }
+
+        showingTopBottomButtons = show;
+
+        if (show) {
+            boolean atTop = threadListLayout.getTopAdapterPosition() <= 0;
+            boolean atBottom = threadListLayout.scrolledToBottom();
+
+            if (atTop) {
+                topButton.setVisibility(View.GONE);
+                bottomButton.setVisibility(View.VISIBLE);
+            } else if (atBottom) {
+                topButton.setVisibility(View.VISIBLE);
+                bottomButton.setVisibility(View.GONE);
+            } else {
+                if (scrollingUp) {
+                    topButton.setVisibility(View.VISIBLE);
+                    bottomButton.setVisibility(View.GONE);
+                } else {
+                    topButton.setVisibility(View.GONE);
+                    bottomButton.setVisibility(View.VISIBLE);
+                }
+            }
+        }
+
+        animateFab(topButton, show && topButton.getVisibility() == View.VISIBLE);
+        animateFab(bottomButton, show && bottomButton.getVisibility() == View.VISIBLE);
+    }
+
+    private void animateFab(final View view, final boolean show) {
+        view.animate()
+                .setInterpolator(new DecelerateInterpolator(2f))
+                .setDuration(200)
+                .alpha(show ? 1f : 0f)
+                .scaleX(show ? 1f : 0f)
+                .scaleY(show ? 1f : 0f)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        if (!show) {
+                            view.setVisibility(View.GONE);
+                        }
+                    }
+
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        if (show) {
+                            view.setVisibility(View.VISIBLE);
+                        }
+                    }
+                })
+                .start();
+    }
+
+    private int dp(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
     private void switchVisible(Visible visible) {
         if (this.visible != visible) {
             if (this.visible != null) {
@@ -629,6 +832,7 @@ public class ThreadLayout extends CoordinatorLayout implements
                         postPopupHelper.popAll();
                         showSearch(false);
                         showReplyButton(false);
+                        showTopBottomButtons(false, false);
                         newPostsNotification = null;
                         break;
                 }
@@ -651,6 +855,7 @@ public class ThreadLayout extends CoordinatorLayout implements
                     callback.hideSwipeRefreshLayout();
                     loadView.setView(threadListLayout);
                     showReplyButton(true);
+                    updateTopBottomDrawables();
                     break;
                 case ERROR:
                     callback.hideSwipeRefreshLayout();
@@ -683,7 +888,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     public interface ThreadLayoutCallback {
-        void showThread(Loadable threadLoadable);
+        void showThread(Loadable loadable);
 
         void showImages(List<PostImage> images, int index, Loadable loadable, ThumbnailView thumbnail);
 
