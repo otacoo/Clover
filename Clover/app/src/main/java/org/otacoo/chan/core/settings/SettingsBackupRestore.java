@@ -32,6 +32,7 @@ import java.util.Set;
 import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.model.json.site.SiteConfig;
 import org.otacoo.chan.core.model.orm.Board;
+import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.model.orm.Pin;
 import org.otacoo.chan.core.model.orm.SavedReply;
@@ -48,12 +49,14 @@ public final class SettingsBackupRestore {
     private static final int BACKUP_VERSION_1 = 1;
     private static final int BACKUP_VERSION_FULL = 2;
     private static final int BACKUP_VERSION_SITES = 3;
+    private static final int BACKUP_VERSION_FILTERS = 4;
 
     private static final String KEY_PREFERENCES = "preferences";
     private static final String KEY_SITES = "sites";
     private static final String KEY_PINS = "pins";
     private static final String KEY_SAVED_REPLIES = "saved_replies";
     private static final String KEY_COOKIES = "cookies";
+    private static final String KEY_FILTERS = "filters";
     
     /** Stable site identifier (SiteRegistry classId); used so restore works across devices where numeric siteId differs. */
     private static final String KEY_SITE_CLASS_ID = "siteClassId";
@@ -116,9 +119,10 @@ public final class SettingsBackupRestore {
         List<SavedReply> savedReplies = databaseManager.runTask(
                 databaseManager.getDatabaseSavedReplyManager().getAllForBackup());
         List<SiteModel> sites = databaseManager.runTask(databaseManager.getDatabaseSiteManager().getAll());
+        List<Filter> filters = databaseManager.runTask(databaseManager.getDatabaseFilterManager().getFilters());
 
         JSONObject out = new JSONObject();
-        out.put(KEY_VERSION, BACKUP_VERSION_SITES);
+        out.put(KEY_VERSION, BACKUP_VERSION_FILTERS);
 
         JSONObject prefsObj = new JSONObject();
         putPreferencesInto(prefsObj, prefs);
@@ -194,6 +198,21 @@ public final class SettingsBackupRestore {
             repliesArr.put(o);
         }
         out.put(KEY_SAVED_REPLIES, repliesArr);
+
+        JSONArray filtersArr = new JSONArray();
+        for (Filter f : filters) {
+            JSONObject o = new JSONObject();
+            o.put("enabled", f.enabled);
+            o.put("type", f.type);
+            o.put("pattern", f.pattern);
+            o.put("allBoards", f.allBoards);
+            o.put("boards", f.boards);
+            o.put("action", f.action);
+            o.put("color", f.color);
+            o.put("order", f.order);
+            filtersArr.put(o);
+        }
+        out.put(KEY_FILTERS, filtersArr);
 
         return out.toString(2);
     }
@@ -342,6 +361,22 @@ public final class SettingsBackupRestore {
                     pin.order = o.optInt("order", -1);
                     pin.archived = o.optBoolean("archived", false);
                     databaseManager.runTask(databaseManager.getDatabasePinManager().createPin(pin));
+                }
+            }
+            if (version >= BACKUP_VERSION_FILTERS && obj.has(KEY_FILTERS)) {
+                JSONArray arr = obj.getJSONArray(KEY_FILTERS);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject o = arr.getJSONObject(i);
+                    Filter f = new Filter();
+                    f.enabled = o.optBoolean("enabled", true);
+                    f.type = o.getInt("type");
+                    f.pattern = o.getString("pattern");
+                    f.allBoards = o.optBoolean("allBoards", true);
+                    f.boards = o.optString("boards", "");
+                    f.action = o.getInt("action");
+                    f.color = o.getInt("color");
+                    f.order = o.optInt("order", 0);
+                    databaseManager.runTask(databaseManager.getDatabaseFilterManager().createFilter(f));
                 }
             }
         } else {
