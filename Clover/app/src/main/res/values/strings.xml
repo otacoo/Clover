@@ -399,9 +399,9 @@ Enable \"Play videos with external player\" in the settings to play videos with 
     <string name="settings_appearance">Appearance</string>
     <string name="settings_appearance_description">Theme, layout, fonts, etc.</string>
     <string name="settings_behavior">Behavior</string>
-    <string name="settings_behavior_description">Thread refresh, captcha, etc.</string>
+    <string name="settings_behavior_description">Threads, posts, connections, etc.</string>
     <string name="settings_media">Media</string>
-    <string name="settings_media_description">Save location, auto loading, etc.</string>
+    <string name="settings_media_description">Save location, video player, etc.</string>
     <string name="settings_filters">Filters</string>
 
     <!-- Thread watcher -->
