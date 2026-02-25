@@ -95,7 +95,8 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
         fileCache.downloadFile(postImage.imageUrl.toString(), new FileCacheListener() {
             @Override
             public void onSuccess(File file) {
-                shareFileCacheImage(postImage, file);
+                // Perform file operations on a background thread to prevent UI lag
+                executor.execute(() -> shareFileCacheImage(postImage, file));
             }
         });
     }
@@ -118,21 +119,24 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             Logger.e(TAG, "Error copying file for sharing", e);
         }
 
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        Uri fileUri = FileCacheProvider.getUriForFile(file);
-        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+        final File finalFile = file;
+        AndroidUtils.runOnUiThread(() -> {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Uri fileUri = FileCacheProvider.getUriForFile(finalFile);
+            intent.putExtra(Intent.EXTRA_STREAM, fileUri);
 
-        if (postImage.type == PostImage.Type.MOVIE) {
-            intent.setType("video/*");
-        } else {
-            intent.setType("image/" + postImage.extension);
-        }
+            if (postImage.type == PostImage.Type.MOVIE) {
+                intent.setType("video/*");
+            } else {
+                intent.setType("image/" + postImage.extension);
+            }
 
-        // ClipData is required for FileProvider permissions on modern Android when using a chooser
-        intent.setClipData(ClipData.newRawUri(null, fileUri));
+            // ClipData is required for FileProvider permissions on modern Android when using a chooser
+            intent.setClipData(ClipData.newRawUri(null, fileUri));
 
-        AndroidUtils.openIntent(Intent.createChooser(intent, getString(R.string.action_share)));
+            AndroidUtils.openIntent(Intent.createChooser(intent, getString(R.string.action_share)));
+        });
     }
 
     public void addTask(final ImageSaveTask task, final String[] folders) {
@@ -142,14 +146,17 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     public void addTasks(final List<ImageSaveTask> tasks, final String[] folders, Runnable success) {
         storage.prepareForSave(folders, () -> {
             if (!needsRequestExternalStoragePermission()) {
-                queueTasks(tasks, folders);
-                if (success != null) {
-                    success.run();
-                }
+                // Move the actual task queueing to the executor thread to avoid blocking UI with Storage.obtain... calls
+                executor.execute(() -> {
+                    queueTasks(tasks, folders);
+                    if (success != null) {
+                        AndroidUtils.runOnUiThread(success);
+                    }
+                });
             } else {
                 requestPermission(granted -> {
                     if (granted) {
-                        queueTasks(tasks, folders);
+                        executor.execute(() -> queueTasks(tasks, folders));
                     } else {
                         showStatusToast(null, false);
                     }
@@ -166,16 +173,24 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             String name = ChanSettings.saveOriginalFilename.get() ? postImage.originalName : postImage.filename;
 
             StorageFile file;
-            if (storage.mode() == Storage.Mode.FILE) {
-                file = storage.obtainLegacyStorageFileForName(folders, name + "." + postImage.extension);
-            } else {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    throw new IllegalStateException();
+            try {
+                if (storage.mode() == Storage.Mode.FILE) {
+                    file = storage.obtainLegacyStorageFileForName(folders, name + "." + postImage.extension);
+                } else {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                        throw new IllegalStateException();
+                    }
+                    // This call can be slow because it involves SAF queries
+                    file = storage.obtainStorageFileForName(folders, name + "." + postImage.extension);
                 }
-                file = storage.obtainStorageFileForName(folders, name + "." + postImage.extension);
+            } catch (Exception e) {
+                Logger.e(TAG, "Error obtaining storage file", e);
+                file = null;
             }
+
             if (file == null) {
-                throw new IllegalStateException("Failed to obtain a StorageFile");
+                Logger.e(TAG, "Failed to obtain a StorageFile for " + name);
+                continue;
             }
             task.setDestination(file);
             task.setShowToast(tasks.size() == 1);
@@ -186,7 +201,7 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             executor.execute(task);
         }
 
-        updateNotification();
+        AndroidUtils.runOnUiThread(this::updateNotification);
     }
 
     @Override
@@ -196,14 +211,17 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             totalTasks = 0;
             doneTasks = 0;
         }
-        updateNotification();
+        
+        AndroidUtils.runOnUiThread(() -> {
+            updateNotification();
 
-        if (task.isMakeBitmap()) {
-            showImageSaved(task);
-        }
-        if (task.isShowToast()) {
-            showStatusToast(task, success);
-        }
+            if (task.isMakeBitmap()) {
+                showImageSaved(task);
+            }
+            if (task.isShowToast()) {
+                showStatusToast(task, success);
+            }
+        });
     }
 
     private void cancelAll() {
