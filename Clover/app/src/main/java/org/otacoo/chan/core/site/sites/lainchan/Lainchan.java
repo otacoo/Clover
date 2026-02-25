@@ -67,7 +67,7 @@ public class Lainchan extends CommonSite {
     @Override
     public void setup() {
         setName("Lainchan");
-        setIcon(SiteIcon.fromFavicon(HttpUrl.parse("https://lainchan.org/favicon.ico")));
+        setIcon(SiteIcon.fromAssets("icons/lainchan.webp"));
 
         setBoards(
                 Board.fromSiteNameCode(this, "Programming", "λ"),
