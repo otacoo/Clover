@@ -2,7 +2,7 @@
 
 - Filters will now be correctly backed up
 - Fix a threading and UI sync issue with the swipe deleting of filters
-- Better handling of update check and fail (3rd try)
+- Better handling of in-app update check and fail
 
 ## 2026-02-24 – v3.1.0
 
@@ -13,14 +13,11 @@
     - Filters can be re-ordered
     - Turned FABs into regular buttons so they don't hide the filter list
     - The Pattern field should no longer lag as much by pattern matching on every keystroke
-    - ~~**Known bug I can't seem to fix:** *removing many filters really fast bugs out the list*~~
 - Add support for [code], [math] and [eqn] tags in the posting form
 - Add option to always show tags in posting form under Behaviour > Reply
 - Board lists will now be sorted alphabetically (or as they come out of the API)
 - Fix bug where pinned thread's unread count wasn't being properly synced with the thread
 - Fix bug where the last read post wasn't being properly managed
-- *Hopefully* fixed an Android issue when trying to update the app through the update check
-- *Hopefully* fixed a Permissions issue for Storage on newer Android version
 - Downgrade Gradle and AGP to more stable and compatible versions
 
 ## 2026-02-24 – v3.0.28
