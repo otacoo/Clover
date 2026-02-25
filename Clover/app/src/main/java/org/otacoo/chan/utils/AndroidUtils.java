@@ -111,6 +111,7 @@ public class AndroidUtils {
         return getRes().getString(res);
     }
 
+    @SuppressWarnings("deprecation")
     public static SharedPreferences getPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(application);
     }
@@ -131,33 +132,34 @@ public class AndroidUtils {
 
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
 
-        ComponentName resolvedActivity = intent.resolveActivity(pm);
-        if (resolvedActivity == null) {
-            openIntentFailed();
-        } else {
-            boolean thisAppIsDefault = resolvedActivity.getPackageName().equals(getAppContext().getPackageName());
-            if (!thisAppIsDefault) {
-                openIntent(intent);
-            } else {
-                // Get all intents that match, and filter out this app
-                List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
-                List<Intent> filteredIntents = new ArrayList<>(resolveInfos.size());
-                for (ResolveInfo info : resolveInfos) {
-                    if (!info.activityInfo.packageName.equals(getAppContext().getPackageName())) {
-                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
-                        i.setPackage(info.activityInfo.packageName);
-                        filteredIntents.add(i);
-                    }
-                }
+        // Use queryIntentActivities to check if we are the default, but handle Android 11+ visibility
+        List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
+        String myPackage = getAppContext().getPackageName();
+        boolean thisAppIsDefault = false;
+        
+        ComponentName defaultComponent = intent.resolveActivity(pm);
+        if (defaultComponent != null && defaultComponent.getPackageName().equals(myPackage)) {
+            thisAppIsDefault = true;
+        }
 
-                if (filteredIntents.size() > 0) {
-                    // Create a chooser for the last app in the list, and add the rest with EXTRA_INITIAL_INTENTS that get placed above
-                    Intent chooser = Intent.createChooser(filteredIntents.remove(filteredIntents.size() - 1), null);
-                    chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, filteredIntents.toArray(new Intent[filteredIntents.size()]));
-                    openIntent(chooser);
-                } else {
-                    openIntentFailed();
+        if (!thisAppIsDefault) {
+            openIntent(intent);
+        } else {
+            List<Intent> filteredIntents = new ArrayList<>(resolveInfos.size());
+            for (ResolveInfo info : resolveInfos) {
+                if (!info.activityInfo.packageName.equals(myPackage)) {
+                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+                    i.setPackage(info.activityInfo.packageName);
+                    filteredIntents.add(i);
                 }
+            }
+
+            if (filteredIntents.size() > 0) {
+                Intent chooser = Intent.createChooser(filteredIntents.remove(filteredIntents.size() - 1), null);
+                chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, filteredIntents.toArray(new Intent[filteredIntents.size()]));
+                openIntent(chooser);
+            } else {
+                openIntentFailed();
             }
         }
     }
@@ -200,9 +202,9 @@ public class AndroidUtils {
 
     public static void openIntent(Intent intent) {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        if (intent.resolveActivity(getAppContext().getPackageManager()) != null) {
+        try {
             getAppContext().startActivity(intent);
-        } else {
+        } catch (ActivityNotFoundException e) {
             openIntentFailed();
         }
     }
