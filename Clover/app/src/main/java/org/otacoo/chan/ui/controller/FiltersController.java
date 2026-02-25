@@ -44,6 +44,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
+import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.manager.FilterEngine;
 import org.otacoo.chan.core.manager.FilterType;
 import org.otacoo.chan.core.model.orm.Filter;
@@ -63,6 +64,9 @@ import de.greenrobot.event.EventBus;
 public class FiltersController extends Controller implements
         ToolbarNavigationController.ToolbarSearchCallback,
         View.OnClickListener {
+
+    @Inject
+    DatabaseManager databaseManager;
 
     @Inject
     FilterEngine filterEngine;
@@ -209,9 +213,16 @@ public class FiltersController extends Controller implements
 
     private final ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
+        private boolean moved = false;
+
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            adapter.onItemMove(viewHolder.getBindingAdapterPosition(), target.getBindingAdapterPosition());
+            int from = viewHolder.getBindingAdapterPosition();
+            int to = target.getBindingAdapterPosition();
+            if (from != RecyclerView.NO_POSITION && to != RecyclerView.NO_POSITION) {
+                adapter.onItemMove(from, to);
+                moved = true;
+            }
             return true;
         }
 
@@ -219,18 +230,25 @@ public class FiltersController extends Controller implements
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
             int position = viewHolder.getBindingAdapterPosition();
             if (position >= 0 && position < adapter.displayList.size()) {
-                Filter filter = adapter.displayList.get(position);
+                Filter filter = adapter.displayList.remove(position);
                 adapter.sourceList.remove(filter);
-                adapter.displayList.remove(position);
                 adapter.notifyItemRemoved(position);
-                deleteFilterFromDatabase(filter);
+                adapter.notifyItemRangeChanged(position, adapter.getItemCount() - position);
+
+                databaseManager.runTaskAsync(databaseManager.getDatabaseFilterManager().deleteFilter(filter), result -> {
+                    updateEnableButton();
+                    EventBus.getDefault().post(new RefreshUIMessage("filters"));
+                });
             }
         }
 
         @Override
         public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
             super.clearView(recyclerView, viewHolder);
-            adapter.saveOrders();
+            if (moved) {
+                moved = false;
+                adapter.saveOrders();
+            }
         }
 
         @Override
@@ -238,12 +256,6 @@ public class FiltersController extends Controller implements
             return false;
         }
     };
-
-    private void deleteFilterFromDatabase(Filter filter) {
-        filterEngine.deleteFilter(filter);
-        updateEnableButton();
-        EventBus.getDefault().post(new RefreshUIMessage("filters"));
-    }
 
     private class FilterAdapter extends RecyclerView.Adapter<FilterCell> {
         private final List<Filter> sourceList = new ArrayList<>();
