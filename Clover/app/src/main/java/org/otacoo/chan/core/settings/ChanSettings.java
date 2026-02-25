@@ -167,7 +167,8 @@ public class ChanSettings {
     public static final BooleanSetting saveOriginalFilename;
     public static final BooleanSetting shareUrl;
     public static final BooleanSetting enableReplyFab;
-    public static final BooleanSetting accessibleInfo;
+    public static final BooleanSetting enableTopBottomFab;
+    public static final BooleanSetting accessiblePostInfo;
     public static final BooleanSetting useImmersiveModeForGallery;
     public static final BooleanSetting anonymize;
     public static final BooleanSetting anonymizeIds;
@@ -262,9 +263,10 @@ public class ChanSettings {
         saveAlbumFolder = new OptionsSetting<>(p, "preference_save_album_folder", DestinationFolderMode.class, DestinationFolderMode.LEGACY);
         saveOriginalFilename = new BooleanSetting(p, "preference_image_save_original", false);
         shareUrl = new BooleanSetting(p, "preference_image_share_url", false);
-        accessibleInfo = new BooleanSetting(p, "preference_enable_accessible_info", false);
+        accessiblePostInfo = new BooleanSetting(p, "preference_enable_accessible_info", false);
         useImmersiveModeForGallery = new BooleanSetting(p, "use_immersive_mode_for_gallery", false);
         enableReplyFab = new BooleanSetting(p, "preference_enable_reply_fab", true);
+        enableTopBottomFab = new BooleanSetting(p, "preference_enable_top_bottom_fab", false);
         anonymize = new BooleanSetting(p, "preference_anonymize", false);
         anonymizeIds = new BooleanSetting(p, "preference_anonymize_ids", false);
         showAnonymousName = new BooleanSetting(p, "preference_show_anonymous_name", true);

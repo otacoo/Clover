@@ -92,8 +92,13 @@ public class AppearanceSettingsController extends SettingsController {
                     R.string.setting_enable_reply_fab,
                     R.string.setting_enable_reply_fab_description)));
 
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+                    ChanSettings.enableTopBottomFab,
+                    R.string.setting_enable_top_bottom_fab,
+                    R.string.setting_enable_top_bottom_fab_description)));
+
             requiresUiRefresh.add(layout.add(new BooleanSettingView(this,
-                    ChanSettings.accessibleInfo, R.string.setting_enable_accessible_post_info,
+                    ChanSettings.accessiblePostInfo, R.string.setting_enable_accessible_post_info,
                     R.string.setting_enable_accessible_post_info_description)));
 
             requiresUiRefresh.add(layout.add(new BooleanSettingView(this,

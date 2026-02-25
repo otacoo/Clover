@@ -506,7 +506,7 @@ public class ThreadPresenter implements
             menu.add(new FloatingMenuItem(POST_OPTION_DELETE, R.string.post_delete));
         }
 
-        if (ChanSettings.accessibleInfo.get()) {
+        if (ChanSettings.accessiblePostInfo.get()) {
             //Accessible info enabled
             menu.add(new FloatingMenuItem(POST_OPTION_INFO, R.string.post_info));
         } else {
