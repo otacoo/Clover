@@ -67,7 +67,7 @@ public class Sushichan extends CommonSite {
     @Override
     public void setup() {
         setName("Sushichan");
-        setIcon(SiteIcon.fromAssets("icons/sushichan.png"));
+        setIcon(SiteIcon.fromAssets("icons/sushichan.webp"));
 
         setBoards(
                 Board.fromSiteNameCode(this, "artsy", "wildcard"),

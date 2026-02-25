@@ -86,7 +86,7 @@ public class Moe8 extends CommonSite {
     @Override
     public void setup() {
         setName("8chan");
-        setIcon(SiteIcon.fromAssets("icons/8moe.png"));
+        setIcon(SiteIcon.fromAssets("icons/8moe.webp"));
 
         // Boards are not fetched at startup. Users add boards by entering their code directly.
         setBoardsType(BoardsType.INFINITE);
