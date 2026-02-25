@@ -92,9 +92,10 @@ public class ThreadLayout extends CoordinatorLayout implements
         ERROR
     }
 
-    // Top and Bottom FAB
-    private static final int SCROLL_THRESHOLD = 260;
+    // Top and Bottom FAB, could make these into menu options later if desired
+    private static final int SCROLL_THRESHOLD_PX = 600;
     private static final int TOP_BOTTOM_DIRECTION_DELAY_MS = 300;
+    private static final int FAB_HIDE_DELAY_MS = 1000;
 
     @Inject
     DatabaseManager databaseManager;
@@ -308,17 +309,24 @@ public class ThreadLayout extends CoordinatorLayout implements
             }
             
             accumulatedScroll += dy;
-            
+
+            // Keep timer alive if FAB is visible
             if (showingTopBottomButtons) {
-                scheduleTopBottomDirectionUpdate(scrollingUp);
                 removeCallbacks(hideTopBottomRunnable);
-                postDelayed(hideTopBottomRunnable, 2000);
-            } else if (Math.abs(accumulatedScroll) >= dp(SCROLL_THRESHOLD)) {
-                // Delay the direction update to give the user a short leeway
-                showTopBottomButtons(true, scrollingUp);
-                scheduleTopBottomDirectionUpdate(scrollingUp);
-                removeCallbacks(hideTopBottomRunnable);
-                postDelayed(hideTopBottomRunnable, 2000);
+                postDelayed(hideTopBottomRunnable, FAB_HIDE_DELAY_MS);
+            }
+
+            // Only react once we've scrolled a reasonable distance in one direction.
+            if (Math.abs(accumulatedScroll) >= dp(SCROLL_THRESHOLD_PX)) {
+                if (!showingTopBottomButtons) {
+                    // not currently visible -> make them appear immediately
+                    showTopBottomButtons(true, scrollingUp);
+                } else {
+                    // already visible -> potentially change direction
+                    scheduleTopBottomDirectionUpdate(scrollingUp);
+                }
+
+                // start counting again from zero
                 accumulatedScroll = 0;
             }
         }
