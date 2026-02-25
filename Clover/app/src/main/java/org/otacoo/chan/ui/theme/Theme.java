@@ -25,6 +25,7 @@ import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -103,15 +104,33 @@ public class Theme {
         reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 0.54f);
     }
 
+    public void resolveDrawablesNight() {
+        settingsDrawable = new ThemeDrawable(R.drawable.ic_settings_white_24dp, 1f);
+        imageDrawable = new ThemeDrawable(R.drawable.ic_image_white_24dp, 1f);
+        sendDrawable = new ThemeDrawable(R.drawable.ic_send_white_24dp, 1f);
+        clearDrawable = new ThemeDrawable(R.drawable.ic_clear_white_24dp, 1f);
+        backDrawable = new ThemeDrawable(R.drawable.ic_arrow_back_white_24dp, 1f);
+        doneDrawable = new ThemeDrawable(R.drawable.ic_done_white_24dp, 1f);
+        historyDrawable = new ThemeDrawable(R.drawable.ic_history_white_24dp, 1f);
+        listAddDrawable = new ThemeDrawable(R.drawable.ic_playlist_add_white_24dp, 1f);
+        helpDrawable = new ThemeDrawable(R.drawable.ic_help_outline_white_24dp, 1f);
+        refreshDrawable = new ThemeDrawable(R.drawable.ic_refresh_white_24dp, 1f);
+        reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 1f, true);
+    }
+
     public void applyFabColor(FloatingActionButton fab) {
         fab.setBackgroundTintList(ColorStateList.valueOf(accentColor.color));
     }
 
+    public void resolveSpanColors() {
+        resolveSpanColors(resValue);
+    }
+
     @SuppressWarnings("ResourceType")
-    private void resolveSpanColors() {
+    public void resolveSpanColors(int styleRes) {
         Resources.Theme theme = AndroidUtils.getAppContext().getResources().newTheme();
         theme.applyStyle(R.style.Chan_Theme, true);
-        theme.applyStyle(resValue, true);
+        theme.applyStyle(styleRes, true);
 
         TypedArray ta = theme.obtainStyledAttributes(new int[]{
                 R.attr.post_quote_color,
@@ -173,27 +192,37 @@ public class Theme {
         return primaryColor;
     }
 
-    public static class ThemeDrawable {
+    public class ThemeDrawable {
         public int drawable;
         public float alpha;
         public int intAlpha;
+        public boolean tint;
 
         public ThemeDrawable(int drawable, float alpha) {
+            this(drawable, alpha, false);
+        }
+
+        public ThemeDrawable(int drawable, float alpha, boolean tint) {
             this.drawable = drawable;
             this.alpha = alpha;
+            this.tint = tint;
             intAlpha = Math.round(alpha * 0xff);
         }
 
         public void apply(ImageView imageView) {
-            imageView.setImageResource(drawable);
-            // Use the int one!
-            //noinspection deprecation
-            imageView.setAlpha(intAlpha);
+            Drawable d = makeDrawable(imageView.getContext());
+            imageView.setImageDrawable(d);
         }
 
         public Drawable makeDrawable(Context context) {
-            Drawable d = ContextCompat.getDrawable(context, drawable).mutate();
-            d.setAlpha(intAlpha);
+            Drawable d = ContextCompat.getDrawable(context, drawable);
+            if (d != null) {
+                d = d.mutate();
+                d.setAlpha(intAlpha);
+                if (tint) {
+                    DrawableCompat.setTint(d, textSecondary);
+                }
+            }
             return d;
         }
     }

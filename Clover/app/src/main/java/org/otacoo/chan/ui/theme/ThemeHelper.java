@@ -19,6 +19,7 @@ package org.otacoo.chan.ui.theme;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -27,6 +28,7 @@ import androidx.annotation.AnyThread;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
@@ -51,6 +53,7 @@ public class ThemeHelper {
     private Theme theme;
 
     public ThemeHelper() {
+        themes.add(new Theme("Auto (System)", "auto", R.style.Chan_Theme, PrimaryColor.BLUE));
         themes.add(new Theme("Light", "light", R.style.Chan_Theme, PrimaryColor.BLUE));
         themes.add(new DarkTheme("Dark", "dark", R.style.Chan_Theme_Dark, PrimaryColor.DARK));
         themes.add(new DarkTheme("Black", "black", R.style.Chan_Theme_Black, PrimaryColor.BLACK));
@@ -84,14 +87,28 @@ public class ThemeHelper {
 
     public void updateCurrentTheme() {
         ChanSettings.ThemeColor settingTheme = ChanSettings.getThemeAndColor();
+        String themeName = settingTheme.theme;
+
+        boolean night = false;
+        if ("auto".equals(themeName)) {
+            int currentNightMode = AndroidUtils.getRes().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            night = currentNightMode == Configuration.UI_MODE_NIGHT_YES;
+            themeName = night ? "dark" : "light";
+        }
+
         for (Theme theme : themes) {
-            if (theme.name.equals(settingTheme.theme)) {
+            if (theme.name.equals(themeName)) {
                 this.theme = theme;
+                if (night) {
+                    this.theme.resolveDrawablesNight();
+                } else {
+                    this.theme.resolveDrawables();
+                }
                 return;
             }
         }
 
-        Logger.e(TAG, "No theme found for setting " + settingTheme + ", using the first one");
+        Logger.e(TAG, "No theme found for " + themeName + ", using the first one");
         theme = themes.get(0);
     }
 
@@ -121,14 +138,22 @@ public class ThemeHelper {
 
     public void setupContext(Activity context) {
         updateCurrentTheme();
+
         context.setTheme(theme.resValue);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             context.getWindow().setStatusBarColor(theme.primaryColor.dark);
             context.getWindow().setNavigationBarColor(0xff000000);
 
-            Bitmap icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_task_description);
-            context.setTaskDescription(new ActivityManager.TaskDescription(null, icon, theme.primaryColor.color));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.setTaskDescription(new ActivityManager.TaskDescription.Builder()
+                        .setPrimaryColor(theme.primaryColor.color)
+                        .build());
+            } else {
+                Bitmap icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_task_description);
+                //noinspection deprecation
+                context.setTaskDescription(new ActivityManager.TaskDescription(null, icon, theme.primaryColor.color));
+            }
         }
     }
 
@@ -157,7 +182,7 @@ public class ThemeHelper {
         public static final PrimaryColor PURPLE = new PrimaryColor("Purple", "purple", 0xFFF3E5F5, 0xFFE1BEE7, 0xFFCE93D8, 0xFFBA68C8, 0xFFAB47BC, 0xFF9C27B0, 0xFF8E24AA, 0xFF7B1FA2, 0xFF7B1FA2, 0xFF4A148C);
         public static final PrimaryColor DEEP_PURPLE = new PrimaryColor("Deep Purple", "deep_purple", 0xFFEDE7F6, 0xFFD1C4E9, 0xFFB39DDB, 0xFF9575CD, 0xFF7E57C2, 0xFF673AB7, 0xFF5E35B1, 0xFF512DA8, 0xFF512DA8, 0xFF311B92);
         public static final PrimaryColor INDIGO = new PrimaryColor("Indigo", "indigo", 0xFFE8EAF6, 0xFFC5CAE9, 0xFF9FA8DA, 0xFF7986CB, 0xFF5C6BC0, 0xFF3F51B5, 0xFF3949AB, 0xFF303F9F, 0xFF303F9F, 0xFF1A237E);
-        public static final PrimaryColor BLUE = new PrimaryColor("Blue", "blue", 0xFFE3F2FD, 0xFFBBDEFB, 0xFF90CAF9, 0xFF64B5F6, 0xFF42A5F5, 0xFF2196F3, 0xFF1E88E5, 0xFF1976D2, 0xFF1976D2, 0xFF0D47A1);
+        public static final PrimaryColor BLUE = new PrimaryColor("Blue", "blue", 0xFFE3F2FD, 0xFFFFCDD2, 0xFF90CAF9, 0xFF64B5F6, 0xFF42A5F5, 0xFF2196F3, 0xFF1E88E5, 0xFF1976D2, 0xFF1976D2, 0xFF0D47A1);
         public static final PrimaryColor LIGHT_BLUE = new PrimaryColor("Light Blue", "light_blue", 0xFFE1F5FE, 0xFFB3E5FC, 0xFF81D4FA, 0xFF4FC3F7, 0xFF29B6F6, 0xFF03A9F4, 0xFF039BE5, 0xFF0288D1, 0xFF0288D1, 0xFF01579B);
         public static final PrimaryColor CYAN = new PrimaryColor("Cyan", "cyan", 0xFFE0F7FA, 0xFFB2EBF2, 0xFF80DEEA, 0xFF4DD0E1, 0xFF26C6DA, 0xFF00BCD4, 0xFF00ACC1, 0xFF0097A7, 0xFF0097A7, 0xFF006064);
         public static final PrimaryColor TEAL = new PrimaryColor("Teal", "teal", 0xFFE0F2F1, 0xFFB2DFDB, 0xFF80CBC4, 0xFF4DB6AC, 0xFF26A69A, 0xFF009688, 0xFF00897B, 0xFF00796B, 0xFF00796B, 0xFF004D40);

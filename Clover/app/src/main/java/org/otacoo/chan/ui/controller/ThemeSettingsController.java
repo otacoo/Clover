@@ -25,6 +25,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
@@ -300,64 +301,44 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         }
 
         @Override
-        public CharSequence getPageTitle(int position) {
-            return super.getPageTitle(position);
-        }
-
-        @Override
         public View getView(final int position, ViewGroup parent) {
             final Theme theme = themes.get(position);
 
             Context themeContext = new ContextThemeWrapper(context, theme.resValue);
-
-            Post.Builder builder = new Post.Builder()
-                    .board(dummyBoard)
-                    .id(123456789)
-                    .opId(1)
-                    .setUnixTimestampSeconds((Time.get() - (30 * 60 * 1000)) / 1000)
-                    .subject("Lorem ipsum")
-                    .comment("<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
-                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br>" +
-                            "<br>" +
-                            "<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
-                            "http://example.com/" +
-                            "<br>" +
-                            "Phasellus consequat semper sodales. Donec dolor lectus, aliquet nec mollis vel, rutrum vel enim.");
-            Post post = new DefaultPostParser(new CommentParser()).parse(theme, builder, parserCallback);
 
             LinearLayout linearLayout = new LinearLayout(themeContext);
             linearLayout.setOrientation(LinearLayout.VERTICAL);
             linearLayout.setBackgroundColor(getAttrColor(themeContext, R.attr.backcolor));
 
             final Toolbar toolbar = new Toolbar(themeContext);
-            final View.OnClickListener colorClick = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    List<FloatingMenuItem> items = new ArrayList<>();
-                    FloatingMenuItem selected = null;
-                    for (ThemeHelper.PrimaryColor color : themeHelper.getColors()) {
-                        FloatingMenuItem floatingMenuItem = new FloatingMenuItem(new ColorsAdapterItem(color, color.color500), color.displayName);
-                        items.add(floatingMenuItem);
-                        if (color == selectedPrimaryColors.get(position)) {
-                            selected = floatingMenuItem;
-                        }
+            
+            final View.OnClickListener colorClick = v -> {
+                if (theme.name.equals("auto")) return; // Disable for Auto theme
+
+                List<FloatingMenuItem> items = new ArrayList<>();
+                FloatingMenuItem selected = null;
+                for (ThemeHelper.PrimaryColor color : themeHelper.getColors()) {
+                    FloatingMenuItem floatingMenuItem = new FloatingMenuItem(new ColorsAdapterItem(color, color.color500), color.displayName);
+                    items.add(floatingMenuItem);
+                    if (color == selectedPrimaryColors.get(position)) {
+                        selected = floatingMenuItem;
+                    }
+                }
+
+                FloatingMenu menu = getColorsMenu(items, selected, toolbar);
+                menu.setCallback(new FloatingMenu.FloatingMenuCallback() {
+                    @Override
+                    public void onFloatingMenuItemClicked(FloatingMenu menu, FloatingMenuItem item) {
+                        ColorsAdapterItem colorItem = (ColorsAdapterItem) item.getId();
+                        selectedPrimaryColors.set(position, colorItem.color);
+                        toolbar.setBackgroundColor(colorItem.color.color);
                     }
 
-                    FloatingMenu menu = getColorsMenu(items, selected, toolbar);
-                    menu.setCallback(new FloatingMenu.FloatingMenuCallback() {
-                        @Override
-                        public void onFloatingMenuItemClicked(FloatingMenu menu, FloatingMenuItem item) {
-                            ColorsAdapterItem colorItem = (ColorsAdapterItem) item.getId();
-                            selectedPrimaryColors.set(position, colorItem.color);
-                            toolbar.setBackgroundColor(colorItem.color.color);
-                        }
-
-                        @Override
-                        public void onFloatingMenuDismissed(FloatingMenu menu) {
-                        }
-                    });
-                    menu.show();
-                }
+                    @Override
+                    public void onFloatingMenuDismissed(FloatingMenu menu) {
+                    }
+                });
+                menu.show();
             };
             toolbar.setCallback(new Toolbar.ToolbarCallback() {
                 @Override
@@ -373,16 +354,84 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                 public void onSearchEntered(NavigationItem item, String entered) {
                 }
             });
-            toolbar.setBackgroundColor(theme.primaryColor.color);
+            
+            if (theme.name.equals("auto")) {
+                Theme lightTheme = null;
+                Theme darkTheme = null;
+                for (Theme t : themes) {
+                    if (t.name.equals("light")) lightTheme = t;
+                    if (t.name.equals("dark")) darkTheme = t;
+                }
+                
+                if (lightTheme != null && darkTheme != null) {
+                    int lightColor = lightTheme.primaryColor.color;
+                    int darkColor = darkTheme.primaryColor.color;
+                    
+                    GradientDrawable gradient = new GradientDrawable(
+                            GradientDrawable.Orientation.LEFT_RIGHT,
+                            new int[]{lightColor, lightColor, darkColor, darkColor}
+                    );
+                    toolbar.setBackground(gradient);
+                } else {
+                    toolbar.setBackgroundColor(selectedPrimaryColors.get(position).color);
+                }
+            } else {
+                toolbar.setBackgroundColor(selectedPrimaryColors.get(position).color);
+                toolbar.setOnClickListener(colorClick);
+            }
+            
             final NavigationItem item = new NavigationItem();
             item.title = theme.displayName;
             item.hasBack = false;
             toolbar.setNavigationItem(false, true, item);
-            toolbar.setOnClickListener(colorClick);
 
             linearLayout.addView(toolbar, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
                     themeContext.getResources().getDimensionPixelSize(R.dimen.toolbar_height)));
 
+            if (theme.name.equals("auto")) {
+                LinearLayout split = new LinearLayout(context);
+                split.setOrientation(LinearLayout.HORIZONTAL);
+
+                Theme lightTheme = null;
+                Theme darkTheme = null;
+                for (Theme t : themes) {
+                    if (t.name.equals("light")) lightTheme = t;
+                    if (t.name.equals("dark")) darkTheme = t;
+                }
+
+                if (lightTheme != null) {
+                    split.addView(createPreviewSide(lightTheme), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+                }
+                if (darkTheme != null) {
+                    split.addView(createPreviewSide(darkTheme), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+                }
+
+                linearLayout.addView(split, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            } else {
+                linearLayout.addView(createPreviewCell(themeContext, theme), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            }
+
+            return linearLayout;
+        }
+
+        private Post.Builder createDummyPostBuilder() {
+            return new Post.Builder()
+                    .board(dummyBoard)
+                    .id(123456789)
+                    .opId(1)
+                    .setUnixTimestampSeconds((Time.get() - (30 * 60 * 1000)) / 1000)
+                    .subject("Lorem ipsum")
+                    .comment("<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br>" +
+                            "<br>" +
+                            "<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
+                            "http://example.com/" +
+                            "<br>" +
+                            "Phasellus consequat semper sodales. Donec dolor lectus, aliquet nec mollis vel, rutrum vel enim.");
+        }
+
+        private View createPreviewCell(Context themeContext, Theme theme) {
+            Post post = new DefaultPostParser(new CommentParser()).parse(theme, createDummyPostBuilder(), parserCallback);
             PostCell postCell = (PostCell) LayoutInflater.from(themeContext).inflate(R.layout.cell_post, null);
             postCell.setPost(theme,
                     post,
@@ -394,9 +443,16 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                     true,
                     ChanSettings.PostViewMode.LIST,
                     false);
-            linearLayout.addView(postCell, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            return postCell;
+        }
 
-            return linearLayout;
+        private View createPreviewSide(Theme theme) {
+            Context themeContext = new ContextThemeWrapper(context, theme.resValue);
+            LinearLayout side = new LinearLayout(themeContext);
+            side.setOrientation(LinearLayout.VERTICAL);
+            side.setBackgroundColor(getAttrColor(themeContext, R.attr.backcolor));
+            side.addView(createPreviewCell(themeContext, theme), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            return side;
         }
 
         @Override

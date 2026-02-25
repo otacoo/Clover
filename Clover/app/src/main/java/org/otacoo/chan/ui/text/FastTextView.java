@@ -156,10 +156,6 @@ public class FastTextView extends View {
 
 //        Logger.test("%X %s %s", System.identityHashCode(this), MeasureSpec.toString(widthMeasureSpec), MeasureSpec.toString(heightMeasureSpec));
 
-        if ((widthMode == MeasureSpec.AT_MOST || widthMode == MeasureSpec.UNSPECIFIED) && !singleLine) {
-            throw new IllegalArgumentException("FasTextView only supports wrapping widths on a single line");
-        }
-
         int width = 0;
         if (widthMode == MeasureSpec.EXACTLY) {
             width = widthSize;
