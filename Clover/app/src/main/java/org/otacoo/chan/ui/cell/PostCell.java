@@ -471,7 +471,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 // handlers and sets a movementmethod.
                 // Required for the isTextSelectable check.
                 // We override the test and movementmethod settings.
-                comment.setTextIsSelectable(true);
+                if (!comment.isTextSelectable()) {
+                    comment.setTextIsSelectable(true);
+                }
 
                 comment.setText(commentText, TextView.BufferType.SPANNABLE);
 
@@ -505,6 +507,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                         // ensure that the start and end are in the right order, in case the selection start/end are flipped
                         int start = Math.min(comment.getSelectionEnd(), comment.getSelectionStart());
                         int end = Math.max(comment.getSelectionEnd(), comment.getSelectionStart());
+                        if (start < 0 || end < 0 || start > comment.getText().length() || end > comment.getText().length()) {
+                            return false;
+                        }
                         CharSequence selection = comment.getText().subSequence(start, end);
                         if (item.getItemId() == quoteMenuItem.getItemId()) {
                             callback.onPostSelectionQuoted(post, selection);
@@ -682,57 +687,59 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 y += widget.getScrollY();
 
                 Layout layout = widget.getLayout();
-                int line = layout.getLineForVertical(y);
-                int off = layout.getOffsetForHorizontal(line, x);
+                if (layout != null) {
+                    int line = layout.getLineForVertical(y);
+                    int off = layout.getOffsetForHorizontal(line, x);
 
-                ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
+                    ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
 
-                if (link.length > 0) {
-                    ClickableSpan clickableSpan1 = link[0];
-                    ClickableSpan clickableSpan2 = link.length > 1 ? link[1] : null;
-                    PostLinkable linkable1 = clickableSpan1 instanceof PostLinkable ? (PostLinkable) clickableSpan1 : null;
-                    PostLinkable linkable2 = clickableSpan2 instanceof PostLinkable ? (PostLinkable) clickableSpan2 : null;
-                    if (action == MotionEvent.ACTION_UP) {
-                        ignoreNextOnClick = true;
-                        if (linkable2 == null && linkable1 != null) {
-                            //regular, non-spoilered link
-                            handlePostLinkableClick(widget, linkable1);
-                        } else if (linkable2 != null && linkable1 != null) {
-                            //spoilered link, figure out which span is the spoiler
-                            if (linkable1.type == PostLinkable.Type.SPOILER && linkable1.isSpoilerVisible()) {
-                                //linkable2 is the link
-                                handlePostLinkableClick(widget, linkable2);
-                            } else if (linkable2.type == PostLinkable.Type.SPOILER && linkable2.isSpoilerVisible()) {
-                                //linkable 1 is the link
+                    if (link.length > 0) {
+                        ClickableSpan clickableSpan1 = link[0];
+                        ClickableSpan clickableSpan2 = link.length > 1 ? link[1] : null;
+                        PostLinkable linkable1 = clickableSpan1 instanceof PostLinkable ? (PostLinkable) clickableSpan1 : null;
+                        PostLinkable linkable2 = clickableSpan2 instanceof PostLinkable ? (PostLinkable) clickableSpan2 : null;
+                        if (action == MotionEvent.ACTION_UP) {
+                            ignoreNextOnClick = true;
+                            if (linkable2 == null && linkable1 != null) {
+                                //regular, non-spoilered link
                                 handlePostLinkableClick(widget, linkable1);
-                            } else {
-                                //weird case where a double stack of linkables, but isn't spoilered (some 4chan stickied posts)
-                                handlePostLinkableClick(widget, linkable1);
+                            } else if (linkable2 != null && linkable1 != null) {
+                                //spoilered link, figure out which span is the spoiler
+                                if (linkable1.type == PostLinkable.Type.SPOILER && linkable1.isSpoilerVisible()) {
+                                    //linkable2 is the link
+                                    handlePostLinkableClick(widget, linkable2);
+                                } else if (linkable2.type == PostLinkable.Type.SPOILER && linkable2.isSpoilerVisible()) {
+                                    //linkable 1 is the link
+                                    handlePostLinkableClick(widget, linkable1);
+                                } else {
+                                    //weird case where a double stack of linkables, but isn't spoilered (some 4chan stickied posts)
+                                    handlePostLinkableClick(widget, linkable1);
+                                }
                             }
+
+                            //do onclick on all postlinkables afterwards, so that we don't update the spoiler state early
+                            for (ClickableSpan s : link) {
+                                if (s instanceof PostLinkable) {
+                                    PostLinkable item = (PostLinkable) s;
+                                    item.onClick(widget);
+                                }
+                            }
+
+                            buffer.removeSpan(BACKGROUND_SPAN);
+                        } else if (action == MotionEvent.ACTION_DOWN && clickableSpan1 instanceof PostLinkable) {
+                            buffer.setSpan(BACKGROUND_SPAN, buffer.getSpanStart(clickableSpan1), buffer.getSpanEnd(clickableSpan1), 0);
+                        } else if (action == MotionEvent.ACTION_CANCEL) {
+                            buffer.removeSpan(BACKGROUND_SPAN);
                         }
 
-                        //do onclick on all postlinkables afterwards, so that we don't update the spoiler state early
-                        for (ClickableSpan s : link) {
-                            if (s instanceof PostLinkable) {
-                                PostLinkable item = (PostLinkable) s;
-                                item.onClick(widget);
-                            }
-                        }
-
-                        buffer.removeSpan(BACKGROUND_SPAN);
-                    } else if (action == MotionEvent.ACTION_DOWN && clickableSpan1 instanceof PostLinkable) {
-                        buffer.setSpan(BACKGROUND_SPAN, buffer.getSpanStart(clickableSpan1), buffer.getSpanEnd(clickableSpan1), 0);
-                    } else if (action == MotionEvent.ACTION_CANCEL) {
+                        return true;
+                    } else {
                         buffer.removeSpan(BACKGROUND_SPAN);
                     }
-
-                    return true;
-                } else {
-                    buffer.removeSpan(BACKGROUND_SPAN);
                 }
             }
 
-            return true;
+            return super.onTouchEvent(widget, buffer, event);
         }
     }
 
@@ -796,6 +803,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 y += widget.getScrollY();
 
                 Layout layout = widget.getLayout();
+                if (layout == null) return false;
+
                 int line = layout.getLineForVertical(y);
                 int off = layout.getOffsetForHorizontal(line, x);
 
