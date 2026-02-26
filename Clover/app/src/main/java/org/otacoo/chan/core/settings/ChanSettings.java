@@ -238,7 +238,7 @@ public class ChanSettings {
         fontCondensed = new BooleanSetting(p, "preference_font_condensed", false);
         thumbnailScale = new IntegerSetting(p, "preference_thumbnail_scale", 100);
         layoutTextBelowThumbnails = new BooleanSetting(p, "layout_text_below_thumbnails", false);
-        openLinkConfirmation = new BooleanSetting(p, "preference_open_link_confirmation", false);
+        openLinkConfirmation = new BooleanSetting(p, "preference_open_link_confirmation", true);
         openLinkBrowser = new BooleanSetting(p, "preference_open_link_browser", false);
         autoRefreshThread = new BooleanSetting(p, "preference_auto_refresh_thread", true);
 //        imageAutoLoad = new BooleanSetting(p, "preference_image_auto_load", true);
@@ -273,7 +273,7 @@ public class ChanSettings {
         revealImageSpoilers = new BooleanSetting(p, "preference_reveal_image_spoilers", false);
         revealTextSpoilers = new BooleanSetting(p, "preference_reveal_text_spoilers", false);
         repliesButtonsBottom = new BooleanSetting(p, "preference_buttons_bottom", false);
-        confirmExit = new BooleanSetting(p, "preference_confirm_exit", false);
+        confirmExit = new BooleanSetting(p, "preference_confirm_exit", true);
         tapNoReply = new BooleanSetting(p, "preference_tap_no_reply", false);
         volumeKeysScrolling = new BooleanSetting(p, "preference_volume_key_scrolling", false);
         postFullDate = new BooleanSetting(p, "preference_post_full_date", false);
