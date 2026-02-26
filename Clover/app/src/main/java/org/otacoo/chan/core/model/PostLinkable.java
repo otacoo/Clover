@@ -36,7 +36,7 @@ import org.otacoo.chan.ui.theme.ThemeHelper;
 @SuppressWarnings("JavadocReference")
 public class PostLinkable extends ClickableSpan {
     public enum Type {
-        QUOTE, LINK, SPOILER, THREAD, DEAD, BOARD
+        QUOTE, LINK, SPOILER, THREAD, DEAD, BOARD, SJIS
     }
 
     public final Theme theme;
@@ -56,7 +56,9 @@ public class PostLinkable extends ClickableSpan {
 
     @Override
     public void onClick(View widget) {
-        spoilerVisible = !spoilerVisible;
+        if (type == Type.SPOILER) {
+            spoilerVisible = !spoilerVisible;
+        }
     }
 
     public void setMarkedNo(int markedNo) {
@@ -89,6 +91,9 @@ public class PostLinkable extends ClickableSpan {
             } else {
                 ds.setColor(currentTheme.textColorRevealSpoiler);
             }
+        } else if (type == Type.SJIS) {
+            ds.setUnderlineText(false);
+            ds.setColor(currentTheme.textPrimary);
         }
     }
 

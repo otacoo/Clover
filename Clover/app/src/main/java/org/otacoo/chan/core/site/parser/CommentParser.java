@@ -33,6 +33,7 @@ import org.otacoo.chan.core.model.PostLinkable;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.ui.span.AbsoluteSizeSpanHashed;
 import org.otacoo.chan.ui.span.ForegroundColorSpanHashed;
+import org.otacoo.chan.ui.span.SjisSpan;
 import org.otacoo.chan.ui.theme.Theme;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -77,6 +78,7 @@ public class CommentParser {
         rule(tagRule("span").cssClass("spoiler").link(PostLinkable.Type.SPOILER));
         rule(tagRule("span").cssClass("fortune").action(this::handleFortune));
         rule(tagRule("span").cssClass("abbr").nullify());
+        rule(tagRule("span").cssClass("sjis").action(this::handleSjis));
         rule(tagRule("span").color(StyleRule.Color.INLINE_QUOTE).linkify());
 
         rule(tagRule("table").action(this::handleTable));
@@ -252,6 +254,19 @@ public class CommentParser {
         }
 
         return text;
+    }
+
+    private CharSequence handleSjis(Theme theme,
+                                    PostParser.Callback callback,
+                                    Post.Builder builder,
+                                    CharSequence text,
+                                    Element span) {
+        SpannableString res = new SpannableString(text);
+        res.setSpan(new SjisSpan(), 0, res.length(), 0);
+        PostLinkable pl = new PostLinkable(theme, text, text, PostLinkable.Type.SJIS);
+        res.setSpan(pl, 0, res.length(), 0);
+        builder.addLinkable(pl);
+        return res;
     }
 
     public CharSequence handleTable(Theme theme,

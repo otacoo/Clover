@@ -29,6 +29,8 @@ import android.annotation.TargetApi;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Layout;
 import android.text.Spannable;
@@ -43,16 +45,20 @@ import android.text.style.ClickableSpan;
 import android.text.style.UnderlineSpan;
 import android.util.AttributeSet;
 import android.view.ActionMode;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
@@ -690,18 +696,18 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                         ignoreNextOnClick = true;
                         if (linkable2 == null && linkable1 != null) {
                             //regular, non-spoilered link
-                            callback.onPostLinkableClicked(post, linkable1);
+                            handlePostLinkableClick(widget, linkable1);
                         } else if (linkable2 != null && linkable1 != null) {
                             //spoilered link, figure out which span is the spoiler
                             if (linkable1.type == PostLinkable.Type.SPOILER && linkable1.isSpoilerVisible()) {
                                 //linkable2 is the link
-                                callback.onPostLinkableClicked(post, linkable2);
+                                handlePostLinkableClick(widget, linkable2);
                             } else if (linkable2.type == PostLinkable.Type.SPOILER && linkable2.isSpoilerVisible()) {
                                 //linkable 1 is the link
-                                callback.onPostLinkableClicked(post, linkable1);
+                                handlePostLinkableClick(widget, linkable1);
                             } else {
                                 //weird case where a double stack of linkables, but isn't spoilered (some 4chan stickied posts)
-                                callback.onPostLinkableClicked(post, linkable1);
+                                handlePostLinkableClick(widget, linkable1);
                             }
                         }
 
@@ -728,6 +734,45 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
             return true;
         }
+    }
+
+    private void handlePostLinkableClick(View widget, PostLinkable linkable) {
+        if (linkable.type == PostLinkable.Type.SJIS) {
+            showSjisArt(linkable.key);
+        } else {
+            callback.onPostLinkableClicked(post, linkable);
+        }
+    }
+
+    private void showSjisArt(CharSequence text) {
+        Context context = getContext();
+        
+        HorizontalScrollView hsv = new HorizontalScrollView(context);
+        hsv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        
+        TextView textView = new TextView(context);
+        textView.setText(text);
+        textView.setPadding(dp(16), dp(16), dp(16), dp(16));
+        
+        Typeface monaTypeface;
+        try {
+            monaTypeface = Typeface.createFromAsset(context.getAssets(), "font/submona.ttf");
+        } catch (Exception e) {
+            monaTypeface = Typeface.MONOSPACE;
+        }
+        
+        textView.setTypeface(monaTypeface);
+        textView.setTextSize(12);
+        textView.setLineSpacing(0, 1.0f);
+        textView.setTextColor(Color.BLACK);
+        textView.setBackgroundColor(Color.WHITE);
+        
+        hsv.addView(textView);
+        
+        new AlertDialog.Builder(context)
+                .setView(hsv)
+                .setPositiveButton(R.string.close, null)
+                .show();
     }
 
     /**
@@ -757,7 +802,11 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
 
                 if (link.length != 0) {
-                    link[0].onClick(widget);
+                    if (link[0] instanceof PostLinkable) {
+                        handlePostLinkableClick(widget, (PostLinkable) link[0]);
+                    } else {
+                        link[0].onClick(widget);
+                    }
                     return true;
                 }
             }
