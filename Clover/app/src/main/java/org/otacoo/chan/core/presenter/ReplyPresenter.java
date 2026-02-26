@@ -170,25 +170,17 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         updateButtons();
         if (previewOpen) {
             callback.openFileName(moreOpen);
-            if (board.spoilers) {
-                callback.openSpoiler(moreOpen, false);
-            }
+            callback.openSpoiler(board.spoilers && moreOpen, false);
         }
     }
 
     private void updateButtons() {
         boolean alwaysShow = ChanSettings.alwaysShowReplyTags.get();
         callback.openCommentQuoteButton(moreOpen || alwaysShow);
-        if (board.spoilers) {
-            callback.openCommentSpoilerButton(moreOpen || alwaysShow);
-        }
-        if (board.codeTags) {
-            callback.openCommentCodeButton(moreOpen || alwaysShow);
-        }
-        if (board.mathTags) {
-            callback.openCommentMathButton(moreOpen || alwaysShow);
-            callback.openCommentEqnButton(moreOpen || alwaysShow);
-        }
+        callback.openCommentSpoilerButton(board.spoilers && (moreOpen || alwaysShow));
+        callback.openCommentCodeButton(board.codeTags && (moreOpen || alwaysShow));
+        callback.openCommentMathButton(board.mathTags && (moreOpen || alwaysShow));
+        callback.openCommentEqnButton(board.mathTags && (moreOpen || alwaysShow));
     }
 
     public boolean isExpanded() {
@@ -203,9 +195,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                 draft.fileName = "";
                 if (moreOpen) {
                     callback.openFileName(false);
-                    if (board.spoilers) {
-                        callback.openSpoiler(false, false);
-                    }
+                    callback.openSpoiler(false, false);
                 }
                 previewOpen = false;
             } else {
@@ -541,9 +531,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         callback.openPreview(true, file);
         if (moreOpen) {
             callback.openFileName(true);
-            if (board.spoilers) {
-                callback.openSpoiler(true, false);
-            }
+            callback.openSpoiler(board.spoilers, false);
         }
         callback.setFileName(name);
         previewOpen = true;

@@ -76,9 +76,7 @@ public class Chan4BoardsRequest extends JsonReaderRequest<List<Board>> {
     private Board readBoardEntry(JsonReader reader) throws IOException {
         reader.beginObject();
 
-        Board board = new Board();
-        board.siteId = site.id();
-        board.site = site;
+        Board board = Board.fromSiteNameCode(site, null, null);
 
         while (reader.hasNext()) {
             String key = reader.nextName();
