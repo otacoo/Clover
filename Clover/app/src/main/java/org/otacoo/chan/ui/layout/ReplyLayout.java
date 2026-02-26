@@ -70,10 +70,8 @@ import org.otacoo.chan.ui.captcha.AuthenticationLayoutInterface;
 import org.otacoo.chan.ui.captcha.CaptchaLayout;
 import org.otacoo.chan.ui.captcha.GenericWebViewAuthenticationLayout;
 import org.otacoo.chan.ui.captcha.LegacyCaptchaLayout;
-import org.otacoo.chan.ui.captcha.LynxchanCaptchaLayout;
 import org.otacoo.chan.ui.captcha.NewCaptchaLayout;
 import org.otacoo.chan.ui.captcha.v1.CaptchaNojsLayoutV1;
-import org.otacoo.chan.ui.captcha.v2.CaptchaNoJsLayoutV2;
 import org.otacoo.chan.ui.drawable.DropdownArrowDrawable;
 import org.otacoo.chan.ui.helper.HintPopup;
 import org.otacoo.chan.utils.Logger;
@@ -519,9 +517,6 @@ public class ReplyLayout extends LoadView implements
                 case NEW_CAPTCHA:
                     typeMatches = authenticationLayout instanceof NewCaptchaLayout;
                     break;
-                case LYNXCHAN_CAPTCHA:
-                    typeMatches = authenticationLayout instanceof LynxchanCaptchaLayout;
-                    break;
             }
             
             if (!typeMatches) {
@@ -575,11 +570,6 @@ public class ReplyLayout extends LoadView implements
                 case NEW_CAPTCHA: {
                     authenticationLayout = new NewCaptchaLayout(getContext());
                     Logger.i("ReplyLayout", "Created NewCaptchaLayout (NEW_CAPTCHA)");
-                    break;
-                }
-                case LYNXCHAN_CAPTCHA: {
-                    authenticationLayout = new LynxchanCaptchaLayout(getContext());
-                    Logger.i("ReplyLayout", "Created LynxchanCaptchaLayout");
                     break;
                 }
                 case NONE:
