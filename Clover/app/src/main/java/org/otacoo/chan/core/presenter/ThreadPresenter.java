@@ -144,6 +144,9 @@ public class ThreadPresenter implements
 
     public void unbindLoadable() {
         if (chanLoader != null) {
+            // Save scroll position before unbinding
+            databaseManager.runTaskAsync(databaseManager.getDatabaseLoadableManager().flush());
+
             chanLoader.clearTimer();
             chanLoaderFactory.release(chanLoader, this);
             chanLoader = null;
