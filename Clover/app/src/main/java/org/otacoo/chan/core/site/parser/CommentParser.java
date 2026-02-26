@@ -53,16 +53,16 @@ public class CommentParser {
 
     private Pattern fullQuotePattern = Pattern.compile("/(\\w+)/\\w+/(\\d+)#p(\\d+)");
     // Cross-board thread link with no #p anchor: /board/thread/threadNo or /board/res/threadNo
-    private Pattern crossBoardThreadPattern = Pattern.compile("/(\\w+)/(?:thread|res)/(\\d+)$");
+    private final Pattern crossBoardThreadPattern = Pattern.compile("/(\\w+)/(?:thread|res)/(\\d+)$");
     private Pattern quotePattern = Pattern.compile(".*#p(\\d+)");
-    private Pattern colorPattern = Pattern.compile("color:#([0-9a-fA-F]+)");
+    private final Pattern colorPattern = Pattern.compile("color:#([0-9a-fA-F]+)");
     // Matches /board/catalog optionally followed by #s=query (intra-board catalog search link)
-    private Pattern boardCatalogPattern = Pattern.compile("/(\\w+)/catalog(?:#s=(.*))?$");
+    private final Pattern boardCatalogPattern = Pattern.compile("/(\\w+)/catalog(?:#s=(.*))?$");
     // Matches /board/ or /board (bare board link, no thread/post)
-    private Pattern boardPattern = Pattern.compile("/(\\w+)/?$");
+    private final Pattern boardPattern = Pattern.compile("/(\\w+)/?$");
 
-    private Map<String, List<StyleRule>> rules = new HashMap<>();
-    private List<String> internalDomains = new ArrayList<>(0);
+    private final Map<String, List<StyleRule>> rules = new HashMap<>();
+    private final List<String> internalDomains = new ArrayList<>(0);
 
     public CommentParser() {
         // Required tags.
@@ -95,13 +95,7 @@ public class CommentParser {
     }
 
     public void rule(StyleRule rule) {
-        List<StyleRule> list = rules.get(rule.tag());
-        if (list == null) {
-            list = new ArrayList<>(3);
-            rules.put(rule.tag(), list);
-        }
-
-        list.add(rule);
+        rules.computeIfAbsent(rule.tag(), k -> new ArrayList<>(3)).add(rule);
     }
 
     public void setQuotePattern(Pattern quotePattern) {
@@ -123,11 +117,11 @@ public class CommentParser {
                                   CharSequence text,
                                   Element element) {
 
-        List<StyleRule> rules = this.rules.get(tag);
-        if (rules != null) {
+        List<StyleRule> tagRules = this.rules.get(tag);
+        if (tagRules != null) {
             for (int i = 0; i < 2; i++) {
                 boolean highPriority = i == 0;
-                for (StyleRule rule : rules) {
+                for (StyleRule rule : tagRules) {
                     if (rule.highPriority() == highPriority && rule.applies(element)) {
                         return rule.apply(theme, callback, post, text, element);
                     }
@@ -135,19 +129,7 @@ public class CommentParser {
             }
         }
 
-        switch (tag) {
-            default:
-                // Unknown tag, return the text;
-                return text;
-        }
-    }
-
-    private CharSequence appendBreakIfNotLastSibling(CharSequence text, Element element) {
-        if (element.nextSibling() != null) {
-            return TextUtils.concat(text, "\n");
-        } else {
-            return text;
-        }
+        return text;
     }
 
     private CharSequence handleAnchor(Theme theme,
@@ -202,14 +184,14 @@ public class CommentParser {
             if (spanContent[0].startsWith(">>>") && spanContent.length == 3) {
                 // >>>/board/post
                 String board = spanContent[1];
-                int postNo = Integer.valueOf(spanContent[2]);
+                int postNo = Integer.parseInt(spanContent[2]);
                 handlerLink = new Link();
                 handlerLink.type = PostLinkable.Type.DEAD;
                 handlerLink.key = text;
                 handlerLink.value = new PostLinkable.ThreadLink(board, -1, postNo);
             } else if (spanContent[0].startsWith(">>") && spanContent.length == 1) {
                 // >>post
-                int postNo = Integer.valueOf(spanContent[0].substring(2));
+                int postNo = Integer.parseInt(spanContent[0].substring(2));
                 handlerLink = new Link();
                 handlerLink.type = PostLinkable.Type.DEAD;
                 handlerLink.key = text;
@@ -245,10 +227,13 @@ public class CommentParser {
 
             Matcher matcher = colorPattern.matcher(style);
             if (matcher.find()) {
-                int hexColor = Integer.parseInt(matcher.group(1), 16);
-                if (hexColor >= 0 && hexColor <= 0xffffff) {
-                    text = span(text, new ForegroundColorSpanHashed(0xff000000 + hexColor),
-                            new StyleSpan(Typeface.BOLD));
+                String hexStr = matcher.group(1);
+                if (hexStr != null) {
+                    int hexColor = (int) Long.parseLong(hexStr, 16);
+                    if (hexColor >= 0 && hexColor <= 0xffffff) {
+                        text = span(text, new ForegroundColorSpanHashed(0xff000000 + hexColor),
+                                new StyleSpan(Typeface.BOLD));
+                    }
                 }
             }
         }
@@ -278,13 +263,13 @@ public class CommentParser {
         Elements tableRows = table.getElementsByTag("tr");
         for (int i = 0; i < tableRows.size(); i++) {
             Element tableRow = tableRows.get(i);
-            if (tableRow.text().length() > 0) {
+            if (!tableRow.text().isEmpty()) {
                 Elements tableDatas = tableRow.getElementsByTag("td");
                 for (int j = 0; j < tableDatas.size(); j++) {
                     Element tableData = tableDatas.get(j);
 
                     SpannableString tableDataPart = new SpannableString(tableData.text());
-                    if (tableData.getElementsByTag("b").size() > 0) {
+                    if (!tableData.getElementsByTag("b").isEmpty()) {
                         tableDataPart.setSpan(new StyleSpan(Typeface.BOLD), 0, tableDataPart.length(), 0);
                         tableDataPart.setSpan(new UnderlineSpan(), 0, tableDataPart.length(), 0);
                     }
@@ -299,31 +284,14 @@ public class CommentParser {
         }
 
         // Overrides the text (possibly) parsed by child nodes.
-        return span(TextUtils.concat(parts.toArray(new CharSequence[parts.size()])),
+        return span(TextUtils.concat(parts.toArray(new CharSequence[0])),
                 new ForegroundColorSpanHashed(theme.inlineQuoteColor),
                 new AbsoluteSizeSpanHashed(sp(12f)));
     }
 
     public Link matchAnchor(Post.Builder post, CharSequence text, Element anchor, PostParser.Callback callback) {
         String href = anchor.attr("href");
-        // For inner links we handle it as relative (for sites that have multiple domains).
-        String path = "";
-        if (href.startsWith("//") || href.startsWith("http://") || href.startsWith("https://")) {
-            int offset = href.startsWith("//") ? 2 : (href.startsWith("http://") ? 7 : 8);
-
-            String domain = href.substring(Math.min(href.length(), offset),
-                    Math.min(href.length(), Math.max(offset, href.indexOf('/', offset))));
-            // Whitelisting domains is optional.
-            // If you don't specify it it will purely use the quote patterns to match.
-            if (internalDomains.isEmpty() || internalDomains.contains(domain)) {
-                int pathStart = href.indexOf('/', offset);
-                if (pathStart >= 0) {
-                    path = href.substring(pathStart);
-                }
-            }
-        } else {
-            path = href;
-        }
+        String path = getPathFromHref(href);
 
         PostLinkable.Type t;
         Object value;
@@ -332,33 +300,50 @@ public class CommentParser {
         Matcher crossBoardThreadMatcher = crossBoardThreadPattern.matcher(path);
         if (externalMatcher.matches()) {
             String board = externalMatcher.group(1);
-            int threadId = Integer.parseInt(externalMatcher.group(2));
-            int postId = Integer.parseInt(externalMatcher.group(3));
+            String threadIdStr = externalMatcher.group(2);
+            String postIdStr = externalMatcher.group(3);
+            
+            if (board != null && threadIdStr != null && postIdStr != null) {
+                int threadId = Integer.parseInt(threadIdStr);
+                int postId = Integer.parseInt(postIdStr);
 
-            if (board.equals(post.board.code) && callback.isInternal(postId)) {
-                t = PostLinkable.Type.QUOTE;
-                value = postId;
+                if (board.equals(post.board.code) && callback.isInternal(postId)) {
+                    t = PostLinkable.Type.QUOTE;
+                    value = postId;
+                } else {
+                    t = PostLinkable.Type.THREAD;
+                    value = new PostLinkable.ThreadLink(board, threadId, postId);
+                }
             } else {
-                t = PostLinkable.Type.THREAD;
-                value = new PostLinkable.ThreadLink(board, threadId, postId);
+                return null;
             }
         } else if (crossBoardThreadMatcher.matches()) {
             // Cross-board thread link without a specific post anchor (e.g. >>>/g/1208196)
             String board = crossBoardThreadMatcher.group(1);
-            int threadId = Integer.parseInt(crossBoardThreadMatcher.group(2));
-            if (board.equals(post.board.code) && callback.isInternal(threadId)) {
-                t = PostLinkable.Type.QUOTE;
-                value = threadId;
+            String threadIdStr = crossBoardThreadMatcher.group(2);
+            if (board != null && threadIdStr != null) {
+                int threadId = Integer.parseInt(threadIdStr);
+                if (board.equals(post.board.code) && callback.isInternal(threadId)) {
+                    t = PostLinkable.Type.QUOTE;
+                    value = threadId;
+                } else {
+                    t = PostLinkable.Type.THREAD;
+                    // postId = threadId so the viewer scrolls to the OP on open
+                    value = new PostLinkable.ThreadLink(board, threadId, threadId);
+                }
             } else {
-                t = PostLinkable.Type.THREAD;
-                // postId = threadId so the viewer scrolls to the OP on open
-                value = new PostLinkable.ThreadLink(board, threadId, threadId);
+                return null;
             }
         } else {
             Matcher quoteMatcher = quotePattern.matcher(path);
             if (quoteMatcher.matches()) {
-                t = PostLinkable.Type.QUOTE;
-                value = Integer.parseInt(quoteMatcher.group(1));
+                String quoteIdStr = quoteMatcher.group(1);
+                if (quoteIdStr != null) {
+                    t = PostLinkable.Type.QUOTE;
+                    value = Integer.parseInt(quoteIdStr);
+                } else {
+                    return null;
+                }
             } else {
                 // Check for intra-board quotelinks: >>>/board/catalog[#s=query] or >>>/board/
                 Matcher catalogMatcher = boardCatalogPattern.matcher(path);
@@ -398,11 +383,32 @@ public class CommentParser {
         return link;
     }
 
+    private String getPathFromHref(String href) {
+        String path = "";
+        if (href.startsWith("//") || href.startsWith("http://") || href.startsWith("https://")) {
+            int offset = href.startsWith("//") ? 2 : (href.startsWith("http://") ? 7 : 8);
+
+            String domain = href.substring(Math.min(href.length(), offset),
+                    Math.min(href.length(), Math.max(offset, href.indexOf('/', offset))));
+            // Whitelisting domains is optional.
+            // If you don't specify it it will purely use the quote patterns to match.
+            if (internalDomains.isEmpty() || internalDomains.contains(domain)) {
+                int pathStart = href.indexOf('/', offset);
+                if (pathStart >= 0) {
+                    path = href.substring(pathStart);
+                }
+            }
+        } else {
+            path = href;
+        }
+        return path;
+    }
+
     public SpannableString span(CharSequence text, Object... additionalSpans) {
         SpannableString result = new SpannableString(text);
         int l = result.length();
 
-        if (additionalSpans != null && additionalSpans.length > 0) {
+        if (additionalSpans != null) {
             for (Object additionalSpan : additionalSpans) {
                 if (additionalSpan != null) {
                     result.setSpan(additionalSpan, 0, l, 0);
@@ -413,7 +419,7 @@ public class CommentParser {
         return result;
     }
 
-    public class Link {
+    public static class Link {
         public PostLinkable.Type type;
         public CharSequence key;
         public Object value;
