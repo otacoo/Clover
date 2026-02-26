@@ -11,7 +11,7 @@
 > It retains the Blue Clover icon but changes the app name back to **Clover**.
 
 This fork is meant primarily to add support for the new 4chan captcha (implemented) and 8chan.moe site support (work in progress).\
-Read the [CHANGES.md](docs/CHANGES.md) file for all the changes made in this fork.
+Read the [CHANGES.md](CHANGES.md) file for all the changes made in this fork.
 
 ## About Clover
 
