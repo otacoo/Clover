@@ -17,6 +17,8 @@
  */
 package org.otacoo.chan.core.site.sites.moe8;
 
+import org.otacoo.chan.core.net.Chan8RateLimit;
+import org.otacoo.chan.core.site.SiteAuthentication;
 import org.otacoo.chan.core.site.common.CommonSite;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanActions;
 
@@ -27,5 +29,16 @@ import org.otacoo.chan.core.site.common.lynxchan.LynxchanActions;
 public class Moe8Actions extends LynxchanActions {
     public Moe8Actions(CommonSite site) {
         super(site);
+    }
+
+    /**
+     * Returns the LynxChan native image captcha authentication for 8chan.
+     * The captcha fetch URL is built dynamically using the active domain so it
+     * works when the app fails over from 8chan.moe to 8chan.st.
+     */
+    @Override
+    public SiteAuthentication postAuthenticate() {
+        return SiteAuthentication.fromLynxchanCaptcha(
+                "https://" + Chan8RateLimit.getActiveDomain() + "/");
     }
 }
