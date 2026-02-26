@@ -41,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <activity-alias
             android:name=".LauncherBlue"
             android:enabled="true"
+            android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:targetActivity=".ui.activity.BoardActivity">
@@ -54,6 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <activity-alias
             android:name=".LauncherGreen"
             android:enabled="false"
+            android:exported="true"
             android:icon="@mipmap/ic_launcher_green"
             android:label="@string/app_name"
             android:targetActivity=".ui.activity.BoardActivity">
@@ -67,6 +69,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <activity-alias
             android:name=".LauncherGold"
             android:enabled="false"
+            android:exported="true"
             android:icon="@mipmap/ic_launcher_gold"
             android:label="@string/app_name"
             android:targetActivity=".ui.activity.BoardActivity">
@@ -99,7 +102,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true">
 
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
