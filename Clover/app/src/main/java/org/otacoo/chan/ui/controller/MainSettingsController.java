@@ -197,12 +197,18 @@ public class MainSettingsController extends SettingsController implements Settin
             Toast.makeText(context, R.string.settings_backup_failed, Toast.LENGTH_SHORT).show();
             return;
         }
+        // record current media save location so we can restore it after the picker
+        String oldSaveLoc = ChanSettings.saveLocation.get();
+
         String filename = String.format(Locale.US, "clover_settings_%tY-%<tm-%<td_%<tH-%<tM-%<tS.json", Calendar.getInstance());
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
         intent.putExtra(Intent.EXTRA_TITLE, filename);
         resultHelper.getResultFromIntent(intent, (resultCode, result) -> {
+            // restore media save location regardless of outcome
+            ChanSettings.saveLocation.set(oldSaveLoc);
+
             if (resultCode != Activity.RESULT_OK || result == null || result.getData() == null) {
                 return;
             }
