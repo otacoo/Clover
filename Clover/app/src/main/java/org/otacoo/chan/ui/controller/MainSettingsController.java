@@ -197,7 +197,7 @@ public class MainSettingsController extends SettingsController implements Settin
             Toast.makeText(context, R.string.settings_backup_failed, Toast.LENGTH_SHORT).show();
             return;
         }
-        String filename = String.format(Locale.US, "clover_settings_%tY-%<tm-%<td.json", Calendar.getInstance());
+        String filename = String.format(Locale.US, "clover_settings_%tY-%<tm-%<td_%<tH-%<tM-%<tS.json", Calendar.getInstance());
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
