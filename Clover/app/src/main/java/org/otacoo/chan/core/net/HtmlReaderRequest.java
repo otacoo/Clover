@@ -17,46 +17,60 @@
  */
 package org.otacoo.chan.core.net;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.Response.Listener;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpHeaderParser;
+import androidx.annotation.NonNull;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public abstract class HtmlReaderRequest<T> extends Request<T> {
-    protected final Listener<T> listener;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
-    public HtmlReaderRequest(String url, Listener<T> listener, Response.ErrorListener errorListener) {
-        super(Request.Method.GET, url, errorListener);
+public abstract class HtmlReaderRequest<T> implements Callback {
+    protected final RequestListener<T> listener;
 
+    public HtmlReaderRequest(RequestListener<T> listener) {
         this.listener = listener;
     }
 
     @Override
-    protected void deliverResponse(T response) {
-        listener.onResponse(response);
+    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+        if (call.isCanceled()) return;
+        AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
     }
 
     @Override
-    protected Response<T> parseNetworkResponse(NetworkResponse response) {
+    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+        if (call.isCanceled()) return;
+
+        if (!response.isSuccessful()) {
+            AndroidUtils.runOnUiThread(() -> listener.onError("HTTP " + response.code()));
+            return;
+        }
+
         try {
-            Document document = Jsoup.parse(new ByteArrayInputStream(response.data),
-                    HttpHeaderParser.parseCharset(response.headers), getUrl());
+            byte[] data = response.body().bytes();
+            String charset = response.body().contentType() != null ? 
+                    response.body().contentType().charset().name() : "UTF-8";
+            
+            Document document = Jsoup.parse(new ByteArrayInputStream(data), charset, call.request().url().toString());
 
             T result = readDocument(document);
 
-            return Response.success(result, HttpHeaderParser.parseCacheHeaders(response));
+            AndroidUtils.runOnUiThread(() -> listener.onResponse(result));
         } catch (IOException e) {
-            return Response.error(new VolleyError(e));
+            AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
         }
     }
 
     public abstract T readDocument(Document document) throws IOException;
+
+    public interface RequestListener<T> {
+        void onResponse(T response);
+        void onError(String error);
+    }
 }

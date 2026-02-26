@@ -18,6 +18,7 @@
  */
 package org.otacoo.chan.ui.captcha;
 
+import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.annotation.SuppressLint;
@@ -28,7 +29,6 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewParent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -65,6 +65,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Inject;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -75,6 +77,9 @@ import okhttp3.Response;
 public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInterface {
     private static final String TAG = "NewCaptchaLayout";
 
+    @Inject
+    OkHttpClient okHttpClient;
+
     /** True when we are showing a captcha UI (asset challenges/legacy image) that would be lost if the user backs out. */
     private volatile boolean showingActiveCaptcha;
     /** True when a post cooldown is active (4chan only). Prevents accidental dismissal. */
@@ -83,7 +88,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private boolean reportedCompletion;
 
     private static final int NATIVE_PAYLOAD_MAX_RETRIES = 5;
-    private static final int CLOUDFLARE_MAX_RETRIES = 45;
     private static final int NATIVE_PAYLOAD_RETRY_DELAY_MS = 500;
 
     private static volatile String ticket = "";
@@ -110,16 +114,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private boolean skipInterceptNextLoad;
     /** True after we have done the first "Get Captcha" navigation (loadUrl); that load sets 4chan-tc-ticket. After that we only use fetch() so we never leave the page. */
     private boolean haveGetCaptchaNavigationDone;
-    /** Counter for consecutive failed fetch attempts - after too many failures, fall back to native page load */
-    private int failedFetchAttempts = 0;
-    /** Track whether we had cf_clearance before the current page load started, to detect when Cloudflare challenge completes */
-    private boolean hadCloudflareClearanceBeforePageLoad = false;
-    /** Auto-fetch attempts per native page load, capped at 1 to prevent reload loops on pcd=-1. */
-    private int nativeAutoFetchCount = 0;
 
     /** Retry state for extracting payload from the native captcha page without clobbering its DOM (needed for JS challenges). */
     private int nativePayloadRetryAttempts = 0;
-    private String nativePayloadRetryUrl = null;
 
     public NewCaptchaLayout(Context context) {
         super(context);
@@ -139,6 +136,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     // Configures basic WebView settings and JS interfaces
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     private void commonInit() {
+        inject(this);
         WebSettings settings = getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -174,8 +172,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         this.baseUrl = auth.baseUrl;
         loadable.site.requestModifier().modifyWebView(this);
 
-        failedFetchAttempts = 0;
-        nativeAutoFetchCount = 0;
         setFocusable(true);
         setFocusableInTouchMode(true);
     }
@@ -289,9 +285,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 if (url.contains("spur.us") || url.contains("mcl.io")) return null;
 
                 boolean isMainFrame = request.isForMainFrame();
-                if (isMainFrame && url.contains("sys.4chan.org/")) {
-                    hadCloudflareClearanceBeforePageLoad = hasCloudflareClearance();
-                }
 
                 // Only intercept main-frame navigations. JS fetch()/XHR sub-resource requests must
                 // pass through to the real servers so that requestCaptchaViaFetch() receives the
@@ -309,7 +302,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 if (isMainFrame && isCaptchaRequest && showingActiveCaptcha) {
                     // Reset per-page state so that the incoming page is evaluated fresh.
                     showingActiveCaptcha = false;
-                    nativeAutoFetchCount = 0;
                     lastResponseWasAsset = false;
                     // Keep skipInterceptNextLoad=true so this re-navigation (triggered by mcl.js /
                     // fingerprinting completing) also loads natively. This gives the JS time to work.
@@ -426,7 +418,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     .header("User-Agent", getSettings().getUserAgentString())
                     .build();
 
-            try (Response response = new OkHttpClient().newCall(request).execute()) {
+            try (Response response = okHttpClient.newCall(request).execute()) {
                 String body = response.body() != null ? response.body().string() : "";
                 copyCookies(response);
 

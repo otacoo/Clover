@@ -22,77 +22,39 @@ import android.util.AttributeSet;
 
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
-import org.otacoo.chan.utils.Logger;
-
 public class CustomScaleImageView extends SubsamplingScaleImageView {
-    private static final String TAG = "CustomScaleImageView";
-
     private Callback callback;
-
-    public CustomScaleImageView(Context context, AttributeSet attr) {
-        super(context, attr);
-        init();
-    }
 
     public CustomScaleImageView(Context context) {
         super(context);
-        init();
+    }
+
+    public CustomScaleImageView(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
 
     public void setCallback(Callback callback) {
         this.callback = callback;
     }
 
-    private void init() {
-        setOnImageEventListener(new OnImageEventListener() {
-            @Override
-            public void onReady() {
-                float scale = Math.min(getWidth() / (float) getSWidth(), getHeight() / (float) getSHeight());
-                setMinScale(scale);
+    @Override
+    protected void onImageLoaded() {
+        super.onImageLoaded();
+        if (callback != null) {
+            callback.onReady();
+        }
+    }
 
-                if (getMaxScale() < scale * 2f) {
-                    setMaxScale(scale * 2f);
-                }
-                setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CUSTOM);
-
-                if (callback != null) {
-                    callback.onReady();
-                }
-            }
-
-            @Override
-            public void onImageLoaded() {
-            }
-
-            @Override
-            public void onPreviewLoadError(Exception e) {
-            }
-
-            @Override
-            public void onPreviewReleased() {
-            }
-
-            @Override
-            public void onImageLoadError(Exception e) {
-                Logger.w(TAG, "onImageLoadError", e);
-                if (callback != null) {
-                    callback.onError(true);
-                }
-            }
-
-            @Override
-            public void onTileLoadError(Exception e) {
-                Logger.w(TAG, "onTileLoadError", e);
-                if (callback != null) {
-                    callback.onError(false);
-                }
-            }
-        });
+    @Override
+    protected void onReady() {
+        super.onReady();
+        if (callback != null) {
+            callback.onReady();
+        }
     }
 
     public interface Callback {
         void onReady();
-
         void onError(boolean wasInitial);
     }
 }

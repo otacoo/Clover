@@ -21,8 +21,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getAppContext;
 import android.annotation.SuppressLint;
 import android.util.Pair;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonArrayRequest;
+import androidx.annotation.NonNull;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.model.orm.Board;
@@ -36,8 +35,15 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class ArchivesManager {
     private JSONArray archivesList;
@@ -71,19 +77,34 @@ public class ArchivesManager {
         }
 
         // fresh copy request, in case of updates (infrequent)
-        RequestQueue requestQueue = Chan.injector().instance(RequestQueue.class);
-        requestQueue.add(new JsonArrayRequest("https://4chenz.github.io/archives.json/archives.json",
-                jsonArray -> {
-                    archivesList = jsonArray;
+        OkHttpClient client = Chan.injector().instance(OkHttpClient.class);
+        Request request = new Request.Builder()
+                .url("https://4chenz.github.io/archives.json/archives.json")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) return;
+                try {
+                    String body = response.body().string();
+                    archivesList = new JSONArray(body);
                     // caching response (it'll be used next time)
                     try {
-                        ByteArrayInputStream byteArray = new ByteArrayInputStream(jsonArray.toString().getBytes("UTF-8"));
+                        ByteArrayInputStream byteArray = new ByteArrayInputStream(body.getBytes("UTF-8"));
                         FileOutputStream cachedJsonFOS = new FileOutputStream(cachedJson);
                         IOUtils.copy(byteArray, cachedJsonFOS);
                         cachedJsonFOS.close();
                         byteArray.close();
                     } catch (Exception exception) { }
-                }, null));
+                } catch (JSONException ignored) {
+                }
+            }
+        });
     }
 
     public List<Pair<String, String>> archivesForBoard(Board b) {

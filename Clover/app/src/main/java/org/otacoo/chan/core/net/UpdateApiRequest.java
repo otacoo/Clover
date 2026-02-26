@@ -20,8 +20,6 @@ package org.otacoo.chan.core.net;
 
 import android.util.JsonReader;
 
-import com.android.volley.Response;
-
 import org.otacoo.chan.BuildConfig;
 
 import java.io.IOException;
@@ -42,10 +40,13 @@ public class UpdateApiRequest extends JsonReaderRequest<UpdateApiRequest.UpdateA
 
     private String forFlavor;
 
-    public UpdateApiRequest(Response.Listener<UpdateApiResponse> listener,
-                            Response.ErrorListener errorListener) {
-        super(BuildConfig.UPDATE_API_ENDPOINT, listener, errorListener);
+    public UpdateApiRequest(RequestListener<UpdateApiResponse> listener) {
+        super(listener);
         forFlavor = BuildConfig.FLAVOR;
+    }
+
+    public String getUrl() {
+        return BuildConfig.UPDATE_API_ENDPOINT;
     }
 
     @Override

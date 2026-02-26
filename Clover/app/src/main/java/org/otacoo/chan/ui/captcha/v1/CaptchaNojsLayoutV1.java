@@ -17,6 +17,8 @@
  */
 package org.otacoo.chan.ui.captcha.v1;
 
+import static org.otacoo.chan.Chan.inject;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
@@ -40,6 +42,8 @@ import org.otacoo.chan.utils.Logger;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -58,20 +62,24 @@ public class CaptchaNojsLayoutV1 extends WebView implements AuthenticationLayout
     private String baseUrl;
     private String siteKey;
 
-    private OkHttpClient okHttpClient = new OkHttpClient();
+    @Inject
+    OkHttpClient okHttpClient;
 
     private String webviewUserAgent;
 
     public CaptchaNojsLayoutV1(Context context) {
         super(context);
+        inject(this);
     }
 
     public CaptchaNojsLayoutV1(Context context, AttributeSet attrs) {
         super(context, attrs);
+        inject(this);
     }
 
     public CaptchaNojsLayoutV1(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        inject(this);
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})

@@ -18,6 +18,7 @@
 package org.otacoo.chan.ui.controller;
 
 import static org.otacoo.chan.Chan.inject;
+import static org.otacoo.chan.Chan.injector;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.getDimen;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
@@ -34,6 +35,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -50,10 +52,9 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.CheckBox;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
 import com.davemorrissey.labs.subscaleview.ImageViewState;
 
 import org.otacoo.chan.R;
@@ -79,13 +80,17 @@ import org.otacoo.chan.ui.view.TransitionImageView;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.inject.Inject;
-
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class ImageViewerController extends Controller implements ImageViewerPresenter.Callback {
     private static final String TAG = "ImageViewerController";
@@ -93,9 +98,6 @@ public class ImageViewerController extends Controller implements ImageViewerPres
     private static final float TRANSITION_FINAL_ALPHA = 0.85f;
 
     private static final int VOLUME_ID = 1;
-
-    @Inject
-    ImageLoader imageLoader;
 
     private int statusBarColorPrevious;
     private AnimatorSet startAnimation;
@@ -116,6 +118,9 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
     private boolean isInImmersiveMode = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private Call inTransitionCall;
+    private Call outTransitionCall;
 
     public ImageViewerController(Context context, Toolbar toolbar) {
         super(context);
@@ -269,6 +274,12 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         showSystemUI();
         handler.removeCallbacksAndMessages(null);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (inTransitionCall != null) {
+            inTransitionCall.cancel();
+        }
+        if (outTransitionCall != null) {
+            outTransitionCall.cancel();
+        }
     }
 
     @Override
@@ -457,21 +468,40 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             }
         });
 
-        imageLoader.get(postImage.getThumbnailUrl().toString(), new ImageLoader.ImageListener() {
+        OkHttpClient client = injector().instance(OkHttpClient.class);
+        Request request = new Request.Builder().url(postImage.getThumbnailUrl().toString()).build();
+        inTransitionCall = client.newCall(request);
+        inTransitionCall.enqueue(new Callback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, "onErrorResponse for preview in transition in ImageViewerController, cannot show correct transition bitmap");
-                startAnimation.start();
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                inTransitionCall = null;
+                Log.e(TAG, "onFailure for preview in transition in ImageViewerController, cannot show correct transition bitmap", e);
+                AndroidUtils.runOnUiThread(startAnimation::start);
             }
 
             @Override
-            public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-                if (response.getBitmap() != null) {
-                    previewImage.setBitmap(response.getBitmap());
-                    startAnimation.start();
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        byte[] data = response.body().bytes();
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        if (bitmap != null) {
+                            AndroidUtils.runOnUiThread(() -> {
+                                previewImage.setBitmap(bitmap);
+                                startAnimation.start();
+                            });
+                        } else {
+                            AndroidUtils.runOnUiThread(startAnimation::start);
+                        }
+                    } else {
+                        AndroidUtils.runOnUiThread(startAnimation::start);
+                    }
+                } finally {
+                    response.close();
+                    inTransitionCall = null;
                 }
             }
-        }, previewImage.getWidth(), previewImage.getHeight());
+        });
     }
 
     public void startPreviewOutTransition(final PostImage postImage) {
@@ -479,20 +509,33 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             return;
         }
 
-        imageLoader.get(postImage.getThumbnailUrl().toString(), new ImageLoader.ImageListener() {
+        OkHttpClient client = injector().instance(OkHttpClient.class);
+        Request request = new Request.Builder().url(postImage.getThumbnailUrl().toString()).build();
+        outTransitionCall = client.newCall(request);
+        outTransitionCall.enqueue(new Callback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, "onErrorResponse for preview out transition in ImageViewerController, cannot show correct transition bitmap");
-                doPreviewOutAnimation(postImage, null);
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                outTransitionCall = null;
+                Log.e(TAG, "onFailure for preview out transition in ImageViewerController, cannot show correct transition bitmap", e);
+                AndroidUtils.runOnUiThread(() -> doPreviewOutAnimation(postImage, null));
             }
 
             @Override
-            public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-                if (response.getBitmap() != null) {
-                    doPreviewOutAnimation(postImage, response.getBitmap());
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        byte[] data = response.body().bytes();
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        AndroidUtils.runOnUiThread(() -> doPreviewOutAnimation(postImage, bitmap));
+                    } else {
+                        AndroidUtils.runOnUiThread(() -> doPreviewOutAnimation(postImage, null));
+                    }
+                } finally {
+                    response.close();
+                    outTransitionCall = null;
                 }
             }
-        }, previewImage.getWidth(), previewImage.getHeight());
+        });
     }
 
     private void doPreviewOutAnimation(PostImage postImage, Bitmap bitmap) {

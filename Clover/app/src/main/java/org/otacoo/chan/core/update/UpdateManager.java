@@ -18,6 +18,7 @@
 package org.otacoo.chan.core.update;
 
 import static org.otacoo.chan.Chan.inject;
+import static org.otacoo.chan.Chan.injector;
 
 import android.content.Context;
 import android.content.Intent;
@@ -27,11 +28,10 @@ import android.text.TextUtils;
 
 import androidx.core.content.FileProvider;
 
-import com.android.volley.RequestQueue;
-
 import org.otacoo.chan.BuildConfig;
 import org.otacoo.chan.core.cache.FileCache;
 import org.otacoo.chan.core.cache.FileCacheListener;
+import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.net.UpdateApiRequest;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -45,6 +45,8 @@ import java.io.IOException;
 import javax.inject.Inject;
 
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 /**
  * Calls the update API and downloads and requests installs of APK files.
@@ -57,9 +59,6 @@ public class UpdateManager {
     private static final String TAG = "UpdateManager";
     private static final String UPDATE_FILENAME = "update.apk";
     private static final String LEGACY_UPDATE_FILENAME = "Clover_update.apk";
-
-    @Inject
-    RequestQueue volleyRequestQueue;
 
     @Inject
     FileCache fileCache;
@@ -89,17 +88,30 @@ public class UpdateManager {
         }
 
         Logger.d(TAG, "Calling update API");
-        volleyRequestQueue.add(new UpdateApiRequest(response -> {
-            if (!processUpdateApiResponse(response) && manual) {
-                callback.onManualCheckNone();
+        
+        UpdateApiRequest request = new UpdateApiRequest(new JsonReaderRequest.RequestListener<UpdateApiRequest.UpdateApiResponse>() {
+            @Override
+            public void onResponse(UpdateApiRequest.UpdateApiResponse response) {
+                if (!processUpdateApiResponse(response) && manual) {
+                    callback.onManualCheckNone();
+                }
             }
-        }, error -> {
-            Logger.e(TAG, "Failed to process API call for updating", error);
 
-            if (manual) {
-                callback.onManualCheckFailed();
+            @Override
+            public void onError(String error) {
+                Logger.e(TAG, "Failed to process API call for updating: " + error);
+
+                if (manual) {
+                    callback.onManualCheckFailed();
+                }
             }
-        }));
+        });
+
+        OkHttpClient client = injector().instance(OkHttpClient.class);
+        Request okRequest = new Request.Builder()
+                .url(request.getUrl())
+                .build();
+        client.newCall(okRequest).enqueue(request);
     }
 
     private boolean processUpdateApiResponse(UpdateApiRequest.UpdateApiResponse response) {

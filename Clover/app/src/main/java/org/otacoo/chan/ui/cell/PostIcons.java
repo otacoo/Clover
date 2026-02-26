@@ -14,18 +14,23 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
+import androidx.annotation.NonNull;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.PostHttpIcon;
 import org.otacoo.chan.ui.theme.Theme;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class PostIcons extends View {
     private static final Bitmap stickyIcon;
@@ -195,11 +200,11 @@ public class PostIcons extends View {
         return width + spacing;
     }
 
-    private static class PostIconsHttpIcon implements ImageLoader.ImageListener {
+    private static class PostIconsHttpIcon implements Callback {
         private final PostIcons postIcons;
         private final String name;
         private final HttpUrl url;
-        private ImageLoader.ImageContainer request;
+        private Call call;
         private Bitmap bitmap;
 
         private PostIconsHttpIcon(PostIcons postIcons, String name, HttpUrl url) {
@@ -209,26 +214,36 @@ public class PostIcons extends View {
         }
 
         private void request() {
-            request = injector().instance(ImageLoader.class).get(url.toString(), this);
+            OkHttpClient client = injector().instance(OkHttpClient.class);
+            Request okRequest = new Request.Builder().url(url).build();
+            call = client.newCall(okRequest);
+            call.enqueue(this);
         }
 
         private void cancel() {
-            if (request != null) {
-                request.cancelRequest();
-                request = null;
+            if (call != null) {
+                call.cancel();
+                call = null;
             }
         }
 
         @Override
-        public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-            if (response.getBitmap() != null) {
-                bitmap = response.getBitmap();
-                postIcons.invalidate();
-            }
+        public void onFailure(@NonNull Call call, @NonNull IOException e) {
         }
 
         @Override
-        public void onErrorResponse(VolleyError error) {
+        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+            try {
+                if (response.isSuccessful() && response.body() != null) {
+                    byte[] data = response.body().bytes();
+                    bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                    if (bitmap != null) {
+                        AndroidUtils.runOnUiThread(postIcons::invalidate);
+                    }
+                }
+            } finally {
+                response.close();
+            }
         }
     }
 }

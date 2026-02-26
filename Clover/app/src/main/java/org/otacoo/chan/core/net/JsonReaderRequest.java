@@ -19,93 +19,88 @@ package org.otacoo.chan.core.net;
 
 import android.util.JsonReader;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpHeaderParser;
+import androidx.annotation.NonNull;
 
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.IOUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
-public abstract class JsonReaderRequest<T> extends Request<T> {
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
+
+public abstract class JsonReaderRequest<T> implements Callback {
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
-    protected final Listener<T> listener;
+    protected final RequestListener<T> listener;
 
-    public JsonReaderRequest(String url, Listener<T> listener, ErrorListener errorListener) {
-        super(Method.GET, url, errorListener);
-
+    public JsonReaderRequest(RequestListener<T> listener) {
         this.listener = listener;
     }
 
     @Override
-    protected void deliverResponse(T response) {
-        listener.onResponse(response);
+    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+        if (call.isCanceled()) return;
+        AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
     }
 
     @Override
-    protected Response<T> parseNetworkResponse(NetworkResponse response) {
-        // Handle common anti-bot/verification challenges (PoWBlock, Cloudflare, Terms of Service)
-        // that return HTML instead of the expected JSON.
-        if (response.data != null && response.data.length > 5) {
-            String snippet = new String(response.data, 0, Math.min(response.data.length, 1024));
+    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+        if (call.isCanceled()) return;
+        
+        if (!response.isSuccessful()) {
+            AndroidUtils.runOnUiThread(() -> listener.onError("HTTP " + response.code()));
+            return;
+        }
+
+        byte[] data = response.body().bytes();
+
+        // Handle common anti-bot/verification challenges
+        if (data.length > 5) {
+            String snippet = new String(data, 0, Math.min(data.length, 1024));
             String trimSnippet = snippet.trim();
             if (trimSnippet.startsWith("<") || trimSnippet.contains("<html") || trimSnippet.contains("<!DOCTYPE")) {
+                String errorMsg;
                 if (snippet.contains("PoWBlock") || snippet.contains("basedflare") || snippet.contains("Bot Protection")) {
-                    return Response.error(new VolleyError("Verification required (PoWBlock). Please 'Login' to this site to solve the challenge."));
+                    errorMsg = "Verification required (PoWBlock). Please 'Login' to this site to solve the challenge.";
                 } else if (snippet.contains("Terms of Service") || snippet.contains("TOS") || snippet.contains("Terms of Use")) {
-                    return Response.error(new VolleyError("Terms of Service must be accepted. Please 'Login' to this site to accept them."));
+                    errorMsg = "Terms of Service must be accepted. Please 'Login' to this site to accept them.";
                 } else if (snippet.contains("cf-browser-verification") || snippet.contains("challenges.cloudflare.com") || snippet.contains("Cloudflare")) {
-                    return Response.error(new VolleyError("Cloudflare verification required. Please 'Login' to this site to solve it."));
+                    errorMsg = "Cloudflare verification required. Please 'Login' to this site to solve it.";
+                } else {
+                    String pageTitle = "";
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("<title>(.*?)</title>", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(snippet);
+                    if (m.find()) {
+                        pageTitle = " (Title: " + m.group(1).trim() + ")";
+                    }
+                    errorMsg = "Received HTML instead of JSON" + pageTitle + ". The site may be showing a challenge or error page. Use 'Login' to verify.";
                 }
-                
-                String pageTitle = "";
-                java.util.regex.Matcher m = java.util.regex.Pattern.compile("<title>(.*?)</title>", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(snippet);
-                if (m.find()) {
-                    pageTitle = " (Title: " + m.group(1).trim() + ")";
-                }
-                
-                return Response.error(new VolleyError("Received HTML instead of JSON" + pageTitle + ". The site may be showing a challenge or error page. Use 'Login' to verify."));
+                AndroidUtils.runOnUiThread(() -> listener.onError(errorMsg));
+                return;
             }
         }
 
-        ByteArrayInputStream baos = new ByteArrayInputStream(response.data);
+        ByteArrayInputStream baos = new ByteArrayInputStream(data);
         JsonReader reader = new JsonReader(new InputStreamReader(baos, UTF8));
 
-        Exception exception = null;
-        T read = null;
         try {
-            read = readJson(reader);
+            T read = readJson(reader);
+            AndroidUtils.runOnUiThread(() -> listener.onResponse(read));
         } catch (Exception e) {
-            exception = e;
-        }
-
-        IOUtils.closeQuietly(reader);
-
-        if (read == null) {
-            if (exception != null) {
-                return Response.error(new VolleyError(exception));
-            } else {
-                return Response.error(new VolleyError("Unknown error"));
-            }
-        } else {
-            return Response.success(read, HttpHeaderParser.parseCacheHeaders(response));
+            AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
+        } finally {
+            IOUtils.closeQuietly(reader);
         }
     }
 
-    /**
-     * Read your json. Returning null or throwing something means a Response.error, Response.success is returned otherwise.
-     * The reader is closed for you.
-     *
-     * @param reader A json reader to use
-     * @return null or the data
-     * @throws Exception none or an exception
-     */
     public abstract T readJson(JsonReader reader) throws Exception;
+
+    public interface RequestListener<T> {
+        void onResponse(T response);
+        void onError(String error);
+    }
 }

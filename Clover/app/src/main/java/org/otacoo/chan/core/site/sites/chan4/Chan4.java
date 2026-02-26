@@ -18,20 +18,24 @@
  */
 package org.otacoo.chan.core.site.sites.chan4;
 
+import static org.otacoo.chan.Chan.injector;
+
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.otacoo.chan.core.model.Archive;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.net.HtmlReaderRequest;
+import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.settings.BooleanSetting;
-import org.otacoo.chan.core.settings.OptionSettingItem;
 import org.otacoo.chan.core.settings.SettingProvider;
 import org.otacoo.chan.core.settings.SharedPreferencesSettingProvider;
 import org.otacoo.chan.core.settings.StringSetting;
-import org.otacoo.chan.core.settings.OptionsSetting;
 import org.otacoo.chan.core.site.Boards;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteActions;
@@ -55,6 +59,7 @@ import org.otacoo.chan.core.site.parser.CommentParser;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,6 +71,7 @@ import java.util.Map;
 import java.util.Random;
 
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 public class Chan4 extends SiteBase {
@@ -120,7 +126,7 @@ public class Chan4 extends SiteBase {
                     if (parts.size() < 3) {
                         // Board mode
                         return Loadable.forCatalog(board);
-                    } else if (parts.size() >= 3) {
+                    } else {
                         // Thread mode
                         int no = -1;
                         try {
@@ -157,8 +163,6 @@ public class Chan4 extends SiteBase {
     };
 
     private static final String TAG = "Chan4";
-
-    private static final String CAPTCHA_KEY = "6Ldp2bsSAAAAAAJ5uyx_lx34lJeEpTLVkP5k04qc";
 
     private static final Random random = new Random();
 
@@ -247,12 +251,18 @@ public class Chan4 extends SiteBase {
             switch (icon) {
                 case "country":
                     b.addPathSegment("country");
-                    b.addPathSegment(arg.get("country_code").toLowerCase(Locale.ENGLISH) + ".gif");
+                    String countryCode = arg.get("country_code");
+                    if (countryCode != null) {
+                        b.addPathSegment(countryCode.toLowerCase(Locale.ENGLISH) + ".gif");
+                    }
                     break;
                 case "board_flag":
                     b.addPathSegment("flags");
                     b.addPathSegment(post.board.code);
-                    b.addPathSegment(arg.get("board_flag_code").toLowerCase(Locale.ENGLISH) + ".gif");
+                    String boardFlagCode = arg.get("board_flag_code");
+                    if (boardFlagCode != null) {
+                        b.addPathSegment(boardFlagCode.toLowerCase(Locale.ENGLISH) + ".gif");
+                    }
                     break;
                 case "since4pass":
                     b.addPathSegment("minileaf.gif");
@@ -311,7 +321,7 @@ public class Chan4 extends SiteBase {
         }
     };
 
-    private SiteRequestModifier siteRequestModifier = new SiteRequestModifier() {
+    private final SiteRequestModifier siteRequestModifier = new SiteRequestModifier() {
         @Override
         public void modifyHttpCall(HttpCall httpCall, Request.Builder requestBuilder) {
             Set<String> cookieParts = new LinkedHashSet<>();
@@ -390,30 +400,56 @@ public class Chan4 extends SiteBase {
         }
     };
 
-    private SiteActions actions = new SiteActions() {
+    private final SiteActions actions = new SiteActions() {
         @Override
         public void boards(final BoardsListener listener) {
-            requestQueue.add(new Chan4BoardsRequest(Chan4.this, response -> {
-                listener.onBoardsReceived(new Boards(response));
-            }, (error) -> {
-                Logger.e(TAG, "Failed to get boards from server", error);
+            Chan4BoardsRequest request = new Chan4BoardsRequest(Chan4.this, new JsonReaderRequest.RequestListener<List<Board>>() {
+                @Override
+                public void onResponse(List<Board> response) {
+                    listener.onBoardsReceived(new Boards(response));
+                }
 
-                // API fail, provide some default boards
-                List<Board> list = new ArrayList<>();
-                list.add(new Board(Chan4.this, "Technology", "g", true, true));
-                list.add(new Board(Chan4.this, "Food & Cooking", "ck", true, true));
-                list.add(new Board(Chan4.this, "Do It Yourself", "diy", true, true));
-                list.add(new Board(Chan4.this, "Animals & Nature", "an", true, true));
-                Collections.shuffle(list);
-                listener.onBoardsReceived(new Boards(list));
-            }));
+                @Override
+                public void onError(String error) {
+                    Logger.e(TAG, "Failed to get boards from server: " + error);
+
+                    // API fail, provide some default boards
+                    List<Board> list = new ArrayList<>();
+                    list.add(Board.fromSiteNameCode(Chan4.this, "Technology", "g"));
+                    list.add(Board.fromSiteNameCode(Chan4.this, "Food & Cooking", "ck"));
+                    list.add(Board.fromSiteNameCode(Chan4.this, "Do It Yourself", "diy"));
+                    list.add(Board.fromSiteNameCode(Chan4.this, "Animals & Nature", "an"));
+                    Collections.shuffle(list);
+                    listener.onBoardsReceived(new Boards(list));
+                }
+            });
+
+            OkHttpClient client = injector().instance(OkHttpClient.class);
+            Request okRequest = new Request.Builder()
+                    .url(request.getUrl())
+                    .build();
+            client.newCall(okRequest).enqueue(request);
         }
 
         @Override
         public void archive(Board board, ArchiveListener archiveListener) {
-            requestQueue.add(new Chan4ArchiveRequest(Chan4.this, board,
-                    archiveListener::onArchive,
-                    error -> archiveListener.onArchiveError()));
+            Chan4ArchiveRequest request = new Chan4ArchiveRequest(Chan4.this, board, new HtmlReaderRequest.RequestListener<Archive>() {
+                @Override
+                public void onResponse(Archive response) {
+                    archiveListener.onArchive(response);
+                }
+
+                @Override
+                public void onError(String error) {
+                    archiveListener.onArchiveError();
+                }
+            });
+            
+            OkHttpClient client = injector().instance(OkHttpClient.class);
+            Request okRequest = new Request.Builder()
+                    .url(request.getUrl())
+                    .build();
+            client.newCall(okRequest).enqueue(request);
         }
 
         @Override

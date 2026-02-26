@@ -24,18 +24,14 @@ import org.otacoo.chan.utils.Time;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 
 public class FileCache implements FileCacheDownloader.Callback {
     private static final String TAG = "FileCache";
-    private static final int TIMEOUT = 10000;
     private static final int DOWNLOAD_POOL_SIZE = 2;
 
     private final ExecutorService downloadPool = Executors.newFixedThreadPool(DOWNLOAD_POOL_SIZE);
@@ -46,18 +42,10 @@ public class FileCache implements FileCacheDownloader.Callback {
 
     private List<FileCacheDownloader> downloaders = new ArrayList<>();
 
-    public FileCache(File directory, long maxSize, String userAgent) {
+    public FileCache(File directory, long maxSize, String userAgent, OkHttpClient okHttpClient) {
         this.userAgent = userAgent;
-
-        httpClient = new OkHttpClient.Builder()
-                .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                // Disable SPDY, causes reproducible timeouts, only one download at the same time and other fun stuff
-                .protocols(Collections.singletonList(Protocol.HTTP_1_1))
-                .build();
-
-        cacheHandler = new CacheHandler(directory, maxSize);
+        this.httpClient = okHttpClient;
+        this.cacheHandler = new CacheHandler(directory, maxSize);
     }
 
     public void clearCache() {

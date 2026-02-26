@@ -17,288 +17,139 @@
  */
 package org.otacoo.chan.ui.captcha.v2;
 
-import android.content.Context;
-import android.content.res.Configuration;
-import android.graphics.Typeface;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.StyleSpan;
-import android.util.AttributeSet;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.GridView;
-import android.widget.ScrollView;
-import android.widget.Toast;
+import static org.otacoo.chan.Chan.injector;
 
-import androidx.annotation.NonNull;
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatButton;
-import androidx.appcompat.widget.AppCompatTextView;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.site.SiteAuthentication;
 import org.otacoo.chan.ui.captcha.AuthenticationLayoutCallback;
 import org.otacoo.chan.ui.captcha.AuthenticationLayoutInterface;
-import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.ui.view.WrappingGridView;
 import org.otacoo.chan.utils.Logger;
 
-import java.util.List;
+import okhttp3.OkHttpClient;
 
-public class CaptchaNoJsLayoutV2 extends FrameLayout
-        implements AuthenticationLayoutInterface,
-        CaptchaNoJsPresenterV2.AuthenticationCallbacks, View.OnClickListener {
+public class CaptchaNoJsLayoutV2 extends LinearLayout implements
+        AuthenticationLayoutInterface,
+        CaptchaNoJsPresenterV2.AuthenticationCallbacks {
     private static final String TAG = "CaptchaNoJsLayoutV2";
 
-    private AppCompatTextView captchaChallengeTitle;
-    private GridView captchaImagesGrid;
-    private AppCompatButton captchaVerifyButton;
-    private AppCompatButton useOldCaptchaButton;
-    private AppCompatButton reloadCaptchaButton;
+    private AuthenticationLayoutCallback callback;
+    private CaptchaNoJsPresenterV2 presenter;
+
+    private TextView statusText;
+    private WrappingGridView imagesGrid;
+    private Button verifyButton;
+    private Button reloadButton;
 
     private CaptchaNoJsV2Adapter adapter;
-    private CaptchaNoJsPresenterV2 presenter;
-    private Context context;
-    private AuthenticationLayoutCallback callback;
 
-    public CaptchaNoJsLayoutV2(@NonNull Context context) {
+    public CaptchaNoJsLayoutV2(Context context) {
         super(context);
         init(context);
     }
 
-    public CaptchaNoJsLayoutV2(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public CaptchaNoJsLayoutV2(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public CaptchaNoJsLayoutV2(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public CaptchaNoJsLayoutV2(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
 
     private void init(Context context) {
-        this.context = context;
-        this.presenter = new CaptchaNoJsPresenterV2(this, context);
-        this.adapter = new CaptchaNoJsV2Adapter(context);
+        setOrientation(VERTICAL);
 
-        View view = inflate(context, R.layout.layout_captcha_nojs_v2, this);
+        LayoutInflater.from(context).inflate(R.layout.layout_captcha_nojs_v2, this, true);
 
-        captchaChallengeTitle = view.findViewById(R.id.captcha_layout_v2_title);
-        captchaImagesGrid = view.findViewById(R.id.captcha_layout_v2_images_grid);
-        captchaVerifyButton = view.findViewById(R.id.captcha_layout_v2_verify_button);
-        useOldCaptchaButton = view.findViewById(R.id.captcha_layout_v2_use_old_captcha_button);
-        reloadCaptchaButton = view.findViewById(R.id.captcha_layout_v2_reload_button);
-        ConstraintLayout buttonsHolder = view.findViewById(R.id.captcha_layout_v2_buttons_holder);
-        ScrollView background = view.findViewById(R.id.captcha_layout_v2_background);
+        statusText = findViewById(R.id.captcha_layout_v2_title);
+        imagesGrid = findViewById(R.id.captcha_layout_v2_images_grid);
+        verifyButton = findViewById(R.id.captcha_layout_v2_verify_button);
+        reloadButton = findViewById(R.id.captcha_layout_v2_reload_button);
 
-        background.setBackgroundColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor));
-        buttonsHolder.setBackgroundColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
-        captchaChallengeTitle.setBackgroundColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
-        captchaChallengeTitle.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_primary));
-        captchaVerifyButton.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_primary));
-        useOldCaptchaButton.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_primary));
-        reloadCaptchaButton.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_primary));
+        adapter = new CaptchaNoJsV2Adapter(context);
+        imagesGrid.setAdapter(adapter);
 
-        captchaVerifyButton.setOnClickListener(this);
-        useOldCaptchaButton.setOnClickListener(this);
-        reloadCaptchaButton.setOnClickListener(this);
+        verifyButton.setOnClickListener(v -> {
+            try {
+                presenter.verify(adapter.getCheckedImageIds());
+            } catch (CaptchaNoJsPresenterV2.CaptchaNoJsV2Error e) {
+                Logger.e(TAG, "Error while verifying captcha", e);
+            }
+        });
 
-        captchaVerifyButton.setEnabled(false);
-    }
+        reloadButton.setOnClickListener(v -> presenter.requestCaptchaInfo());
 
-    @Override
-    protected void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        reset();
+        OkHttpClient okHttpClient = injector().instance(OkHttpClient.class);
+        this.presenter = new CaptchaNoJsPresenterV2(this, context, okHttpClient);
     }
 
     @Override
     public void initialize(Loadable loadable, AuthenticationLayoutCallback callback) {
         this.callback = callback;
 
-        SiteAuthentication authentication = loadable.site.actions().postAuthenticate();
-        if (authentication.type != SiteAuthentication.Type.CAPTCHA2_NOJS) {
-            callback.onFallbackToV1CaptchaView();
-            return;
-        }
+        SiteAuthentication auth = loadable.site.actions().postAuthenticate();
+        presenter.init(auth.siteKey, auth.baseUrl);
 
-        presenter.init(authentication.siteKey, authentication.baseUrl);
+        presenter.requestCaptchaInfo();
     }
 
     @Override
     public void reset() {
-        hardReset();
+        presenter.requestCaptchaInfo();
     }
 
     @Override
     public void hardReset() {
-        CaptchaNoJsPresenterV2.RequestCaptchaInfoError captchaInfoError = presenter.requestCaptchaInfo();
-
-        switch (captchaInfoError) {
-            case Ok:
-                break;
-            case HoldYourHorses:
-                showToast(getContext().getString(
-                        R.string.captcha_layout_v2_you_are_requesting_captcha_too_fast));
-                break;
-            case AlreadyInProgress:
-                showToast(getContext().getString(
-                        R.string.captcha_layout_v2_captcha_request_is_already_in_progress));
-                break;
-            case AlreadyShutdown:
-                // do nothing
-                break;
-        }
+        reset();
     }
 
     @Override
     public boolean requireResetAfterComplete() {
-        return false;
+        return true;
     }
 
     @Override
     public void onDestroy() {
-        adapter.onDestroy();
         presenter.onDestroy();
+        adapter.onDestroy();
     }
 
     @Override
     public void onCaptchaInfoParsed(CaptchaInfo captchaInfo) {
-        // called on a background thread
+        post(() -> {
+            if (captchaInfo.getCaptchaTitle() != null) {
+                statusText.setText(captchaInfo.getCaptchaTitle().getTitle());
+            }
+            adapter.setImages(captchaInfo.getChallengeImages());
+            imagesGrid.setVisibility(VISIBLE);
+            verifyButton.setEnabled(true);
+        });
+    }
 
-        AndroidUtils.runOnUiThread(() -> {
-            captchaVerifyButton.setEnabled(true);
-            renderCaptchaWindow(captchaInfo);
+    @Override
+    public void onCaptchaInfoParseError(Throwable error) {
+        post(() -> {
+            statusText.setText(R.string.thread_load_failed_network);
         });
     }
 
     @Override
     public void onVerificationDone(String verificationToken) {
-        // called on a background thread
-
-        AndroidUtils.runOnUiThread(() -> {
-            captchaVerifyButton.setEnabled(true);
+        if (callback != null) {
             callback.onAuthenticationComplete(this, null, verificationToken);
-        });
-    }
-    // Called when we got response from re-captcha but could not parse some part of it
-
-    @Override
-    public void onCaptchaInfoParseError(Throwable error) {
-        // called on a background thread
-
-        handleError(true, error);
-    }
-
-    private void handleError(boolean shouldFallback, Throwable error) {
-        AndroidUtils.runOnUiThread(() -> {
-            Logger.e(TAG, "CaptchaV2 error", error);
-
-            String message = error.getMessage();
-            showToast(message);
-
-            captchaVerifyButton.setEnabled(true);
-
-            if (shouldFallback) {
-                callback.onFallbackToV1CaptchaView();
-            }
-        });
-    }
-
-    private void showToast(String message) {
-        AndroidUtils.runOnUiThread(() -> Toast.makeText(context, message, Toast.LENGTH_LONG).show());
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v == captchaVerifyButton) {
-            sendVerificationResponse();
-        } else if (v == useOldCaptchaButton) {
-            callback.onFallbackToV1CaptchaView();
-        } else if (v == reloadCaptchaButton) {
-            reset();
-        }
-    }
-
-    private void renderCaptchaWindow(CaptchaInfo captchaInfo) {
-        try {
-            setCaptchaTitle(captchaInfo);
-
-            captchaImagesGrid.setAdapter(null);
-            captchaImagesGrid.setAdapter(adapter);
-
-            int columnsCount;
-            int imageSize = captchaImagesGrid.getWidth();
-
-            switch (captchaInfo.getCaptchaType()) {
-                case Canonical:
-                    columnsCount = 3;
-                    imageSize /= columnsCount;
-                    break;
-                case NoCanonical:
-                    columnsCount = 2;
-                    imageSize /= columnsCount;
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown captcha type");
-            }
-
-            captchaImagesGrid.setNumColumns(columnsCount);
-
-            adapter.setImageSize(imageSize);
-            adapter.setImages(captchaInfo.challengeImages);
-
-            captchaVerifyButton.setEnabled(true);
-        } catch (Throwable error) {
-            Logger.e(TAG, "renderCaptchaWindow", error);
-            if (callback != null) {
-                callback.onFallbackToV1CaptchaView();
-            }
-        }
-    }
-
-    private void setCaptchaTitle(CaptchaInfo captchaInfo) {
-        if (captchaInfo.getCaptchaTitle() == null) {
-            return;
-        }
-
-        if (captchaInfo.getCaptchaTitle().hasBold()) {
-            SpannableString spannableString = new SpannableString(captchaInfo.getCaptchaTitle().getTitle());
-            spannableString.setSpan(
-                    new StyleSpan(Typeface.BOLD),
-                    captchaInfo.getCaptchaTitle().getBoldStart(),
-                    captchaInfo.getCaptchaTitle().getBoldEnd(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-            captchaChallengeTitle.setText(spannableString);
-        } else {
-            captchaChallengeTitle.setText(captchaInfo.getCaptchaTitle().getTitle());
-        }
-    }
-
-    private void sendVerificationResponse() {
-        List<Integer> selectedIds = adapter.getCheckedImageIds();
-
-        try {
-            CaptchaNoJsPresenterV2.VerifyError verifyError = presenter.verify(selectedIds);
-            switch (verifyError) {
-                case Ok:
-                    captchaVerifyButton.setEnabled(false);
-                    break;
-                case NoImagesSelected:
-                    showToast(getContext().getString(R.string.captcha_layout_v2_you_have_to_select_at_least_one_image));
-                    break;
-                case AlreadyInProgress:
-                    showToast(getContext().getString(R.string.captcha_layout_v2_verification_already_in_progress));
-                    break;
-                case AlreadyShutdown:
-                    // do nothing
-                    break;
-            }
-        } catch (Throwable error) {
-            onCaptchaInfoParseError(error);
         }
     }
 }

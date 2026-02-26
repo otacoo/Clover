@@ -26,16 +26,15 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -52,8 +51,10 @@ import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.loader.ChanThreadLoader;
 import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.ui.notification.ThreadWatchNotifications;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -68,6 +69,11 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import de.greenrobot.event.EventBus;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Manages all Pin related management.
@@ -705,11 +711,8 @@ public class WatchManager {
         }
     }
 
-    public class PinWatcher implements ChanThreadLoader.ChanLoaderCallback, ImageLoader.ImageListener {
+    public class PinWatcher implements ChanThreadLoader.ChanLoaderCallback {
         private static final String TAG = "PinWatcher";
-
-        // Width and height of the bitmap for the notification image.
-        private static final int THUMBNAIL_SIZE = 128;
 
         private final Pin pin;
         private ChanThreadLoader chanLoader;
@@ -722,7 +725,7 @@ public class WatchManager {
         private boolean requireNotificationUpdate = true;
 
         private Bitmap thumbnailBitmap = null;
-        private ImageLoader.ImageContainer thumbnailContainer;
+        private Call currentThumbnailCall;
 
         public PinWatcher(Pin pin) {
             this.pin = pin;
@@ -788,6 +791,10 @@ public class WatchManager {
                 Logger.d(TAG, "PinWatcher: destroyed for " + pin);
                 chanLoaderFactory.release(chanLoader, this);
                 chanLoader = null;
+            }
+            if (currentThumbnailCall != null) {
+                currentThumbnailCall.cancel();
+                currentThumbnailCall = null;
             }
         }
 
@@ -919,24 +926,36 @@ public class WatchManager {
         }
 
         private void loadThumbnailBitmapIfNeeded() {
-            if (TextUtils.isEmpty(pin.thumbnailUrl) || thumbnailContainer != null) {
+            if (TextUtils.isEmpty(pin.thumbnailUrl) || thumbnailBitmap != null || currentThumbnailCall != null) {
                 return;
             }
 
-            thumbnailContainer = injector().instance(ImageLoader.class)
-                    .get(pin.thumbnailUrl, this,
-                            THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-        }
+            OkHttpClient client = injector().instance(OkHttpClient.class);
+            Request request = new Request.Builder().url(pin.thumbnailUrl).build();
+            currentThumbnailCall = client.newCall(request);
+            currentThumbnailCall.enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    currentThumbnailCall = null;
+                }
 
-        @Override
-        public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-            if (response.getBitmap() != null) {
-                thumbnailBitmap = response.getBitmap();
-            }
-        }
-
-        @Override
-        public void onErrorResponse(VolleyError error) {
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    try {
+                        if (response.isSuccessful() && response.body() != null) {
+                            byte[] data = response.body().bytes();
+                            thumbnailBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            if (thumbnailBitmap != null) {
+                                requireNotificationUpdate = true;
+                                AndroidUtils.runOnUiThread(() -> pinWatcherUpdated(PinWatcher.this));
+                            }
+                        }
+                    } finally {
+                        response.close();
+                        currentThumbnailCall = null;
+                    }
+                }
+            });
         }
     }
 }

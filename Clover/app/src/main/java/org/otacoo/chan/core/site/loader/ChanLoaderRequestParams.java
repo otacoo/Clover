@@ -18,8 +18,6 @@
 package org.otacoo.chan.core.site.loader;
 
 
-import com.android.volley.Response;
-
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.site.parser.ChanReader;
@@ -42,26 +40,12 @@ public class ChanLoaderRequestParams {
      */
     public final List<Post> cached;
 
-    /**
-     * Success listener.
-     */
-    public final Response.Listener<ChanLoaderResponse> listener;
-
-    /**
-     * Error listener.
-     */
-    public final Response.ErrorListener errorListener;
-
     public ChanLoaderRequestParams(Loadable loadable,
                                    ChanReader chanReader,
-                                   List<Post> cached,
-                                   Response.Listener<ChanLoaderResponse> listener,
-                                   Response.ErrorListener errorListener) {
+                                   List<Post> cached) {
 
         this.loadable = loadable;
         this.chanReader = chanReader;
         this.cached = cached;
-        this.listener = listener;
-        this.errorListener = errorListener;
     }
 }

@@ -17,17 +17,16 @@
  */
 package org.otacoo.chan.core.site.loader;
 
-
-import com.android.volley.Request;
+import okhttp3.Call;
 
 public class ChanLoaderRequest {
-    private Request<ChanLoaderResponse> volleyRequest;
+    private Call okHttpCall;
 
-    public ChanLoaderRequest(Request<ChanLoaderResponse> volleyRequest) {
-        this.volleyRequest = volleyRequest;
+    public ChanLoaderRequest(Call okHttpCall) {
+        this.okHttpCall = okHttpCall;
     }
 
-    public Request<ChanLoaderResponse> getVolleyRequest() {
-        return volleyRequest;
+    public Call getOkHttpCall() {
+        return okHttpCall;
     }
 }

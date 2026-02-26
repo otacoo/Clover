@@ -27,6 +27,7 @@ import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -38,21 +39,41 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.LruCache;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkError;
-import com.android.volley.ParseError;
-import com.android.volley.TimeoutError;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
-
 import org.otacoo.chan.R;
+import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.Logger;
 
-public class ThumbnailView extends View implements ImageLoader.ImageListener {
-    private ImageLoader.ImageContainer container;
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class ThumbnailView extends View {
+    private static final String TAG = "ThumbnailView";
+    private static final LruCache<String, Bitmap> sMemoryCache;
+
+    static {
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+        final int cacheSize = maxMemory / 8;
+        sMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                return bitmap.getByteCount() / 1024;
+            }
+        };
+    }
+
+    private Call currentCall;
+    private String currentUrl;
     private int fadeTime = 200;
     private ValueAnimator fadeAnimation;
     private boolean hidden = false;
@@ -105,23 +126,83 @@ public class ThumbnailView extends View implements ImageLoader.ImageListener {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        cancelRequest();
         endAnimations();
     }
 
     public void setUrl(String url, int width, int height) {
-        if (container != null && container.getRequestUrl().equals(url)) {
+        if (TextUtils.equals(currentUrl, url)) {
             return;
         }
 
-        if (container != null) {
-            container.cancelRequest();
-            container = null;
-            error = false;
-            setImageBitmap(null);
+        cancelRequest();
+        currentUrl = url;
+        error = false;
+        setImageBitmap(null);
+
+        if (TextUtils.isEmpty(url)) {
+            return;
         }
 
-        if (!TextUtils.isEmpty(url)) {
-            container = injector().instance(ImageLoader.class).get(url, this, width, height);
+        Bitmap cached = sMemoryCache.get(url);
+        if (cached != null) {
+            setImageBitmap(cached);
+            onImageSet(true);
+            return;
+        }
+
+        OkHttpClient client = injector().instance(OkHttpClient.class);
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        currentCall = client.newCall(request);
+        currentCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (call.isCanceled()) return;
+                AndroidUtils.runOnUiThread(() -> {
+                    error = true;
+                    errorText = getString(R.string.thumbnail_load_failed_network);
+                    onImageSet(false);
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (call.isCanceled()) return;
+                if (!response.isSuccessful()) {
+                    AndroidUtils.runOnUiThread(() -> {
+                        error = true;
+                        errorText = getString(R.string.thumbnail_load_failed_server);
+                        onImageSet(false);
+                    });
+                    return;
+                }
+
+                byte[] data = response.body().bytes();
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                if (bitmap != null) {
+                    sMemoryCache.put(url, bitmap);
+                    AndroidUtils.runOnUiThread(() -> {
+                        setImageBitmap(bitmap);
+                        onImageSet(false);
+                    });
+                } else {
+                    AndroidUtils.runOnUiThread(() -> {
+                        error = true;
+                        errorText = getString(R.string.thumbnail_load_failed_server);
+                        onImageSet(false);
+                    });
+                }
+            }
+        });
+    }
+
+    private void cancelRequest() {
+        if (currentCall != null) {
+            currentCall.cancel();
+            currentCall = null;
         }
     }
 
@@ -191,28 +272,6 @@ public class ThumbnailView extends View implements ImageLoader.ImageListener {
             setAlpha(1f);
         }
         endAnimations();
-    }
-
-    @Override
-    public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-        if (response.getBitmap() != null) {
-            setImageBitmap(response.getBitmap());
-            onImageSet(isImmediate);
-        }
-    }
-
-    @Override
-    public void onErrorResponse(VolleyError e) {
-        error = true;
-
-        if (e instanceof NetworkError || e instanceof TimeoutError || e instanceof ParseError || e instanceof AuthFailureError) {
-            errorText = getString(R.string.thumbnail_load_failed_network);
-        } else {
-            errorText = getString(R.string.thumbnail_load_failed_server);
-        }
-
-        onImageSet(false);
-        invalidate();
     }
 
     @Override

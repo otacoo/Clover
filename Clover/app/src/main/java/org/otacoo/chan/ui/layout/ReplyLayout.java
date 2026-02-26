@@ -32,7 +32,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
@@ -55,8 +54,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
-
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
@@ -73,6 +70,7 @@ import org.otacoo.chan.ui.captcha.AuthenticationLayoutInterface;
 import org.otacoo.chan.ui.captcha.CaptchaLayout;
 import org.otacoo.chan.ui.captcha.GenericWebViewAuthenticationLayout;
 import org.otacoo.chan.ui.captcha.LegacyCaptchaLayout;
+import org.otacoo.chan.ui.captcha.LynxchanCaptchaLayout;
 import org.otacoo.chan.ui.captcha.NewCaptchaLayout;
 import org.otacoo.chan.ui.captcha.v1.CaptchaNojsLayoutV1;
 import org.otacoo.chan.ui.captcha.v2.CaptchaNoJsLayoutV2;
@@ -85,7 +83,6 @@ import org.otacoo.chan.ui.view.LoadView;
 import org.otacoo.chan.ui.view.SelectionListeningEditText;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.ImageDecoder;
-import org.otacoo.chan.utils.TLSSocketFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -93,7 +90,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,8 +97,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -119,6 +113,9 @@ public class ReplyLayout extends LoadView implements
         SelectionListeningEditText.SelectionChangedListener {
     @Inject
     ReplyPresenter presenter;
+    
+    @Inject
+    OkHttpClient okHttpClient;
 
     private ReplyLayoutCallback callback;
     private boolean newCaptcha;
@@ -440,17 +437,8 @@ public class ReplyLayout extends LoadView implements
             final File cacheFile = new File(context.getCacheDir(), "picked_file_dl");
 
             Request request = new Request.Builder().url(clipboardURL).build();
-            OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
-            if (Build.VERSION.SDK_INT < 22) {
-                TrustManagerFactory trustManagerFactory = TrustManagerFactory.
-                        getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                trustManagerFactory.init((KeyStore) null);
-                okHttpClientBuilder.sslSocketFactory(TLSSocketFactory.getInstance(),
-                        (X509TrustManager) trustManagerFactory.getTrustManagers()[0]);
-            }
-
             final Handler handler = new Handler(Looper.getMainLooper());
-            okHttpClientBuilder.build().newCall(request).enqueue(new Callback() {
+            okHttpClient.newCall(request).enqueue(new Callback() {
 
                 @Override
                 public void onFailure(Call call, IOException e) {
@@ -531,6 +519,9 @@ public class ReplyLayout extends LoadView implements
                 case NEW_CAPTCHA:
                     typeMatches = authenticationLayout instanceof NewCaptchaLayout;
                     break;
+                case LYNXCHAN_CAPTCHA:
+                    typeMatches = authenticationLayout instanceof LynxchanCaptchaLayout;
+                    break;
             }
             
             if (!typeMatches) {
@@ -584,6 +575,11 @@ public class ReplyLayout extends LoadView implements
                 case NEW_CAPTCHA: {
                     authenticationLayout = new NewCaptchaLayout(getContext());
                     Logger.i("ReplyLayout", "Created NewCaptchaLayout (NEW_CAPTCHA)");
+                    break;
+                }
+                case LYNXCHAN_CAPTCHA: {
+                    authenticationLayout = new LynxchanCaptchaLayout(getContext());
+                    Logger.i("ReplyLayout", "Created LynxchanCaptchaLayout");
                     break;
                 }
                 case NONE:

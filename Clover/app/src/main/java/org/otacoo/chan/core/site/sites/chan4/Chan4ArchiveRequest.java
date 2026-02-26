@@ -17,8 +17,6 @@
  */
 package org.otacoo.chan.core.site.sites.chan4;
 
-import com.android.volley.Response;
-
 import org.otacoo.chan.core.model.Archive;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.net.HtmlReaderRequest;
@@ -32,10 +30,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Chan4ArchiveRequest extends HtmlReaderRequest<Archive> {
-    public Chan4ArchiveRequest(Site site, Board board,
-                               Response.Listener<Archive> listener,
-                               Response.ErrorListener errorListener) {
-        super(site.endpoints().archive(board).toString(), listener, errorListener);
+    private final Site site;
+    private final Board board;
+
+    public Chan4ArchiveRequest(Site site, Board board, RequestListener<Archive> listener) {
+        super(listener);
+        this.site = site;
+        this.board = board;
+    }
+
+    public String getUrl() {
+        return site.endpoints().archive(board).toString();
     }
 
     @Override
@@ -43,13 +48,18 @@ public class Chan4ArchiveRequest extends HtmlReaderRequest<Archive> {
         List<Archive.ArchiveItem> items = new ArrayList<>();
 
         Element table = document.getElementById("arc-list");
+        if (table == null) return Archive.fromItems(items);
         Element tableBody = table.getElementsByTag("tbody").first();
+        if (tableBody == null) return Archive.fromItems(items);
         Elements trs = tableBody.getElementsByTag("tr");
         for (Element tr : trs) {
             Elements dataElements = tr.getElementsByTag("td");
+            if (dataElements.size() < 2) continue;
             String description = dataElements.get(1).text();
-            int id = Integer.parseInt(dataElements.get(0).text());
-            items.add(Archive.ArchiveItem.fromDescriptionId(description, id));
+            try {
+                int id = Integer.parseInt(dataElements.get(0).text());
+                items.add(Archive.ArchiveItem.fromDescriptionId(description, id));
+            } catch (NumberFormatException ignored) {}
         }
 
         return Archive.fromItems(items);

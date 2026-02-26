@@ -84,8 +84,8 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
     private List<Filter> filters;
     private long startLoad;
 
-    public ChanReaderRequest(ChanLoaderRequestParams request) {
-        super(getChanUrl(request.loadable).toString(), request.listener, request.errorListener);
+    public ChanReaderRequest(ChanLoaderRequestParams request, RequestListener<ChanLoaderResponse> listener) {
+        super(listener);
         inject(this);
 
         // Copy the loadable and cached list. The cached array may changed/cleared by other threads.
@@ -109,52 +109,14 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
         databaseSavedReplyManager = databaseManager.getDatabaseSavedReplyManager();
     }
 
-    private static HttpUrl getChanUrl(Loadable loadable) {
-        HttpUrl url;
-
-        if (loadable.site == null) {
-            throw new NullPointerException("Loadable.site == null");
-        }
-
-        if (loadable.board == null) {
-            throw new NullPointerException("Loadable.board == null");
-        }
-
+    public HttpUrl getUrl() {
         if (loadable.isThreadMode()) {
-            url = loadable.site.endpoints().thread(loadable.board, loadable);
+            return loadable.site.endpoints().thread(loadable.board, loadable);
         } else if (loadable.isCatalogMode()) {
-            url = loadable.site.endpoints().catalog(loadable.board);
+            return loadable.site.endpoints().catalog(loadable.board);
         } else {
             throw new IllegalArgumentException("Unknown mode");
         }
-        return url;
-    }
-
-    @Override
-    public Priority getPriority() {
-        return Priority.HIGH;
-    }
-
-    @Override
-    public Map<String, String> getHeaders() throws com.android.volley.AuthFailureError {
-        Map<String, String> headers = new HashMap<>(super.getHeaders());
-
-        headers.put("User-Agent", userAgentProvider.getUserAgent());
-        headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
-        headers.put("Accept-Language", "en-US,en;q=0.9");
-        headers.put("Cache-Control", "no-cache");
-        headers.put("Pragma", "no-cache");
-        
-        // Modern browser fetch headers often required by bot protections
-        headers.put("Sec-Fetch-Dest", "empty");
-        headers.put("Sec-Fetch-Mode", "cors");
-        headers.put("Sec-Fetch-Site", "same-origin");
-
-        if (loadable.site != null && loadable.site.requestModifier() != null) {
-            loadable.site.requestModifier().modifyVolleyHeaders(headers, getUrl());
-        }
-
-        return headers;
     }
 
     @Override

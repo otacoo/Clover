@@ -17,7 +17,6 @@
  */
 package org.otacoo.chan.core.site;
 
-
 import static org.otacoo.chan.Chan.injector;
 import static org.otacoo.chan.utils.AndroidUtils.getAppContext;
 import static org.otacoo.chan.utils.AndroidUtils.getRes;
@@ -27,14 +26,19 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
+import androidx.annotation.NonNull;
 
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
 import java.io.IOException;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class SiteIcon {
     private static final String TAG = "SiteIcon";
@@ -74,20 +78,32 @@ public class SiteIcon {
             drawable.getPaint().setFilterBitmap(false);
             result.onSiteIcon(this, drawable);
         } else if (url != null) {
-            injector().instance(ImageLoader.class).get(url.toString(), new ImageLoader.ImageListener() {
+            OkHttpClient client = injector().instance(OkHttpClient.class);
+            Request request = new Request.Builder().url(url).build();
+            client.newCall(request).enqueue(new Callback() {
                 @Override
-                public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-                    if (response.getBitmap() != null) {
-                        Drawable drawable = new BitmapDrawable(response.getBitmap());
-                        result.onSiteIcon(SiteIcon.this, drawable);
-                    }
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    Logger.e(TAG, "Error loading favicon", e);
                 }
 
                 @Override
-                public void onErrorResponse(VolleyError error) {
-                    Logger.e(TAG, "Error loading favicon", error);
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    try {
+                        if (response.isSuccessful() && response.body() != null) {
+                            byte[] data = response.body().bytes();
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            if (bitmap != null) {
+                                AndroidUtils.runOnUiThread(() -> {
+                                    Drawable drawable = new BitmapDrawable(getRes(), bitmap);
+                                    result.onSiteIcon(SiteIcon.this, drawable);
+                                });
+                            }
+                        }
+                    } finally {
+                        response.close();
+                    }
                 }
-            }, FAVICON_SIZE, FAVICON_SIZE);
+            });
         }
     }
 

@@ -18,17 +18,19 @@
 package org.otacoo.chan.ui.view;
 
 import static org.otacoo.chan.Chan.inject;
+import static org.otacoo.chan.Chan.injector;
 
 import android.content.ClipData;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
 import android.graphics.RectF;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -38,27 +40,24 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.MediaController;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
-
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.ImageLoader.ImageContainer;
-import com.davemorrissey.labs.subscaleview.ImageSource;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
-import androidx.media3.common.C;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.ui.PlayerView;
+
+import com.davemorrissey.labs.subscaleview.ImageSource;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.cache.FileCache;
@@ -77,6 +76,11 @@ import java.io.IOException;
 
 import javax.inject.Inject;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
@@ -93,9 +97,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     FileCache fileCache;
 
     @Inject
-    ImageLoader imageLoader;
-
-    @Inject
     UserAgentProvider userAgent;
 
     private ImageView playView;
@@ -105,7 +106,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private Mode mode = Mode.UNLOADED;
 
     private boolean hasContent = false;
-    private ImageContainer thumbnailRequest;
+    private Call thumbnailCall;
     private FileCacheDownloader bigImageRequest;
     private FileCacheDownloader gifRequest;
     private FileCacheDownloader videoRequest;
@@ -251,38 +252,42 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             return;
         }
 
-        if (thumbnailRequest != null) {
+        if (thumbnailCall != null) {
             return;
         }
 
-        // Also use volley for the thumbnails
-        thumbnailRequest = imageLoader.get(thumbnailUrl, new ImageLoader.ImageListener() {
+        OkHttpClient client = injector().instance(OkHttpClient.class);
+        Request request = new Request.Builder().url(thumbnailUrl).build();
+        thumbnailCall = client.newCall(request);
+        thumbnailCall.enqueue(new okhttp3.Callback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                thumbnailRequest = null;
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                thumbnailCall = null;
                 if (center) {
-                    onError(error);
+                    AndroidUtils.runOnUiThread(() -> onError(e));
                 }
             }
 
             @Override
-            public void onResponse(ImageContainer response, boolean isImmediate) {
-                thumbnailRequest = null;
-                if (response.getBitmap() != null && (!hasContent || mode == Mode.LOWRES)) {
-                    ImageView thumbnail = new ImageView(getContext());
-                    thumbnail.setImageBitmap(response.getBitmap());
-
-                    onModeLoaded(Mode.LOWRES, thumbnail);
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        byte[] data = response.body().bytes();
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        if (bitmap != null && (!hasContent || mode == Mode.LOWRES)) {
+                            AndroidUtils.runOnUiThread(() -> {
+                                ImageView thumbnail = new ImageView(getContext());
+                                thumbnail.setImageBitmap(bitmap);
+                                onModeLoaded(Mode.LOWRES, thumbnail);
+                            });
+                        }
+                    }
+                } finally {
+                    response.close();
+                    thumbnailCall = null;
                 }
             }
-        }, getWidth(), getHeight());
-
-        if (thumbnailRequest.getBitmap() != null) {
-            // Request was immediate and thumbnailRequest was first set to null in onResponse, and then set to the container
-            // when the method returned
-            // Still set it to null here
-            thumbnailRequest = null;
-        }
+        });
     }
 
     private void setBigImage(String imageUrl) {
@@ -646,7 +651,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     private void setBitImageFileInternal(File file, boolean tiling, final Mode forMode) {
         final CustomScaleImageView image = new CustomScaleImageView(getContext());
-        image.setImage(ImageSource.uri(file.getAbsolutePath()).tiling(tiling));
+        image.setImage(com.davemorrissey.labs.subscaleview.ImageSource.uri(file.getAbsolutePath()).tiling(tiling));
         image.setOnClickListener(MultiImageView.this);
         addView(image, 0, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         image.setCallback(new CustomScaleImageView.Callback() {
@@ -690,9 +695,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     private void cancelLoad() {
-        if (thumbnailRequest != null) {
-            thumbnailRequest.cancelRequest();
-            thumbnailRequest = null;
+        if (thumbnailCall != null) {
+            thumbnailCall.cancel();
+            thumbnailCall = null;
         }
         if (bigImageRequest != null) {
             bigImageRequest.cancel();
@@ -741,6 +746,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
         hasContent = true;
         callback.onModeLoaded(this, mode);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
     }
 
     @Override

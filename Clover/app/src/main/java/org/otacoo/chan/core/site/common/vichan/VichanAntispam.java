@@ -17,6 +17,8 @@
  */
 package org.otacoo.chan.core.site.common.vichan;
 
+import static org.otacoo.chan.Chan.inject;
+
 import org.otacoo.chan.utils.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -29,6 +31,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -46,12 +50,14 @@ public class VichanAntispam {
     private static final String TAG = "Antispam";
     private HttpUrl url;
 
-    private OkHttpClient okHttpClient = new OkHttpClient();
+    @Inject
+    OkHttpClient okHttpClient;
 
     private List<String> fieldsToIgnore = new ArrayList<>();
 
     public VichanAntispam(HttpUrl url) {
         this.url = url;
+        inject(this);
     }
 
     public void addDefaultIgnoreFields() {

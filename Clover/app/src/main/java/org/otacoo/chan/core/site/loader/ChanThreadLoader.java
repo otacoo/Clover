@@ -21,14 +21,11 @@ import static org.otacoo.chan.Chan.inject;
 
 import android.text.TextUtils;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-
 import org.otacoo.chan.core.exception.ChanLoaderException;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.parser.ChanReader;
 import org.otacoo.chan.core.site.parser.ChanReaderRequest;
 import org.otacoo.chan.ui.helper.PostHelper;
@@ -45,6 +42,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+
 /**
  * A ChanThreadLoader is the loader for Loadables.
  * <p>Obtain ChanLoaders with {@link org.otacoo.chan.core.pool.ChanLoaderFactory}.
@@ -52,14 +53,14 @@ import javax.inject.Inject;
  * {@link ChanLoaderCallback}.
  * <p>For threads timers can be started with {@link #setTimer()} to do a request later.
  */
-public class ChanThreadLoader implements Response.ErrorListener, Response.Listener<ChanLoaderResponse> {
+public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanLoaderResponse> {
     private static final String TAG = "ChanThreadLoader";
     private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private static final int[] WATCH_TIMEOUTS = {10, 15, 20, 30, 60, 90, 120, 180, 240, 300, 600, 1800, 3600};
 
     @Inject
-    RequestQueue volleyRequestQueue;
+    OkHttpClient okHttpClient;
 
     private final List<ChanLoaderCallback> listeners = new ArrayList<>();
     private final Loadable loadable;
@@ -105,7 +106,7 @@ public class ChanThreadLoader implements Response.ErrorListener, Response.Listen
         if (listeners.isEmpty()) {
             clearTimer();
             if (request != null) {
-                request.getVolleyRequest().cancel();
+                request.getOkHttpCall().cancel();
                 request = null;
             }
             return true;
@@ -125,7 +126,7 @@ public class ChanThreadLoader implements Response.ErrorListener, Response.Listen
         clearTimer();
 
         if (request != null) {
-            request.getVolleyRequest().cancel();
+            request.getOkHttpCall().cancel();
             // request = null;
         }
 
@@ -239,11 +240,17 @@ public class ChanThreadLoader implements Response.ErrorListener, Response.Listen
 
         ChanReader chanReader = loadable.getSite().chanReader();
 
-        ChanLoaderRequestParams requestParams = new ChanLoaderRequestParams(loadable, chanReader, cached, this, this);
-        ChanReaderRequest readerRequest = new ChanReaderRequest(requestParams);
-        request = new ChanLoaderRequest(readerRequest);
-
-        volleyRequestQueue.add(request.getVolleyRequest());
+        ChanLoaderRequestParams requestParams = new ChanLoaderRequestParams(loadable, chanReader, cached);
+        ChanReaderRequest readerRequest = new ChanReaderRequest(requestParams, this);
+        
+        Request okRequest = new Request.Builder()
+                .url(readerRequest.getUrl())
+                .build();
+        
+        Call call = okHttpClient.newCall(okRequest);
+        call.enqueue(readerRequest);
+        
+        request = new ChanLoaderRequest(call);
 
         return request;
     }
@@ -253,7 +260,7 @@ public class ChanThreadLoader implements Response.ErrorListener, Response.Listen
         request = null;
 
         if (response.posts.isEmpty()) {
-            onErrorResponse(new VolleyError("Post size is 0"));
+            onError("Post size is 0");
             return;
         }
 
@@ -318,10 +325,10 @@ public class ChanThreadLoader implements Response.ErrorListener, Response.Listen
     }
 
     @Override
-    public void onErrorResponse(VolleyError error) {
+    public void onError(String error) {
         request = null;
 
-        Logger.i(TAG, "Loading error", error);
+        Logger.i(TAG, "Loading error: " + error);
 
         clearTimer();
 

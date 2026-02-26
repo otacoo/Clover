@@ -19,9 +19,6 @@ package org.otacoo.chan.core.site.sites.chan4;
 
 import android.util.JsonReader;
 
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
-
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.Site;
@@ -31,20 +28,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import okhttp3.HttpUrl;
+
 public class Chan4BoardsRequest extends JsonReaderRequest<List<Board>> {
     public static List<String> BLOCKED = Collections.singletonList(
             "f"
     );
 
-//    public static List<String> TREAT_AS_NOT_WORKSAFE = Arrays.asList(
-//            "a", "c", "w", "cm", "jp", "mlp", "lgbt"
-//    );
-
     private final Site site;
 
-    public Chan4BoardsRequest(Site site, Listener<List<Board>> listener, ErrorListener errorListener) {
-        super(site.endpoints().boards().toString(), listener, errorListener);
+    public Chan4BoardsRequest(Site site, RequestListener<List<Board>> listener) {
+        super(listener);
         this.site = site;
+    }
+
+    public HttpUrl getUrl() {
+        return site.endpoints().boards();
     }
 
     @Override
@@ -187,10 +186,6 @@ public class Chan4BoardsRequest extends JsonReaderRequest<List<Board>> {
         if (BLOCKED.contains(board.code)) {
             return null;
         }
-
-//        if (TREAT_AS_NOT_WORKSAFE.contains(board.code)) {
-//            board.workSafe = false;
-//        }
 
         return board;
     }

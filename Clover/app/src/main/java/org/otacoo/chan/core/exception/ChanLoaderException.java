@@ -17,26 +17,16 @@
  */
 package org.otacoo.chan.core.exception;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkError;
-import com.android.volley.ParseError;
-import com.android.volley.ServerError;
-import com.android.volley.TimeoutError;
-import com.android.volley.VolleyError;
-
 import org.otacoo.chan.R;
+
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLException;
 
 public class ChanLoaderException extends Exception {
-    private VolleyError volleyError;
-
-    public ChanLoaderException(VolleyError volleyError) {
-        this.volleyError = volleyError;
-    }
-
-    public ChanLoaderException() {
-    }
+    private int statusCode = -1;
 
     public ChanLoaderException(String message) {
         super(message);
@@ -50,36 +40,37 @@ public class ChanLoaderException extends Exception {
         super(cause);
     }
 
+    public ChanLoaderException(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public ChanLoaderException() {
+    }
+
     public Throwable getThrowable() {
-        return volleyError != null ? volleyError : getCause();
+        return getCause() != null ? getCause() : this;
     }
 
     public boolean isNotFound() {
-        return volleyError instanceof ServerError && isServerErrorNotFound((ServerError) volleyError);
+        return statusCode == 404;
     }
 
     public int getErrorMessage() {
-        int errorMessage;
-        if (volleyError.getCause() instanceof SSLException) {
-            errorMessage = R.string.thread_load_failed_ssl;
-        } else if (volleyError instanceof NetworkError ||
-                volleyError instanceof TimeoutError ||
-                volleyError instanceof ParseError ||
-                volleyError instanceof AuthFailureError) {
-            errorMessage = R.string.thread_load_failed_network;
-        } else if (volleyError instanceof ServerError) {
-            if (isServerErrorNotFound((ServerError) volleyError)) {
-                errorMessage = R.string.thread_load_failed_not_found;
+        Throwable cause = getCause();
+        if (cause instanceof SSLException) {
+            return R.string.thread_load_failed_ssl;
+        } else if (cause instanceof SocketTimeoutException ||
+                cause instanceof UnknownHostException ||
+                cause instanceof IOException) {
+            return R.string.thread_load_failed_network;
+        } else if (statusCode != -1) {
+            if (statusCode == 404) {
+                return R.string.thread_load_failed_not_found;
             } else {
-                errorMessage = R.string.thread_load_failed_server;
+                return R.string.thread_load_failed_server;
             }
         } else {
-            errorMessage = R.string.thread_load_failed_parsing;
+            return R.string.thread_load_failed_parsing;
         }
-        return errorMessage;
-    }
-
-    private boolean isServerErrorNotFound(ServerError serverError) {
-        return serverError.networkResponse != null && serverError.networkResponse.statusCode == 404;
     }
 }

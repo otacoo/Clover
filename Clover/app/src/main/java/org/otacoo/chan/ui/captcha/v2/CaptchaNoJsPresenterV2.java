@@ -57,8 +57,7 @@ public class CaptchaNoJsPresenterV2 {
     // this cookie is taken from dashchan
     private static final String defaultGoogleCookies = "NID=87=gkOAkg09AKnvJosKq82kgnDnHj8Om2pLskKhdna02msog8HkdHDlasDf";
 
-    // TODO: inject this in the future when https://github.com/Floens/Clover/pull/678 is merged
-    private final OkHttpClient okHttpClient = new OkHttpClient();
+    private final OkHttpClient okHttpClient;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final CaptchaNoJsHtmlParser parser;
@@ -74,8 +73,9 @@ public class CaptchaNoJsPresenterV2 {
     private String baseUrl;
     private long lastTimeCaptchaRequest = 0L;
 
-    public CaptchaNoJsPresenterV2(@Nullable AuthenticationCallbacks callbacks, Context context) {
+    public CaptchaNoJsPresenterV2(@Nullable AuthenticationCallbacks callbacks, Context context, OkHttpClient okHttpClient) {
         this.callbacks = callbacks;
+        this.okHttpClient = okHttpClient;
         this.parser = new CaptchaNoJsHtmlParser(context, okHttpClient);
     }
 

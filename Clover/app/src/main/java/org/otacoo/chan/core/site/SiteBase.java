@@ -20,8 +20,6 @@ package org.otacoo.chan.core.site;
 
 import static org.otacoo.chan.Chan.injector;
 
-import com.android.volley.RequestQueue;
-
 import org.codejargon.feather.Feather;
 import org.otacoo.chan.core.database.LoadableProvider;
 import org.otacoo.chan.core.manager.BoardManager;
@@ -42,7 +40,6 @@ public abstract class SiteBase implements Site {
     protected SiteConfig config;
 
     protected HttpCallManager httpCallManager;
-    protected RequestQueue requestQueue;
     protected BoardManager boardManager;
     protected LoadableProvider loadableProvider;
 
@@ -69,7 +66,6 @@ public abstract class SiteBase implements Site {
 
         Feather injector = injector();
         httpCallManager = injector.instance(HttpCallManager.class);
-        requestQueue = injector.instance(RequestQueue.class);
         boardManager = injector.instance(BoardManager.class);
         loadableProvider = injector.instance(LoadableProvider.class);
         SiteService siteService = injector.instance(SiteService.class);
