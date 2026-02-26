@@ -30,6 +30,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -52,6 +53,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class LogsController extends Controller {
     private static final String TAG = "LogsController";
@@ -186,15 +188,10 @@ public class LogsController extends Controller {
     }
 
     private void exportLogsClicked(ToolbarMenuSubItem item) {
-        Toast.makeText(context, "Collecting app logs…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Exporting filtered logs…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             try {
-                Process proc = new ProcessBuilder()
-                        .command("logcat", "-d", "-v", "time",
-                                "--pid=" + android.os.Process.myPid())
-                        .redirectErrorStream(true)
-                        .start();
-                String output = IOUtils.readString(proc.getInputStream());
+                String logOutput = getFilteredAndAnonymizedLogs();
 
                 java.text.SimpleDateFormat sdf =
                         new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US);
@@ -202,7 +199,7 @@ public class LogsController extends Controller {
                 String fileName = "clover_log_" + timestamp + ".txt";
 
                 // Log exports always go to Downloads. If that fails (e.g. due to permissions), they fall back to app-private storage.
-                File logFile = writeLog(fileName, output);
+                File logFile = writeLog(fileName, logOutput);
 
                 final String savedPath = logFile.getAbsolutePath();
                 new Handler(Looper.getMainLooper()).post(() ->
@@ -216,6 +213,28 @@ public class LogsController extends Controller {
                                 Toast.LENGTH_SHORT).show());
             }
         }, "log-export").start();
+    }
+
+    private String getFilteredAndAnonymizedLogs() {
+        StringBuilder sb = new StringBuilder();
+        for (String line : allLines) {
+            if (shouldIgnoreLine(line)) {
+                continue;
+            }
+
+            if (activeFilter.isEmpty() || line.toLowerCase().contains(activeFilter)) {
+                sb.append(anonymizeLog(line)).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
+    private boolean shouldIgnoreLine(String line) {
+        if (line == null) return true;
+        // Ignore messages about StrictMode
+        if (line.contains("StrictMode")) return true;
+        // Ignore framework warnings about legacy API access (greylist/blacklist noise)
+        return line.contains("Accessing hidden");
     }
 
     private File writeLog(String fileName, String logOutput) throws IOException {
@@ -255,7 +274,7 @@ public class LogsController extends Controller {
     }
 
     private void copyLogsClicked(ToolbarMenuSubItem item) {
-        String text = logTextView.getText().toString();
+        String text = getFilteredAndAnonymizedLogs();
         ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext()
                 .getSystemService(Context.CLIPBOARD_SERVICE);
         clipboard.setPrimaryClip(ClipData.newPlainText("Logs", text));
@@ -265,8 +284,9 @@ public class LogsController extends Controller {
     private void loadLogs() {
         Process process;
         try {
+            // Filter by our PID immediately to only see our app's logs
             process = new ProcessBuilder()
-                    .command("logcat", "-d", "-v", "tag")
+                    .command("logcat", "-d", "-v", "tag", "--pid=" + android.os.Process.myPid())
                     .start();
         } catch (IOException e) {
             Logger.e(TAG, "Error starting logcat", e);
@@ -275,8 +295,10 @@ public class LogsController extends Controller {
 
         String raw = IOUtils.readString(process.getInputStream());
         List<String> lines = new ArrayList<>();
-        for (String line : raw.split("\n")) {
-            lines.add(line);
+        if (!TextUtils.isEmpty(raw)) {
+            for (String line : raw.split("\n")) {
+                lines.add(line);
+            }
         }
 
         new Handler(Looper.getMainLooper()).post(() -> {
@@ -289,6 +311,10 @@ public class LogsController extends Controller {
     private void applyFilter() {
         List<String> matched = new ArrayList<>();
         for (String line : allLines) {
+            if (shouldIgnoreLine(line)) {
+                continue;
+            }
+
             if (activeFilter.isEmpty() || line.toLowerCase().contains(activeFilter)) {
                 matched.add(line);
             }
@@ -301,5 +327,18 @@ public class LogsController extends Controller {
 
         logTextView.setText(sb.toString());
         lineCountView.setText(matched.size() + " / " + allLines.size() + " lines");
+    }
+
+    private static final Pattern IP_PATTERN = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}\\@[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}(\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25})+");
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("(auth|token|session|key|pass|password|secret)[=_:][^\\s&]{4,}", Pattern.CASE_INSENSITIVE);
+
+    private String anonymizeLog(String line) {
+        if (line == null) return "";
+        String scrubbed = line;
+        scrubbed = IP_PATTERN.matcher(scrubbed).replaceAll("[IP_ADDR]");
+        scrubbed = EMAIL_PATTERN.matcher(scrubbed).replaceAll("[EMAIL]");
+        scrubbed = TOKEN_PATTERN.matcher(scrubbed).replaceAll("$1=[REDACTED]");
+        return scrubbed;
     }
 }
