@@ -73,18 +73,6 @@ public class EmailVerificationController extends Controller {
                 @Override
                 public void onPageFinished(android.webkit.WebView view, String url) {
                     super.onPageFinished(view, url);
-                    // Attempt to run 8chan's validation JS and click redirect links
-                    view.evaluateJavascript(
-                        "(function() {" +
-                        "  if (window.bypassUtils && window.bypassUtils.runValidation) {" +
-                        "    bypassUtils.runValidation(function() { console.log('PoW Validated'); });" +
-                        "  }" +
-                        "  var a = document.querySelector('h1 a, a.button, button');" +
-                        "  if (a && (a.innerText.toLowerCase().includes('click') || " +
-                        "            a.innerText.toLowerCase().includes('here') || " +
-                        "            a.innerText.toLowerCase().includes('verify') || " +
-                        "            a.innerText.toLowerCase().includes('bypass'))) a.click();" +
-                        "})();", null);
                 }
             });
         }
