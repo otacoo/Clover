@@ -11,7 +11,7 @@
 > It retains the Blue Clover icon but changes the app name back to **Clover**.
 
 This fork is meant primarily to add support for the new 4chan captcha (implemented) and 8chan.moe site support (work in progress).\
-Read the [CHANGES.md](CHANGES.md) file for all the changes made in this fork.
+Read the [CHANGES.md](docs/CHANGES.md) file for all the changes made in this fork.
 
 ## About Clover
 
@@ -22,13 +22,14 @@ Issues can be reported here at the [Issues page](https://github.com/otacoo/Clove
 Please search before reporting an issue to avoid duplicates!
 
 
-## Contributing
-For first-time contributors, the issues with the label [good first issue](https://github.com/chandevel/Clover/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are a great place to start.  
+## Contributing & Building
 
-See the [Clover setup guide](https://github.com/chandevel/Clover/wiki/Building-Clover) for a guide on building Clover.  
+**Note:**\
+I'll only accept [pull requests](https://github.com/otacoo/Clover/pulls) for adding *site support* or *themes*.
 
-We have a special guide for [making new themes.](https://github.com/chandevel/Clover/wiki/Adding-a-new-theme)
+To build and test locally, see the [BUILD.md](docs/BUILD.md) instructions.
 
+We have a special guide for [making new themes](docs/THEMES.md).
 
 
 ## License
