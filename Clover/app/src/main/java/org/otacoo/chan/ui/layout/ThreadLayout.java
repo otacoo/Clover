@@ -434,12 +434,6 @@ public class ThreadLayout extends CoordinatorLayout implements
             switchVisible(Visible.ERROR);
             errorText.setText(errorMessage);
             errorAuthButton.setVisibility(verificationRequired ? VISIBLE : GONE);
-
-            if (verificationRequired) {
-                Toast.makeText(getContext(),
-                        "PoW verification required. Tap \"Login\" in Site Settings to solve the challenge.",
-                        Toast.LENGTH_LONG).show();
-            }
         }
     }
 
