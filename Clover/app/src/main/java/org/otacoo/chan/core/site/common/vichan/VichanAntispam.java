@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -47,7 +48,7 @@ import okhttp3.ResponseBody;
  * {@link #get()} blocks, run it off the main thread.
  */
 public class VichanAntispam {
-    private static final String TAG = "Antispam";
+    private static final String TAG = "VichanAntispam";
     private HttpUrl url;
 
     @Inject
@@ -63,7 +64,7 @@ public class VichanAntispam {
     public void addDefaultIgnoreFields() {
         fieldsToIgnore.addAll(Arrays.asList("board", "thread", "name", "email",
                 "subject", "body", "password", "file", "spoiler", "json_response",
-                "file_url1", "file_url2", "file_url3"));
+                "file_url1", "file_url2", "file_url3", "post", "com"));
     }
 
     public void ignoreField(String name) {
@@ -76,24 +77,36 @@ public class VichanAntispam {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-        try {
-            Response response = okHttpClient.newCall(request).execute();
+        
+        try (Response response = okHttpClient.newCall(request).execute()) {
             ResponseBody body = response.body();
             if (body != null) {
                 Document document = Jsoup.parse(body.string());
-                Elements form = document.body().getElementsByTag("form");
-                for (Element element : form) {
-                    if (element.attr("name").equals("post")) {
-                        // Add all <input> and <textarea> elements.
-                        Elements inputs = element.getElementsByTag("input");
-                        inputs.addAll(element.getElementsByTag("textarea"));
+                Elements forms = document.body().getElementsByTag("form");
+                for (Element form : forms) {
+                    // Usually the post form has name="post" or no name but contains a textarea.
+                    if (form.attr("name").equals("post") || !form.getElementsByTag("textarea").isEmpty()) {
+                        Elements inputs = form.getElementsByTag("input");
+                        Elements textareas = form.getElementsByTag("textarea");
 
                         for (Element input : inputs) {
                             String name = input.attr("name");
                             String value = input.val();
+                            String type = input.attr("type").toLowerCase(Locale.ENGLISH);
 
-                            if (!fieldsToIgnore.contains(name)) {
-                                res.put(name, value);
+                            if (name.isEmpty() || fieldsToIgnore.contains(name) || type.equals("file") || type.equals("submit")) {
+                                continue;
+                            }
+                            
+                            res.put(name, value);
+                        }
+                        
+                        // We generally ignore renamed textareas because we send the comment as "body".
+                        // Sending an empty renamed textarea might override the "body" parameter on the server.
+                        for (Element textarea : textareas) {
+                            String name = textarea.attr("name");
+                            if (!name.isEmpty() && !fieldsToIgnore.contains(name)) {
+                                Logger.d(TAG, "Ignoring likely renamed comment field: " + name);
                             }
                         }
 
@@ -103,8 +116,12 @@ public class VichanAntispam {
             }
         } catch (IOException e) {
             Logger.e(TAG, "IOException parsing vichan bot fields", e);
-        } catch (NullPointerException e) {
-            Logger.e(TAG, "NullPointerException parsing vichan bot fields", e);
+        } catch (Exception e) {
+            Logger.e(TAG, "Error parsing vichan bot fields", e);
+        }
+
+        if (!res.isEmpty()) {
+            Logger.i(TAG, "Found antispam fields: " + res.keySet());
         }
 
         return res;

@@ -69,6 +69,11 @@ public class VichanEndpoints extends CommonSite.CommonEndpoints {
     }
 
     @Override
+    public HttpUrl boards() {
+        return root.builder().s("boards.json").url();
+    }
+
+    @Override
     public HttpUrl reply(Loadable loadable) {
         return sys.builder().s("post.php").url();
     }
