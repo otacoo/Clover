@@ -646,9 +646,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 } catch (Exception ignored) {}
             }
 
+            // derive colours from theme attributes
+            ThemeHelper.ColorPair tc = ThemeHelper.getThemeBackgroundForeground(getContext());
+
             return html.replace("__CLOVER_JSON__", json.replace("</script>", "<\\/script>"))
-                    .replace("__C_BG__", isDark ? "#0d0d0d" : "#ffffff")
-                    .replace("__C_FG__", isDark ? "#e8e8e8" : "#1a1a1a")
+                    .replace("__C_BG__", tc.bgHex)
+                    .replace("__C_FG__", tc.fgHex)
                     .replace("__C_TIMER_SHADOW__", isDark ? "0 0 1px rgba(255,255,255,0.25)" : "0 1px 2px rgba(0,0,0,0.15)")
                     .replace("__C_LINK__", isDark ? "#b8b8b8" : "#1565c0")
                     .replace("__C_INPUT_BG__", isDark ? "#1e1e1e" : "#fff")
@@ -668,8 +671,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private void showOverlay(String msg, boolean showButton) {
         if (showingActiveCaptcha && !showButton) return;
         boolean isDark = !ThemeHelper.theme().isLightTheme;
-        String bg = isDark ? "rgba(18,18,18,0.9)" : "rgba(255,255,255,0.9)";
-        String fg = isDark ? "#e0e0e0" : "#000";
+        ThemeHelper.ColorPair tc = ThemeHelper.getThemeBackgroundForeground(getContext());
+        int baseBg = tc.bgInt;
+        String bg = String.format("rgba(%d,%d,%d,0.9)",
+                (baseBg >> 16) & 0xFF,
+                (baseBg >> 8) & 0xFF,
+                baseBg & 0xFF);
+        String fg = tc.fgHex;
         String btn = isDark ? "background:#333;color:#eee;border:1px solid #555;" : "background:#0066cc;color:#fff;border:none;";
         
         String js = "(function(){" +
@@ -702,7 +710,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         String key = getGlobalKey();
         globalCooldowns.put(key, System.currentTimeMillis() + (seconds * 1000L));
         if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
-            Toast.makeText(AndroidUtils.getAppContext(), "4chan: Cooldown started (" + seconds + "s)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(AndroidUtils.getAppContext(), "4chan: Cooldown started (" + seconds + "s)", Toast.LENGTH_LONG).show();
         }
     }
 
