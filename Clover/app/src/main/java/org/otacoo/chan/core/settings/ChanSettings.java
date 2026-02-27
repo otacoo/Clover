@@ -228,7 +228,7 @@ public class ChanSettings {
     static {
         SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
 
-        theme = new StringSetting(p, "preference_theme", "light");
+        theme = new StringSetting(p, "preference_theme", "auto");
 
         layoutMode = new OptionsSetting<>(p, "preference_layout_mode", LayoutMode.class, LayoutMode.AUTO);
 
