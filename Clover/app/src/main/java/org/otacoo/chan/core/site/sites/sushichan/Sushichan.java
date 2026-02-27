@@ -68,7 +68,7 @@ public class Sushichan extends CommonSite {
         @Override
         public String desktopUrl(Loadable loadable, @Nullable Post post) {
             if (loadable.isCatalogMode()) {
-                return getUrl().newBuilder().addPathSegment(loadable.boardCode).addPathSegment("").toString();
+                return getUrl().newBuilder().addPathSegment(loadable.boardCode).toString();
             } else if (loadable.isThreadMode()) {
                 return getUrl().newBuilder()
                         .addPathSegment(loadable.boardCode).addPathSegment("res")
