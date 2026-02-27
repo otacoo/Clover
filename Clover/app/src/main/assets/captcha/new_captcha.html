@@ -95,12 +95,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: __C_BG__;
+            padding: 8px 35px 8px 10px;
+            border-bottom: 1px solid __C_INPUT_BORDER__;
+            box-sizing: border-box;
         }
         #t-expiry-wrap {
-            margin-right: 28px;
             font-size: 12px;
             font-weight: bold;
             color: __C_MUTED__;
+            white-space: nowrap;
         }
         #t-native-instructions {
             font-size: 14px;
@@ -198,7 +205,7 @@
             cursor: not-allowed;
         }
 
-        /* Single page captchas styling */
+        /* Single page captchas */
         .t-single-task {
             border-bottom: 1px solid __C_INPUT_BORDER__;
             padding-bottom: 16px;
@@ -206,6 +213,84 @@
         }
         .t-single-task:last-child {
             border-bottom: none;
+        }
+
+        /* Slider UI */
+        .t-slider-wrap {
+            margin-bottom: 16px;
+            background: __C_INPUT_BG__;
+            border: 1px solid __C_INPUT_BORDER__;
+            border-radius: 4px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .t-slider-viewport {
+            width: 100%;
+            height: 120px;
+            overflow: hidden;
+            position: relative;
+            background: __C_BG__;
+            border: 1px solid __C_INPUT_BORDER__;
+            border-radius: 2px;
+            margin-bottom: 12px;
+        }
+        .t-slider-track {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transition: transform 0.1s ease-out;
+        }
+        .t-slider-img {
+            flex-shrink: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .t-slider-input {
+            width: 100%;
+            margin: 0;
+            cursor: pointer;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        .t-slider-input:focus {
+            outline: none;
+        }
+        /* Slider Track */
+        .t-slider-input::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: __C_INPUT_BORDER__;
+            border-radius: 3px;
+        }
+        /* Slider Thumb */
+        .t-slider-input::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: __C_FG__;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -9px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border: 2px solid __C_LINK_CLICKABLE__;
+        }
+
+        .t-slider-btn {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: __C_BTN_BG__;
+            color: __C_BTN_FG__;
+            border: 1px solid __C_BTN_BORDER__;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .t-slider-btn:active {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -219,8 +304,18 @@
     </div>
     <div id="t-native">
         <div id="t-native-header">
-            <span id="t-native-counter"></span>
+            <div style="display:flex; align-items:center; gap: 8px;">
+                <span id="t-native-counter" style="font-weight: bold;"></span>
+                <button id="t-toggle-slider" class="t-slider-btn" type="button">Use Slider</button>
+            </div>
             <span id="t-expiry-wrap"></span>
+        </div>
+        <!-- Slider UI (dynamic replacement for choices) - Stepped mode -->
+        <div id="t-slider-wrap-stepped" class="t-slider-wrap" style="display:none;">
+            <div class="t-slider-viewport">
+                <div id="t-slider-track-stepped" class="t-slider-track"></div>
+            </div>
+            <input type="range" id="t-slider-input-stepped" class="t-slider-input" min="0" value="0" step="1">
         </div>
         <!-- Traditional stepped UI -->
         <div id="t-stepped-ui" style="display:none;">
@@ -241,6 +336,7 @@
 <script>
 
 var isSingleView = false;
+var useSliderMode = false;
 var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 // --- Utility Functions ---
@@ -664,7 +760,7 @@ function buildNativeTasksUI(data) {
         }
 
         var headerEl = document.getElementById('t-native-counter');
-        if (headerEl) headerEl.textContent = 'Challenge ' + (currentIndex + 1) + ' of ' + total;
+        if (headerEl) headerEl.textContent = 'Task ' + (currentIndex + 1) + ' of ' + total;
 
         var instrEl = document.getElementById('t-native-instructions-text');
         if (instrEl) {
@@ -689,21 +785,68 @@ function buildNativeTasksUI(data) {
 
         var wrap = document.getElementById('t-native-choices');
         wrap.innerHTML = '';
-        choices.forEach(function(choice, idx) {
-            var div = document.createElement('div');
-            div.className = 't-choice' + (answers[currentIndex] === idx ? ' selected' : '');
-            var img = document.createElement('img');
-            img.src = toImgSrc(choice);
-            div.appendChild(img);
-            div.onclick = function() {
+
+        var sliderWrap = document.getElementById('t-slider-wrap-stepped');
+        var sliderInput = document.getElementById('t-slider-input-stepped');
+        var sliderTrack = document.getElementById('t-slider-track-stepped');
+        var toggleBtn = document.getElementById('t-toggle-slider');
+
+        function setupSlider() {
+            sliderTrack.innerHTML = '';
+            choices.forEach(function(choice) {
+                var img = document.createElement('img');
+                img.className = 't-slider-img';
+                img.src = toImgSrc(choice);
+                sliderTrack.appendChild(img);
+            });
+            sliderInput.max = choices.length - 1;
+            sliderInput.oninput = function() {
+                var idx = parseInt(this.value);
+                sliderTrack.style.transform = 'translateX(-' + (idx * 100) + '%)';
                 answers[currentIndex] = idx;
-                var all = wrap.querySelectorAll('.t-choice');
-                for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
-                div.classList.add('selected');
                 document.getElementById('t-native-next').disabled = false;
             };
-            wrap.appendChild(div);
-        });
+            // Sync slider value with answer if it exists
+            if (answers[currentIndex] !== undefined) {
+                sliderInput.value = answers[currentIndex];
+                sliderTrack.style.transform = 'translateX(-' + (answers[currentIndex] * 100) + '%)';
+            } else {
+                sliderInput.value = 0;
+                sliderTrack.style.transform = 'translateX(0)';
+            }
+        }
+
+        toggleBtn.onclick = function() {
+            useSliderMode = !useSliderMode;
+            this.textContent = useSliderMode ? 'Use Grid' : 'Use Slider';
+            renderChallenge();
+        };
+
+        toggleBtn.style.display = 'inline-block';
+
+        if (useSliderMode) {
+            document.getElementById('t-native-choices-wrap').style.display = 'none';
+            sliderWrap.style.display = 'block';
+            setupSlider();
+        } else {
+            document.getElementById('t-native-choices-wrap').style.display = 'block';
+            sliderWrap.style.display = 'none';
+            choices.forEach(function(choice, idx) {
+                var div = document.createElement('div');
+                div.className = 't-choice' + (answers[currentIndex] === idx ? ' selected' : '');
+                var img = document.createElement('img');
+                img.src = toImgSrc(choice);
+                div.appendChild(img);
+                div.onclick = function() {
+                    answers[currentIndex] = idx;
+                    var all = wrap.querySelectorAll('.t-choice');
+                    for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+                    div.classList.add('selected');
+                    document.getElementById('t-native-next').disabled = false;
+                };
+                wrap.appendChild(div);
+            });
+        }
 
         var btn = document.getElementById('t-native-next');
         btn.disabled = answers[currentIndex] === undefined;
@@ -749,15 +892,31 @@ function buildSingleViewTasksUI(data) {
 
     var globalTarget = getTarget(data) || '';
 
+    var toggleBtn = document.getElementById('t-toggle-slider');
+    toggleBtn.style.display = 'none'; // Individual buttons used instead
+
     tasks.forEach(function(task, taskIdx) {
         var taskDiv = document.createElement('div');
         taskDiv.className = 't-single-task';
+        var taskUseSlider = false;
 
         var header = document.createElement('div');
-        header.style.fontSize = '14px';
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
         header.style.marginBottom = '8px';
-        header.style.fontWeight = 'bold';
-        header.textContent = 'Task ' + (taskIdx + 1) + ' of ' + total;
+
+        var title = document.createElement('div');
+        title.style.fontSize = '14px';
+        title.style.fontWeight = 'bold';
+        title.textContent = 'Task ' + (taskIdx + 1) + ' of ' + total;
+        header.appendChild(title);
+
+        var taskSliderBtn = document.createElement('button');
+        taskSliderBtn.className = 't-slider-btn';
+        taskSliderBtn.type = 'button';
+        taskSliderBtn.textContent = 'Use Slider';
+        header.appendChild(taskSliderBtn);
         taskDiv.appendChild(header);
 
         var instrDiv = document.createElement('div');
@@ -806,33 +965,96 @@ function buildSingleViewTasksUI(data) {
         }
         taskDiv.appendChild(instrDiv);
 
-        var choicesGrid = document.createElement('div');
-        choicesGrid.style.display = 'flex';
-        choicesGrid.style.flexDirection = 'column';
-        choicesGrid.style.gap = '8px';
-        choicesGrid.style.alignItems = 'center';
+        var contentWrap = document.createElement('div');
 
-        choices.forEach(function(choice, choiceIdx) {
-            var choiceDiv = document.createElement('div');
-            choiceDiv.className = 't-choice';
-            var img = document.createElement('img');
-            img.src = toImgSrc(choice);
-            choiceDiv.appendChild(img);
+        function renderChoices() {
+            contentWrap.innerHTML = '';
+            var choicesGrid = document.createElement('div');
+            choicesGrid.style.display = 'flex';
+            choicesGrid.style.flexDirection = 'column';
+            choicesGrid.style.gap = '8px';
+            choicesGrid.style.alignItems = 'center';
 
-            choiceDiv.onclick = function() {
-                answers[taskIdx] = choiceIdx;
-                var all = choicesGrid.querySelectorAll('.t-choice');
-                for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
-                choiceDiv.classList.add('selected');
+            choices.forEach(function(choice, choiceIdx) {
+                var choiceDiv = document.createElement('div');
+                choiceDiv.className = 't-choice' + (answers[taskIdx] === choiceIdx ? ' selected' : '');
+                var img = document.createElement('img');
+                img.src = toImgSrc(choice);
+                choiceDiv.appendChild(img);
 
-                var allAnswered = answers.every(function(a) { return a !== undefined; });
-                document.getElementById('t-native-submit').disabled = !allAnswered;
+                choiceDiv.onclick = function() {
+                    answers[taskIdx] = choiceIdx;
+                    var all = choicesGrid.querySelectorAll('.t-choice');
+                    for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+                    choiceDiv.classList.add('selected');
+                    updateSubmitButtonStatus();
+                };
+                choicesGrid.appendChild(choiceDiv);
+            });
+            contentWrap.appendChild(choicesGrid);
+        }
+
+        function renderSlider() {
+            contentWrap.innerHTML = '';
+            var sWrap = document.createElement('div');
+            sWrap.className = 't-slider-wrap';
+
+            var viewport = document.createElement('div');
+            viewport.className = 't-slider-viewport';
+
+            var track = document.createElement('div');
+            track.className = 't-slider-track';
+
+            choices.forEach(function(choice) {
+                var img = document.createElement('img');
+                img.className = 't-slider-img';
+                img.src = toImgSrc(choice);
+                track.appendChild(img);
+            });
+            viewport.appendChild(track);
+            sWrap.appendChild(viewport);
+
+            var sInput = document.createElement('input');
+            sInput.type = 'range';
+            sInput.className = 't-slider-input';
+            sInput.min = '0';
+            sInput.max = choices.length - 1;
+            sInput.step = '1';
+
+            if (answers[taskIdx] !== undefined) {
+                sInput.value = answers[taskIdx];
+                track.style.transform = 'translateX(-' + (answers[taskIdx] * 100) + '%)';
+            } else {
+                sInput.value = 0;
+                track.style.transform = 'translateX(0)';
+            }
+
+            sInput.oninput = function() {
+                var idx = parseInt(this.value);
+                track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+                answers[taskIdx] = idx;
+                updateSubmitButtonStatus();
             };
-            choicesGrid.appendChild(choiceDiv);
-        });
-        taskDiv.appendChild(choicesGrid);
+            sWrap.appendChild(sInput);
+            contentWrap.appendChild(sWrap);
+        }
+
+        taskSliderBtn.onclick = function() {
+            taskUseSlider = !taskUseSlider;
+            this.textContent = taskUseSlider ? 'Use Grid' : 'Use Slider';
+            if (taskUseSlider) renderSlider();
+            else renderChoices();
+        };
+
+        renderChoices();
+        taskDiv.appendChild(contentWrap);
         container.appendChild(taskDiv);
     });
+
+    function updateSubmitButtonStatus() {
+        var allAnswered = answers.every(function(a) { return a !== undefined; });
+        document.getElementById('t-native-submit').disabled = !allAnswered;
+    }
 
     document.getElementById('t-native-submit').disabled = true;
     document.getElementById('t-native-submit').onclick = function() {
