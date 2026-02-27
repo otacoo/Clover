@@ -172,6 +172,40 @@ public class ThemeHelper {
         return defaultColor;
     }
 
+    /**
+     * Simple pair holding a background and foreground colour, both as ints and
+     * hex strings. Used by components that need to match the app theme.
+     */
+    public static class ColorPair {
+        public final int bgInt;
+        public final int fgInt;
+        public final String bgHex;
+        public final String fgHex;
+
+        public ColorPair(int bgInt, int fgInt, String bgHex, String fgHex) {
+            this.bgInt = bgInt;
+            this.fgInt = fgInt;
+            this.bgHex = bgHex;
+            this.fgHex = fgHex;
+        }
+    }
+
+    /**
+     * Returns the background and primary text colours derived from the current
+     * theme. Falls back to sensible light/dark defaults when attributes are
+     * unavailable.
+     */
+    public static ColorPair getThemeBackgroundForeground(android.content.Context ctx) {
+        boolean isDark = !theme().isLightTheme;
+        int bgCol = AndroidUtils.getAttrColor(ctx, R.attr.backcolor);
+        if (bgCol == 0) bgCol = isDark ? 0xFF0D0D0D : 0xFFFFFFFF;
+        String bgHex = String.format("#%06X", (0xFFFFFF & bgCol));
+        int fgCol = AndroidUtils.getAttrColor(ctx, R.attr.text_color_primary);
+        if (fgCol == 0) fgCol = isDark ? 0xFFE8E8E8 : 0xFF1A1A1A;
+        String fgHex = String.format("#%06X", (0xFFFFFF & fgCol));
+        return new ColorPair(bgCol, fgCol, bgHex, fgHex);
+    }
+
     public List<PrimaryColor> getColors() {
         return Arrays.asList(PrimaryColor.values());
     }
