@@ -72,6 +72,13 @@ public class BoardSetupPresenter implements Observer {
 
         allBoardsObservable = boardManager.getAllBoardsObservable();
         allBoardsObservable.addObserver(this);
+
+        // lazy‑load available boards only when the board setup dialog is shown.
+        // if we already have boards cached, there's no need to hit the network again.
+        if (site.boardsType().canList && boardManager.getSiteBoards(site).isEmpty()) {
+            site.actions().boards(boards ->
+                    boardManager.updateAvailableBoardsForSite(site, boards.boards));
+        }
     }
 
     public void destroy() {

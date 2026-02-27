@@ -412,15 +412,10 @@ public class Chan4 extends SiteBase {
                 @Override
                 public void onError(String error) {
                     Logger.e(TAG, "Failed to get boards from server: " + error);
-
-                    // API fail, provide some default boards
-                    List<Board> list = new ArrayList<>();
-                    list.add(Board.fromSiteNameCode(Chan4.this, "Technology", "g"));
-                    list.add(Board.fromSiteNameCode(Chan4.this, "Food & Cooking", "ck"));
-                    list.add(Board.fromSiteNameCode(Chan4.this, "Do It Yourself", "diy"));
-                    list.add(Board.fromSiteNameCode(Chan4.this, "Animals & Nature", "an"));
-                    Collections.shuffle(list);
-                    listener.onBoardsReceived(new Boards(list));
+                    android.widget.Toast.makeText(AndroidUtils.getAppContext(),
+                            "Unable to load board list, please try again. No connection or 4chan server issue?",
+                            android.widget.Toast.LENGTH_LONG).show();
+                    listener.onBoardsReceived(new Boards(new ArrayList<>()));
                 }
             });
 
