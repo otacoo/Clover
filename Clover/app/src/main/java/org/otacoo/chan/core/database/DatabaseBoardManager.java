@@ -17,8 +17,10 @@ import org.otacoo.chan.utils.Time;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public class DatabaseBoardManager {
@@ -101,9 +103,11 @@ public class DatabaseBoardManager {
                 board.site = site;
             }
 
+            Set<String> newCodes = new HashSet<>();
             List<Board> toCreate = new ArrayList<>();
             List<Pair<Board, Board>> toUpdate = new ArrayList<>();
             for (Board board : boards) {
+                newCodes.add(board.code);
                 if (byCodeFromDb.containsKey(board.code)) {
                     Board dbBoard = byCodeFromDb.get(board.code);
                     if (!dbBoard.propertiesEqual(board)) {
@@ -111,6 +115,13 @@ public class DatabaseBoardManager {
                     }
                 } else {
                     toCreate.add(board);
+                }
+            }
+
+            List<Board> toDelete = new ArrayList<>();
+            for (Board dbBoard : allFromDb) {
+                if (!newCodes.contains(dbBoard.code) && !dbBoard.saved) {
+                    toDelete.add(dbBoard);
                 }
             }
 
@@ -130,24 +141,16 @@ public class DatabaseBoardManager {
                 }
             }
 
-            /*for (Board board : boards) {
-                QueryBuilder<Board, Integer> q = helper.boardsDao.queryBuilder();
-                q.where().eq("site", board.getSite().id())
-                        .and().eq("value", board.code);
-                Board existing = q.queryForFirst();
-                if (existing != null) {
-                    existing.updateExcludingUserFields(board);
-                    helper.boardsDao.update(existing);
-                    board.updateExcludingUserFields(existing);
-                } else {
-                    helper.boardsDao.create(board);
+            if (!toDelete.isEmpty()) {
+                for (Board board : toDelete) {
+                    helper.boardsDao.delete(board);
                 }
-            }*/
+            }
 
             Time.endTiming("createAll boards " +
-                    toCreate.size() + ", " + toUpdate.size(), start);
+                    toCreate.size() + ", " + toUpdate.size() + ", deleted " + toDelete.size(), start);
 
-            return !toCreate.isEmpty() || !toUpdate.isEmpty();
+            return !toCreate.isEmpty() || !toUpdate.isEmpty() || !toDelete.isEmpty();
         };
     }
 

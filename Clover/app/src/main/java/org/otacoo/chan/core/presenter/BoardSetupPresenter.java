@@ -18,11 +18,14 @@
 package org.otacoo.chan.core.presenter;
 
 
+import android.widget.Toast;
+
 import org.otacoo.chan.core.manager.BoardManager;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.repository.BoardRepository;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.ui.helper.BoardHelper;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.BackgroundUtils;
 
 import java.util.ArrayList;
@@ -73,11 +76,13 @@ public class BoardSetupPresenter implements Observer {
         allBoardsObservable = boardManager.getAllBoardsObservable();
         allBoardsObservable.addObserver(this);
 
-        // lazy‑load available boards only when the board setup dialog is shown.
-        // if we already have boards cached, there's no need to hit the network again.
-        if (site.boardsType().canList && boardManager.getSiteBoards(site).isEmpty()) {
-            site.actions().boards(boards ->
-                    boardManager.updateAvailableBoardsForSite(site, boards.boards));
+        // Always refresh available boards from network when opening the setup screen if the site supports it.
+        // This ensures the user can "clean up" or see an up-to-date list of boards if needed.
+        if (site.boardsType().canList) {
+            site.actions().boards(boards -> {
+                boardManager.updateAvailableBoardsForSite(site, boards.boards);
+                Toast.makeText(AndroidUtils.getAppContext(), "Board list refreshed.", Toast.LENGTH_LONG).show();
+            });
         }
     }
 
