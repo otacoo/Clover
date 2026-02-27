@@ -4,6 +4,7 @@ import android.content.Context;
 
 import org.codejargon.feather.Provides;
 import org.otacoo.chan.core.cache.FileCache;
+import org.otacoo.chan.core.net.ChanInterceptor;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.Logger;
 
@@ -31,7 +32,8 @@ public class NetModule {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                 .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS);
+                .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+                .addInterceptor(new ChanInterceptor(userAgentProvider));
 
         if (ChanSettings.dnsOverHttps.get()) {
             try {
