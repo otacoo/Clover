@@ -75,11 +75,10 @@ public abstract class SiteBase implements Site {
         });
 
         initializeSettings();
-        // Boards are loaded lazily when the user opens the board setup dialog, so no need to fetch them here.
-        // Previously we fetched the full board list for every site during post-initialization:
-        // if (boardsType().canList) {
-        //     actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards));
-        // }
+
+        if (boardsType().canList && !boardManager.getSiteSavedBoards(this).isEmpty()) {
+           actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards));
+        }
 
         Time.endTiming("initialized " + name(), start);
     }
