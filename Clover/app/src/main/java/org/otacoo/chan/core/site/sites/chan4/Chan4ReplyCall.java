@@ -50,15 +50,14 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
     ) {
         super.setup(requestBuilder, progressListener);
 
-        HttpUrl replyUrl = site.endpoints().reply(this.reply.loadable);
-        // Set browser-like headers that sys.4chan.org expects for multipart POST
-        requestBuilder.header("Host", "sys.4chan.org");
+        // Referer must be the board or thread page, not the sys endpoint.
+        String referer = site.resolvable().desktopUrl(reply.loadable, null);
         requestBuilder.header("Origin", "https://boards.4chan.org");
-        requestBuilder.header("Referer", replyUrl.toString());
+        requestBuilder.header("Referer", referer);
+        
+        // sys.4chan.org expects specific browser-like headers for multipart POST
         requestBuilder.header("Accept",
                 "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-        requestBuilder.header("Accept-Language", "en-US,en;q=0.5");
-        requestBuilder.header("Connection", "keep-alive");
         requestBuilder.header("Sec-Fetch-Dest", "document");
         requestBuilder.header("Sec-Fetch-Mode", "navigate");
         requestBuilder.header("Sec-Fetch-Site", "same-site");
@@ -86,10 +85,8 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
 
         formBuilder.addFormDataPart("com", reply.comment);
 
-        if (reply.captchaResponse != null) {
-            if (reply.captchaChallenge != null) {
-                //formBuilder.addFormDataPart("recaptcha_challenge_field", reply.captchaChallenge);
-                //formBuilder.addFormDataPart("recaptcha_response_field", reply.captchaResponse);
+        if (reply.captchaResponse != null && !reply.captchaResponse.isEmpty()) {
+            if (reply.captchaChallenge != null && !reply.captchaChallenge.isEmpty()) {
                 formBuilder.addFormDataPart("t-challenge", reply.captchaChallenge);
                 formBuilder.addFormDataPart("t-response", reply.captchaResponse);
             } else {
@@ -105,7 +102,7 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
             formBuilder.addFormDataPart("spoiler", "on");
         }
 
-        if (!reply.flag.isEmpty()) {
+        if (reply.flag != null && !reply.flag.isEmpty()) {
             formBuilder.addFormDataPart("flag", reply.flag);
         }
     }
@@ -114,17 +111,15 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
             MultipartBody.Builder formBuilder,
             @Nullable ProgressRequestBody.ProgressRequestListener progressListener
     ) {
+        RequestBody fileBody = RequestBody.create(
+                MediaType.parse("application/octet-stream"), reply.file
+        );
+
         RequestBody requestBody;
-
         if (progressListener == null) {
-            requestBody = RequestBody.create(
-                    MediaType.parse("application/octet-stream"), reply.file
-            );
+            requestBody = fileBody;
         } else {
-            requestBody = new ProgressRequestBody(RequestBody.create(
-                    MediaType.parse("application/octet-stream"), reply.file
-            ), progressListener);
-
+            requestBody = new ProgressRequestBody(fileBody, progressListener);
         }
 
         formBuilder.addFormDataPart(

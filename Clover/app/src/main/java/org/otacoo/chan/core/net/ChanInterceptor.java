@@ -36,7 +36,7 @@ public class ChanInterceptor implements Interceptor {
 
     @NonNull
     @Override
-    public Response intercept(@NonNull Chain chain) throws IOException {
+    public Response intercept(@NonNull Interceptor.Chain chain) throws IOException {
         Request originalRequest = chain.request();
 
         Request.Builder builder = originalRequest.newBuilder()
