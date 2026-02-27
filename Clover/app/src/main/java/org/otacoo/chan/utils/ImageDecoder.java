@@ -119,7 +119,7 @@ public class ImageDecoder {
         // If primary is unspecified, scale primary to match secondary's scaling ratio.
         if (maxPrimary == 0) {
             double ratio = (double) maxSecondary / (double) actualSecondary;
-            return (int) (actualPrimary * ratio);
+            return Math.max(1, (int) (actualPrimary * ratio));
         }
 
         if (maxSecondary == 0) {
@@ -131,7 +131,7 @@ public class ImageDecoder {
         if (resized * ratio > maxSecondary) {
             resized = (int) (maxSecondary / ratio);
         }
-        return resized;
+        return Math.max(1, resized);
     }
 
     private static int findBestSampleSize(int actualWidth, int actualHeight, int desiredWidth, int desiredHeight) {
