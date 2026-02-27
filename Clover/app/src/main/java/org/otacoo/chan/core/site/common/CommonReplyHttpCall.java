@@ -29,7 +29,6 @@ import org.jsoup.Jsoup;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Random;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,12 +54,6 @@ public abstract class CommonReplyHttpCall extends HttpCall {
         this.reply = reply;
     }
 
-    private static String generateHttpBoundary() {
-        // this shouldn't be here but I'm not going to waste more time on
-        // an app that will be completely dead before the end of the year
-        return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase(Locale.ENGLISH).substring(0, 16);
-    }
-
     @Override
     public void setup(
             Request.Builder requestBuilder,
@@ -68,15 +61,13 @@ public abstract class CommonReplyHttpCall extends HttpCall {
     ) {
         replyResponse.password = Long.toHexString(RANDOM.nextLong());
 
-        String boundary = "------WebKitFormBoundary" + generateHttpBoundary();
-        MultipartBody.Builder formBuilder = new MultipartBody.Builder(boundary);
+        MultipartBody.Builder formBuilder = new MultipartBody.Builder();
         formBuilder.setType(MultipartBody.FORM);
 
         addParameters(formBuilder, progressListener);
 
         HttpUrl replyUrl = site.endpoints().reply(this.reply.loadable);
         requestBuilder.url(replyUrl);
-        requestBuilder.addHeader("Referer", replyUrl.toString());
         requestBuilder.post(formBuilder.build());
     }
 
