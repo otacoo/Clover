@@ -1,3 +1,32 @@
+## 2026-02-27 – v3.1.2
+
+>[!WARNING]
+>A lot of old back-end code was rewritten in this release, if something broke, I'm sorry.\
+>Please open an [issue here](https://github.com/otacoo/Clover/issues).\
+>You can tap the Clover build number in the app a few times to open dev settings, there you will be able to export the app's logs.\
+>Thank you for your understanding.
+
+- **New option:** Add Top and Bottom buttons (Appearance > Layout)
+- **New option:** Add Auto (System) theme to match Day/Night cycle theming
+- **New feature:** 4chan: support Shift JIS and Mona font
+- 4chan: Improve captcha UX and fail-safe for future captcha shenanigans
+- 4chan: Formatting tags will now correctly show up only if the board supports them
+- 4chan: Fix an issue where the board list could become stale and never be fetched again on a fresh start if there was no connection
+- 4chan: Captcha view will now use Theme matching background and text color
+- Bring back Lainchan support
+- Update Sushichan domain to .cafe
+- Vichan engine updates
+- Remove 8chan site support for now until I can get it working properly
+- Clover will now only fetch boardlists when opening the add‑boards dialog in Settings > Site (press the “+”); no network activity on app start
+- Changed a few default settings (don't be alarmed if some things get enabled/disabled)
+- Backup JSON will now have the hour in the filename when saving
+- Backing up settings will no longer change Clover's "Save location" on some Android versions
+- Fully moved the app from Volley to OkHttp, refactored a lot of "old" code in the process
+- Fix an issue where scroll position wasn't being properly saved when leaving a thread or the app
+- Tentatively fixed an issue that could cause the app to crash when selecting text in a thread (issue #1)
+- Move image saving from the main UI thread to avoid slow downs when saving images
+- Dev options: Logs are now anonymized and can be exported depending on selected filter
+
 ## 2026-02-25 – v3.1.1
 
 - Filters will now be correctly backed up
