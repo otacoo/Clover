@@ -229,7 +229,6 @@ public final class SettingsBackupRestore {
                 "https://sys.4channel.org",
                 "https://8chan.moe",
                 "https://8chan.st",
-                "https//sushigirl.us",
                 "https://sushigirl.cafe"
         };
         for (String domain : domains) {

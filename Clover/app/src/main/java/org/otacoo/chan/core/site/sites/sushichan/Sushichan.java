@@ -17,22 +17,38 @@
  */
 package org.otacoo.chan.core.site.sites.sushichan;
 
+import static org.otacoo.chan.Chan.injector;
+
+import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.net.JsonReaderRequest;
+import org.otacoo.chan.core.site.Boards;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteIcon;
 import org.otacoo.chan.core.site.common.CommonSite;
 import org.otacoo.chan.core.site.common.vichan.VichanActions;
 import org.otacoo.chan.core.site.common.vichan.VichanApi;
+import org.otacoo.chan.core.site.common.vichan.VichanBoardsRequest;
 import org.otacoo.chan.core.site.common.vichan.VichanCommentParser;
 import org.otacoo.chan.core.site.common.vichan.VichanEndpoints;
+import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 public class Sushichan extends CommonSite {
+    private static final String TAG = "Sushichan";
+
     public static final CommonSiteUrlHandler URL_HANDLER = new CommonSiteUrlHandler() {
         @Override
         public Class<? extends Site> getSiteClass() {
@@ -41,7 +57,7 @@ public class Sushichan extends CommonSite {
 
         @Override
         public HttpUrl getUrl() {
-            return HttpUrl.parse("https://sushigirl.us/");
+            return HttpUrl.parse("https://sushigirl.cafe/");
         }
 
         @Override
@@ -52,11 +68,11 @@ public class Sushichan extends CommonSite {
         @Override
         public String desktopUrl(Loadable loadable, @Nullable Post post) {
             if (loadable.isCatalogMode()) {
-                return getUrl().newBuilder().addPathSegment(loadable.boardCode).toString();
+                return getUrl().newBuilder().addPathSegment(loadable.boardCode).addPathSegment("").toString();
             } else if (loadable.isThreadMode()) {
                 return getUrl().newBuilder()
                         .addPathSegment(loadable.boardCode).addPathSegment("res")
-                        .addPathSegment(String.valueOf(loadable.no) + ".html")
+                        .addPathSegment(loadable.no + ".html")
                         .toString();
             } else {
                 return getUrl().toString();
@@ -69,19 +85,7 @@ public class Sushichan extends CommonSite {
         setName("Sushichan");
         setIcon(SiteIcon.fromAssets("icons/sushichan.webp"));
 
-        setBoards(
-                Board.fromSiteNameCode(this, "artsy", "wildcard"),
-                Board.fromSiteNameCode(this, "sushi social", "lounge"),
-                Board.fromSiteNameCode(this, "site meta-discussion", "yakuza"),
-                Board.fromSiteNameCode(this, "vidya gaems", "arcade"),
-                Board.fromSiteNameCode(this, "cute things", "kawaii"),
-                Board.fromSiteNameCode(this, "tasty morsels & delights", "kitchen"),
-                Board.fromSiteNameCode(this, "enjoyable sounds", "tunes"),
-                Board.fromSiteNameCode(this, "arts & literature", "culture"),
-                Board.fromSiteNameCode(this, "technology", "silicon"),
-                Board.fromSiteNameCode(this, "internet death cult", "hell"),
-                Board.fromSiteNameCode(this, "dat ecchi & hentai goodness", "lewd")
-        );
+        setBoardsType(BoardsType.DYNAMIC);
 
         setResolvable(URL_HANDLER);
 
@@ -93,9 +97,34 @@ public class Sushichan extends CommonSite {
         });
 
         setEndpoints(new VichanEndpoints(this,
-                "https://sushigirl.us/",
-                "https://sushigirl.us/"));
-        setActions(new VichanActions(this));
+                "https://sushigirl.cafe/",
+                "https://sushigirl.cafe/"));
+
+        setActions(new VichanActions(this) {
+            @Override
+            public void boards(final BoardsListener listener) {
+                VichanBoardsRequest request = new VichanBoardsRequest(Sushichan.this, new JsonReaderRequest.RequestListener<>() {
+                    @Override
+                    public void onResponse(List<Board> response) {
+                        listener.onBoardsReceived(new Boards(response));
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Logger.e(TAG, "Failed to get boards: " + error);
+                        Toast.makeText(AndroidUtils.getAppContext(), "Failed to load board list", Toast.LENGTH_LONG).show();
+                        listener.onBoardsReceived(new Boards(new ArrayList<>()));
+                    }
+                });
+
+                OkHttpClient client = injector().instance(OkHttpClient.class);
+                Request okRequest = new Request.Builder()
+                        .url(request.getUrl())
+                        .build();
+                client.newCall(okRequest).enqueue(request);
+            }
+        });
+
         setApi(new VichanApi(this));
         setParser(new VichanCommentParser());
     }
