@@ -325,6 +325,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 super.onPageFinished(view, url);
                 if (url == null || !url.contains("sys.4chan.org")) return;
 
+                // DO NOT interfere with sign-in or verification pages
+                if (url.contains("/signin") || url.contains("action=verify")) {
+                    return;
+                }
+
                 injectThemingAndHooks();
 
                 if (url.endsWith("/post")) {
