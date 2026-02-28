@@ -37,6 +37,9 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.database.DatabaseManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
 
 public class DeveloperSettingsController extends Controller {
@@ -44,6 +47,8 @@ public class DeveloperSettingsController extends Controller {
 
     @Inject
     DatabaseManager databaseManager;
+
+    private AlertDialog currentCookieDialog;
 
     public DeveloperSettingsController(Context context) {
         super(context);
@@ -251,7 +256,7 @@ public class DeveloperSettingsController extends Controller {
                                 }
                                 cm.flush();
                                 Toast.makeText(context, "Saved " + cookieName, Toast.LENGTH_SHORT).show();
-                                showCookieManagerDialog(); // refresh UI
+                                view.post(this::showCookieManagerDialog); // refresh UI
                             })
                             .setNegativeButton("Cancel", null)
                             .show();
@@ -268,12 +273,20 @@ public class DeveloperSettingsController extends Controller {
                             .setPositiveButton("Delete", (dlg, which) -> {
                                 for (String domain : DOMAINS) {
                                     String host = android.net.Uri.parse(domain).getHost();
-                                    String expired = cookieName + "=; Domain=" + host + "; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax";
-                                    cm.setCookie(domain, expired);
+                                    // Try multiple domain/path combinations to ensure deletion
+                                    String[] formats = {
+                                        cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=" + host,
+                                        cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=." + host,
+                                        cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/",
+                                        cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+                                    };
+                                    for (String f : formats) {
+                                        cm.setCookie(domain, f);
+                                    }
                                 }
                                 cm.flush();
                                 Toast.makeText(context, "Deleted " + cookieName, Toast.LENGTH_SHORT).show();
-                                showCookieManagerDialog(); // refresh UI
+                                view.post(this::showCookieManagerDialog); // refresh UI
                             })
                             .setNegativeButton("Cancel", null)
                             .show();
@@ -294,7 +307,11 @@ public class DeveloperSettingsController extends Controller {
         ScrollView sv = new ScrollView(context);
         sv.addView(root);
 
-        new AlertDialog.Builder(context)
+        if (currentCookieDialog != null && currentCookieDialog.isShowing()) {
+            currentCookieDialog.dismiss();
+        }
+
+        currentCookieDialog = new AlertDialog.Builder(context)
                 .setTitle("4chan Cookies (" + cookieMap.size() + " entries)")
                 .setView(sv)
                 .setPositiveButton("Refresh", (dlg, which) -> showCookieManagerDialog())
@@ -334,7 +351,8 @@ public class DeveloperSettingsController extends Controller {
                             .setNegativeButton("Cancel", (dlg2, which2) -> showCookieManagerDialog())
                             .show();
                 })
-                .setNegativeButton("Close", null)
+                .setNegativeButton("Close", (dlg, which) -> currentCookieDialog = null)
+                .setOnCancelListener(dlg -> currentCookieDialog = null)
                 .show();
     }
 }
