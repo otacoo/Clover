@@ -40,6 +40,11 @@ public class ColorPickerView extends View {
     private Paint paint;
     private Paint centerPaint;
     private int centerRadius;
+    private OnColorChangedListener listener;
+
+    public interface OnColorChangedListener {
+        void onColorChanged(int color);
+    }
 
     public ColorPickerView(Context context) {
         super(context);
@@ -57,8 +62,13 @@ public class ColorPickerView extends View {
         centerPaint.setStrokeWidth(dp(5));
     }
 
+    public void setOnColorChangedListener(OnColorChangedListener listener) {
+        this.listener = listener;
+    }
+
     public void setColor(int color) {
         centerPaint.setColor(color);
+        invalidate();
     }
 
     public int getColor() {
@@ -71,6 +81,7 @@ public class ColorPickerView extends View {
         float y = event.getY() - getHeight() / 2f;
 
         switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
                 float angle = (float) Math.atan2(y, x);
                 // need to turn angle [-PI ... PI] into unit [0....1]
@@ -78,7 +89,11 @@ public class ColorPickerView extends View {
                 if (unit < 0.0) {
                     unit += 1.0;
                 }
-                centerPaint.setColor(interpColor(COLORS, unit));
+                int color = interpColor(COLORS, unit);
+                centerPaint.setColor(color);
+                if (listener != null) {
+                    listener.onColorChanged(color);
+                }
                 invalidate();
                 break;
         }
