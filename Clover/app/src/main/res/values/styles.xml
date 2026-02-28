@@ -20,10 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <color name="primary_dark">#ff8CC7E7</color>
     <color name="accent">#ff1B98D1</color>
 
+    <!--
+        Theme Color Item Definitions:
+        - colorPrimary: Toolbar color
+        - colorAccent: FAB (Floating Action Button) color
+        - loading_bar_color: Loading bar color
+    -->
+
     <!-- Main light theme -->
     <style name="Chan.Theme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">#2196F3</item>
-        <item name="colorAccent">#009688</item>
+        <item name="colorAccent">#ff009688</item>
         <item name="loading_bar_color">?colorPrimary</item>
         <item name="ui_text_color">#ffffffff</item>
 
