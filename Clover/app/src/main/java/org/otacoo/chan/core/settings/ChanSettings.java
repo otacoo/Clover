@@ -331,15 +331,6 @@ public class ChanSettings {
 
         appIconMode = new OptionsSetting<>(p, "preference_app_icon_mode", AppIconMode.class, AppIconMode.BLUE);
 
-        // Old (but possibly still in some users phone)
-        // preference_board_view_mode default "list"
-        // preference_board_editor_filler default false
-        // preference_pass_enabled default false
-        // preference_autoplay false
-        // preference_watch_background_timeout "60" the old timeout background setting in minutes
-        // preference_network_https true
-        // counter_settings_open
-        // counter_reply_open
     }
 
     public static boolean isCrashReportingAvailable() {
