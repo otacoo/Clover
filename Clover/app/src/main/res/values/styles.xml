@@ -22,7 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <!-- Main light theme -->
     <style name="Chan.Theme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorAccent">#ff009688</item>
+        <item name="colorPrimary">#2196F3</item>
+        <item name="colorAccent">#009688</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+        <item name="ui_text_color">#ffffffff</item>
 
         <item name="android:windowBackground">@android:color/white</item>
         <item name="windowActionModeOverlay">true</item>
@@ -66,12 +69,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="dropdown_light_pressed_color">#88ffffff</item>
         <item name="dropdown_dark_color">#ff757575</item>
         <item name="dropdown_dark_pressed_color">#887d7d7d</item>
-
-        <item name="loading_bar_color">?colorPrimary</item>
-        <item name="ui_text_color">#ffffffff</item>
     </style>
 
+    <!-- Main dark theme -->
     <style name="Chan.Theme.Dark" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">#212121</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+        <item name="ui_text_color">#ffffffff</item>
+
         <item name="dropdown_dark_color">#ffffffff</item>
         <item name="dropdown_dark_pressed_color">#88ffffff</item>
 
@@ -100,13 +106,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.Black" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#000000</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+
         <item name="backcolor">#ff000000</item>
         <item name="backcolor_secondary">#ff212121</item>
 
         <item name="post_spoiler_color">#ff2c2c2c</item>
     </style>
 
-    <style name="Chan.Theme.YotsubaB">
+    <style name="Chan.Theme.YotsubaB" parent="Chan.Theme">
+        <item name="colorPrimary">#F44336</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+
         <item name="backcolor">#ffd6daf0</item>
         <item name="backcolor_secondary">#ffeef2ff</item>
 
@@ -120,7 +134,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_highlight_quote_color">#6d0000</item>
     </style>
 
-    <style name="Chan.Theme.Yotsuba">
+    <style name="Chan.Theme.Yotsuba" parent="Chan.Theme">
+        <item name="colorPrimary">#F44336</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+
         <item name="backcolor">#fff0e0d6</item>
         <item name="backcolor_secondary">#ffffffee</item>
 
@@ -136,7 +154,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_highlight_quote_color">#000039</item>
     </style>
 
-    <style name="Chan.Theme.Photon">
+    <style name="Chan.Theme.Photon" parent="Chan.Theme">
+        <item name="colorPrimary">#FF9800</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+
         <item name="backcolor">#ffeeeeee</item>
 
         <item name="post_name_color">#ff004A99</item>
@@ -149,6 +171,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.Tomorrow" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#212121</item>
+        <item name="colorAccent">#2196F3</item>
+        <item name="loading_bar_color">?colorPrimary</item>
+
         <item name="backcolor">#ff282a2e</item>
         <item name="backcolor_secondary">#ff1d1f21</item>
 
@@ -162,11 +188,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_highlight_quote_color">#2b435a</item>
         <item name="post_subject_color">#ffb294bb</item>
         <item name="post_inline_quote_color">#ffb5bd68</item>
-
     </style>
     
     <style name="Chan.Theme.Insomnia" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#212121</item>
         <item name="colorAccent">#ff5f89ac</item>
+        <item name="loading_bar_color">?colorPrimary</item>
 
         <item name="backcolor">#ff222222</item>
         <item name="backcolor_secondary">#ff242424</item>
@@ -204,7 +231,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.Gruvbox" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#212121</item>
         <item name="colorAccent">#ebdbb2</item>
+        <item name="loading_bar_color">?colorPrimary</item>
 
         <item name="backcolor">#282828</item>
         <item name="backcolor_secondary">#3c3836</item>
@@ -239,7 +268,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.GruvboxBlack" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#000000</item>
         <item name="colorAccent">#d79921</item>
+        <item name="loading_bar_color">?colorPrimary</item>
 
         <item name="backcolor">#000000</item>
         <item name="backcolor_secondary">#212121</item>
@@ -274,7 +305,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.Neon" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#212121</item>
         <item name="colorAccent">#999999</item>
+        <item name="loading_bar_color">?colorPrimary</item>
 
         <item name="backcolor">#222222</item>
         <item name="backcolor_secondary">#555555</item>
@@ -309,7 +342,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </style>
 
     <style name="Chan.Theme.SolarizedDark" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#FF9800</item>
         <item name="colorAccent">#999999</item>
+        <item name="loading_bar_color">?colorPrimary</item>
 
         <item name="backcolor">#002b36</item>
         <item name="backcolor_secondary">#073642</item>

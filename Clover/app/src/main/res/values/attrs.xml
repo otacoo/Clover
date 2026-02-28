@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <attr name="colorPrimary" format="color" />
+    <attr name="colorAccent" format="color" />
+
     <attr name="text_color_primary" format="color" />
     <attr name="text_color_secondary" format="color" />
     <attr name="text_color_hint" format="color" />
