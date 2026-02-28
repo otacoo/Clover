@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -112,8 +113,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private boolean lastResponseWasAsset;
     /** When true, do not intercept the next captcha load so the WebView gets the native 4chan page (e.g. after cooldown). */
     private boolean skipInterceptNextLoad;
-    /** True after we have done the first "Get Captcha" navigation (loadUrl); that load sets 4chan-tc-ticket. After that we only use fetch() so we never leave the page. */
-    private boolean haveGetCaptchaNavigationDone;
 
     /** Retry state for extracting payload from the native captcha page without clobbering its DOM (needed for JS challenges). */
     private int nativePayloadRetryAttempts = 0;
@@ -194,8 +193,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     public int getRequestCooldownRemainingSeconds() {
         Long lastRequest = globalCooldowns.get(LAST_REQUEST_KEY);
         if (lastRequest == null) return 0;
-        long now = System.currentTimeMillis();
-        int remaining = (int) ((lastRequest + 30000L - now) / 1000);
+        int remaining = (int) ((lastRequest + 30000L - System.currentTimeMillis()) / 1000);
         return Math.max(0, remaining);
     }
 
@@ -217,6 +215,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         // Preserve active challenge if user returns to it before it expires.
         if (showingActiveCaptcha) {
             Logger.i(TAG, "reset: preserving active captcha challenge view");
+            maybeToast("Returning to active captcha session.", false);
             onCaptchaLoaded();
             return;
         }
@@ -232,11 +231,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             try {
                 JSONObject obj = (savedPayload != null && !savedPayload.equals("null")) ? new JSONObject(savedPayload) : new JSONObject();
                 JSONObject inner = obj.optJSONObject("twister");
-                if (inner != null) {
-                    inner.put("pcd", displayRemaining);
-                } else {
-                    obj.put("pcd", displayRemaining);
-                }
+                Objects.requireNonNullElse(inner, obj).put("pcd", displayRemaining);
                 savedPayload = obj.toString();
             } catch (Exception ignored) {}
 
@@ -257,22 +252,27 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     @Override
     public void hardReset() {
-        hardReset(false, false);
+        hardReset(true, false);
     }
 
     // Performs a full reload of the 4chan captcha endpoint
-    private void hardReset(boolean afterCooldown, boolean includeTicket) {
+    private void hardReset(boolean includeCacheBuster, boolean includeTicket) {
         showingActiveCaptcha = false;
         reportedCompletion = false;
+        nativePayloadRetryAttempts = 0;
         String ticketParam = (includeTicket && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
         String url = "https://sys.4chan.org/captcha?board=" + board + (thread_id > 0 ? "&thread_id=" + thread_id : "") + ticketParam;
-        if (afterCooldown) {
-            url += "&_=" + System.currentTimeMillis();
+        if (includeCacheBuster) {
+            url += (url.contains("?") ? "&" : "?") + "_=" + System.currentTimeMillis();
         }
         
         lastResponseWasAsset = false;
         Map<String, String> headers = new HashMap<>();
         headers.put("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id);
+        
+        // Ensure local storage is cleared for hard reset to avoid stale session state
+        evaluateJavascript("localStorage.clear(); sessionStorage.clear();", null);
+        
         loadUrl(url, headers);
     }
 
@@ -286,15 +286,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
                 boolean isMainFrame = request.isForMainFrame();
 
-                // Only intercept main-frame navigations. JS fetch()/XHR sub-resource requests must
-                // pass through to the real servers so that requestCaptchaViaFetch() receives the
-                // actual 4chan JSON response via onCaptchaPayloadReady — not our asset HTML.
-                //
-                // IMPORTANT: when showingActiveCaptcha=true the native 4chan challenge page is
-                // live and running its own JS. Any navigation it triggers (self-refresh to load
-                // the actual puzzle) must NOT be intercepted — doing so would replace the challenge
-                // page with our asset and loop back to "0s" state. Let it load natively and let
-                // onPageFinished / extractPayloadFromNativePageAndLoadAsset handle the result.
+                // Only intercept main-frame navigations; subresources should go through so
+                // postMessage payloads reach our JS hook. When an active captcha page
+                // is running we also avoid intercepting its own refresh navigations.
                 boolean isCaptchaRequest = (board != null && !board.isEmpty()) 
                         ? url.startsWith("https://sys.4chan.org/captcha?board=" + board)
                         : url.contains("sys.4chan.org/captcha?");
@@ -309,8 +303,15 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     return null;
                 }
 
-                if (isCaptchaRequest && isMainFrame && !skipInterceptNextLoad && hasCloudflareClearance()) {
-                    return interceptCaptchaRequest(url);
+                if (isCaptchaRequest && isMainFrame && !skipInterceptNextLoad) {
+                    if (hasCloudflareClearance() && hasFingerprintCookies()) {
+                        return interceptCaptchaRequest(url);
+                    } else {
+                        // missing clearance or fingerprint – fall back to native page so
+                        // mcl.js / cloudflare can run and issue required cookies.
+                        Logger.i(TAG, "interceptCaptchaRequest: Missing required cookies, skipping intercept");
+                        return null;
+                    }
                 }
                 
                 if (isMainFrame && isCaptchaRequest) {
@@ -347,13 +348,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         if (getWindowToken() != null) onCaptchaLoaded();
                     }, 500);
                 } else {
-                    extractPayloadFromNativePageAndLoadAsset(view, url);
+                    extractPayloadFromNativePageAndLoadAsset(url);
                 }
             }
 
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                String host = Uri.parse(url).getHost();
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                String host = request.getUrl().getHost();
                 if (host != null && (host.contains("4chan.org") || host.contains("cloudflare"))) {
                     return false;
                 }
@@ -414,11 +416,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private WebResourceResponse interceptCaptchaRequest(String url) {
         try {
             String cookies = get4chanCookieHeader();
-            if (cookies == null || !cookies.contains("__session")) return null;
-
             Request request = new Request.Builder()
                     .url(url)
-                    .header("Cookie", cookies)
+                    .header("Cookie", cookies != null ? cookies : "")
                     .header("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id)
                     .header("User-Agent", getSettings().getUserAgentString())
                     .build();
@@ -427,8 +427,34 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 String body = response.body() != null ? response.body().string() : "";
                 copyCookies(response);
 
+                // if we see the fingerprint landing page, tokens are likely stale.
+                if (body.contains("mcl.io") || body.contains("spur.us")) {
+                    Logger.i(TAG, "interceptCaptchaRequest: fingerprint page detected, clearing stale tokens");
+                    maybeToast("Captcha tokens (mcl.js) appear to have expired; refreshing...", false);
+                    clearFingerprintCookies();
+                    skipInterceptNextLoad = true;
+                    return null;
+                }
+
                 String payload = extractTwisterPayload(body);
                 if (payload != null) {
+                    // if we keep getting only cooldown data after timer, treat as stale
+                    try {
+                        JSONObject obj = new JSONObject(payload);
+                        JSONObject tw = obj.optJSONObject("twister");
+                        if (tw == null) tw = obj;
+                        boolean hasTasks = tw.has("tasks") || tw.has("img");
+                        int pcd = tw.optInt("pcd", -1);
+                        int cd = tw.optInt("cd", -1);
+                        if (!hasTasks && (pcd <= 0 && cd <= 0)) {
+                            Logger.i(TAG, "interceptCaptchaRequest: cooldown finished but no challenge, assuming stale tokens");
+                            maybeToast("No captcha challenge arrived after cooldown; tokens may be bad, reloading.", false);
+                            clearFingerprintCookies();
+                            skipInterceptNextLoad = true;
+                            return null;
+                        }
+                    } catch (Exception ignored) {}
+
                     persistTicket(payload);
                     String assetHtml = loadAssetWithCaptchaData(payload);
                     if (assetHtml != null) {
@@ -437,6 +463,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         return new WebResourceResponse("text/html", "UTF-8", new ByteArrayInputStream(assetHtml.getBytes(StandardCharsets.UTF_8)));
                     }
                 } else {
+                    Logger.i(TAG, "interceptCaptchaRequest: No payload found in response body");
                     handleSiteErrorInIntercept(body);
                 }
             }
@@ -484,11 +511,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
             String err = obj.optString("error", "");
             if (!err.isEmpty() && pcd <= 0 && cd <= 0) {
-                showOverlay(err, true);
+                showOverlay(err);
                 return;
             }
 
-            // If the user has good standing or verified email, 4chan may skip the captcha challenges.
+            // captcha may be skipped for good-standing / verified accounts
             String lower = payload.toLowerCase();
             if (lower.contains("verified") || lower.contains("not required")) {
                 if (onCooldownNow()) {
@@ -502,9 +529,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 return;
             }
 
-            showOverlay("Tap to request a captcha.", true);
+            showOverlay("Tap to request a captcha.");
+            maybeToast("Post successful.", false);
         } catch (Exception e) {
-            Logger.e(TAG, "applyPayload failed", e);
+            Logger.e(TAG, "Failed to post: applyPayload failed", e);
         }
     }
 
@@ -529,7 +557,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             AndroidUtils.runOnUiThread(() -> {
                 if (!msg.isEmpty() && !"null".equals(msg)) {
                     Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
-                    showOverlay(msg, true);
+                    showOverlay(msg);
                 } else {
                     hardReset(false, false);
                 }
@@ -549,8 +577,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     }
 
     // Scans the native page's JS environment for captcha data
-    private void extractPayloadFromNativePageAndLoadAsset(WebView view, String url) {
-        if (!haveGetCaptchaNavigationDone) haveGetCaptchaNavigationDone = true;
+    private void extractPayloadFromNativePageAndLoadAsset(String url) {
 
         String js = "(function(){" +
                 "  var res = { html: document.documentElement.outerHTML };" +
@@ -568,8 +595,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 String payload = (p != null && !p.toString().equals("null")) ? p.toString() : extractTwisterPayload(html);
                 String errMsg = res.optString("errMsg");
 
+                Logger.i(TAG, "extractPayload: errMsg=" + errMsg + ", payloadFound=" + (payload != null));
+
                 if (!errMsg.isEmpty()) {
-                    showOverlay(errMsg, true);
+                    showOverlay(errMsg);
                     return;
                 }
 
@@ -592,9 +621,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             onCaptchaLoaded();
         } else if (nativePayloadRetryAttempts < NATIVE_PAYLOAD_MAX_RETRIES) {
             nativePayloadRetryAttempts++;
-            new Handler(Looper.getMainLooper()).postDelayed(() -> extractPayloadFromNativePageAndLoadAsset(this, url), NATIVE_PAYLOAD_RETRY_DELAY_MS);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> extractPayloadFromNativePageAndLoadAsset(url), NATIVE_PAYLOAD_RETRY_DELAY_MS);
         } else {
-            showOverlay("Captcha failed to load.", true);
+            showOverlay("Captcha failed to load.");
         }
     }
 
@@ -611,7 +640,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     if (c == '{') depth++; else if (c == '}') depth--;
                     if (depth == 0) {
                         String candidate = html.substring(start, i);
-                        if (candidate.contains("pcd") || candidate.contains("tasks") || candidate.contains("img") || candidate.contains("ticket")) {
+                        if (candidate.contains("pcd") || candidate.contains("tasks") || candidate.contains("img") || candidate.contains("ticket") || candidate.contains("cd") || candidate.contains("challenge")) {
                             return candidate;
                         }
                         break;
@@ -672,24 +701,28 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    // Injects a non-destructive overlay with a message and action button
-    private void showOverlay(String msg, boolean showButton) {
-        if (showingActiveCaptcha && !showButton) return;
+    // Injects a non-destructive overlay with a message and "Get Captcha" button
+    private void showOverlay(String msg) {
         boolean isDark = !ThemeHelper.theme().isLightTheme;
         ThemeHelper.ColorPair tc = ThemeHelper.getThemeBackgroundForeground(getContext());
         int baseBg = tc.bgInt;
-        String bg = String.format("rgba(%d,%d,%d,0.9)",
+        @SuppressLint("DefaultLocale") String bg = String.format("rgba(%d,%d,%d,0.9)",
                 (baseBg >> 16) & 0xFF,
                 (baseBg >> 8) & 0xFF,
                 baseBg & 0xFF);
         String fg = tc.fgHex;
         String btn = isDark ? "background:#333;color:#eee;border:1px solid #555;" : "background:#0066cc;color:#fff;border:none;";
         
+        String displayMsg = msg;
+        if (msg.toLowerCase().contains("failed to load")) {
+            displayMsg = msg + " Tap to retry.";
+        }
+
         String js = "(function(){" +
                 "  var ov = document.getElementById('clover-overlay') || document.createElement('div');" +
                 "  ov.id = 'clover-overlay';" +
                 "  ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:" + bg + ";color:" + fg + ";display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;padding:20px;box-sizing:border-box;';" +
-                "  ov.innerHTML = '<div>" + msg.replace("'", "\\'") + "</div>" + (showButton ? "<button id=\"gcb\" style=\"margin-top:20px;padding:10px 20px;border-radius:4px;" + btn + "\">Get Captcha</button>" : "") + "';" +
+                "  ov.innerHTML = '<div>" + displayMsg.replace("'", "\\'") + "</div>" + ("<button id=\"gcb\" style=\"margin-top:20px;padding:10px 20px;border-radius:4px;" + btn + "\">Get Captcha</button><div style=\"margin-top:15px;font-size:12px;color:__C_LINK__;cursor:pointer;\" onclick=\"CaptchaCallback.onResetSession();\">Reset Session</div>") + "';" +
                 "  document.body.appendChild(ov);" +
                 "  var b = document.getElementById('gcb'); if(b) b.onclick = function(){ CaptchaCallback.onRequestCaptcha(); };" +
                 "})();";
@@ -715,14 +748,19 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         String key = getGlobalKey();
         globalCooldowns.put(key, System.currentTimeMillis() + (seconds * 1000L));
         if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
-            Toast.makeText(AndroidUtils.getAppContext(), "4chan: Cooldown started (" + seconds + "s)", Toast.LENGTH_LONG).show();
+            Toast.makeText(AndroidUtils.getAppContext(), "4chan: Cooldown to request new captcha started: (" + seconds + "s)", Toast.LENGTH_LONG).show();
         }
     }
 
     // Returns true if the WebView already has a valid cf_clearance cookie
     private boolean hasCloudflareClearance() {
         String c = CookieManager.getInstance().getCookie("https://sys.4chan.org");
-        return c != null && c.contains("cf_clearance");
+        return c != null && c.contains("cf_clearance") && c.contains("__cf_bm");
+    }
+
+    private boolean hasFingerprintCookies() {
+        String c = CookieManager.getInstance().getCookie("https://sys.4chan.org");
+        return c != null && c.contains("_tcm");
     }
 
     // Aggregates cookies from all 4chan subdomains for background requests
@@ -736,6 +774,23 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return set.isEmpty() ? null : TextUtils.join("; ", set);
     }
 
+    private void clearFingerprintCookies() {
+        CookieManager cm = CookieManager.getInstance();
+        String[] domains = {"sys.4chan.org", "boards.4chan.org", ".4chan.org"};
+        String[] cookies = {"_tcm", "_tcs", "cf_clearance", "__cf_bm", "_cfuvid", "csrf"};
+        
+        for (String domain : domains) {
+            String baseUrl = "https://" + (domain.startsWith(".") ? domain.substring(1) : domain);
+            for (String cookie : cookies) {
+                String expire = cookie + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=" + domain + ";";
+                cm.setCookie(baseUrl, expire);
+            }
+        }
+        cm.flush();
+
+        maybeToast("Session looks stale. Trying to refresh cookies...", false);
+    }
+
     // Syncs cookies from a background OkHttp response back to the WebView
     private void copyCookies(Response r) {
         CookieManager cm = CookieManager.getInstance();
@@ -745,8 +800,20 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         cm.flush();
     }
 
+    // Convenience wrappers for showing a long toast on the UI thread
+    private void showLongToast(final String msg) {
+        AndroidUtils.runOnUiThread(() -> Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show());
+    }
+
+    // Show a toast if user has enabled captcha toasts or when it is forced.
+    private void maybeToast(final String msg, boolean force) {
+        if (force || AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
+            showLongToast(msg);
+        }
+    }
+
     private String urlEncode(String s) {
-        try { return URLEncoder.encode(s, "UTF-8"); } catch (Exception e) { return s; }
+        try { return URLEncoder.encode(s, StandardCharsets.UTF_8.name()); } catch (Exception e) { return s; }
     }
 
     // Handles site-wide errors (like bans) detected during interception
@@ -757,13 +824,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             final String finalErr = err;
             AndroidUtils.runOnUiThread(() -> {
                 Toast.makeText(getContext(), finalErr, Toast.LENGTH_LONG).show();
-                showOverlay(finalErr, true);
+                showOverlay(finalErr);
             });
         }
     }
 
     private static String extractRawJsonError(String b) {
-        try { return new JSONObject(b).optString("error", null); } catch (Exception e) { return null; }
+        try { return new JSONObject(b).optString("error", ""); } catch (Exception e) { return ""; }
     }
 
     static String stripHtml(String s) {
@@ -786,6 +853,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         if (callback != null) {
             callback.onAuthenticationComplete(this, challenge, response);
         }
+    }
+
+    @Override
+    public void reload() {
+        Logger.i(TAG, "reload: performing hardReset()");
+        hardReset();
     }
 
     @Override public boolean requireResetAfterComplete() { return false; }
@@ -823,11 +896,21 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 }
             }
         }
+        
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            performClick();
+        }
+
         return super.onTouchEvent(event);
     }
 
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
     // JavaScript Bridge implementation
-    private class CaptchaInterface {
+    public class CaptchaInterface {
         @JavascriptInterface
         public void onCaptchaLoaded() {
             AndroidUtils.runOnUiThread(NewCaptchaLayout.this::onCaptchaLoaded);
@@ -846,7 +929,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         @JavascriptInterface
         public void onCaptchaPayloadReady(String p) {
             try {
-                String decoded = URLDecoder.decode(p, "UTF-8");
+                String decoded = URLDecoder.decode(p, StandardCharsets.UTF_8.name());
                 AndroidUtils.runOnUiThread(() -> applyPayload(decoded, getUrl()));
             } catch (Exception ignored) {}
         }
@@ -854,6 +937,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         @JavascriptInterface
         public void saveTicket(String t) {
             ticket = t;
+        }
+
+        @JavascriptInterface
+        public void onResetSession() {
+            AndroidUtils.runOnUiThread(NewCaptchaLayout.this::clearFingerprintCookies);
         }
     }
 }
