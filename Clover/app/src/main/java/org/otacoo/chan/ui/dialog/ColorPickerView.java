@@ -33,6 +33,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 
 public class ColorPickerView extends View {
+    private static final float ACHROMATIC_THRESHOLD = 0.1f;
+
     private static final int[] COLORS = new int[]{
             0xFFFF0000, 0xFFFF00FF, 0xFF0000FF, 0xFF00FFFF, 0xFF00FF00,
             0xFFFFFF00, 0xFFFF0000
@@ -47,6 +49,7 @@ public class ColorPickerView extends View {
     private float[] hsv = new float[3];
     private RectF valueRect = new RectF();
     private boolean trackingValue = false;
+    private boolean achromaticMode = false;
 
     public interface OnColorChangedListener {
         void onColorChanged(int color);
@@ -79,11 +82,10 @@ public class ColorPickerView extends View {
     public void setColor(int color) {
         float[] newHsv = new float[3];
         Color.colorToHSV(color, newHsv);
-        
-        // For achromatic colors (very low saturation), preserve the existing hue
-        // This prevents the gradient bar from always showing red when picking dark/grey colors
-        if (newHsv[1] < 0.1f) {
-            newHsv[0] = hsv[0];
+
+        achromaticMode = newHsv[1] < ACHROMATIC_THRESHOLD;
+        if (achromaticMode) {
+            newHsv[1] = 0f;
         }
         
         hsv = newHsv;
@@ -140,12 +142,17 @@ public class ColorPickerView extends View {
                 if (trackingValue) {
                     float val = (x - valueRect.left) / valueRect.width();
                     val = Math.max(0f, Math.min(1f, val));
-                    if (val < 0.5f) {
-                        hsv[1] = 1f;
-                        hsv[2] = val * 2f;
+                    if (achromaticMode) {
+                        hsv[1] = 0f;
+                        hsv[2] = val;
                     } else {
-                        hsv[1] = 1f - (val - 0.5f) * 2f;
-                        hsv[2] = 1f;
+                        if (val < 0.5f) {
+                            hsv[1] = 1f;
+                            hsv[2] = val * 2f;
+                        } else {
+                            hsv[1] = 1f - (val - 0.5f) * 2f;
+                            hsv[2] = 1f;
+                        }
                     }
                 } else {
                     float dx = x - cx;
@@ -159,7 +166,8 @@ public class ColorPickerView extends View {
                     float[] tempHsv = new float[3];
                     Color.colorToHSV(color, tempHsv);
                     hsv[0] = tempHsv[0];
-                    if (hsv[1] < 0.1f) hsv[1] = 1f;
+                    achromaticMode = false;
+                    if (hsv[1] < ACHROMATIC_THRESHOLD) hsv[1] = 1f;
                     if (hsv[2] < 0.1f) hsv[2] = 1f;
                 }
                 
@@ -195,8 +203,13 @@ public class ColorPickerView extends View {
         float barHeight = dp(24);
         valueRect.set(margin, getHeight() - barHeight - margin, getWidth() - margin, getHeight() - margin);
         
-        int middleColor = Color.HSVToColor(new float[]{hsv[0], 1f, 1f});
-        int[] gradientColors = new int[] { Color.BLACK, middleColor, Color.WHITE };
+        int[] gradientColors;
+        if (achromaticMode) {
+            gradientColors = new int[] { Color.BLACK, Color.WHITE };
+        } else {
+            int middleColor = Color.HSVToColor(new float[]{hsv[0], 1f, 1f});
+            gradientColors = new int[] { Color.BLACK, middleColor, Color.WHITE };
+        }
         
         valuePaint.setShader(new LinearGradient(valueRect.left, 0, valueRect.right, 0, gradientColors, null, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(valueRect, dp(4), dp(4), valuePaint);
@@ -208,10 +221,14 @@ public class ColorPickerView extends View {
         indicatorPaint.setStrokeWidth(dp(2));
         
         float barVal;
-        if (hsv[2] < 1f) {
-            barVal = hsv[2] / 2f;
+        if (achromaticMode) {
+            barVal = hsv[2];
         } else {
-            barVal = 0.5f + (1f - hsv[1]) / 2f;
+            if (hsv[2] < 1f) {
+                barVal = hsv[2] / 2f;
+            } else {
+                barVal = 0.5f + (1f - hsv[1]) / 2f;
+            }
         }
         
         float ix = valueRect.left + barVal * valueRect.width();
