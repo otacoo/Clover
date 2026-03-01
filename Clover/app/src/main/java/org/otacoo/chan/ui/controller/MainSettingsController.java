@@ -50,11 +50,17 @@ import org.otacoo.chan.ui.settings.SettingsGroup;
 import org.otacoo.chan.ui.settings.SplitBooleanSettingView;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import androidx.appcompat.app.AlertDialog;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -254,19 +260,81 @@ public class MainSettingsController extends SettingsController implements Settin
                         sb.append(new String(buf, 0, n, StandardCharsets.UTF_8));
                     }
                 }
-                SettingsBackupRestore.importFull(databaseManager, AndroidUtils.getPreferences(), sb.toString());
-                ChanSettings.reloadProxy();
-                Toast.makeText(context, R.string.settings_restore_success, Toast.LENGTH_LONG).show();
-                StartActivity startActivity = getStartActivity(context);
-                if (startActivity != null) {
-                    startActivity.restartApp();
-                }
+                String backupJson = sb.toString();
+                Set<String> availableKeys = SettingsBackupRestore.getAvailableRestoreKeys(backupJson);
+                showRestoreSelectionDialog(backupJson, availableKeys);
             } catch (Exception e) {
                 Logger.e("MainSettingsController", "Restore failed", e);
                 String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
                 Toast.makeText(context, context.getString(R.string.settings_restore_failed) + ": " + msg, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    /** Show a dialog to select which settings to restore. */
+    private void showRestoreSelectionDialog(String backupJson, Set<String> availableKeys) {
+        List<String> keyList = new ArrayList<>(availableKeys);
+        List<String> displayNames = new ArrayList<>();
+        boolean[] checkedItems = new boolean[keyList.size()];
+        
+        // Create display names and initialize all to checked
+        for (int i = 0; i < keyList.size(); i++) {
+            displayNames.add(SettingsBackupRestore.getKeyDisplayName(keyList.get(i)));
+            checkedItems[i] = true;
+        }
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.settings_restore_select);
+        builder.setMultiChoiceItems(displayNames.toArray(new String[0]), checkedItems, (dialog, which, isChecked) -> {
+            checkedItems[which] = isChecked;
+        });
+        
+        builder.setPositiveButton(R.string.settings_restore_button, (dialog, which) -> {
+            Set<String> selectedKeys = new HashSet<>();
+            for (int i = 0; i < checkedItems.length; i++) {
+                if (checkedItems[i]) {
+                    selectedKeys.add(keyList.get(i));
+                }
+            }
+            performRestore(backupJson, selectedKeys);
+        });
+        
+        builder.setNegativeButton(android.R.string.cancel, null);
+        
+        // Add "Toggle all" button
+        builder.setNeutralButton(R.string.settings_restore_toggle_all, (dialog, which) -> {
+            boolean allChecked = true;
+            for (boolean checked : checkedItems) {
+                if (!checked) {
+                    allChecked = false;
+                    break;
+                }
+            }
+            for (int i = 0; i < checkedItems.length; i++) {
+                checkedItems[i] = !allChecked;
+            }
+            // Reshow the dialog with updated state
+            showRestoreSelectionDialog(backupJson, availableKeys);
+        });
+        
+        builder.show();
+    }
+    
+    /** Perform the actual restore with selected keys. */
+    private void performRestore(String backupJson, Set<String> selectedKeys) {
+        try {
+            SettingsBackupRestore.importFull(databaseManager, AndroidUtils.getPreferences(), backupJson, selectedKeys);
+            ChanSettings.reloadProxy();
+            Toast.makeText(context, R.string.settings_restore_success, Toast.LENGTH_LONG).show();
+            StartActivity startActivity = getStartActivity(context);
+            if (startActivity != null) {
+                startActivity.restartApp();
+            }
+        } catch (Exception e) {
+            Logger.e("MainSettingsController", "Restore failed", e);
+            String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
+            Toast.makeText(context, context.getString(R.string.settings_restore_failed) + ": " + msg, Toast.LENGTH_LONG).show();
+        }
     }
 
     /** Unwraps context (e.g. ContextWrapper) to find StartActivity so restore can trigger restart. */

@@ -1,6 +1,7 @@
 /*
- * Clover - 4chan browser https://github.com/Floens/Clover/
- * Copyright (C) 2014  Floens
+ * Clover - 4chan browser https://github.com/otacoo/Clover/
+ * Copyright (C) 2014  Floens https://github.com/Floens/Clover/
+ * Copyright (C) 2026  Otacoo 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +78,34 @@ public final class SettingsBackupRestore {
         }
 
         return false;
+    }
+
+    // Extract available top-level keys to selectively restore from the backup JSON
+    public static Set<String> getAvailableRestoreKeys(String json) throws Exception {
+        JSONObject obj = new JSONObject(json);
+        Set<String> availableKeys = new HashSet<>();
+        int version = obj.optInt(KEY_VERSION, BACKUP_VERSION_1);
+        
+        if (obj.has(KEY_PREFERENCES)) availableKeys.add(KEY_PREFERENCES);
+        if (obj.has(KEY_SITES)) availableKeys.add(KEY_SITES);
+        if (obj.has(KEY_COOKIES)) availableKeys.add(KEY_COOKIES);
+        if (obj.has(KEY_PINS)) availableKeys.add(KEY_PINS);
+        if (obj.has(KEY_SAVED_REPLIES)) availableKeys.add(KEY_SAVED_REPLIES);
+        if (version >= BACKUP_VERSION_FILTERS && obj.has(KEY_FILTERS)) availableKeys.add(KEY_FILTERS);
+        
+        return availableKeys;
+    }
+    
+    public static String getKeyDisplayName(String key) {
+        switch (key) {
+            case KEY_PREFERENCES: return "Preferences";
+            case KEY_SITES: return "Sites & Boards";
+            case KEY_COOKIES: return "Cookies";
+            case KEY_PINS: return "Watched Threads";
+            case KEY_SAVED_REPLIES: return "Saved Replies";
+            case KEY_FILTERS: return "Filters";
+            default: return key;
+        }
     }
 
     /** Resolve backup siteClassId to current device's site id. Returns -1 if no site with that class exists. */
@@ -257,14 +286,22 @@ public final class SettingsBackupRestore {
     }
 
     public static void importFull(DatabaseManager databaseManager, SharedPreferences prefs, String json) throws Exception {
+        importFull(databaseManager, prefs, json, getAvailableRestoreKeys(json));
+    }
+
+    // Import selected keys from the backup JSON. If selectedKeys is null or empty, does nothing.
+    public static void importFull(DatabaseManager databaseManager, SharedPreferences prefs, String json, Set<String> selectedKeys) throws Exception {
+        if (selectedKeys == null || selectedKeys.isEmpty()) {
+            return;
+        }
         JSONObject obj = new JSONObject(json);
         int version = obj.optInt(KEY_VERSION, BACKUP_VERSION_1);
 
         if (version >= BACKUP_VERSION_FULL) {
-            if (obj.has(KEY_PREFERENCES)) {
+            if (selectedKeys.contains(KEY_PREFERENCES) && obj.has(KEY_PREFERENCES)) {
                 applyPreferences(prefs, obj.getJSONObject(KEY_PREFERENCES));
             }
-            if (obj.has(KEY_SITES)) {
+            if (selectedKeys.contains(KEY_SITES) && obj.has(KEY_SITES)) {
                 JSONArray arr = obj.getJSONArray(KEY_SITES);
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
@@ -313,10 +350,10 @@ public final class SettingsBackupRestore {
                     }
                 }
             }
-            if (obj.has(KEY_COOKIES)) {
+            if (selectedKeys.contains(KEY_COOKIES) && obj.has(KEY_COOKIES)) {
                 applyCookies(obj.getJSONObject(KEY_COOKIES));
             }
-            if (obj.has(KEY_SAVED_REPLIES)) {
+            if (selectedKeys.contains(KEY_SAVED_REPLIES) && obj.has(KEY_SAVED_REPLIES)) {
                 JSONArray arr = obj.getJSONArray(KEY_SAVED_REPLIES);
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
@@ -330,7 +367,7 @@ public final class SettingsBackupRestore {
                     databaseManager.runTask(databaseManager.getDatabaseSavedReplyManager().saveReply(r));
                 }
             }
-            if (obj.has(KEY_PINS)) {
+            if (selectedKeys.contains(KEY_PINS) && obj.has(KEY_PINS)) {
                 JSONArray arr = obj.getJSONArray(KEY_PINS);
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
@@ -362,7 +399,7 @@ public final class SettingsBackupRestore {
                     databaseManager.runTask(databaseManager.getDatabasePinManager().createPin(pin));
                 }
             }
-            if (version >= BACKUP_VERSION_FILTERS && obj.has(KEY_FILTERS)) {
+            if (version >= BACKUP_VERSION_FILTERS && selectedKeys.contains(KEY_FILTERS) && obj.has(KEY_FILTERS)) {
                 JSONArray arr = obj.getJSONArray(KEY_FILTERS);
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
@@ -379,6 +416,7 @@ public final class SettingsBackupRestore {
                 }
             }
         } else {
+            // Old backup format (v1) - restore all preferences without selective import
             applyPreferencesFromRoot(prefs, obj);
         }
     }

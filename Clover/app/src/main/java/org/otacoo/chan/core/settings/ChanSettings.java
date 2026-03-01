@@ -19,14 +19,21 @@ package org.otacoo.chan.core.settings;
 
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.manager.WatchManager;
 import org.otacoo.chan.core.update.UpdateManager;
 import org.otacoo.chan.ui.adapter.PostsFilter;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import de.greenrobot.event.EventBus;
 
@@ -136,6 +143,7 @@ public class ChanSettings {
     private static Proxy proxy;
 
     private static final StringSetting theme;
+    private static final StringSetting customThemes;
     public static final OptionsSetting<LayoutMode> layoutMode;
     public static final StringSetting fontSize;
     public static final BooleanSetting fontCondensed;
@@ -229,6 +237,7 @@ public class ChanSettings {
         SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
 
         theme = new StringSetting(p, "preference_theme", "auto");
+        customThemes = new StringSetting(p, "preference_custom_themes", "[]");
 
         layoutMode = new OptionsSetting<>(p, "preference_layout_mode", LayoutMode.class, LayoutMode.AUTO);
 
@@ -375,6 +384,17 @@ public class ChanSettings {
         ChanSettings.theme.set(value);
     }
 
+    public static List<CustomTheme> getCustomThemes() {
+        String raw = customThemes.get();
+        if (TextUtils.isEmpty(raw)) return new ArrayList<>();
+        Type type = new TypeToken<List<CustomTheme>>() {}.getType();
+        return new Gson().fromJson(raw, type);
+    }
+
+    public static void saveCustomThemes(List<CustomTheme> themes) {
+        customThemes.set(new Gson().toJson(themes));
+    }
+
     /**
      * Returns a {@link Proxy} if a proxy is enabled, <tt>null</tt> otherwise.
      *
@@ -412,6 +432,22 @@ public class ChanSettings {
             this.color = color;
             this.accentColor = accentColor;
             this.loadingBarColor = loadingBarColor;
+        }
+    }
+
+    public static class CustomTheme {
+        public String displayName;
+        public String name;
+        public String baseTheme;
+        public boolean isLightTheme;
+        public Map<String, Integer> colorOverrides;
+        
+        public CustomTheme(String displayName, String name, String baseTheme, boolean isLightTheme, Map<String, Integer> colorOverrides) {
+            this.displayName = displayName;
+            this.name = name;
+            this.baseTheme = baseTheme;
+            this.isLightTheme = isLightTheme;
+            this.colorOverrides = colorOverrides;
         }
     }
 
