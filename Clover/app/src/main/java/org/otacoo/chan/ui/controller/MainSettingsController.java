@@ -32,6 +32,7 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import org.otacoo.chan.R;
@@ -302,22 +303,31 @@ public class MainSettingsController extends SettingsController implements Settin
         builder.setNegativeButton(android.R.string.cancel, null);
         
         // Add "Toggle all" button
-        builder.setNeutralButton(R.string.settings_restore_toggle_all, (dialog, which) -> {
-            boolean allChecked = true;
-            for (boolean checked : checkedItems) {
-                if (!checked) {
-                    allChecked = false;
-                    break;
+        builder.setNeutralButton(R.string.settings_restore_toggle_all, null);
+
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                boolean allChecked = true;
+                for (boolean checked : checkedItems) {
+                    if (!checked) {
+                        allChecked = false;
+                        break;
+                    }
                 }
-            }
-            for (int i = 0; i < checkedItems.length; i++) {
-                checkedItems[i] = !allChecked;
-            }
-            // Reshow the dialog with updated state
-            showRestoreSelectionDialog(backupJson, availableKeys);
+
+                boolean newCheckedState = !allChecked;
+                ListView listView = dialog.getListView();
+                for (int i = 0; i < checkedItems.length; i++) {
+                    checkedItems[i] = newCheckedState;
+                    if (listView != null) {
+                        listView.setItemChecked(i, newCheckedState);
+                    }
+                }
+            });
         });
-        
-        builder.show();
+
+        dialog.show();
     }
     
     /** Perform the actual restore with selected keys. */
