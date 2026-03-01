@@ -33,7 +33,9 @@ import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class ThemeHelper {
     private static final String TAG = "ThemeHelper";
@@ -53,35 +55,117 @@ public class ThemeHelper {
     private Theme theme;
 
     public ThemeHelper() {
+        // Note: PrimaryColor parameters below are fallback defaults only; actual colors come from styles.xml
         themes.add(new Theme("Auto (System)", "auto", R.style.Chan_Theme, PrimaryColor.BLUE));
         themes.add(new Theme("Light", "light", R.style.Chan_Theme, PrimaryColor.BLUE));
         themes.add(new DarkTheme("Dark", "dark", R.style.Chan_Theme_Dark, PrimaryColor.DARK));
-        themes.add(new DarkTheme("Black", "black", R.style.Chan_Theme_Black, PrimaryColor.BLACK));
+        themes.add(new DarkTheme("Black", "black", R.style.Chan_Theme_Black, PrimaryColor.DARK));
         themes.add(new DarkTheme("Tomorrow", "tomorrow", R.style.Chan_Theme_Tomorrow, PrimaryColor.DARK));
-        themes.add(new Theme("Yotsuba", "yotsuba", R.style.Chan_Theme_Yotsuba, PrimaryColor.RED));
-        themes.add(new Theme("Yotsuba B", "yotsuba_b", R.style.Chan_Theme_YotsubaB, PrimaryColor.RED));
-        themes.add(new Theme("Photon", "photon", R.style.Chan_Theme_Photon, PrimaryColor.ORANGE));
+        themes.add(new Theme("Yotsuba", "yotsuba", R.style.Chan_Theme_Yotsuba, PrimaryColor.BLUE));
+        themes.add(new Theme("Yotsuba B", "yotsuba_b", R.style.Chan_Theme_YotsubaB, PrimaryColor.BLUE));
+        themes.add(new Theme("Photon", "photon", R.style.Chan_Theme_Photon, PrimaryColor.BLUE));
         themes.add(new DarkTheme("Insomnia", "insomnia", R.style.Chan_Theme_Insomnia, PrimaryColor.DARK));
         themes.add(new DarkTheme("Gruvbox", "gruvbox", R.style.Chan_Theme_Gruvbox, PrimaryColor.DARK));
-        themes.add(new DarkTheme("Gruvbox Black", "gruvbox_black", R.style.Chan_Theme_GruvboxBlack, PrimaryColor.BLACK));
+        themes.add(new DarkTheme("Gruvbox Black", "gruvbox_black", R.style.Chan_Theme_GruvboxBlack, PrimaryColor.DARK));
         themes.add(new DarkTheme("Neon", "neon", R.style.Chan_Theme_Neon, PrimaryColor.DARK));
-        themes.add(new DarkTheme("Solarized Dark", "solarized_dark", R.style.Chan_Theme_SolarizedDark, PrimaryColor.ORANGE));
+        themes.add(new DarkTheme("Solarized Dark", "solarized_dark", R.style.Chan_Theme_SolarizedDark, PrimaryColor.DARK));
 
-        ChanSettings.ThemeColor settingTheme = ChanSettings.getThemeAndColor();
-        for (Theme theme : themes) {
-            if (theme.name.equals(settingTheme.theme)) {
-                patchTheme(theme, settingTheme);
+        loadCustomThemes();
+
+        updateCurrentTheme();
+    }
+
+    private void loadCustomThemes() {
+        for (ChanSettings.CustomTheme custom : ChanSettings.getCustomThemes()) {
+            themes.add(createThemeFromCustom(custom));
+        }
+    }
+
+    private Theme createThemeFromCustom(ChanSettings.CustomTheme custom) {
+        Theme theme;
+        int styleRes = "dark".equals(custom.baseTheme) ? R.style.Chan_Theme_Dark : R.style.Chan_Theme;
+        if (custom.isLightTheme) {
+            theme = new Theme(custom.displayName, custom.name, styleRes, PrimaryColor.BLUE);
+        } else {
+            theme = new DarkTheme(custom.displayName, custom.name, styleRes, PrimaryColor.DARK);
+        }
+        theme.colorOverrides = custom.colorOverrides;
+        theme.resolveSpanColors();
+        
+        // Update defaults for custom themes so reset works correctly
+        theme.defaultPrimaryColor = theme.primaryColor;
+        theme.defaultAccentColor = theme.accentColor;
+        theme.defaultLoadingBarColor = theme.loadingBarColor;
+        
+        return theme;
+    }
+
+    public void addCustomTheme(ChanSettings.CustomTheme custom) {
+        List<ChanSettings.CustomTheme> list = ChanSettings.getCustomThemes();
+        boolean foundInSettings = false;
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).name.equals(custom.name)) {
+                list.set(i, custom);
+                foundInSettings = true;
+                break;
+            }
+        }
+        if (!foundInSettings) list.add(custom);
+        ChanSettings.saveCustomThemes(list);
+
+        // Update internal themes list
+        boolean foundInList = false;
+        for (int i = 0; i < themes.size(); i++) {
+            if (themes.get(i).name.equals(custom.name)) {
+                themes.set(i, createThemeFromCustom(custom));
+                foundInList = true;
+                break;
+            }
+        }
+        if (!foundInList) {
+            themes.add(createThemeFromCustom(custom));
+        }
+        
+        updateCurrentTheme();
+    }
+
+    public void removeCustomTheme(String themeName) {
+        List<ChanSettings.CustomTheme> list = ChanSettings.getCustomThemes();
+        for (Iterator<ChanSettings.CustomTheme> it = list.iterator(); it.hasNext(); ) {
+            if (it.next().name.equals(themeName)) {
+                it.remove();
+                break;
+            }
+        }
+        ChanSettings.saveCustomThemes(list);
+
+        for (Iterator<Theme> it = themes.iterator(); it.hasNext(); ) {
+            if (it.next().name.equals(themeName)) {
+                it.remove();
                 break;
             }
         }
 
+        ChanSettings.ThemeColor current = ChanSettings.getThemeAndColor();
+        if (current.theme.equals(themeName)) {
+            ChanSettings.setThemeAndColor(new ChanSettings.ThemeColor("auto", "blue", "blue"));
+        }
+        
         updateCurrentTheme();
+    }
+
+    public ChanSettings.CustomTheme getCustomTheme(String themeName) {
+        for (ChanSettings.CustomTheme custom : ChanSettings.getCustomThemes()) {
+            if (custom.name.equals(themeName)) {
+                return custom;
+            }
+        }
+        return null;
     }
 
     public void changeTheme(Theme theme, PrimaryColor primaryColor, PrimaryColor accentColor, PrimaryColor loadingBarColor) {
         ChanSettings.ThemeColor setting = new ChanSettings.ThemeColor(theme.name, primaryColor.name, accentColor.name, loadingBarColor.name);
         ChanSettings.setThemeAndColor(setting);
-        patchTheme(theme, setting);
         updateCurrentTheme();
     }
 
@@ -104,26 +188,37 @@ public class ThemeHelper {
                 } else {
                     this.theme.resolveDrawables();
                 }
+                patchTheme(this.theme, settingTheme);
                 return;
             }
         }
 
         Logger.e(TAG, "No theme found for " + themeName + ", using the first one");
         theme = themes.get(0);
+        patchTheme(theme, settingTheme);
     }
 
     private void patchTheme(Theme theme, ChanSettings.ThemeColor setting) {
         // Patch the theme primary and accent color when set in the settings
         if (setting.color != null) {
-            theme.primaryColor = getColor(setting.color, PrimaryColor.BLACK);
+            theme.primaryColor = getColor(setting.color, theme.defaultPrimaryColor);
         }
         if (setting.accentColor != null) {
-            theme.accentColor = getColor(setting.accentColor, PrimaryColor.BLUE);
+            theme.accentColor = getColor(setting.accentColor, theme.defaultAccentColor);
         }
-        if (setting.loadingBarColor != null) {
-            theme.loadingBarColor = getColor(setting.loadingBarColor, theme.primaryColor);
-        } else {
-            theme.loadingBarColor = theme.primaryColor;
+        
+        // For loading bar color: only apply from settings for custom themes
+        // Built-in themes should use their theme-defined value
+        boolean isCustomTheme = theme.name.startsWith("custom_");
+        if (setting.loadingBarColor != null && isCustomTheme) {
+            theme.loadingBarColor = getColor(setting.loadingBarColor, theme.defaultLoadingBarColor);
+        }
+        
+        // Ensure overrides are applied if this is a custom theme
+        if (isCustomTheme) {
+            for (Map.Entry<String, Integer> entry : theme.colorOverrides.entrySet()) {
+                theme.applyColorOverride(entry.getKey(), entry.getValue());
+            }
         }
     }
 
@@ -139,6 +234,8 @@ public class ThemeHelper {
     public void setupContext(Activity context) {
         updateCurrentTheme();
 
+        // Ensure the correct theme style is applied for Auto(System) mode
+        // by using the resolved theme's style resource (not the Auto theme's Light style)
         context.setTheme(theme.resValue);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -159,7 +256,7 @@ public class ThemeHelper {
 
     public PrimaryColor getColor(String name, PrimaryColor defaultColor) {
         if (name == null) return defaultColor;
-        if (name.startsWith("#") || name.length() >= 8) { // Likely a hex color
+        if (name.startsWith("#")) {
              return PrimaryColor.fromHex("Custom", name, defaultColor);
         }
         for (PrimaryColor primaryColor : PrimaryColor.values()) {
@@ -196,12 +293,9 @@ public class ThemeHelper {
      * unavailable.
      */
     public static ColorPair getThemeBackgroundForeground(android.content.Context ctx) {
-        boolean isDark = !theme().isLightTheme;
         int bgCol = AndroidUtils.getAttrColor(ctx, R.attr.backcolor);
-        if (bgCol == 0) bgCol = isDark ? 0xFF0D0D0D : 0xFFFFFFFF;
-        String bgHex = String.format("#%06X", (0xFFFFFF & bgCol));
         int fgCol = AndroidUtils.getAttrColor(ctx, R.attr.text_color_primary);
-        if (fgCol == 0) fgCol = isDark ? 0xFFE8E8E8 : 0xFF1A1A1A;
+        String bgHex = String.format("#%06X", (0xFFFFFF & bgCol));
         String fgHex = String.format("#%06X", (0xFFFFFF & fgCol));
         return new ColorPair(bgCol, fgCol, bgHex, fgHex);
     }

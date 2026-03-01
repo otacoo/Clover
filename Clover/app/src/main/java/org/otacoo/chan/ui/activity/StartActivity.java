@@ -55,6 +55,7 @@ import org.otacoo.chan.ui.controller.DoubleNavigationController;
 import org.otacoo.chan.ui.controller.DrawerController;
 import org.otacoo.chan.ui.controller.SplitNavigationController;
 import org.otacoo.chan.ui.controller.StyledToolbarNavigationController;
+import org.otacoo.chan.ui.controller.ThemeSettingsController;
 import org.otacoo.chan.ui.controller.ThreadSlideController;
 import org.otacoo.chan.ui.controller.ViewThreadController;
 import org.otacoo.chan.ui.helper.VersionHandler;
@@ -105,6 +106,17 @@ public class StartActivity extends AppCompatActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Apply the correct theme BEFORE super.onCreate() for Auto (System) theme in night mode
+        // This ensures the activity initializes with the correct theme style from the start
+        ChanSettings.ThemeColor settingTheme = ChanSettings.getThemeAndColor();
+        if ("auto".equals(settingTheme.theme)) {
+            int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            if (currentNightMode == Configuration.UI_MODE_NIGHT_YES) {
+                setTheme(R.style.Chan_Theme_Dark);
+            }
+            // Light mode (Chan.Theme) is the default from manifest for light system mode
+        }
+        
         super.onCreate(savedInstanceState);
         inject(this);
 
@@ -172,6 +184,11 @@ public class StartActivity extends AppCompatActivity implements
             handled = restoreFromSavedState(savedInstanceState);
         } else {
             handled = restoreFromUrl();
+        }
+
+        if (!handled && getIntent().getBooleanExtra("open_theme_view", false)) {
+            mainNavigationController.pushController(new ThemeSettingsController(this), false);
+            handled = true;
         }
 
         // Not from a state or from a url, launch the setup controller if no boards are set up yet,

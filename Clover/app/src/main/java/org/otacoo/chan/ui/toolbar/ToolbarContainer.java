@@ -446,11 +446,13 @@ public class ToolbarContainer extends FrameLayout {
 
             FrameLayout titleContainer = menu.findViewById(R.id.title_container);
 
+            int uiTextColor = getAttrColor(getContext(), R.attr.ui_text_color);
+
             // Title
             final TextView titleView = menu.findViewById(R.id.title);
             titleView.setTypeface(AndroidUtils.ROBOTO_MEDIUM);
             titleView.setText(item.title);
-            titleView.setTextColor(0xffffffff);
+            titleView.setTextColor(uiTextColor);
 
             // Middle title with arrow and callback
             if (item.middleMenu != null) {
@@ -488,7 +490,7 @@ public class ToolbarContainer extends FrameLayout {
                 titleParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
                 titleView.setLayoutParams(titleParams);
                 subtitleView.setText(item.subtitle);
-                subtitleView.setTextColor(0xffffffff);
+                subtitleView.setTextColor(uiTextColor);
                 titleView.setPadding(titleView.getPaddingLeft(), dp(5f),
                         titleView.getPaddingRight(), titleView.getPaddingBottom());
             } else {

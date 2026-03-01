@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <string name="ok">OK</string>
     <string name="exit">Exit</string>
     <string name="delete">Delete</string>
+    <string name="remove">Remove</string>
     <string name="undo">Undo</string>
     <string name="save">Save</string>
 
@@ -451,6 +452,9 @@ Enable \"Play videos with external player\" in the settings to play videos with 
     <string name="settings_restore_success">Settings restored. Restart the app for all changes to take effect.</string>
     <string name="settings_backup_failed">Backup failed</string>
     <string name="settings_restore_failed">Restore failed</string>
+    <string name="settings_restore_select">Select which settings to restore</string>
+    <string name="settings_restore_button">Restore</string>
+    <string name="settings_restore_toggle_all">Toggle all</string>
 
     <!-- Main About group -->
     <string name="settings_group_about">About</string>
@@ -622,8 +626,21 @@ Re-enable this permission in the app settings if you permanently disabled it."
 "Swipe to change the theme.
 Tap the toolbar menu to change its color."
     </string>
-    <string name="setting_theme_accent">Tap here to change the FAB color</string>
+    <string name="setting_theme_accent">Tap here to change FAB color</string>
     <string name="setting_theme_reset_done">Theme selection reset to defaults.</string>
+    <string name="setting_theme_add">Create new theme</string>
+    <string name="setting_theme_create_name">Theme name</string>
+    <string name="setting_theme_create_base">Base theme</string>
+    <string name="setting_theme_create_items">Theme colors</string>
+    <string name="setting_theme_item_toolbar_color">Toolbar color</string>
+    <string name="setting_theme_item_fab_color">Buttons color</string>
+    <string name="setting_theme_item_backcolor">Background color</string>
+    <string name="setting_theme_item_loading_bar_color">Loading bar color</string>
+    <string name="setting_theme_item_text_color_primary">Primary text color</string>
+    <string name="setting_theme_item_post_quote_color">Quote color</string>
+    <string name="setting_theme_item_post_link_color">Link color</string>
+    <string name="setting_theme_item_post_subject_color">Subject color</string>
+    <string name="setting_theme_item_post_name_color">Name color</string>
 
     <!-- Developer settings -->
     <string name="settings_open_logs">View logs</string>

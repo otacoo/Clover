@@ -23,6 +23,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.widget.Toast;
 
 import org.otacoo.chan.R;
@@ -61,7 +62,7 @@ public class AppearanceSettingsController extends SettingsController {
             SettingsGroup appearance = new SettingsGroup(R.string.settings_group_appearance);
 
             appearance.add(new LinkSettingView(this,
-                    getString(R.string.setting_theme), theme().displayName,
+                    getString(R.string.setting_theme), getThemeDescription(),
                     v -> navigationController.pushController(
                             new ThemeSettingsController(context))));
 
@@ -141,6 +142,22 @@ public class AppearanceSettingsController extends SettingsController {
 
             groups.add(post);
         }
+    }
+
+    private String getThemeDescription() {
+        ChanSettings.ThemeColor current = ChanSettings.getThemeAndColor();
+        String themeName = current.theme;
+        String displayName;
+        
+        // If using the Auto theme, show "Auto" and append the current system mode
+        if ("auto".equals(themeName)) {
+            boolean isDarkMode = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            displayName = "Auto (" + (isDarkMode ? "Dark" : "Light") + ")";
+        } else {
+            displayName = theme().displayName;
+        }
+        
+        return displayName;
     }
 
     private void setupAppIconSetting(SettingsGroup appearance) {

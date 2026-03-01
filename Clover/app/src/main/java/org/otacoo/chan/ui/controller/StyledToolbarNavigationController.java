@@ -17,6 +17,8 @@
  */
 package org.otacoo.chan.ui.controller;
 
+import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
+
 import android.content.Context;
 
 import org.otacoo.chan.R;
@@ -36,6 +38,8 @@ public class StyledToolbarNavigationController extends ToolbarNavigationControll
         super.onCreate();
 
         view = inflateRes(R.layout.controller_navigation_toolbar);
+        view.setBackgroundColor(getAttrColor(context, R.attr.backcolor));
+
         container = (NavigationControllerContainerLayout) view.findViewById(R.id.container);
         NavigationControllerContainerLayout nav = (NavigationControllerContainerLayout) container;
         nav.setNavigationController(this);

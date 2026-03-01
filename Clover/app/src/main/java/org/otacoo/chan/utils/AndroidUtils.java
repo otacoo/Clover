@@ -60,6 +60,7 @@ import androidx.core.app.ActivityManagerCompat;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.ui.theme.ThemeHelper;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
@@ -224,6 +225,9 @@ public class AndroidUtils {
     }
 
     public static int getAttrColor(Context context, int attr) {
+        int themeColor = ThemeHelper.getInstance().getTheme().getColorForAttr(attr);
+        if (themeColor != 0) return themeColor;
+
         TypedArray typedArray = context.getTheme().obtainStyledAttributes(new int[]{attr});
         int color = typedArray.getColor(0, 0);
         typedArray.recycle();

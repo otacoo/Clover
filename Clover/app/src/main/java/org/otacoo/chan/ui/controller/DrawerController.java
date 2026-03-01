@@ -20,6 +20,7 @@ package org.otacoo.chan.ui.controller;
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
+import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -80,6 +81,8 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         drawerLayout = view.findViewById(R.id.drawer_layout);
         drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, Gravity.LEFT);
         drawer = view.findViewById(R.id.drawer);
+        drawer.setBackgroundColor(getAttrColor(context, R.attr.backcolor));
+
         drawer.setOnRefreshListener(() -> {
             watchManager.forceUpdate();
             drawer.setRefreshing(false);

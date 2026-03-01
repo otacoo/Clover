@@ -22,6 +22,7 @@ import static org.otacoo.chan.utils.AndroidUtils.dp;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Shader;
@@ -39,8 +40,13 @@ public class ColorPickerView extends View {
 
     private Paint paint;
     private Paint centerPaint;
+    private Paint valuePaint;
     private int centerRadius;
     private OnColorChangedListener listener;
+
+    private float[] hsv = new float[3];
+    private RectF valueRect = new RectF();
+    private boolean trackingValue = false;
 
     public interface OnColorChangedListener {
         void onColorChanged(int color);
@@ -60,6 +66,10 @@ public class ColorPickerView extends View {
 
         centerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         centerPaint.setStrokeWidth(dp(5));
+
+        valuePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        
+        Color.colorToHSV(Color.BLUE, hsv);
     }
 
     public void setOnColorChangedListener(OnColorChangedListener listener) {
@@ -67,34 +77,101 @@ public class ColorPickerView extends View {
     }
 
     public void setColor(int color) {
+        float[] newHsv = new float[3];
+        Color.colorToHSV(color, newHsv);
+        
+        // For achromatic colors (very low saturation), preserve the existing hue
+        // This prevents the gradient bar from always showing red when picking dark/grey colors
+        if (newHsv[1] < 0.1f) {
+            newHsv[0] = hsv[0];
+        }
+        
+        hsv = newHsv;
         centerPaint.setColor(color);
         invalidate();
     }
 
     public int getColor() {
-        return centerPaint.getColor();
+        return Color.HSVToColor(hsv);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int w = MeasureSpec.getSize(widthMeasureSpec);
+        int h = MeasureSpec.getSize(heightMeasureSpec);
+        
+        int minSize = dp(200);
+        int targetSize = dp(300);
+        
+        if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.AT_MOST) {
+            w = Math.min(targetSize, w);
+        } else if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.UNSPECIFIED) {
+            w = targetSize;
+        }
+        
+        if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.AT_MOST) {
+            h = Math.min(targetSize, h);
+        } else if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) {
+            h = targetSize;
+        }
+        
+        w = Math.max(w, minSize);
+        h = Math.max(h, minSize);
+        
+        setMeasuredDimension(w, h);
     }
 
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
-        float x = event.getX() - getWidth() / 2f;
-        float y = event.getY() - getHeight() / 2f;
+        float x = event.getX();
+        float y = event.getY();
+        
+        float cx = getWidth() / 2f;
+        float cy = (getHeight() - dp(48)) / 2f; 
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
-                float angle = (float) Math.atan2(y, x);
-                // need to turn angle [-PI ... PI] into unit [0....1]
-                float unit = (float) (angle / (2.0 * Math.PI));
-                if (unit < 0.0) {
-                    unit += 1.0;
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
                 }
-                int color = interpColor(COLORS, unit);
-                centerPaint.setColor(color);
+                trackingValue = valueRect.contains(x, y);
+                // fall through
+            case MotionEvent.ACTION_MOVE:
+                if (trackingValue) {
+                    float val = (x - valueRect.left) / valueRect.width();
+                    val = Math.max(0f, Math.min(1f, val));
+                    if (val < 0.5f) {
+                        hsv[1] = 1f;
+                        hsv[2] = val * 2f;
+                    } else {
+                        hsv[1] = 1f - (val - 0.5f) * 2f;
+                        hsv[2] = 1f;
+                    }
+                } else {
+                    float dx = x - cx;
+                    float dy = y - cy;
+                    float angle = (float) Math.atan2(dy, dx);
+                    float unit = (float) (angle / (2.0 * Math.PI));
+                    if (unit < 0.0) {
+                        unit += 1.0;
+                    }
+                    int color = interpColor(COLORS, unit);
+                    float[] tempHsv = new float[3];
+                    Color.colorToHSV(color, tempHsv);
+                    hsv[0] = tempHsv[0];
+                    if (hsv[1] < 0.1f) hsv[1] = 1f;
+                    if (hsv[2] < 0.1f) hsv[2] = 1f;
+                }
+                
+                int finalColor = Color.HSVToColor(hsv);
+                centerPaint.setColor(finalColor);
                 if (listener != null) {
-                    listener.onColorChanged(color);
+                    listener.onColorChanged(finalColor);
                 }
                 invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                trackingValue = false;
                 break;
         }
         return true;
@@ -102,10 +179,45 @@ public class ColorPickerView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        float r = Math.min(getWidth() / 2f, getHeight() / 2f) - paint.getStrokeWidth() * 0.5f;
-        canvas.translate(getWidth() / 2f, getHeight() / 2f);
+        float cx = getWidth() / 2f;
+        float cy = (getHeight() - dp(48)) / 2f;
+        
+        float r = Math.min(cx, cy) - paint.getStrokeWidth() * 0.5f - dp(8);
+        
+        canvas.save();
+        canvas.translate(cx, cy);
         canvas.drawOval(new RectF(-r, -r, r, r), paint);
         canvas.drawCircle(0, 0, centerRadius, centerPaint);
+        canvas.restore();
+        
+        // Draw value bar (Black -> Color -> White)
+        float margin = dp(16);
+        float barHeight = dp(24);
+        valueRect.set(margin, getHeight() - barHeight - margin, getWidth() - margin, getHeight() - margin);
+        
+        int middleColor = Color.HSVToColor(new float[]{hsv[0], 1f, 1f});
+        int[] gradientColors = new int[] { Color.BLACK, middleColor, Color.WHITE };
+        
+        valuePaint.setShader(new LinearGradient(valueRect.left, 0, valueRect.right, 0, gradientColors, null, Shader.TileMode.CLAMP));
+        canvas.drawRoundRect(valueRect, dp(4), dp(4), valuePaint);
+        
+        // Draw indicator on value bar
+        Paint indicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        indicatorPaint.setColor(Color.WHITE);
+        indicatorPaint.setStyle(Paint.Style.STROKE);
+        indicatorPaint.setStrokeWidth(dp(2));
+        
+        float barVal;
+        if (hsv[2] < 1f) {
+            barVal = hsv[2] / 2f;
+        } else {
+            barVal = 0.5f + (1f - hsv[1]) / 2f;
+        }
+        
+        float ix = valueRect.left + barVal * valueRect.width();
+        canvas.drawCircle(ix, valueRect.centerY(), barHeight / 2f + dp(2), indicatorPaint);
+        indicatorPaint.setColor(Color.BLACK);
+        canvas.drawCircle(ix, valueRect.centerY(), barHeight / 2f + dp(4), indicatorPaint);
     }
 
     private int interpColor(int colors[], float unit) {
@@ -120,7 +232,6 @@ public class ColorPickerView extends View {
         int i = (int) p;
         p -= i;
 
-        // now p is just the fractional part [0...1) and i is the index
         int c0 = colors[i];
         int c1 = colors[i + 1];
         int a = ave(Color.alpha(c0), Color.alpha(c1), p);

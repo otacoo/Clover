@@ -33,6 +33,9 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.core.site.parser.PostParser;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A Theme<br>
  * Used for setting the toolbar color, and passed around {@link PostParser} to give the spans the correct color.<br>
@@ -46,6 +49,10 @@ public class Theme {
     public ThemeHelper.PrimaryColor primaryColor;
     public ThemeHelper.PrimaryColor accentColor;
     public ThemeHelper.PrimaryColor loadingBarColor;
+
+    public ThemeHelper.PrimaryColor defaultPrimaryColor;
+    public ThemeHelper.PrimaryColor defaultAccentColor;
+    public ThemeHelper.PrimaryColor defaultLoadingBarColor;
 
     public int textPrimary;
     public int textSecondary;
@@ -65,6 +72,12 @@ public class Theme {
     public int savedReplyColor;
     public int selectedColor;
     public int textColorRevealSpoiler;
+    
+    public int backColor;
+    public int backColorSecondary;
+    public int dividerColor;
+    public int dividerSplitColor;
+    public int uiTextColor;
 
     public ThemeDrawable settingsDrawable;
     public ThemeDrawable imageDrawable;
@@ -77,6 +90,8 @@ public class Theme {
     public ThemeDrawable helpDrawable;
     public ThemeDrawable refreshDrawable;
     public ThemeDrawable reorderDrawable;
+    
+    public Map<String, Integer> colorOverrides = new HashMap<>();
 
     public Theme(String displayName, String name, int resValue, ThemeHelper.PrimaryColor primaryColor) {
         this.displayName = displayName;
@@ -88,20 +103,38 @@ public class Theme {
 
         resolveSpanColors();
         resolveDrawables();
+
+        defaultPrimaryColor = this.primaryColor;
+        defaultAccentColor = this.accentColor;
+        defaultLoadingBarColor = this.loadingBarColor;
     }
 
     public void resolveDrawables() {
-        settingsDrawable = new ThemeDrawable(R.drawable.ic_settings_black_24dp, 0.54f);
-        imageDrawable = new ThemeDrawable(R.drawable.ic_image_black_24dp, 0.54f);
-        sendDrawable = new ThemeDrawable(R.drawable.ic_send_black_24dp, 0.54f);
-        clearDrawable = new ThemeDrawable(R.drawable.ic_clear_black_24dp, 0.54f);
-        backDrawable = new ThemeDrawable(R.drawable.ic_arrow_back_black_24dp, 0.54f);
-        doneDrawable = new ThemeDrawable(R.drawable.ic_done_black_24dp, 0.54f);
-        historyDrawable = new ThemeDrawable(R.drawable.ic_history_black_24dp, 0.54f);
-        listAddDrawable = new ThemeDrawable(R.drawable.ic_playlist_add_black_24dp, 0.54f);
-        helpDrawable = new ThemeDrawable(R.drawable.ic_help_outline_black_24dp, 0.54f);
-        refreshDrawable = new ThemeDrawable(R.drawable.ic_refresh_black_24dp, 0.54f);
-        reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 0.54f);
+        if (isLightTheme) {
+            settingsDrawable = new ThemeDrawable(R.drawable.ic_settings_black_24dp, 0.54f);
+            imageDrawable = new ThemeDrawable(R.drawable.ic_image_black_24dp, 0.54f);
+            sendDrawable = new ThemeDrawable(R.drawable.ic_send_black_24dp, 0.54f);
+            clearDrawable = new ThemeDrawable(R.drawable.ic_clear_black_24dp, 0.54f);
+            backDrawable = new ThemeDrawable(R.drawable.ic_arrow_back_black_24dp, 0.54f);
+            doneDrawable = new ThemeDrawable(R.drawable.ic_done_black_24dp, 0.54f);
+            historyDrawable = new ThemeDrawable(R.drawable.ic_history_black_24dp, 0.54f);
+            listAddDrawable = new ThemeDrawable(R.drawable.ic_playlist_add_black_24dp, 0.54f);
+            helpDrawable = new ThemeDrawable(R.drawable.ic_help_outline_black_24dp, 0.54f);
+            refreshDrawable = new ThemeDrawable(R.drawable.ic_refresh_black_24dp, 0.54f);
+            reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 0.54f);
+        } else {
+            settingsDrawable = new ThemeDrawable(R.drawable.ic_settings_white_24dp, 1f);
+            imageDrawable = new ThemeDrawable(R.drawable.ic_image_white_24dp, 1f);
+            sendDrawable = new ThemeDrawable(R.drawable.ic_send_white_24dp, 1f);
+            clearDrawable = new ThemeDrawable(R.drawable.ic_clear_white_24dp, 1f);
+            backDrawable = new ThemeDrawable(R.drawable.ic_arrow_back_white_24dp, 1f);
+            doneDrawable = new ThemeDrawable(R.drawable.ic_done_white_24dp, 1f);
+            historyDrawable = new ThemeDrawable(R.drawable.ic_history_white_24dp, 1f);
+            listAddDrawable = new ThemeDrawable(R.drawable.ic_playlist_add_white_24dp, 1f);
+            helpDrawable = new ThemeDrawable(R.drawable.ic_help_outline_white_24dp, 1f);
+            refreshDrawable = new ThemeDrawable(R.drawable.ic_refresh_white_24dp, 1f);
+            reorderDrawable = new ThemeDrawable(R.drawable.ic_reorder_black_24dp, 1f, true);
+        }
     }
 
     public void resolveDrawablesNight() {
@@ -150,7 +183,15 @@ public class Theme {
                 R.attr.text_color_primary,
                 R.attr.text_color_secondary,
                 R.attr.text_color_hint,
-                R.attr.text_color_reveal_spoiler
+                R.attr.text_color_reveal_spoiler,
+                R.attr.colorPrimary,
+                R.attr.colorAccent,
+                R.attr.loading_bar_color,
+                R.attr.backcolor,
+                R.attr.backcolor_secondary,
+                R.attr.divider_color,
+                R.attr.divider_split_color,
+                R.attr.ui_text_color
         });
 
         quoteColor = ta.getColor(0, 0);
@@ -171,25 +212,102 @@ public class Theme {
         textSecondary = ta.getColor(15, 0);
         textHint = ta.getColor(16, 0);
         textColorRevealSpoiler = ta.getColor(17, 0);
+        int primaryColorInt = ta.getColor(18, 0);
+        int accentColorInt = ta.getColor(19, 0);
+        int loadingBarColorInt = ta.getColor(20, 0);
+        backColor = ta.getColor(21, 0);
+        backColorSecondary = ta.getColor(22, 0);
+        dividerColor = ta.getColor(23, 0);
+        dividerSplitColor = ta.getColor(24, 0);
+        uiTextColor = ta.getColor(25, 0);
 
         ta.recycle();
 
-        ta = theme.obtainStyledAttributes(new int[]{
-                R.attr.loading_bar_color
-        });
+        if (primaryColorInt != 0) {
+            primaryColor = resolvePrimaryColor(primaryColorInt, primaryColor);
+        }
 
-        loadingBarColor = resolvePrimaryColor(ta.getColor(0, primaryColor.color));
+        if (accentColorInt != 0) {
+            accentColor = resolvePrimaryColor(accentColorInt, ThemeHelper.PrimaryColor.BLUE);
+        }
 
-        ta.recycle();
+        if (loadingBarColorInt != 0) {
+            loadingBarColor = resolvePrimaryColor(loadingBarColorInt, primaryColor);
+        } else {
+            loadingBarColor = primaryColor;
+        }
+        
+        // Apply overrides
+        for (Map.Entry<String, Integer> entry : colorOverrides.entrySet()) {
+            applyColorOverride(entry.getKey(), entry.getValue());
+        }
     }
 
-    private ThemeHelper.PrimaryColor resolvePrimaryColor(int color) {
+    public int getColorForAttr(int attr) {
+        if (attr == R.attr.backcolor) return backColor;
+        if (attr == R.attr.backcolor_secondary) return backColorSecondary;
+        if (attr == R.attr.text_color_primary) return textPrimary;
+        if (attr == R.attr.text_color_secondary) return textSecondary;
+        if (attr == R.attr.text_color_hint) return textHint;
+        if (attr == R.attr.post_quote_color) return quoteColor;
+        if (attr == R.attr.post_highlight_quote_color) return highlightQuoteColor;
+        if (attr == R.attr.post_link_color) return linkColor;
+        if (attr == R.attr.post_subject_color) return subjectColor;
+        if (attr == R.attr.post_name_color) return nameColor;
+        if (attr == R.attr.colorPrimary) return primaryColor.color;
+        if (attr == R.attr.colorAccent) return accentColor.color;
+        if (attr == R.attr.loading_bar_color) return loadingBarColor.color;
+        if (attr == R.attr.divider_color) return dividerColor;
+        if (attr == R.attr.ui_text_color) return uiTextColor;
+        return 0;
+    }
+
+    public void applyColorOverride(String attrName, int color) {
+        if ("post_quote_color".equals(attrName)) quoteColor = color;
+        else if ("post_highlight_quote_color".equals(attrName)) highlightQuoteColor = color;
+        else if ("post_link_color".equals(attrName)) linkColor = color;
+        else if ("post_spoiler_color".equals(attrName)) spoilerColor = color;
+        else if ("post_inline_quote_color".equals(attrName)) inlineQuoteColor = color;
+        else if ("post_subject_color".equals(attrName)) subjectColor = color;
+        else if ("post_name_color".equals(attrName)) nameColor = color;
+        else if ("post_id_background_light".equals(attrName)) idBackgroundLight = color;
+        else if ("post_id_background_dark".equals(attrName)) idBackgroundDark = color;
+        else if ("post_capcode_color".equals(attrName)) capcodeColor = color;
+        else if ("post_details_color".equals(attrName)) detailsColor = color;
+        else if ("post_highlighted_color".equals(attrName)) highlightedColor = color;
+        else if ("post_saved_reply_color".equals(attrName)) savedReplyColor = color;
+        else if ("post_selected_color".equals(attrName)) selectedColor = color;
+        else if ("text_color_primary".equals(attrName)) textPrimary = color;
+        else if ("text_color_secondary".equals(attrName)) textSecondary = color;
+        else if ("text_color_hint".equals(attrName)) textHint = color;
+        else if ("text_color_reveal_spoiler".equals(attrName)) textColorRevealSpoiler = color;
+        else if ("colorPrimary".equals(attrName)) {
+            primaryColor = resolvePrimaryColor(color, primaryColor);
+        }
+        else if ("colorAccent".equals(attrName)) {
+            accentColor = resolvePrimaryColor(color, ThemeHelper.PrimaryColor.BLUE);
+        }
+        else if ("loading_bar_color".equals(attrName)) {
+            loadingBarColor = resolvePrimaryColor(color, primaryColor);
+        }
+        else if ("backcolor".equals(attrName)) {
+            backColor = color;
+            backColorSecondary = color;
+        }
+        else if ("backcolor_secondary".equals(attrName)) backColorSecondary = color;
+        else if ("divider_color".equals(attrName)) dividerColor = color;
+        else if ("divider_split_color".equals(attrName)) dividerSplitColor = color;
+        else if ("ui_text_color".equals(attrName)) uiTextColor = color;
+    }
+
+    private ThemeHelper.PrimaryColor resolvePrimaryColor(int color, ThemeHelper.PrimaryColor defaultColor) {
         for (ThemeHelper.PrimaryColor pc : ThemeHelper.PrimaryColor.values()) {
             if (pc.color == color) {
                 return pc;
             }
         }
-        return primaryColor;
+        String hex = String.format("#%08X", color);
+        return ThemeHelper.PrimaryColor.fromHex("Custom", hex, defaultColor);
     }
 
     public class ThemeDrawable {
