@@ -1,3 +1,21 @@
+## 2026-03-01 – v3.1.3
+
+- **New feature:** Reworked the **Theme** section; you can now create your own themes within the app!
+  - Custom themes can be created and deleted
+  - Custom themes will be backed up and restored with the backup/restore option
+  - Modified a few of the default themes like YotsubaB
+  - Added a Reset button to reset the Theme back to its color defaults
+  - Added a loading bar to the Theme preview
+  - Swiping between themes will now show their FAB colors live
+- 4chan: improved the flow and toast information for the captcha
+- 4chan: added preventive measures for when cookies/session get stale which could lock the user in a cooldown loop
+- Color picker now allows one to pick custom colors on top of the usual presets
+- **New feature:** Backup & restore option now allows you to pick which keys to restore
+- Fix an issue where thumbnails with odd dimensions could cause a crash (#1)
+- Fix an issue where selecting text could cause the app to crash on certain Android versions (unconfirmed #1)
+- Dev options: Fix a bug where the cookie add/del dialog was stacking dialogs
+- Dev options: Fix an issue where certain 4chan cookies couldn't be deleted
+
 ## 2026-02-27 – v3.1.2
 
 >[!WARNING]
