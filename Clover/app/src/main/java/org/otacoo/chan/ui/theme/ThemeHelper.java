@@ -33,6 +33,7 @@ import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,7 @@ public class ThemeHelper {
         } else {
             theme = new DarkTheme(custom.displayName, custom.name, styleRes, PrimaryColor.DARK);
         }
+        custom.colorOverrides = normalizeColorOverrides(custom.colorOverrides);
         theme.colorOverrides = custom.colorOverrides;
         theme.resolveSpanColors();
         
@@ -100,7 +102,34 @@ public class ThemeHelper {
         return theme;
     }
 
+    private Map<String, Integer> normalizeColorOverrides(Map<String, Integer> overrides) {
+        Map<String, Integer> normalized = new HashMap<>();
+        if (overrides == null) {
+            return normalized;
+        }
+
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) overrides).entrySet()) {
+            if (!(entry.getKey() instanceof String)) {
+                continue;
+            }
+
+            Object value = entry.getValue();
+            if (value instanceof Number) {
+                normalized.put((String) entry.getKey(), ((Number) value).intValue());
+            } else if (value instanceof String) {
+                try {
+                    normalized.put((String) entry.getKey(), (int) Long.parseLong((String) value));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        return normalized;
+    }
+
     public void addCustomTheme(ChanSettings.CustomTheme custom) {
+        custom.colorOverrides = normalizeColorOverrides(custom.colorOverrides);
+
         List<ChanSettings.CustomTheme> list = ChanSettings.getCustomThemes();
         boolean foundInSettings = false;
         for (int i = 0; i < list.size(); i++) {
@@ -200,7 +229,9 @@ public class ThemeHelper {
 
     private void patchTheme(Theme theme, ChanSettings.ThemeColor setting) {
         // Patch the theme primary and accent color when set in the settings
-        if (setting.color != null) {
+        boolean isAutoThemeMode = "auto".equals(setting.theme);
+
+        if (setting.color != null && !isAutoThemeMode) {
             theme.primaryColor = getColor(setting.color, theme.defaultPrimaryColor);
         }
         if (setting.accentColor != null) {

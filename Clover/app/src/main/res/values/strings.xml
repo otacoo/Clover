@@ -452,6 +452,7 @@ Enable \"Play videos with external player\" in the settings to play videos with 
     <string name="settings_restore_success">Settings restored. Restart the app for all changes to take effect.</string>
     <string name="settings_backup_failed">Backup failed</string>
     <string name="settings_restore_failed">Restore failed</string>
+    <string name="settings_custom_theme_reset">Corrupted custom theme data was reset to defaults.</string>
     <string name="settings_restore_select">Select which settings to restore</string>
     <string name="settings_restore_button">Restore</string>
     <string name="settings_restore_toggle_all">Toggle all</string>

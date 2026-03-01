@@ -18,6 +18,7 @@
 package org.otacoo.chan.core.settings;
 
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -27,6 +28,7 @@ import org.otacoo.chan.core.manager.WatchManager;
 import org.otacoo.chan.core.update.UpdateManager;
 import org.otacoo.chan.ui.adapter.PostsFilter;
 import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.Logger;
 
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
@@ -388,7 +390,16 @@ public class ChanSettings {
         String raw = customThemes.get();
         if (TextUtils.isEmpty(raw)) return new ArrayList<>();
         Type type = new TypeToken<List<CustomTheme>>() {}.getType();
-        return new Gson().fromJson(raw, type);
+        try {
+            List<CustomTheme> parsed = new Gson().fromJson(raw, type);
+            return parsed != null ? parsed : new ArrayList<>();
+        } catch (Exception e) {
+            Logger.e("ChanSettings", "Invalid custom theme data, resetting to defaults", e);
+            customThemes.set("[]");
+            AndroidUtils.runOnUiThread(() ->
+                    Toast.makeText(AndroidUtils.getAppContext(), R.string.settings_custom_theme_reset, Toast.LENGTH_LONG).show());
+            return new ArrayList<>();
+        }
     }
 
     public static void saveCustomThemes(List<CustomTheme> themes) {
