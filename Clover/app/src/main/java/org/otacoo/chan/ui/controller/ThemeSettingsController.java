@@ -437,7 +437,11 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         if (existing != null) baseSpinner.setSelection("dark".equals(existing.baseTheme) ? 1 : 0);
         root.addView(baseSpinner);
 
-        final Map<String, Integer> overrides = existing != null ? new HashMap<>(existing.colorOverrides) : new HashMap<>();
+        Map<String, Integer> existingOverrides = sanitizeColorOverrides(existing != null ? existing.colorOverrides : null);
+        if (existing != null) {
+            existing.colorOverrides = existingOverrides;
+        }
+        final Map<String, Integer> overrides = new HashMap<>(existingOverrides);
         
         String[] attrNames = {
                 "colorPrimary",
@@ -482,8 +486,8 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
             
             // Only use override if it exists; otherwise use a preview color (gray for new themes)
             int colorVal;
-            if (existing != null && existing.colorOverrides.containsKey(attrName)) {
-                colorVal = existing.colorOverrides.get(attrName);
+            if (existing != null) {
+                colorVal = getOverrideColor(overrides, attrName, Color.GRAY);
             } else {
                 // For new themes, show gray as placeholder but don't add to overrides yet
                 // When user explicitly picks a color, it will be added to overrides
@@ -497,8 +501,9 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
             colorPreview.setBackground(shape);
             
             colorPreview.setOnClickListener(v -> {
+                int currentColor = getOverrideColor(overrides, attrName, ThemeHelper.PrimaryColor.GREY.color);
                 showColorPickerDialog(getString(nameRes), 
-                    themeHelper.getColor(String.format("#%08X", overrides.get(attrName)), ThemeHelper.PrimaryColor.GREY), 
+                    themeHelper.getColor(String.format("#%08X", currentColor), ThemeHelper.PrimaryColor.GREY), 
                     color -> {
                         overrides.put(attrName, color.color);
                         shape.setColor(color.color);
@@ -565,6 +570,39 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         }
 
         builder.show();
+    }
+
+    private Map<String, Integer> sanitizeColorOverrides(Map<String, Integer> overrides) {
+        Map<String, Integer> sanitized = new HashMap<>();
+        if (overrides == null) {
+            return sanitized;
+        }
+
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) overrides).entrySet()) {
+            if (!(entry.getKey() instanceof String)) {
+                continue;
+            }
+
+            Object value = entry.getValue();
+            if (value instanceof Number) {
+                sanitized.put((String) entry.getKey(), ((Number) value).intValue());
+            } else if (value instanceof String) {
+                try {
+                    sanitized.put((String) entry.getKey(), (int) Long.parseLong((String) value));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        return sanitized;
+    }
+
+    private int getOverrideColor(Map<String, Integer> overrides, String attrName, int fallback) {
+        if (overrides == null) {
+            return fallback;
+        }
+        Integer color = overrides.get(attrName);
+        return color != null ? color : fallback;
     }
 
     private class Adapter extends ViewPagerAdapter {
