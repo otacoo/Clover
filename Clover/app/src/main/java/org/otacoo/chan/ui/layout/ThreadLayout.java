@@ -108,6 +108,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private View progressLayout;
 
     private LoadView loadView;
+    private LinearLayout fabContainer;
     private HidingFloatingActionButton replyButton;
     private HidingFloatingActionButton topButton;
     private HidingFloatingActionButton bottomButton;
@@ -151,6 +152,7 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         // View binding
         loadView = findViewById(R.id.loadview);
+        fabContainer = findViewById(R.id.fab_container);
         replyButton = findViewById(R.id.reply_button);
         topButton = findViewById(R.id.top_button);
         bottomButton = findViewById(R.id.bottom_button);
@@ -185,14 +187,7 @@ public class ThreadLayout extends CoordinatorLayout implements
             AndroidUtils.removeFromParentView(replyButton);
         } else {
             replyButton.setOnClickListener(this);
-            replyButton.setToolbar(callback.getToolbar());
             theme().applyFabColor(replyButton);
-            if (ChanSettings.toolbarBottom.get()) {
-                int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
-                CoordinatorLayout.LayoutParams lp = (CoordinatorLayout.LayoutParams) replyButton.getLayoutParams();
-                lp.bottomMargin += toolbarH;
-                replyButton.setLayoutParams(lp);
-            }
         }
 
         // Setup Top/Bottom FABs
@@ -202,23 +197,17 @@ public class ThreadLayout extends CoordinatorLayout implements
             AndroidUtils.removeFromParentView(bottomButton);
         } else {
             topButton.setOnClickListener(this);
-            topButton.setToolbar(callback.getToolbar());
             
             bottomButton.setOnClickListener(this);
-            bottomButton.setToolbar(callback.getToolbar());
             
             updateTopBottomDrawables();
+        }
 
-            if (ChanSettings.toolbarBottom.get()) {
-                int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
-                CoordinatorLayout.LayoutParams lpTop = (CoordinatorLayout.LayoutParams) topButton.getLayoutParams();
-                lpTop.bottomMargin += toolbarH;
-                topButton.setLayoutParams(lpTop);
-
-                CoordinatorLayout.LayoutParams lpBottom = (CoordinatorLayout.LayoutParams) bottomButton.getLayoutParams();
-                lpBottom.bottomMargin += toolbarH;
-                bottomButton.setLayoutParams(lpBottom);
-            }
+        if (ChanSettings.toolbarBottom.get()) {
+            int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+            CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
+            containerLp.bottomMargin += toolbarH;
+            fabContainer.setLayoutParams(containerLp);
         }
 
         presenter.create(this);

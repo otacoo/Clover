@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
+<!-- This file controls the Theme page controller layout -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -44,22 +45,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:paddingRight="56dp" />
 
     </LinearLayout>
-
+    <!-- This is for the reset button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/reset"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="start|bottom"
-        android:layout_margin="16dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginBottom="22dp"
         app:backgroundTint="#ff009688"
         android:src="@drawable/ic_refresh_white_24dp" />
-
+    <!-- This is for the apply theme button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right|bottom"
-        android:layout_margin="16dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="22dp"
         android:src="@drawable/ic_done_white_24dp" />
 
 
