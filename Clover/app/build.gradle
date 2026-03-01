@@ -31,10 +31,10 @@ android {
         //noinspection ExpiredTargetSdkVersion
         multiDexEnabled true
 
-        versionName "v3.1.2"
+        versionName "v3.1.3"
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
-        versionCode 30102
+        versionCode 30103
     }
 
     compileOptions {
