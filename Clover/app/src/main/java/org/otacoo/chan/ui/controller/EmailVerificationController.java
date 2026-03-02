@@ -65,6 +65,13 @@ public class EmailVerificationController extends Controller {
         navigation.title = title;
         navigation.swipeable = false;
 
+        AuthWebView.runOnWebViewThread(this::setupWebView);
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private void setupWebView() {
+        if (!alive) return;
+
         webView = new AuthWebView(context);
         
         // 8chan.moe specific automation

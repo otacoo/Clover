@@ -108,6 +108,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private String board;
     private int thread_id;
     private org.otacoo.chan.core.site.Site site;
+    private String cachedUserAgent;
 
     /** True when we served asset HTML from intercept (no #t-root; skip waitForCaptchaForm). */
     private boolean lastResponseWasAsset;
@@ -149,9 +150,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
         // Set a default user agent from settings
         String userAgent = ChanSettings.customUserAgent.get();
-        if (!userAgent.isEmpty()) {
-            settings.setUserAgentString(userAgent);
+        if (userAgent.isEmpty()) {
+            userAgent = WebSettings.getDefaultUserAgent(getContext());
         }
+        settings.setUserAgentString(userAgent);
+        cachedUserAgent = userAgent;
 
         setWebViewClient(createCaptchaWebViewClient());
         setBackgroundColor(getAttrColor(getContext(), R.attr.backcolor));
@@ -420,7 +423,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     .url(url)
                     .header("Cookie", cookies != null ? cookies : "")
                     .header("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id)
-                    .header("User-Agent", getSettings().getUserAgentString())
+                    .header("User-Agent", cachedUserAgent)
                     .build();
 
             try (Response response = okHttpClient.newCall(request).execute()) {

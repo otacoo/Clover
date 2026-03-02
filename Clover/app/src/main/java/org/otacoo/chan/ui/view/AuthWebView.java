@@ -20,6 +20,8 @@ package org.otacoo.chan.ui.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -28,6 +30,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.utils.Logger;
 
 /**
  * A standard WebView configured for 4chan sign-in/verification.
@@ -35,6 +38,20 @@ import org.otacoo.chan.core.settings.ChanSettings;
  * It shares the same cookie and localStorage space as NewCaptchaLayout.
  */
 public class AuthWebView extends WebView {
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+
+    public static boolean isOnWebViewThread() {
+        return Looper.myLooper() == Looper.getMainLooper();
+    }
+
+    public static void runOnWebViewThread(Runnable runnable) {
+        if (isOnWebViewThread()) {
+            runnable.run();
+        } else {
+            Logger.w("AuthWebView", "WebView call posted from non-main thread");
+            MAIN_HANDLER.post(runnable);
+        }
+    }
 
     public AuthWebView(Context context) {
         super(context);

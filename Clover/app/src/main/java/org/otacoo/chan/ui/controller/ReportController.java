@@ -29,6 +29,7 @@ import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteRequestModifier;
 import org.otacoo.chan.ui.helper.PostHelper;
+import org.otacoo.chan.ui.view.AuthWebView;
 
 import okhttp3.HttpUrl;
 
@@ -46,6 +47,13 @@ public class ReportController extends Controller {
     public void onCreate() {
         super.onCreate();
         navigation.title = context.getString(R.string.report_screen, PostHelper.getTitle(post, null));
+
+        AuthWebView.runOnWebViewThread(this::setupWebView);
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private void setupWebView() {
+        if (!alive) return;
 
         Site site = post.board.getSite();
         HttpUrl url = site.endpoints().report(post);

@@ -21,6 +21,7 @@ import android.content.Context;
 import android.webkit.WebView;
 
 import org.otacoo.chan.controller.Controller;
+import org.otacoo.chan.ui.view.AuthWebView;
 
 public class LicensesController extends Controller {
     private String title;
@@ -38,6 +39,11 @@ public class LicensesController extends Controller {
 
         navigation.title = title;
 
+        AuthWebView.runOnWebViewThread(this::setupWebView);
+    }
+
+    private void setupWebView() {
+        if (!alive) return;
         WebView webView = new WebView(context);
         webView.loadUrl(url);
         webView.setBackgroundColor(0xffffffff);
