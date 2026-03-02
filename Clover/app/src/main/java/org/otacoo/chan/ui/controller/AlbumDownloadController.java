@@ -259,7 +259,7 @@ public class AlbumDownloadController extends Controller implements View.OnClickL
 
         @Override
         public void onClick(View v) {
-            int adapterPosition = getAdapterPosition();
+            int adapterPosition = getBindingAdapterPosition();
             AlbumDownloadItem item = items.get(adapterPosition);
             item.checked = !item.checked;
             updateAllChecked();

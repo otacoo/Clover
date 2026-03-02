@@ -45,7 +45,6 @@ public class SettingsController extends Controller implements AndroidUtils.OnMea
     protected List<SettingView> requiresUiRefresh = new ArrayList<>();
 
     // Very user unfriendly.
-    @Deprecated
     protected List<SettingView> requiresRestart = new ArrayList<>();
 
     private boolean needRestart = false;

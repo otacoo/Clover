@@ -27,7 +27,7 @@ public class ToolbarMenu {
 
     public final List<ToolbarMenuItem> items = new ArrayList<>();
 
-    public ToolbarMenu(@Deprecated Context context) {
+    public ToolbarMenu(Context context) {
     }
 
     public ToolbarMenuItem addItem(ToolbarMenuItem item) {

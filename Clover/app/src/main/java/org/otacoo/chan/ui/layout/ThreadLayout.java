@@ -121,7 +121,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private PostPopupHelper postPopupHelper;
     private ImageOptionsHelper imageReencodingHelper;
     private Visible visible;
-    private ProgressDialog deletingDialog;
+    private AlertDialog deletingDialog;
     private boolean refreshedFromSwipe;
     private boolean replyButtonEnabled;
     private boolean topBottomButtonEnabled;
@@ -614,7 +614,14 @@ public class ThreadLayout extends CoordinatorLayout implements
     @Override
     public void showDeleting() {
         if (deletingDialog == null) {
-            deletingDialog = ProgressDialog.show(getContext(), null, getString(R.string.delete_wait));
+            View view = inflate(getContext(), R.layout.layout_progress_dialog, null);
+            TextView messageView = view.findViewById(R.id.message);
+            messageView.setText(R.string.delete_wait);
+
+            deletingDialog = new AlertDialog.Builder(getContext())
+                    .setView(view)
+                    .setCancelable(false)
+                    .show();
         }
     }
 

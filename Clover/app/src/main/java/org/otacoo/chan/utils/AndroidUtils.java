@@ -45,6 +45,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -54,6 +55,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.app.ActivityManagerCompat;
 
@@ -180,7 +182,9 @@ public class AndroidUtils {
 
         if (openWithCustomTabs) {
             CustomTabsIntent tabsIntent = new CustomTabsIntent.Builder()
-                    .setToolbarColor(theme().primaryColor.color)
+                    .setDefaultColorSchemeParams(new CustomTabColorSchemeParams.Builder()
+                            .setToolbarColor(theme().primaryColor.color)
+                            .build())
                     .build();
             try {
                 tabsIntent.launchUrl(activity, Uri.parse(link));
@@ -250,11 +254,11 @@ public class AndroidUtils {
     }
 
     public static int dp(float dp) {
-        return (int) (dp * getRes().getDisplayMetrics().density);
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getRes().getDisplayMetrics());
     }
 
     public static int sp(float sp) {
-        return (int) (sp * getRes().getDisplayMetrics().scaledDensity);
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, getRes().getDisplayMetrics());
     }
 
     public static Typeface getTypeface(String name) {
@@ -464,9 +468,9 @@ public class AndroidUtils {
         if (network == null) return false;
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
         if (capabilities == null) return false;
-        if (type == ConnectivityManager.TYPE_WIFI) {
+        if (type == 1) { // ConnectivityManager.TYPE_WIFI
             return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
-        } else if (type == ConnectivityManager.TYPE_MOBILE) {
+        } else if (type == 0) { // ConnectivityManager.TYPE_MOBILE
             return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
         } else {
             return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);

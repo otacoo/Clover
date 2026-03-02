@@ -277,6 +277,10 @@ public class ThemeHelper {
                 context.setTaskDescription(new ActivityManager.TaskDescription.Builder()
                         .setPrimaryColor(theme.primaryColor.color)
                         .build());
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                Bitmap icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_task_description);
+                //noinspection deprecation
+                context.setTaskDescription(new ActivityManager.TaskDescription(null, icon, theme.primaryColor.color));
             } else {
                 Bitmap icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_task_description);
                 //noinspection deprecation

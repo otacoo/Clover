@@ -5,6 +5,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getAppContext;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -86,8 +87,15 @@ public class BitmapUtils {
             compressFormat = Bitmap.CompressFormat.PNG;
         }
         // if the user had a WebPee image and forgot to reencode it, he gets a free JPEG instead
-        if (compressFormat == Bitmap.CompressFormat.WEBP) {
-            compressFormat = Bitmap.CompressFormat.JPEG;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (compressFormat == Bitmap.CompressFormat.WEBP_LOSSLESS || compressFormat == Bitmap.CompressFormat.WEBP_LOSSY) {
+                compressFormat = Bitmap.CompressFormat.JPEG;
+            }
+        } else {
+            //noinspection deprecation
+            if (compressFormat == Bitmap.CompressFormat.WEBP) {
+                compressFormat = Bitmap.CompressFormat.JPEG;
+            }
         }
 
         try {
@@ -246,7 +254,12 @@ public class BitmapUtils {
             }
 
             // it's neither JPEG nor PNG, so let's just imagine it's a WebPee
-            return Bitmap.CompressFormat.WEBP;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return Bitmap.CompressFormat.WEBP_LOSSY;
+            } else {
+                //noinspection deprecation
+                return Bitmap.CompressFormat.WEBP;
+            }
         }
     }
 }

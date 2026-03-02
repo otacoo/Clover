@@ -32,6 +32,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
@@ -581,8 +582,11 @@ public class ReplyLayout extends LoadView implements
     @Override
     public void setPage(ReplyPresenter.Page page, boolean animate) {
         if (page != ReplyPresenter.Page.AUTHENTICATION && getContext() instanceof Activity) {
-            ((Activity) getContext()).getWindow().setSoftInputMode(
-                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                //noinspection deprecation
+                ((Activity) getContext()).getWindow().setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            }
         }
         switch (page) {
             case LOADING:

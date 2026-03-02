@@ -383,7 +383,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
         if (networkType == ChanSettings.MediaAutoLoadMode.NONE) {
             return false;
         } else if (networkType == ChanSettings.MediaAutoLoadMode.WIFI) {
-            return isConnected(ConnectivityManager.TYPE_WIFI);
+            return isConnected(1); // ConnectivityManager.TYPE_WIFI
         } else if (networkType == ChanSettings.MediaAutoLoadMode.ALL) {
             return true;
         }

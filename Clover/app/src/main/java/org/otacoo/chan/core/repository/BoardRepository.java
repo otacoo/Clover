@@ -24,18 +24,17 @@ import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.utils.Logger;
+import org.otacoo.chan.utils.SimpleObservable;
 import org.otacoo.chan.utils.Time;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class BoardRepository implements Observer {
+public class BoardRepository implements SimpleObservable.SimpleObserver<Void> {
     private static final String TAG = "BoardRepository";
 
     private final DatabaseManager databaseManager;
@@ -64,7 +63,7 @@ public class BoardRepository implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == allSites) {
             updateObservablesAsync();
         }
@@ -189,12 +188,11 @@ public class BoardRepository implements Observer {
         savedBoards.notifyObservers();
     }
 
-    public class SitesBoards extends Observable {
+    public class SitesBoards extends SimpleObservable<Void> {
         private List<SiteBoards> siteBoards = new ArrayList<>();
 
         public void set(List<SiteBoards> siteBoards) {
             this.siteBoards = siteBoards;
-            setChanged();
         }
 
         public List<SiteBoards> get() {

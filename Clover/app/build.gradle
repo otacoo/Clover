@@ -42,6 +42,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    configurations.configureEach {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
+
     /*
     kotlinOptions {
         jvmTarget = '17'

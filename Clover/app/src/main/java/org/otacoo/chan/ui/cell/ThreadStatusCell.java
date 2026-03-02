@@ -23,6 +23,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.StyleSpan;
@@ -48,7 +49,7 @@ public class ThreadStatusCell extends LinearLayout implements View.OnClickListen
 
     private TextView text;
     private String error;
-    private Handler handler = new Handler(msg -> {
+    private Handler handler = new Handler(Looper.getMainLooper(), msg -> {
         if (msg.what == MESSAGE_INVALIDATE) {
             if (running && update()) {
                 schedule();

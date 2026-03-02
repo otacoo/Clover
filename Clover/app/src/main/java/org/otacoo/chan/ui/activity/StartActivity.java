@@ -240,7 +240,14 @@ public class StartActivity extends AppCompatActivity implements
         boolean handled = false;
 
         // Restore the activity state from the previously saved state.
-        ChanState chanState = savedInstanceState.getParcelable(STATE_KEY);
+        ChanState chanState;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            chanState = savedInstanceState.getParcelable(STATE_KEY, ChanState.class);
+        } else {
+            //noinspection deprecation
+            chanState = savedInstanceState.getParcelable(STATE_KEY);
+        }
+
         if (chanState == null) {
             Logger.w(TAG, "savedInstanceState was not null, but no ChanState was found!");
         } else {

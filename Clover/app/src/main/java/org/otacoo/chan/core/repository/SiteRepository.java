@@ -15,12 +15,13 @@ import org.otacoo.chan.core.site.SiteIcon;
 import org.otacoo.chan.core.site.SiteRegistry;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.utils.Logger;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -201,11 +202,9 @@ public class SiteRepository {
     private Site instantiateSiteClass(Class<? extends Site> clazz) {
         Site site;
         try {
-            site = clazz.newInstance();
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException();
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException();
+            site = clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new IllegalArgumentException(e);
         }
         return site;
     }
@@ -288,7 +287,7 @@ public class SiteRepository {
         databaseManager.getDatabaseFilterManager().deleteFilters(filtersToDelete).call();
     }
 
-    public class Sites extends Observable {
+    public class Sites extends SimpleObservable<Void> {
         private List<Site> sites = Collections.unmodifiableList(new ArrayList<>());
         private SparseArray<Site> sitesById = new SparseArray<>();
 
@@ -323,32 +322,27 @@ public class SiteRepository {
             List<Site> copy = new ArrayList<>(sites);
             copy.addAll(all);
             resetSites(copy);
-            setChanged();
         }
 
         private void setAll(List<Site> all) {
             resetSites(new ArrayList<>(all));
-            setChanged();
         }
 
         private void add(Site site) {
             List<Site> copy = new ArrayList<>(sites);
             copy.add(site);
             resetSites(copy);
-            setChanged();
         }
 
         private void remove(Site site) {
             List<Site> copy = new ArrayList<>(sites);
             copy.remove(site);
-            resetSites(copy);
-            setChanged();
+            resetSites(copy);         
         }
 
         // We don't keep the order ourselves here, that's the task of listeners. Do notify the
         // listeners.
         private void wasReordered() {
-            setChanged();
         }
 
         private void resetSites(List<Site> newSites) {

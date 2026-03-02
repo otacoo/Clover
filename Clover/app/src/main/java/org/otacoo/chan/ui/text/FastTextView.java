@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.os.Build;
 import android.text.Layout;
 import android.text.Spanned;
 import android.text.StaticLayout;
@@ -237,7 +238,16 @@ public class FastTextView extends View {
 
     private StaticLayout getStaticLayout(int layoutWidth) {
 //        Logger.test("new staticlayout width=%d", layoutWidth);
-        return new StaticLayout(text, paint, layoutWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return StaticLayout.Builder.obtain(text, 0, text.length(), paint, layoutWidth)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setLineSpacing(0f, 1f)
+                    .setIncludePad(false)
+                    .build();
+        } else {
+            //noinspection deprecation
+            return new StaticLayout(text, paint, layoutWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
+        }
     }
 
     private static class FastTextViewItem {

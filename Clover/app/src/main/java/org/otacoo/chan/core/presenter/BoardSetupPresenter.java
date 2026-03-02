@@ -27,6 +27,7 @@ import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.BackgroundUtils;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +42,7 @@ import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
 
-public class BoardSetupPresenter implements Observer {
+public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void> {
     private BoardManager boardManager;
 
     private Callback callback;
@@ -93,7 +94,7 @@ public class BoardSetupPresenter implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == allBoardsObservable) {
             if (addCallback != null) {
                 // Update the boards shown in the query.

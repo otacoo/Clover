@@ -61,7 +61,7 @@ public abstract class MultipartHttpCall extends HttpCall {
 
     public MultipartHttpCall fileParameter(String name, String filename, File file) {
         formBuilder.addFormDataPart(name, filename, RequestBody.create(
-                MediaType.parse("application/octet-stream"), file
+                file, MediaType.parse("application/octet-stream")
         ));
         return this;
     }

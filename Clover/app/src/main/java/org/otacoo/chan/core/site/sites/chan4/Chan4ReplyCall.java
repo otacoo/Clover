@@ -112,7 +112,7 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
             @Nullable ProgressRequestBody.ProgressRequestListener progressListener
     ) {
         RequestBody fileBody = RequestBody.create(
-                MediaType.parse("application/octet-stream"), reply.file
+                reply.file, MediaType.parse("application/octet-stream")
         );
 
         RequestBody requestBody;

@@ -140,7 +140,6 @@ public class Board implements SiteReference {
     @DatabaseField
     public boolean archive = false;
 
-    @Deprecated // public, at least
     public Board() {
     }
 

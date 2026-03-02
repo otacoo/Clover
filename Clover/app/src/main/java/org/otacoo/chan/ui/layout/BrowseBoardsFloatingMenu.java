@@ -56,9 +56,7 @@ import org.otacoo.chan.core.site.SiteIcon;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.AndroidUtils;
-
-import java.util.Observable;
-import java.util.Observer;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import javax.inject.Inject;
 
@@ -71,7 +69,7 @@ import javax.inject.Inject;
  * {@link BoardsMenuPresenter}.
  */
 public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuPresenter.Callback,
-        Observer {
+        SimpleObservable.SimpleObserver<Void> {
     private static final int MINIMAL_WIDTH_DP = 4 * 56;
     private static final int ELEVATION_DP = 4;
     private static final int OFFSET_X_DP = 5;
@@ -145,7 +143,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == presenter.items()) {
             adapter.notifyDataSetChanged();
         }
@@ -431,7 +429,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         public void bind(Site site) {
             this.site = site;
 
-            divider.setVisibility(getAdapterPosition() == 0 ? View.GONE : View.VISIBLE);
+            divider.setVisibility(getBindingAdapterPosition() == 0 ? View.GONE : View.VISIBLE);
 
             icon = site.icon();
 

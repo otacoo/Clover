@@ -23,13 +23,11 @@ import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.repository.BoardRepository;
 import org.otacoo.chan.core.site.Site;
-
-import java.util.Observable;
-import java.util.Observer;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import javax.inject.Inject;
 
-public class BrowsePresenter implements Observer {
+public class BrowsePresenter implements SimpleObservable.SimpleObserver<Void> {
     private final DatabaseManager databaseManager;
     private final BoardManager boardManager;
     private Callback callback;
@@ -83,7 +81,7 @@ public class BrowsePresenter implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == savedBoardsObservable) {
             if (!hadBoards && hasBoards()) {
                 hadBoards = true;

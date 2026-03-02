@@ -26,10 +26,13 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BlendMode;
+import android.graphics.BlendModeColorFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -44,9 +47,9 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.OnLifecycleEvent;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -84,7 +87,7 @@ import okhttp3.Response;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
-public class MultiImageView extends FrameLayout implements View.OnClickListener, LifecycleObserver, Player.Listener {
+public class MultiImageView extends FrameLayout implements View.OnClickListener, DefaultLifecycleObserver, Player.Listener {
     public enum Mode {
         UNLOADED, LOWRES, BIGIMAGE, GIF, MOVIE, OTHER
     }
@@ -210,8 +213,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         return gif;
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    private void pauseVideo() {
+    @Override
+    public void onPause(@NonNull LifecycleOwner owner) {
         if (exoPlayer != null) {
             exoPlayer.setPlayWhenReady(false);
         } else if (videoView != null) {
@@ -580,7 +583,12 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (isImage) {
             imageView.setTileBackgroundColor(backgroundColor);
         } else {
-            gifView.getDrawable().setColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                gifView.getDrawable().setColorFilter(new BlendModeColorFilter(backgroundColor, BlendMode.DST_OVER));
+            } else {
+                //noinspection deprecation
+                gifView.getDrawable().setColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
+            }
         }
         backgroundToggle = !backgroundToggle;
     }

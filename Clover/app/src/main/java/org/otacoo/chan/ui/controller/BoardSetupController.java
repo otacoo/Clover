@@ -28,6 +28,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -84,8 +85,8 @@ public class BoardSetupController extends Controller implements View.OnClickList
     ) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            int from = viewHolder.getAdapterPosition();
-            int to = target.getAdapterPosition();
+            int from = viewHolder.getBindingAdapterPosition();
+            int to = target.getBindingAdapterPosition();
 
             if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) {
                 return false;
@@ -98,7 +99,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
 
         @Override
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            int position = viewHolder.getAdapterPosition();
+            int position = viewHolder.getBindingAdapterPosition();
 
             presenter.remove(position);
         }
@@ -180,7 +181,10 @@ public class BoardSetupController extends Controller implements View.OnClickList
 
         Window window = dialog.getWindow();
         assert window != null;
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            //noinspection deprecation
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
         dialog.show();
     }
 

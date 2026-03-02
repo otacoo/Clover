@@ -450,13 +450,19 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
     @Override
     public void onAuthenticationComplete(AuthenticationLayoutInterface authenticationLayout, String challenge, String response) {
+        Logger.i(TAG, "onAuthenticationComplete received from " + authenticationLayout.getClass().getSimpleName() + 
+                ". Challenge present: " + (challenge != null && !challenge.isEmpty()) + 
+                ", Response length: " + (response != null ? response.length() : 0));
+        
         draft.captchaChallenge = challenge;
         draft.captchaResponse = response;
 
         if (authenticationLayout.requireResetAfterComplete()) {
+            Logger.i(TAG, "onAuthenticationComplete: Reset requested by auth layout");
             authenticationLayout.reset();
         }
 
+        Logger.i(TAG, "onAuthenticationComplete: Triggering makeSubmitCall()");
         makeSubmitCall();
     }
 
@@ -636,8 +642,14 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             onPostError(null, new IOException("loadable is null"));
             return;
         }
+        
+        Logger.i(TAG, "makeSubmitCall: site=" + loadable.site.name() + ", board=" + loadable.board + ", thread=" + loadable.no);
+        Logger.i(TAG, "makeSubmitCall: captchaChallenge present: " + (draft.captchaChallenge != null && !draft.captchaChallenge.isEmpty()) + 
+                ", captchaResponse present: " + (draft.captchaResponse != null && !draft.captchaResponse.isEmpty()));
+
         loadable.getSite().actions().post(draft, this);
         switchPage(Page.LOADING, true);
+        Logger.i(TAG, "makeSubmitCall: switchPage(LOADING) called");
     }
 
     public void switchPage(Page page, boolean animate) {

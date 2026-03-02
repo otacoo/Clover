@@ -245,7 +245,7 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     }
 
     private void showImageSaved(ImageSaveTask task) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(getAppContext());
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getAppContext(), SavingNotification.CHANNEL_ID_SAVING);
         builder.setSmallIcon(R.drawable.ic_stat_notify);
         builder.setContentTitle(getString(R.string.image_save_saved));
         String savedAs = getAppContext().getString(R.string.image_save_as, task.getDestination().name());

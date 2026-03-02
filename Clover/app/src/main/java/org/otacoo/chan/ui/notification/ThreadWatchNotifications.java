@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.manager.WatchManager;
@@ -95,8 +96,9 @@ public class ThreadWatchNotifications extends NotificationHelper {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(applicationContext, channelId);
 
+        Person user = new Person.Builder().setName("").build();
         NotificationCompat.MessagingStyle messagingStyle =
-                new NotificationCompat.MessagingStyle("");
+                new NotificationCompat.MessagingStyle(user);
 
         builder.setSmallIcon(!mentions ?
                 R.drawable.ic_stat_notify : R.drawable.ic_stat_notify_alert);
@@ -150,7 +152,11 @@ public class ThreadWatchNotifications extends NotificationHelper {
 //            if (name.length() == 0) {
 //                name = "Anonymous";
 //            }
-            messagingStyle.addMessage(comment, post.time, name);
+            Person.Builder personBuilder = new Person.Builder();
+            if (name != null) {
+                personBuilder.setName(name);
+            }
+            messagingStyle.addMessage(comment, post.time, personBuilder.build());
         }
     }
 

@@ -316,7 +316,7 @@ public class FiltersController extends Controller implements
             filter();
         }
 
-        @SuppressLint("NotifyDataSetChanged")
+        @SuppressLint("notifyDataSetChanged();SetChanged")
         private void filter() {
             displayList.clear();
             if (!TextUtils.isEmpty(searchQuery)) {

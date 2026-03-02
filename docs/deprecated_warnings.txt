@@ -1,0 +1,106 @@
+// This file contains all the deprecated Xlint warnings that use a Build.VERSION.SDK_INT to avoid running certain things on older devices
+
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\toolbar\ToolbarMenu.java:30: warning: [deprecation] @Deprecated annotation has no effect on this variable declaration
+    public ToolbarMenu(@Deprecated Context context) {
+                                           ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\view\MultiImageView.java:590: warning: [deprecation] setColorFilter(int,Mode) in Drawable has been deprecated
+                gifView.getDrawable().setColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
+                                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\layout\ReplyLayout.java:588: warning: [deprecation] SOFT_INPUT_ADJUST_RESIZE in LayoutParams has been deprecated
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                                                  ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\text\FastTextView.java:249: warning: [deprecation] StaticLayout(CharSequence,TextPaint,int,Alignment,float,float,boolean) in StaticLayout has been deprecated
+            return new StaticLayout(text, paint, layoutWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
+                   ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\activity\StartActivity.java:248: warning: [deprecation] <T>getParcelable(String) in Bundle has been deprecated
+            chanState = savedInstanceState.getParcelable(STATE_KEY);
+                                          ^
+  where T is a type-variabl
+    T extends Parcelable declared in method <T>getParcelable(String)
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\adapter\DrawerAdapter.java:265: warning: [deprecation] setBackgroundDrawable(Drawable) in View has been deprecated
+            holder.itemView.setBackgroundDrawable(AndroidUtils.getAttrDrawable(holder.itemView.getContext(), android.R.attr.selectableItemBackground));
+                           ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:674: warning: [deprecation] SYSTEM_UI_FLAG_IMMERSIVE in View has been deprecated
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                                ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:674: warning: [deprecation] SYSTEM_UI_FLAG_LAYOUT_STABLE in View has been deprecated
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                                                                ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:675: warning: [deprecation] SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION in View has been deprecated
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                          ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:675: warning: [deprecation] SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN in View has been deprecated
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                                                       ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:676: warning: [deprecation] SYSTEM_UI_FLAG_HIDE_NAVIGATION in View has been deprecated
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
+                          ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:676: warning: [deprecation] SYSTEM_UI_FLAG_FULLSCREEN in View has been deprecated
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
+                                                                ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:674: warning: [deprecation] setSystemUiVisibility(int) in View has been deprecated
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:679: warning: [deprecation] SYSTEM_UI_FLAG_FULLSCREEN in View has been deprecated
+                if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0 && isInImmersiveMode) {
+                                      ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:678: warning: [deprecation] setOnSystemUiVisibilityChangeListener(OnSystemUiVisibilityChangeListener) in View has been deprecated
+            decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:720: warning: [deprecation] setOnSystemUiVisibilityChangeListener(OnSystemUiVisibilityChangeListener) in View has been deprecated
+            decorView.setOnSystemUiVisibilityChangeListener(null);
+                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ImageViewerController.java:721: warning: [deprecation] setSystemUiVisibility(int) in View has been deprecated
+            decorView.setSystemUiVisibility(0);
+                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\AppearanceSettingsController.java:82: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+            ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\AppearanceSettingsController.java:86: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+            ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\AppearanceSettingsController.java:91: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+            ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\AppearanceSettingsController.java:96: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+            ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\AppearanceSettingsController.java:236: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+        requiresRestart.add(layout.add(new ListSettingView<>(this,
+        ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:68: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+        requiresRestart.clear();
+        ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:82: warning: [deprecation] requiresRestart in SettingsController has been deprecated
+            requiresRestart.add(general.add(new BooleanSettingView(this,
+            ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:218: warning: [deprecation] removeAllCookie() in CookieManager has been deprecated
+                CookieManager.getInstance().removeAllCookie();
+                                           ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:220: warning: [deprecation] CookieSyncManager in android.webkit has been deprecated
+                CookieSyncManager.createInstance(Chan.getInstance());
+                ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:220: warning: [deprecation] createInstance(Context) in CookieSyncManager has been deprecated
+                CookieSyncManager.createInstance(Chan.getInstance());
+                                 ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:222: warning: [deprecation] CookieSyncManager in android.webkit has been deprecated
+                CookieSyncManager.getInstance().sync();
+                ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:222: warning: [deprecation] getInstance() in CookieSyncManager has been deprecated
+                CookieSyncManager.getInstance().sync();
+                                 ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BehaviourSettingsController.java:222: warning: [deprecation] sync() in CookieSyncManager has been deprecated
+                CookieSyncManager.getInstance().sync();
+                                               ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\BoardSetupController.java:186: warning: [deprecation] SOFT_INPUT_ADJUST_RESIZE in LayoutParams has been deprecated
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                                                              ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\ui\controller\ThemeSettingsController.java:86: warning: [deprecation] Board() in Board has been deprecated
+        dummyBoard = new Board();
+                     ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\utils\BitmapUtils.java:96: warning: [deprecation] WEBP in CompressFormat has been deprecated
+            if (compressFormat == Bitmap.CompressFormat.WEBP) {
+                                                       ^
+\Clover\Clover\app\src\main\java\org\otacoo\chan\utils\BitmapUtils.java:261: warning: [deprecation] WEBP in CompressFormat has been deprecated
+                return Bitmap.CompressFormat.WEBP;
+                                            ^

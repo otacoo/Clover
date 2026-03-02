@@ -22,15 +22,14 @@ import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteService;
 import org.otacoo.chan.utils.Logger;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 import javax.inject.Inject;
 
-public class SitesSetupPresenter implements Observer {
+public class SitesSetupPresenter implements SimpleObservable.SimpleObserver<Void> {
     private static final String TAG = "SitesSetupPresenter";
 
     private final SiteService siteService;
@@ -67,7 +66,7 @@ public class SitesSetupPresenter implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == sites) {
             sitesShown.clear();
             sitesShown.addAll(sites.getAllInOrder());

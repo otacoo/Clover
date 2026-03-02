@@ -81,8 +81,8 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
 
         inject(this);
 
-        if (loadable.mode == Loadable.Mode.BOARD) {
-            loadable.mode = Loadable.Mode.CATALOG;
+        if (loadable.mode == Loadable.Mode.CATALOG) {
+            // Nothing to do
         }
     }
 

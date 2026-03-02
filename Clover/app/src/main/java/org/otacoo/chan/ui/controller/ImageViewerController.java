@@ -47,6 +47,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.CheckBox;
@@ -659,17 +661,30 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
         isInImmersiveMode = true;
 
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
-
-        decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0 && isInImmersiveMode) {
-                showSystemUI();
-                handler.postDelayed(this::hideSystemUI, 2500);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Window window = getWindow();
+            window.setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
-        });
+        } else {
+            View decorView = getWindow().getDecorView();
+            //noinspection deprecation
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+            //noinspection deprecation
+            decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+                //noinspection deprecation
+                if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0 && isInImmersiveMode) {
+                    showSystemUI();
+                    handler.postDelayed(this::hideSystemUI, 2500);
+                }
+            });
+        }
 
         //setting this to 0 because GONE doesn't seem to work?
         ViewGroup.LayoutParams params = navigationController.getToolbar().getLayoutParams();
@@ -696,9 +711,20 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
         isInImmersiveMode = false;
 
-        View decorView = getWindow().getDecorView();
-        decorView.setOnSystemUiVisibilityChangeListener(null);
-        decorView.setSystemUiVisibility(0);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Window window = getWindow();
+            window.setDecorFitsSystemWindows(true);
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            }
+        } else {
+            View decorView = getWindow().getDecorView();
+            //noinspection deprecation
+            decorView.setOnSystemUiVisibilityChangeListener(null);
+            //noinspection deprecation
+            decorView.setSystemUiVisibility(0);
+        }
 
         //setting this to the toolbar height because VISIBLE doesn't seem to work?
         ViewGroup.LayoutParams params = navigationController.getToolbar().getLayoutParams();

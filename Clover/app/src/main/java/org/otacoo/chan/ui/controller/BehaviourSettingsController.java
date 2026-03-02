@@ -20,6 +20,7 @@ package org.otacoo.chan.ui.controller;
 import static org.otacoo.chan.Chan.injector;
 
 import android.content.Context;
+import android.os.Build;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.widget.Toast;
@@ -209,10 +210,17 @@ public class BehaviourSettingsController extends SettingsController {
 
     private void setupClearSavedCookiesSetting(SettingsGroup post) {
         post.add(new LinkSettingView(this, R.string.setting_clear_saved_cookies, 0, v -> {
-            // TODO: wait for Floens to come back and fix this.
-            CookieManager.getInstance().removeAllCookie();
-            CookieSyncManager.createInstance(Chan.getInstance());
-            CookieSyncManager.getInstance().sync();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                CookieManager.getInstance().removeAllCookies(null);
+                CookieManager.getInstance().flush();
+            } else {
+                //noinspection deprecation
+                CookieManager.getInstance().removeAllCookie();
+                //noinspection deprecation
+                CookieSyncManager.createInstance(Chan.getInstance());
+                //noinspection deprecation
+                CookieSyncManager.getInstance().sync();
+            }
             Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG)
                     .show();
         }));

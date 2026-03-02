@@ -19,14 +19,16 @@ package org.otacoo.chan.ui.helper;
 
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -82,7 +84,8 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
 
     private UpdateManager updateManager;
 
-    private ProgressDialog updateDownloadDialog;
+    private AlertDialog updateDownloadDialog;
+    private ProgressBar updateDownloadProgress;
 
     public VersionHandler(Context context, RuntimePermissionsHelper runtimePermissionsHelper) {
         this.context = context;
@@ -184,30 +187,40 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
     }
 
     private void createDownloadProgressDialog() {
-        updateDownloadDialog = new ProgressDialog(context);
-        updateDownloadDialog.setCancelable(false);
-        updateDownloadDialog.setTitle(R.string.update_install_downloading);
-        updateDownloadDialog.setMax(10000);
-        updateDownloadDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        updateDownloadDialog.setProgressNumberFormat("");
+        View view = LayoutInflater.from(context).inflate(R.layout.layout_update_progress, null);
+        updateDownloadProgress = view.findViewById(R.id.progress);
+
+        updateDownloadDialog = new AlertDialog.Builder(context)
+                .setTitle(R.string.update_install_downloading)
+                .setCancelable(false)
+                .setView(view)
+                .create();
         updateDownloadDialog.show();
     }
 
     @Override
     public void onUpdateDownloadProgress(long downloaded, long total) {
-        updateDownloadDialog.setProgress((int) (updateDownloadDialog.getMax() * (downloaded / (double) total)));
+        if (updateDownloadProgress != null) {
+            updateDownloadProgress.setProgress((int) (updateDownloadProgress.getMax() * (downloaded / (double) total)));
+        }
     }
 
     @Override
     public void onUpdateDownloadSuccess() {
-        updateDownloadDialog.dismiss();
-        updateDownloadDialog = null;
+        if (updateDownloadDialog != null) {
+            updateDownloadDialog.dismiss();
+            updateDownloadDialog = null;
+            updateDownloadProgress = null;
+        }
     }
 
     @Override
     public void onUpdateDownloadFailed() {
-        updateDownloadDialog.dismiss();
-        updateDownloadDialog = null;
+        if (updateDownloadDialog != null) {
+            updateDownloadDialog.dismiss();
+            updateDownloadDialog = null;
+            updateDownloadProgress = null;
+        }
         new AlertDialog.Builder(context)
                 .setTitle(R.string.update_install_download_failed)
                 .setPositiveButton(R.string.ok, null)

@@ -21,6 +21,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -34,7 +35,7 @@ import org.otacoo.chan.utils.AndroidUtils;
 public class GenericWebViewAuthenticationLayout extends WebView implements AuthenticationLayoutInterface {
     public static final int CHECK_INTERVAL = 500;
 
-    private final Handler handler = new Handler();
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean attachedToWindow = false;
 
     private Site site;

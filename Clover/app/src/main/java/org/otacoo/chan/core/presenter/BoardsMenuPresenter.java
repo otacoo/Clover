@@ -24,6 +24,7 @@ import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.repository.BoardRepository;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.ui.helper.BoardHelper;
+import org.otacoo.chan.utils.SimpleObservable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.Observer;
 
 import javax.inject.Inject;
 
-public class BoardsMenuPresenter implements Observer {
+public class BoardsMenuPresenter implements SimpleObservable.SimpleObserver<Void> {
     private Callback callback;
     private BoardRepository.SitesBoards allBoards;
 
@@ -72,7 +73,7 @@ public class BoardsMenuPresenter implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
+    public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == allBoards) {
             updateWithFilter();
         }
@@ -82,7 +83,7 @@ public class BoardsMenuPresenter implements Observer {
         items.update(this.allBoards.get(), filter);
     }
 
-    public static class Items extends Observable {
+    public static class Items extends SimpleObservable<Void> {
         public List<Item> items = new ArrayList<>();
         private int itemIdCounter = 1;
 
@@ -118,7 +119,6 @@ public class BoardsMenuPresenter implements Observer {
                 }
             }
 
-            setChanged();
             notifyObservers();
         }
 

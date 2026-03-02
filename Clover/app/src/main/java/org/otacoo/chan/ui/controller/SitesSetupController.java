@@ -84,8 +84,8 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
     ) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            int from = viewHolder.getAdapterPosition();
-            int to = target.getAdapterPosition();
+            int from = viewHolder.getBindingAdapterPosition();
+            int to = target.getBindingAdapterPosition();
 
             presenter.move(from, to);
 
