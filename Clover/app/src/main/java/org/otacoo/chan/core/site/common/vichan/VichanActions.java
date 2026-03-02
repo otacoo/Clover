@@ -100,6 +100,15 @@ public class VichanActions extends CommonSite.CommonActions {
         for (Map.Entry<String, String> e : fields.entrySet()) {
             call.parameter(e.getKey(), e.getValue());
         }
+
+        // Lainchan delay
+        if (site.config().name.equalsIgnoreCase("Lainchan")) {
+            try {
+                Thread.sleep(6000);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+        }
     }
 
     @Override
