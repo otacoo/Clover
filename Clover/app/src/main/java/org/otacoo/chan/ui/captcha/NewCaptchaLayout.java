@@ -110,13 +110,16 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private org.otacoo.chan.core.site.Site site;
     private String cachedUserAgent;
 
-    /** True when we served asset HTML from intercept (no #t-root; skip waitForCaptchaForm). */
-    private boolean lastResponseWasAsset;
-    /** When true, do not intercept the next captcha load so the WebView gets the native 4chan page (e.g. after cooldown). */
-    private boolean skipInterceptNextLoad;
+    /** True when an error overlay is showing, preventing any automated resets from clearing it. */
+    private volatile boolean showingOverlay;
 
     /** Retry state for extracting payload from the native captcha page without clobbering its DOM (needed for JS challenges). */
     private int nativePayloadRetryAttempts = 0;
+
+    /** Internal flag to distinguish between the WebView loading a web page vs. our local assets for UI elements. */
+    private volatile boolean lastResponseWasAsset;
+    /** Internal flag to skip OkHttp interception for the next load (e.g., when reloading with custom headers). */
+    private volatile boolean skipInterceptNextLoad;
 
     public NewCaptchaLayout(Context context) {
         super(context);
@@ -159,6 +162,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         setWebViewClient(createCaptchaWebViewClient());
         setBackgroundColor(getAttrColor(getContext(), R.attr.backcolor));
         addJavascriptInterface(new CaptchaInterface(), "CaptchaCallback");
+    }
+
+    private void onCaptchaResponse(String response) {
+        if (response == null || response.trim().isEmpty()) return;
+        Logger.i(TAG, "onCaptchaResponse: " + response);
+        maybeToast(response, false);
+        // #t-resp means we should not proceed to submission until the user has seen the message.
     }
 
     // Connects the layout to a board/thread and the completion callback
@@ -215,10 +225,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     public void reset() {
         reportedCompletion = false;
         
-        // Preserve active challenge if user returns to it before it expires.
-        if (showingActiveCaptcha) {
-            Logger.i(TAG, "reset: preserving active captcha challenge view");
-            maybeToast("Returning to active captcha session.", false);
+        // Preserve active challenge or error overlay if user returns to it.
+        if (showingActiveCaptcha || showingOverlay) {
+            Logger.i(TAG, "reset: preserving active captcha or overlay view");
+            maybeToast(showingOverlay ? "Returning to error details." : "Returning to active captcha session.", false);
             onCaptchaLoaded();
             return;
         }
@@ -261,6 +271,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     // Performs a full reload of the 4chan captcha endpoint
     private void hardReset(boolean includeCacheBuster, boolean includeTicket) {
         showingActiveCaptcha = false;
+        showingOverlay = false;
         reportedCompletion = false;
         nativePayloadRetryAttempts = 0;
         String ticketParam = (includeTicket && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
@@ -407,6 +418,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 "  (function pollResp() {" +
                 "    var el = document.getElementById('t-resp');" +
                 "    if (el && el.value) {" +
+                "      var val = el.value.trim();" +
+                "      if (val && !window.__lastTResp) {" +
+                "        window.__lastTResp = val;" +
+                "        try { CaptchaCallback.onCaptchaResponse(val); } catch(e) {}" +
+                "      } else if (val && val !== window.__lastTResp) {" +
+                "        window.__lastTResp = val;" +
+                "        try { CaptchaCallback.onCaptchaResponse(val); } catch(e) {}" +
+                "      }" +
                 "      var chall = document.getElementById('t-challenge') || {value:''};" +
                 "      CaptchaCallback.onCaptchaEntered(chall.value, el.value);" +
                 "    } else if (el) setTimeout(pollResp, 500);" +
@@ -555,16 +574,45 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Checks for submission errors on the post-reply page
     private void handlePostResult() {
-        evaluateJavascript("(function(){ var el = document.getElementById('errmsg'); return el ? el.innerText : ''; })()", result -> {
-            String msg = (result != null) ? result.replaceAll("^\"|\"$", "").trim() : "";
-            AndroidUtils.runOnUiThread(() -> {
-                if (!msg.isEmpty() && !"null".equals(msg)) {
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
-                    showOverlay(msg);
-                } else {
-                    hardReset(false, false);
-                }
-            });
+        evaluateJavascript("(function(){" +
+                "  var el = document.getElementById('errmsg');" +
+                "  var body = document.body ? document.body.innerText : '';" +
+                "  return JSON.stringify({ " +
+                "    msg: el ? el.innerText : ''," +
+                "    full: body" +
+                "  });" +
+                "})()", result -> {
+            try {
+                JSONObject res = new JSONObject(result != null ? result : "{}");
+                String msg = res.optString("msg").trim();
+                String full = res.optString("full").trim();
+
+                AndroidUtils.runOnUiThread(() -> {
+                    if (!msg.isEmpty() && !"null".equals(msg)) {
+                        Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                        showOverlay(msg);
+                    } else if (full.contains("Post successful")) {
+                        // Success - no reload needed here, callback handles it
+                        Logger.i(TAG, "Post successful detected on /post page");
+                    } else if (full.contains("Error") || full.contains("Verification") || full.contains("mistyped") || full.contains("Video Games")) {
+                        // Generic error detection fallback
+                        String display = "Post failed or verification error.";
+                        if (full.contains("Error:")) {
+                            int start = full.indexOf("Error");
+                            int end = Math.min(start + 120, full.length());
+                            display = full.substring(start, end).replace("\n", " ") + "...";
+                        }
+                        Toast.makeText(getContext(), display, Toast.LENGTH_LONG).show();
+                        showOverlay(display);
+                    } else {
+                        // Unrecognized state – reload captcha
+                        hardReset(false, false);
+                    }
+                });
+            } catch (Exception e) {
+                Logger.e(TAG, "handlePostResult parse failed", e);
+                hardReset(false, false);
+            }
         });
     }
 
@@ -685,10 +733,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
             // derive colours from theme attributes
             ThemeHelper.ColorPair tc = ThemeHelper.getThemeBackgroundForeground(getContext());
+            int accentCol = ThemeHelper.theme().accentColor.color;
+            String accentHex = String.format("#%06X", (0xFFFFFF & accentCol));
 
             return html.replace("__CLOVER_JSON__", json.replace("</script>", "<\\/script>"))
                     .replace("__C_BG__", tc.bgHex)
                     .replace("__C_FG__", tc.fgHex)
+                    .replace("__C_ACCENT__", accentHex)
                     .replace("__C_TIMER_SHADOW__", isDark ? "0 0 1px rgba(255,255,255,0.25)" : "0 1px 2px rgba(0,0,0,0.15)")
                     .replace("__C_LINK__", isDark ? "#b8b8b8" : "#1565c0")
                     .replace("__C_INPUT_BG__", isDark ? "#1e1e1e" : "#fff")
@@ -706,6 +757,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Injects a non-destructive overlay with a message and "Get Captcha" button
     private void showOverlay(String msg) {
+        showingOverlay = true;
+        showingActiveCaptcha = false;
+        
         boolean isDark = !ThemeHelper.theme().isLightTheme;
         ThemeHelper.ColorPair tc = ThemeHelper.getThemeBackgroundForeground(getContext());
         int baseBg = tc.bgInt;
@@ -717,17 +771,26 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         String btn = isDark ? "background:#333;color:#eee;border:1px solid #555;" : "background:#0066cc;color:#fff;border:none;";
         
         String displayMsg = msg;
-        if (msg.toLowerCase().contains("failed to load")) {
-            displayMsg = msg + " Tap to retry.";
+        boolean isError = false;
+        if (msg.toLowerCase().contains("failed to load") || msg.toLowerCase().contains("error") || msg.toLowerCase().contains("fail")) {
+            displayMsg = msg + (msg.toLowerCase().contains("retry") ? "" : " Tap to retry.");
+            isError = true;
+            post(() -> Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show());
         }
+
+        String errorHtml = isError ? "<div style=\"color:#e53935;font-weight:bold;margin-bottom:15px;font-size:16px;\">" + displayMsg.replace("'", "\\'") + "</div>" : "";
+        String titleHtml = isError ? "Tap to request a captcha." : displayMsg.replace("'", "\\'");
 
         String js = "(function(){" +
                 "  var ov = document.getElementById('clover-overlay') || document.createElement('div');" +
                 "  ov.id = 'clover-overlay';" +
                 "  ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:" + bg + ";color:" + fg + ";display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;padding:20px;box-sizing:border-box;';" +
-                "  ov.innerHTML = '<div>" + displayMsg.replace("'", "\\'") + "</div>" + ("<button id=\"gcb\" style=\"margin-top:20px;padding:10px 20px;border-radius:4px;" + btn + "\">Get Captcha</button><div style=\"margin-top:15px;font-size:12px;color:__C_LINK__;cursor:pointer;\" onclick=\"CaptchaCallback.onResetSession();\">Reset Session</div>") + "';" +
-                "  document.body.appendChild(ov);" +
+                "  ov.innerHTML = '" + errorHtml + "<div>" + titleHtml + "</div>" + 
+                ("<button id=\"gcb\" style=\"margin-top:20px;padding:10px 20px;border-radius:4px;" + btn + "\">Get Captcha</button>" +
+                "<div style=\"flex:1;\"></div>" +
+                "<div style=\"margin-top:30px;padding-bottom:20px;font-size:12px;color:__C_LINK__;cursor:pointer;opacity:0.8;\" onclick=\"CaptchaCallback.onResetSession();\">⚠️ Reset Session</div>") + "';" +
                 "  var b = document.getElementById('gcb'); if(b) b.onclick = function(){ CaptchaCallback.onRequestCaptcha(); };" +
+                "  document.body.appendChild(ov);" +
                 "})();";
         evaluateJavascript(js, null);
     }
@@ -927,6 +990,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         @JavascriptInterface
         public void onRequestCaptcha() {
             AndroidUtils.runOnUiThread(() -> NewCaptchaLayout.this.hardReset(false, true));
+        }
+
+        @JavascriptInterface
+        public void onCaptchaResponse(String r) {
+            AndroidUtils.runOnUiThread(() -> NewCaptchaLayout.this.onCaptchaResponse(r));
         }
 
         @JavascriptInterface

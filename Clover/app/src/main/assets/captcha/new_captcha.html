@@ -71,11 +71,16 @@
             padding: 10px 20px;
             margin-top: 18px;
             cursor: pointer;
-            background: __C_BTN_BG__;
-            color: __C_BTN_FG__;
-            border: 1px solid __C_BTN_BORDER__;
+            background: __C_ACCENT__;
+            color: #fff;
+            border: 1px solid rgba(0,0,0,0.1);
             border-radius: 6px;
             font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        #t-msg-btn:active, 
+        .t-msg-btn:active {
+            opacity: 0.8;
         }
         #t-msg-btn:disabled,
         .t-msg-btn:disabled {
@@ -142,6 +147,21 @@
             border-radius: 4px;
             overflow: hidden;
             background: __C_INPUT_BG__;
+            cursor: zoom-in;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 200;
+        }
+        #t-native-target-wrap.zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(3);
+            box-shadow: 0 0 100vmax rgba(0,0,0,0.8);
+            border: 1px solid #fff;
+            width: 100px;
+            height: 100px;
+            cursor: zoom-out;
         }
         #t-native-target-wrap img {
             width: 100%;
@@ -738,6 +758,13 @@ function buildFromJson(data) {
 function buildNativeTasksUI(data) {
     document.getElementById('t-stepped-ui').style.display = 'block';
     document.getElementById('t-single-ui').style.display = 'none';
+
+    var targetWrap = document.getElementById('t-native-target-wrap');
+    if (targetWrap) {
+        targetWrap.onclick = function() {
+            this.classList.toggle('zoomed');
+        };
+    }
 
     var tasks = data.tasks;
     var total = tasks.length;
