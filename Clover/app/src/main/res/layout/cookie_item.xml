@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Clover - 4chan browser https://github.com/Floens/Clover/
+Copyright (C) 2014  Floens
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="?backcolor"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="1dp">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/cookie_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textColor="?text_color_primary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/cookie_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?text_color_secondary"
+            android:textSize="13sp"
+            android:paddingTop="4dp" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/delete_cookie"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
+        android:src="@drawable/ic_clear_black_24dp"
+        android:tint="?text_color_secondary"
+        android:background="?android:selectableItemBackgroundBorderless"
+        android:contentDescription="Delete cookie" />
+
+</LinearLayout>
