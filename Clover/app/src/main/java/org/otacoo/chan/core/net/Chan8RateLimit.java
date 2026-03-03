@@ -19,7 +19,7 @@ package org.otacoo.chan.core.net;
 
 import java.util.concurrent.Semaphore;
 
-/** Shared rate-limiter and domain-failover helper for 8chan.moe / 8chan.st. */
+/** Shared rate-limiter and domain-failover helper for 8chan.moe / 8chan.st. / 8chan.cc */
 public final class Chan8RateLimit {
 
     private static final int MAX_CONCURRENT = 8;
@@ -31,7 +31,7 @@ public final class Chan8RateLimit {
     private Chan8RateLimit() {}
 
     public static boolean is8chan(String url) {
-        return url.contains("8chan.moe") || url.contains("8chan.st");
+        return url.contains("8chan.moe") || url.contains("8chan.st") || url.contains("8chan.cc"); 
     }
 
     public static boolean isMedia(String url) {
@@ -52,6 +52,7 @@ public final class Chan8RateLimit {
         if (url.contains(domain)) return url;
         if (url.contains("8chan.moe")) return url.replace("8chan.moe", domain);
         if (url.contains("8chan.st"))  return url.replace("8chan.st",  domain);
+        if (url.contains("8chan.cc"))  return url.replace("8chan.cc",  domain);
         return url;
     }
 
