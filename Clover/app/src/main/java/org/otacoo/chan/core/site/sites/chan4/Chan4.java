@@ -207,6 +207,11 @@ public class Chan4 extends SiteBase {
         }
 
         @Override
+        public HttpUrl root() {
+            return b;
+        }
+
+        @Override
         public HttpUrl thread(Board board, Loadable loadable) {
             return a.newBuilder()
                     .addPathSegment(board.code)

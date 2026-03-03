@@ -33,6 +33,8 @@ import okhttp3.HttpUrl;
 public interface SiteEndpoints {
     HttpUrl catalog(Board board);
 
+    HttpUrl root();
+
     HttpUrl thread(Board board, Loadable loadable);
 
     HttpUrl imageUrl(Post.Builder post, Map<String, String> arg);
