@@ -533,7 +533,6 @@ public class WatchManager {
                     break;
             }
 
-            Logger.d(TAG, "Setting interval type from " + currentInterval.name() + " to " + intervalType.name());
             // Logger.d(TAG, "Setting interval type from " + currentInterval.name() + " to " + intervalType.name());
             currentInterval = intervalType;
 

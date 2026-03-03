@@ -234,7 +234,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
     }
 
     private ChanLoaderRequest getData() {
-        Logger.d(TAG, "Requested " + loadable.boardCode + ", " + loadable.no);
+        // Logger.d(TAG, "Requested " + loadable.boardCode + ", " + loadable.no);
 
         List<Post> cached = thread == null ? new ArrayList<Post>() : thread.posts;
 
