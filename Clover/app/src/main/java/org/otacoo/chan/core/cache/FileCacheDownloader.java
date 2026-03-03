@@ -132,12 +132,10 @@ public class FileCacheDownloader implements Runnable {
 
     @AnyThread
     private void log(String message) {
-        Logger.d(TAG, logPrefix() + message);
     }
 
     @AnyThread
     private void log(String message, Exception e) {
-        Logger.e(TAG, logPrefix() + message, e);
     }
 
     private String logPrefix() {
