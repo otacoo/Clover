@@ -114,9 +114,7 @@ public class VichanActions extends CommonSite.CommonActions {
             }
         }
 
-        //Logger.d(TAG, "prepare: Selected commentField=" + (selectedCommentField != null ? selectedCommentField : "(not-detected)")
-            + ", fileField=" + fileFieldName
-            + ", fileInsertAfter=" + (postFormData.fileInsertAfterField != null ? postFormData.fileInsertAfterField : "(end)"));
+        //Logger.d(TAG, "prepare: Selected commentField=" + (selectedCommentField != null ? selectedCommentField : "(not-detected)") + ", fileField=" + fileFieldName + ", fileInsertAfter=" + (postFormData.fileInsertAfterField != null ? postFormData.fileInsertAfterField : "(end)"));
         if (!filesAdded) {
             addFiles(call, reply, fileFieldName);
         }
