@@ -196,6 +196,7 @@ public class ChanSettings {
     public static final BooleanSetting neverHideToolbar;
     public static final BooleanSetting toolbarBottom;
     public static final BooleanSetting controllerSwipeable;
+    public static final BooleanSetting pinnedSearchesEnabled;
 
     public static final BooleanSetting videoDefaultMuted;
     public static final BooleanSetting videoAutoLoop;
@@ -224,6 +225,8 @@ public class ChanSettings {
     public static final LongSetting updateCheckTime;
     public static final LongSetting updateCheckInterval;
     public static final BooleanSetting autoCheckUpdates;
+
+    public static final StringSetting pinnedSearches;
 
     public static final BooleanSetting crashReporting;
     public static final BooleanSetting reencodeHintShown;
@@ -295,6 +298,9 @@ public class ChanSettings {
         neverHideToolbar = new BooleanSetting(p, "preference_never_hide_toolbar", false);
         toolbarBottom = new BooleanSetting(p, "preference_toolbar_bottom", false);
         controllerSwipeable = new BooleanSetting(p, "preference_controller_swipeable", true);
+        pinnedSearchesEnabled = new BooleanSetting(p, "preference_pinned_searches_enabled", false);
+        pinnedSearchesEnabled.addCallback((setting, value) ->
+                EventBus.getDefault().post(new SettingChanged<>(pinnedSearchesEnabled)));
 //        saveBoardFolder = new BooleanSetting(p, "preference_save_subboard", false);
         videoDefaultMuted = new BooleanSetting(p, "preference_video_default_muted", true);
         videoAutoLoop = new BooleanSetting(p, "preference_video_loop", true);
@@ -333,6 +339,7 @@ public class ChanSettings {
         updateCheckInterval = new LongSetting(p, "update_check_interval", UpdateManager.DEFAULT_UPDATE_CHECK_INTERVAL_MS);
         autoCheckUpdates = new BooleanSetting(p, "preference_auto_check_updates", false);
 
+        pinnedSearches = new StringSetting(p, "preference_pinned_searches", "[]");
         crashReporting = new BooleanSetting(p, "preference_crash_reporting", true);
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
@@ -408,6 +415,22 @@ public class ChanSettings {
         customThemes.set(new Gson().toJson(themes));
     }
 
+    public static List<PinnedSearch> getPinnedSearches() {
+        try {
+            Type type = new TypeToken<List<PinnedSearch>>() {}.getType();
+            List<PinnedSearch> list = new Gson().fromJson(pinnedSearches.get(), type);
+            if (list == null) return new ArrayList<>();
+            return list;
+        } catch (Exception e) {
+            Logger.e("ChanSettings", "Error loading pinned searches", e);
+            return new ArrayList<>();
+        }
+    }
+
+    public static void savePinnedSearches(List<PinnedSearch> searches) {
+        pinnedSearches.set(new Gson().toJson(searches));
+    }
+
     /**
      * Returns a {@link Proxy} if a proxy is enabled, <tt>null</tt> otherwise.
      *
@@ -461,6 +484,31 @@ public class ChanSettings {
             this.baseTheme = baseTheme;
             this.isLightTheme = isLightTheme;
             this.colorOverrides = colorOverrides;
+        }
+    }
+
+    public static class PinnedSearch {
+        public String boardCode;
+        public String searchTerm;
+
+        public PinnedSearch(String boardCode, String searchTerm) {
+            this.boardCode = boardCode;
+            this.searchTerm = searchTerm;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PinnedSearch that = (PinnedSearch) o;
+            return TextUtils.equals(boardCode, that.boardCode) && TextUtils.equals(searchTerm, that.searchTerm);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = boardCode != null ? boardCode.hashCode() : 0;
+            result = 31 * result + (searchTerm != null ? searchTerm.hashCode() : 0);
+            return result;
         }
     }
 

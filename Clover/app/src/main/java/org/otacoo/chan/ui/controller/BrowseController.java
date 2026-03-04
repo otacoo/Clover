@@ -353,7 +353,12 @@ public class BrowseController extends ThreadController implements
 
     @Override
     public void showThread(Loadable threadLoadable) {
-        showThread(threadLoadable, true);
+        if (threadLoadable.isCatalogMode()) {
+            setBoard(threadLoadable.board);
+            loadBoard(threadLoadable);
+        } else {
+            showThread(threadLoadable, true);
+        }
     }
 
     // Creates or updates the target ThreadViewController

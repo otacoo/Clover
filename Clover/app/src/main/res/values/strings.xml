@@ -28,6 +28,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <string name="undo">Undo</string>
     <string name="save">Save</string>
 
+    <string name="pin_search_title">Pin Catalog Search</string>
+    <string name="pin_search_term_hint">Search term (e.g. vidya)</string>
+
     <string name="mark_as_my_post">Mark as my post</string>
     <string name="unmark_as_my_post">Forget post</string>
 
@@ -732,4 +735,7 @@ Don't have a 4chan Pass?<br>
     <string name="forward_15_seconds">Forward 15 seconds</string>
     <string name="rewind_5_seconds">Rewind 5 seconds</string>
     <string name="_play_pause">Play or pause the video</string>
+
+    <string name="setting_pinned_searches">Enable pinned searches</string>
+    <string name="setting_pinned_searches_description">Adds a button to the bookmarks drawer to pin catalog searches</string>
 </resources>

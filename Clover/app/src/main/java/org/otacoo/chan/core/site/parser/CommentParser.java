@@ -21,6 +21,7 @@ import static org.otacoo.chan.core.site.parser.StyleRule.tagRule;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.StyleSpan;
@@ -362,6 +363,11 @@ public class CommentParser {
                 if (catalogMatcher.find()) {
                     String board = catalogMatcher.group(1);
                     String query = catalogMatcher.group(2); // may be null
+                    if (query != null && query.contains("%")) {
+                        try {
+                            query = Uri.decode(query);
+                        } catch (Exception ignored) {}
+                    }
                     t = PostLinkable.Type.BOARD;
                     value = new PostLinkable.BoardLink(board, query, scheme, host);
                 } else if (boardMatcher.matches()) {

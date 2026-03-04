@@ -18,19 +18,28 @@
 package org.otacoo.chan.ui.controller;
 
 import static org.otacoo.chan.Chan.inject;
+import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -44,11 +53,17 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.controller.NavigationController;
 import org.otacoo.chan.core.manager.WatchManager;
+import org.otacoo.chan.core.manager.BoardManager;
+import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.model.orm.Pin;
+import org.otacoo.chan.core.model.orm.Board;
+import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.adapter.DrawerAdapter;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -64,6 +79,12 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
 
     @Inject
     WatchManager watchManager;
+
+    @Inject
+    BoardManager boardManager;
+
+    @Inject
+    SiteRepository siteRepository;
 
     public DrawerController(Context context) {
         super(context);
@@ -94,6 +115,7 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         drawerAdapter = new DrawerAdapter(this);
         recyclerView.setAdapter(drawerAdapter);
 
+        drawerAdapter.setPinnedSearches(ChanSettings.getPinnedSearches());
         drawerAdapter.onPinsChanged(watchManager.getAllPins());
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(drawerAdapter.getItemTouchHelperCallback());
@@ -140,6 +162,46 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         openPin(pin);
     }
 
+    @Override
+    public void onPinnedSearchClicked(ChanSettings.PinnedSearch search) {
+        drawerLayout.post(() -> drawerLayout.post(() -> drawerLayout.closeDrawer(drawer)));
+
+        Site site = siteRepository.all().getAll().get(0); // Get the first available site dynamically
+        Board board = boardManager.getBoard(site, search.boardCode);
+        if (board == null) {
+            // If not found, try to create it (site 0 is 4chan)
+            board = site.board(search.boardCode);
+        }
+        
+        if (board != null) {
+            Loadable loadable = Loadable.forCatalog(board);
+            loadable.searchQuery = Uri.decode(search.searchTerm);
+
+            Controller top = getTop();
+            if (top instanceof DoubleNavigationController) {
+                DoubleNavigationController dnc = (DoubleNavigationController) top;
+                if (dnc.getLeftController() instanceof BrowseController) {
+                    BrowseController bc = (BrowseController) dnc.getLeftController();
+                    bc.setBoard(board);
+                    bc.loadBoard(loadable);
+                    dnc.switchToController(true);
+                }
+            } else if (top instanceof ToolbarNavigationController) {
+                ToolbarNavigationController tnc = (ToolbarNavigationController) top;
+                if (tnc.getTop() instanceof BrowseController) {
+                    BrowseController bc = (BrowseController) tnc.getTop();
+                    bc.setBoard(board);
+                    bc.loadBoard(loadable);
+                } else {
+                    BrowseController browseController = new BrowseController(context);
+                    tnc.pushController(browseController);
+                    browseController.setBoard(board);
+                    browseController.loadBoard(loadable);
+                }
+            }
+        }
+    }
+
     public void openPin(Pin pin) {
         ThreadController threadController = getTopThreadController();
         if (threadController != null) {
@@ -175,7 +237,101 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
                 fixSnackbarText(context, snackbar);
                 snackbar.show();
             }
+        } else if (headerAction == DrawerAdapter.HeaderAction.ADD) {
+            showAddSearchPinDialog();
         }
+    }
+
+    private void showAddSearchPinDialog() {
+        LinearLayout wrap = new LinearLayout(context);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setPadding(dp(16), dp(16), dp(16), 0);
+
+        final Spinner boardSpinner = new Spinner(context);
+        List<Site> sites = siteRepository.all().getAll();
+        if (sites.isEmpty()) return;
+
+        List<Board> boards = new ArrayList<>();
+        for (Site site : sites) {
+            String siteName = site.name().toLowerCase();
+            if (siteName.contains("sushichan") || siteName.contains("lainchan")) {
+                continue;
+            }
+
+            List<Board> siteSaved = boardManager.getSiteSavedBoards(site);
+            if (!siteSaved.isEmpty()) {
+                boards.addAll(siteSaved);
+            } else {
+                boards.addAll(boardManager.getSiteBoards(site));
+            }
+        }
+
+        final List<Board> finalBoards = boards;
+        List<String> boardNames = new ArrayList<>();
+        for (Board b : finalBoards) {
+            String siteName = b.site != null ? b.site.name() : "Unknown";
+            boardNames.add("[" + siteName + "] /" + b.code + "/ - " + b.name);
+        }
+
+        int textColor = getAttrColor(context, R.attr.text_color_primary);
+        int backColor = getAttrColor(context, R.attr.backcolor);
+
+        wrap.setBackgroundColor(backColor);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, boardNames) {
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(textColor);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                view.setTextColor(textColor);
+                view.setBackgroundColor(backColor);
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        boardSpinner.setAdapter(adapter);
+        wrap.addView(boardSpinner, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        final EditText termInput = new EditText(context);
+        termInput.setSingleLine();
+        termInput.setHint(R.string.pin_search_term_hint);
+        termInput.setTextColor(textColor);
+        termInput.setHintTextColor(textColor & 0x88ffffff);
+        termInput.setBackgroundTintList(ColorStateList.valueOf(getAttrColor(context, R.attr.colorAccent)));
+        wrap.addView(termInput, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        AlertDialog dialog = new AlertDialog.Builder(context)
+                .setPositiveButton(R.string.add, (d, which) -> {
+                    int selectedPos = boardSpinner.getSelectedItemPosition();
+                    if (selectedPos < 0 || selectedPos >= finalBoards.size()) return;
+
+                    String boardCode = finalBoards.get(selectedPos).code;
+                    String term = termInput.getText().toString().trim();
+
+                    if (!TextUtils.isEmpty(boardCode) && !TextUtils.isEmpty(term)) {
+                        String encodedTerm = Uri.encode(term);
+                        List<ChanSettings.PinnedSearch> searches = ChanSettings.getPinnedSearches();
+                        searches.add(0, new ChanSettings.PinnedSearch(boardCode, encodedTerm));
+                        ChanSettings.savePinnedSearches(searches);
+                        drawerAdapter.setPinnedSearches(searches);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .setTitle(R.string.pin_search_title)
+                .setView(wrap)
+                .create();
+
+        AndroidUtils.requestKeyboardFocus(dialog, termInput);
+        dialog.show();
+
+        dialog.getWindow().getDecorView().setBackgroundColor(backColor);
     }
 
     @Override
@@ -253,6 +409,12 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
     public void onEvent(WatchManager.PinChangedMessage message) {
         drawerAdapter.onPinChanged(recyclerView, message.pin);
         updateBadge();
+    }
+
+    public void onEvent(ChanSettings.SettingChanged<?> message) {
+        if (message.setting == ChanSettings.pinnedSearchesEnabled) {
+            drawerAdapter.notifyDataSetChanged();
+        }
     }
 
     public void setDrawerEnabled(boolean enabled) {

@@ -25,6 +25,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
+import android.net.Uri;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -50,19 +51,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
 public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public enum HeaderAction {
-        CLEAR, CLEAR_ALL
+        CLEAR, CLEAR_ALL, ADD
     }
 
     private static final int PIN_OFFSET = 2;
 
     private static final int TYPE_SETTINGS = 0;
-    private static final int TYPE_HEADER = 1;
-    private static final int TYPE_PIN = 2;
+    private static final int TYPE_SEARCH_PIN = 1;
+    private static final int TYPE_DIVIDER = 2;
+    private static final int TYPE_HEADER = 3;
+    private static final int TYPE_PIN = 4;
 
     private static final Comparator<Pin> SORT_PINS = new Comparator<Pin>() {
         @Override
@@ -76,6 +80,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private final Callback callback;
     private List<Pin> pins = new ArrayList<>();
+    private List<ChanSettings.PinnedSearch> pinnedSearches = new ArrayList<>();
     private Pin highlighted;
 
     public DrawerAdapter(Callback callback) {
@@ -88,11 +93,18 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         this.highlighted = highlighted;
     }
 
+    public void setPinnedSearches(List<ChanSettings.PinnedSearch> searches) {
+        this.pinnedSearches.clear();
+        this.pinnedSearches.addAll(searches);
+        notifyDataSetChanged();
+    }
+
     public ItemTouchHelper.Callback getItemTouchHelperCallback() {
         return new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                boolean pin = getItemViewType(viewHolder.getBindingAdapterPosition()) == TYPE_PIN;
+                int type = getItemViewType(viewHolder.getBindingAdapterPosition());
+                boolean pin = type == TYPE_PIN || type == TYPE_SEARCH_PIN;
                 int dragFlags = pin ? ItemTouchHelper.UP | ItemTouchHelper.DOWN : 0;
                 int swipeFlags = pin ? ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT : 0;
 
@@ -103,24 +115,59 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 int from = viewHolder.getBindingAdapterPosition();
                 int to = target.getBindingAdapterPosition();
+                int fromType = getItemViewType(from);
+                int toType = getItemViewType(to);
 
-                if (getItemViewType(to) == TYPE_PIN) {
-                    Pin item = pins.remove(from - PIN_OFFSET);
-                    pins.add(to - PIN_OFFSET, item);
+                if (fromType == TYPE_PIN && toType == TYPE_PIN) {
+                    int fromIndex = from - getPinOffset();
+                    int toIndex = to - getPinOffset();
+                    Pin item = pins.remove(fromIndex);
+                    pins.add(toIndex, item);
                     notifyItemMoved(from, to);
                     applyOrder();
                     return true;
-                } else {
-                    return false;
+                } else if (fromType == TYPE_SEARCH_PIN && toType == TYPE_SEARCH_PIN) {
+                    int fromIndex = from - 2;
+                    int toIndex = to - 2;
+                    ChanSettings.PinnedSearch item = pinnedSearches.remove(fromIndex);
+                    pinnedSearches.add(toIndex, item);
+                    notifyItemMoved(from, to);
+                    ChanSettings.savePinnedSearches(pinnedSearches);
+                    return true;
                 }
+                return false;
             }
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                // Will call #onPinRemoved, and remove the pin from pins
-                callback.onPinRemoved(pins.get(viewHolder.getBindingAdapterPosition() - PIN_OFFSET));
+                int pos = viewHolder.getBindingAdapterPosition();
+                int type = getItemViewType(pos);
+                if (type == TYPE_PIN) {
+                    callback.onPinRemoved(pins.get(pos - getPinOffset()));
+                } else if (type == TYPE_SEARCH_PIN) {
+                    pinnedSearches.remove(pos - 2);
+                    ChanSettings.savePinnedSearches(pinnedSearches);
+                    notifyItemRemoved(pos);
+                    if (pinnedSearches.isEmpty()) {
+                        notifyDataSetChanged(); // Remove divider if it was the last search pin
+                    }
+                }
             }
         };
+    }
+
+    private int getPinOffset() {
+        int offset = 1; // TYPE_SETTINGS
+        offset += 1; // TYPE_HEADER
+        if (showPinnedSearches() && !pinnedSearches.isEmpty()) {
+            offset += pinnedSearches.size();
+            offset += 1; // TYPE_DIVIDER
+        }
+        return offset;
+    }
+
+    private boolean showPinnedSearches() {
+        return ChanSettings.pinnedSearchesEnabled.get();
     }
 
     @Override
@@ -130,6 +177,10 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 return new SettingsHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_settings, parent, false));
             case TYPE_HEADER:
                 return new HeaderHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_header, parent, false));
+            case TYPE_SEARCH_PIN:
+                return new SearchPinViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_pin, parent, false));
+            case TYPE_DIVIDER:
+                return new DividerHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.drawer_divider, parent, false));
             case TYPE_PIN:
                 return new PinViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_pin, parent, false));
         }
@@ -149,46 +200,94 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 HeaderHolder headerHolder = (HeaderHolder) holder;
                 headerHolder.text.setText(R.string.drawer_pinned);
                 theme().clearDrawable.apply(headerHolder.clear);
+                headerHolder.add.setVisibility(showPinnedSearches() ? View.VISIBLE : View.GONE);
+                theme().listAddDrawable.apply(headerHolder.add);
 
                 break;
+            case TYPE_SEARCH_PIN:
+                SearchPinViewHolder searchPinHolder = (SearchPinViewHolder) holder;
+                int searchIndex = position - 2;
+                if (searchIndex >= 0 && searchIndex < pinnedSearches.size()) {
+                    ChanSettings.PinnedSearch search = pinnedSearches.get(searchIndex); // 0=Settings, 1=Header
+                    String displayTerm = Uri.decode(search.searchTerm);
+                    searchPinHolder.textView.setText(">>>/" + search.boardCode + "/" + displayTerm);
+                    searchPinHolder.image.setVisibility(View.VISIBLE);
+                    searchPinHolder.image.setCircular(true);
+                    searchPinHolder.image.setImageDrawable(null);
+
+                    String label = "";
+                    if (displayTerm != null && displayTerm.length() > 0) {
+                        label = displayTerm.substring(0, Math.min(displayTerm.length(), 3)).toLowerCase(Locale.ROOT);
+                    } else {
+                        label = search.boardCode;
+                    }
+                    searchPinHolder.image.setLabelText(label);
+
+                    searchPinHolder.watchCountText.setVisibility(View.GONE);
+                }
+                break;
+            case TYPE_DIVIDER:
+                break;
             case TYPE_PIN:
-                final Pin pin = pins.get(position - PIN_OFFSET);
-                PinViewHolder pinHolder = (PinViewHolder) holder;
-                updatePinViewHolder(pinHolder, pin);
+                int pinIndex = position - getPinOffset();
+                if (pinIndex >= 0 && pinIndex < pins.size()) {
+                    final Pin pin = pins.get(pinIndex);
+                    PinViewHolder pinHolder = (PinViewHolder) holder;
+                    updatePinViewHolder(pinHolder, pin);
+                }
+                break;
         }
     }
 
     @Override
     public int getItemCount() {
-        return pins.size() + PIN_OFFSET;
+        int count = 1; // SETTINGS
+        count += 1; // HEADER
+        if (showPinnedSearches() && !pinnedSearches.isEmpty()) {
+            count += pinnedSearches.size();
+            count += 1; // DIVIDER
+        }
+        count += pins.size();
+        return count;
     }
 
     @Override
     public long getItemId(int position) {
-        position -= PIN_OFFSET;
-        if (position >= 0 && position < pins.size()) {
-            return pins.get(position).id + 10;
-        } else {
-            return position;
+        int type = getItemViewType(position);
+        if (type == TYPE_PIN) {
+            int index = position - getPinOffset();
+            if (index >= 0 && index < pins.size()) {
+                return pins.get(index).id + 1000;
+            }
+        } else if (type == TYPE_SEARCH_PIN) {
+            int index = position - 2;
+            if (index >= 0 && index < pinnedSearches.size()) {
+                return pinnedSearches.get(index).hashCode();
+            }
         }
+        return position;
     }
 
     @Override
     public int getItemViewType(int position) {
-        switch (position) {
-            case 0:
-                return TYPE_SETTINGS;
-            case 1:
-                return TYPE_HEADER;
-            default:
-                return TYPE_PIN;
+        if (position == 0) return TYPE_SETTINGS;
+        if (position == 1) return TYPE_HEADER;
+        int current = 2; // SETTINGS + HEADER
+        if (showPinnedSearches() && !pinnedSearches.isEmpty()) {
+            if (position < current + pinnedSearches.size()) {
+                return TYPE_SEARCH_PIN;
+            }
+            current += pinnedSearches.size();
+            if (position == current) return TYPE_DIVIDER;
+            current += 1;
         }
+        return TYPE_PIN;
     }
 
     public void onPinsChanged(List<Pin> pins) {
         this.pins.clear();
         this.pins.addAll(pins);
-        Collections.sort(pins, SORT_PINS);
+        Collections.sort(this.pins, SORT_PINS);
         notifyDataSetChanged();
     }
 
@@ -205,15 +304,18 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
 
     public void onPinChanged(RecyclerView recyclerView, Pin pin) {
-        PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(pins.indexOf(pin) + PIN_OFFSET);
-        if (holder != null) {
-            updatePinViewHolder(holder, pin);
+        int index = pins.indexOf(pin);
+        if (index != -1) {
+            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(index + getPinOffset());
+            if (holder != null) {
+                updatePinViewHolder(holder, pin);
+            }
         }
     }
 
     public void updateHighlighted(RecyclerView recyclerView) {
         for (int i = 0; i < pins.size(); i++) {
-            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(i + PIN_OFFSET);
+            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(i + getPinOffset());
             if (holder != null) {
                 updatePinViewHolder(holder, pins.get(i));
             }
@@ -221,7 +323,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
 
     private void updatePinViewHolder(PinViewHolder holder, Pin pin) {
-        CharSequence text = pin.loadable.title;
+        CharSequence text = pin.loadable == null ? "" : pin.loadable.title;
         if (pin.isError) {
             text = TextUtils.concat(PostHelper.addIcon(PostHelper.trashIcon, sp(14 + 2)), text);
         } else if (pin.archived) {
@@ -271,6 +373,27 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
+    private class SearchPinViewHolder extends RecyclerView.ViewHolder {
+        private ThumbnailView image;
+        private TextView textView;
+        private TextView watchCountText;
+
+        private SearchPinViewHolder(View itemView) {
+            super(itemView);
+            image = itemView.findViewById(R.id.thumb);
+            textView = itemView.findViewById(R.id.text);
+            textView.setTypeface(ROBOTO_MEDIUM);
+            watchCountText = itemView.findViewById(R.id.watch_count);
+
+            itemView.setOnClickListener(v -> {
+                int pos = getBindingAdapterPosition();
+                if (pos >= 2 && pos < 2 + pinnedSearches.size()) {
+                    callback.onPinnedSearchClicked(pinnedSearches.get(pos - 2));
+                }
+            });
+        }
+    }
+
     private class PinViewHolder extends RecyclerView.ViewHolder {
         private boolean highlighted;
         private ThumbnailView image;
@@ -291,9 +414,10 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
-                    if (pos >= 0 && pos < pins.size()) {
-                        callback.onPinClicked(pins.get(pos));
+                    int pos = getBindingAdapterPosition();
+                    int offset = getPinOffset();
+                    if (pos >= offset && pos < offset + pins.size()) {
+                        callback.onPinClicked(pins.get(pos - offset));
                     }
                 }
             });
@@ -301,9 +425,10 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             /*itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
-                    if (pos >= 0 && pos < pins.size()) {
-                        callback.onPinLongClicked(pins.get(pos));
+                    int pos = getBindingAdapterPosition();
+                    int offset = getPinOffset();
+                    if (pos >= offset && pos < offset + pins.size()) {
+                        callback.onPinLongClicked(pins.get(pos - offset));
                     }
 
                     return true;
@@ -313,9 +438,10 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             watchCountText.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getBindingAdapterPosition() - PIN_OFFSET;
-                    if (pos >= 0 && pos < pins.size()) {
-                        callback.onWatchCountClicked(pins.get(pos));
+                    int pos = getBindingAdapterPosition();
+                    int offset = getPinOffset();
+                    if (pos >= offset && pos < offset + pins.size()) {
+                        callback.onWatchCountClicked(pins.get(pos - offset));
                     }
                 }
             });
@@ -325,6 +451,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public class HeaderHolder extends RecyclerView.ViewHolder {
         private TextView text;
         private ImageView clear;
+        private ImageView add;
 
         private HeaderHolder(View itemView) {
             super(itemView);
@@ -332,6 +459,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             text.setTypeface(ROBOTO_MEDIUM);
             clear = itemView.findViewById(R.id.clear);
             setRoundItemBackground(clear);
+            add = itemView.findViewById(R.id.add);
+            setRoundItemBackground(add);
+
             clear.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -345,6 +475,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     return true;
                 }
             });
+            add.setOnClickListener(v -> callback.onHeaderClicked(HeaderHolder.this, HeaderAction.ADD));
         }
     }
 
@@ -397,6 +528,8 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public interface Callback {
         void onPinClicked(Pin pin);
+
+        void onPinnedSearchClicked(ChanSettings.PinnedSearch search);
 
         void onWatchCountClicked(Pin pin);
 

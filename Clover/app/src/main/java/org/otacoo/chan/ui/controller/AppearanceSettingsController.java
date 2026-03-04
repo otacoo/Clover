@@ -98,6 +98,11 @@ public class AppearanceSettingsController extends SettingsController {
                     R.string.setting_enable_top_bottom_fab,
                     R.string.setting_enable_top_bottom_fab_description)));
 
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
+                    ChanSettings.pinnedSearchesEnabled,
+                    R.string.setting_pinned_searches,
+                    R.string.setting_pinned_searches_description)));
+
             requiresUiRefresh.add(layout.add(new BooleanSettingView(this,
                     ChanSettings.accessiblePostInfo, R.string.setting_enable_accessible_post_info,
                     R.string.setting_enable_accessible_post_info_description)));

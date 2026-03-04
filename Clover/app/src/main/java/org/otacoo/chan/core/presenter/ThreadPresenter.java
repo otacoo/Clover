@@ -122,9 +122,9 @@ public class ThreadPresenter implements
             }
 
             // Reset search state so a catalog search filter doesn't bleed into threads
-            searchOpen = false;
-            searchQuery = null;
-            threadPresenterCallback.showSearch(false);
+            searchOpen = !TextUtils.isEmpty(loadable.searchQuery);
+            searchQuery = loadable.searchQuery;
+            threadPresenterCallback.showSearch(searchOpen);
 
             Pin pin = watchManager.findPinByLoadable(loadable);
             // TODO this isn't true anymore, because all loadables come from one location.
@@ -628,7 +628,15 @@ public class ThreadPresenter implements
                         .get(Loadable.forCatalog(board));
                 // Carry the catalog search term (e.g. "sdg" from >>>/aco/sdg) so the
                 // destination board automatically applies the search on arrival.
-                catalogLoadable.searchQuery = boardLink.searchQuery;
+                // Decoded to match ChanSettings.PinnedSearch logic in DrawerController.
+                String query = boardLink.searchQuery;
+                if (query != null && query.contains("%")) {
+                    try {
+                        query = android.net.Uri.decode(query);
+                    } catch (Exception ignored) {}
+                }
+                catalogLoadable.searchQuery = query;
+
                 threadPresenterCallback.showThread(catalogLoadable);
             } else {
                 String fallbackUrl = boardLink.originalScheme + "://"
