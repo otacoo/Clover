@@ -272,12 +272,16 @@ public abstract class ThreadController extends Controller implements
         if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
             title = site.name() + " Verification";
         }
-        
+
+        // Don't stack duplicate verification screens.
+        if (navigationController != null
+                && navigationController.getTop() instanceof EmailVerificationController) {
+            return;
+        }
+
         EmailVerificationController c = new EmailVerificationController(context, url, title);
         if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
-            c.setRequiredCookies("TOS", "POW_TOKEN"); 
-        }
-        
+            c.setRequiredCookies("POW_ID", "POW_TOKEN", "TOS");        }
         if (navigationController != null) {
             navigationController.pushController(c);
         } else if (doubleNavigationController != null) {
