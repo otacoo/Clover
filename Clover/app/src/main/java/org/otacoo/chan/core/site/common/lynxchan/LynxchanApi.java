@@ -39,32 +39,39 @@ public class LynxchanApi extends CommonSite.CommonApi {
         opBuilder.opId(0);
         opBuilder.id(queue.getLoadable().no);
         opBuilder.setUnixTimestampSeconds(0);
-        
+
         queue.setOp(opBuilder);
-        
+
         boolean opAdded = false;
 
         reader.beginObject();
+        boolean opMarkdownHandled = false;
         while (reader.hasNext()) {
             String key = reader.nextName();
-            if (key.endsWith("Posts") || key.equals("posts")) {
-                // OP is added after reading all its fields
+            // Lynxchan thread JSON: OP fields are at the top level,
+            // reply posts are in the "posts" array.
+            if (key.equals("posts")) {
+                // Flush OP before reading replies
                 if (!opAdded) {
                     queue.addForParse(opBuilder);
                     opAdded = true;
                 }
-
                 reader.beginArray();
                 while (reader.hasNext()) {
                     readPostObject(reader, queue, false);
                 }
                 reader.endArray();
+            } else if ((key.equals("message") || key.equals("comment")) && opMarkdownHandled) {
+                // "markdown" is the rendered HTML; "message" is raw source — skip raw source
+                // if we already captured the HTML version.
+                reader.skipValue();
             } else {
+                if (key.equals("markdown")) opMarkdownHandled = true;
                 readSinglePostField(reader, key, queue, opBuilder);
             }
         }
         reader.endObject();
-        
+
         if (!opAdded) {
             queue.addForParse(opBuilder);
         }
@@ -72,11 +79,31 @@ public class LynxchanApi extends CommonSite.CommonApi {
 
     @Override
     public void loadCatalog(JsonReader reader, ChanReaderProcessingQueue queue) throws Exception {
-        reader.beginArray();
-        while (reader.hasNext()) {
-            readPostObject(reader, queue, true);
+        // 8chan/Lynxchan catalog.json can be an array: [...] or an object: {"threads": [...]}
+        // Try to detect by peaking.
+        if (reader.peek() == JsonToken.BEGIN_ARRAY) {
+            reader.beginArray();
+            while (reader.hasNext()) {
+                readPostObject(reader, queue, true);
+            }
+            reader.endArray();
+        } else {
+            // Iterate the outer object and read the threads array when found.
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String key = reader.nextName();
+                if (key.equals("threads")) {
+                    reader.beginArray();
+                    while (reader.hasNext()) {
+                        readPostObject(reader, queue, true);
+                    }
+                    reader.endArray();
+                } else {
+                    reader.skipValue();
+                }
+            }
+            reader.endObject();
         }
-        reader.endArray();
     }
 
     @Override
@@ -102,6 +129,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
         String standaloneMime  = null;
 
         reader.beginObject();
+        boolean markdownHandled = false;
         while (reader.hasNext()) {
             String key = reader.nextName();
             if (key.equals("path") && reader.peek() == JsonToken.STRING) {
@@ -110,7 +138,12 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 standaloneThumb = reader.nextString();
             } else if (key.equals("mime") && reader.peek() == JsonToken.STRING) {
                 standaloneMime = reader.nextString();
+            } else if ((key.equals("message") || key.equals("comment")) && markdownHandled) {
+                // "markdown" is the rendered HTML; "message" is raw source — skip raw source
+                // if we already captured the HTML version.
+                reader.skipValue();
             } else {
+                if (key.equals("markdown")) markdownHandled = true;
                 readSinglePostField(reader, key, queue, builder);
             }
         }
@@ -167,12 +200,37 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 }
             }
 
+            // For catalog items, the image path is derived from the thumbnail by stripping
+            // the "t_" prefix.  Thumbnails have no extension, so the derived path also lacks
+            // one.  Append the known extension so the full-image URL resolves correctly.
+            if (imagePath != null && !ext.isEmpty()) {
+                int dot   = imagePath.lastIndexOf('.');
+                int sl    = imagePath.lastIndexOf('/');
+                if (dot <= sl) imagePath = imagePath + "." + ext; // no extension yet
+            }
+
             String usePath = imagePath != null ? imagePath : standaloneThumb;
             String filename = usePath;
             int lastSlash = usePath.lastIndexOf('/');
             if (lastSlash != -1) filename = usePath.substring(lastSlash + 1);
+            // Strip trailing extension from the display name to avoid "foo.png.png" in the UI.
+            if (!ext.isEmpty() && filename.toLowerCase(Locale.US).endsWith("." + ext)) {
+                filename = filename.substring(0, filename.length() - ext.length() - 1);
+            }
 
-            Map<String, String> args = SiteEndpoints.makeArgument("path", imagePath, "thumb", standaloneThumb);
+            // 8chan.moe uses flat /.media/ paths for everything.
+            // Ensure the arguments passed to SiteEndpoints do not contain leading slashes
+            // because HttpUrl.Builder#addPathSegments interprets them literally or doubles them.
+            String cleanImagePath = imagePath;
+            if (cleanImagePath != null && cleanImagePath.startsWith("/")) {
+                cleanImagePath = cleanImagePath.substring(1);
+            }
+            String cleanThumbPath = standaloneThumb;
+            if (cleanThumbPath != null && cleanThumbPath.startsWith("/")) {
+                cleanThumbPath = cleanThumbPath.substring(1);
+            }
+
+            Map<String, String> args = SiteEndpoints.makeArgument("path", cleanImagePath, "thumb", cleanThumbPath);
 
             PostImage.Builder imageBuilder = new PostImage.Builder()
                 .thumbnailUrl(queue.getLoadable().getSite().endpoints().thumbnailUrl(builder, false, args))
@@ -203,9 +261,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
         SiteEndpoints endpoints = queue.getLoadable().getSite().endpoints();
 
         switch (key) {
-            case "threadId":
             case "postId":
             case "no":
+            case "threadId": // 8chan catalog uses threadId for the OP id
                 if (reader.peek() == JsonToken.NUMBER) {
                     builder.id(reader.nextInt());
                 } else if (reader.peek() == JsonToken.STRING) {
@@ -233,6 +291,15 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 }
                 break;
             case "markdown":
+                if (reader.peek() != JsonToken.NULL) {
+                    // Lynxchan uses bare \n between HTML elements; convert to <br> so
+                    // the CommentParser renders line-breaks correctly.
+                    String md = reader.nextString().replace("\n", "<br>");
+                    builder.comment(md);
+                } else {
+                    reader.skipValue();
+                }
+                break;
             case "message":
             case "comment":
                 if (reader.peek() != JsonToken.NULL) {
@@ -243,6 +310,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 break;
             case "creation":
             case "time":
+            case "lastBump": // Lynxchan catalog threads use lastBump (ISO-8601) as the bump time
                 try {
                     if (reader.peek() == JsonToken.NUMBER) {
                         builder.setUnixTimestampSeconds(reader.nextLong());
@@ -260,7 +328,8 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 reader.beginArray();
                 List<PostImage> images = new ArrayList<>();
                 while (reader.hasNext()) {
-                    images.add(readPostImage(reader, builder, endpoints));
+                    PostImage img = readPostImage(reader, builder, endpoints);
+                    if (img != null) images.add(img);
                 }
                 reader.endArray();
                 builder.images(images);
@@ -393,18 +462,49 @@ public class LynxchanApi extends CommonSite.CommonApi {
         if (path == null) return null;
 
         Map<String, String> args = makeArgument("path", path, "thumb", thumb);
+
+        // Derive extension: prefer explicit extension in the path, fall back to mime type.
         String ext = "";
-        if (mime != null && mime.contains("/")) {
-            ext = mime.split("/")[1];
-        } else if (path.contains(".")) {
-            ext = path.substring(path.lastIndexOf(".") + 1);
+        if (path.contains(".")) {
+            int dot = path.lastIndexOf('.');
+            int slash = path.lastIndexOf('/');
+            if (dot > slash) ext = path.substring(dot + 1).toLowerCase(Locale.US);
+        }
+        if (ext.isEmpty() && mime != null) {
+            switch (mime) {
+                case "image/jpeg":  ext = "jpg";  break;
+                case "image/jpg":   ext = "jpg";  break;
+                case "image/jxl":   ext = "jxl";  break;
+                case "image/png":   ext = "png";  break;
+                case "image/apng":  ext = "png";  break;
+                case "image/gif":   ext = "gif";  break;
+                case "image/avif":  ext = "avif"; break;
+                case "image/webp":  ext = "webp"; break;
+                case "image/bmp":   ext = "bmp";  break;
+                case "video/mp4":   ext = "mp4";  break;
+                case "video/webm":  ext = "webm"; break;
+                case "video/x-m4v": ext = "m4v";  break;
+                case "audio/ogg":   ext = "ogg";  break;
+                case "audio/mpeg":  ext = "mp3";  break;
+                case "audio/x-m4a": ext = "m4a";  break;
+                case "audio/x-wav": ext = "wav";  break;
+                default:
+                    if (mime.contains("/")) ext = mime.substring(mime.indexOf('/') + 1);
+                    break;
+            }
         }
 
+        // Strip the file extension from the display name when it is already embedded in
+        // originalName (e.g. "80385381_p1.png") to avoid the doubled "foo.png.png" display.
+        String displayName = originalName != null ? originalName : "image";
+        if (!ext.isEmpty() && displayName.toLowerCase(Locale.US).endsWith("." + ext)) {
+            displayName = displayName.substring(0, displayName.length() - ext.length() - 1);
+        }
         return new PostImage.Builder()
                 .originalName(originalName != null ? originalName : "image")
                 .thumbnailUrl(endpoints.thumbnailUrl(builder, false, args))
                 .imageUrl(endpoints.imageUrl(builder, args))
-                .filename(originalName != null ? originalName : "image")
+                .filename(displayName)
                 .extension(ext)
                 .imageWidth(width)
                 .imageHeight(height)
