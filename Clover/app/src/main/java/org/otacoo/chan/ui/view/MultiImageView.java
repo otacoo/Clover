@@ -52,6 +52,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
 import androidx.media3.datasource.DataSource;
@@ -497,9 +498,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
             playView.setVisibility(View.GONE);
 
-            addView(exoVideoView);
+            addView(exoVideoView, 0);
             exoPlayer.setPlayWhenReady(true);
-            onModeLoaded(Mode.MOVIE, exoVideoView);
             callback.onVideoLoaded(this);
         }
     }
@@ -539,6 +539,18 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     public void onIsPlayingChanged(boolean isPlaying) {
     }
 
+    @Override
+    public void onRenderedFirstFrame() {
+        if (exoVideoView != null) {
+            onModeLoaded(Mode.MOVIE, exoVideoView);
+        }
+    }
+
+    @Override
+    public void onPlayerError(PlaybackException error) {
+        onVideoError();
+    }
+
     private void onVideoError() {
         if (!videoError) {
             videoError = true;
@@ -567,15 +579,21 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     public void onTracksChanged(Tracks tracks) {
         if (exoPlayer != null) {
             boolean hasAudio = false;
+            boolean hasVideo = false;
             for (Tracks.Group group : tracks.getGroups()) {
                 if (group.getType() == C.TRACK_TYPE_AUDIO) {
                     hasAudio = true;
-                    break;
+                } else if (group.getType() == C.TRACK_TYPE_VIDEO) {
+                    hasVideo = true;
                 }
             }
 
             if (hasAudio) {
                 callback.onAudioLoaded(this);
+            }
+
+            if (!hasVideo && exoVideoView != null) {
+                onModeLoaded(Mode.MOVIE, exoVideoView);
             }
         }
     }
