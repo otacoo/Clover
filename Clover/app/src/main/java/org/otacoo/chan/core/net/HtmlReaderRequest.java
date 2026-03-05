@@ -45,10 +45,15 @@ public abstract class HtmlReaderRequest<T> implements Callback {
 
     @Override
     public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-        if (call.isCanceled()) return;
+        if (call.isCanceled()) {
+            response.close();
+            return;
+        }
 
         if (!response.isSuccessful()) {
-            AndroidUtils.runOnUiThread(() -> listener.onError("HTTP " + response.code()));
+            int respCode = response.code();
+            response.close();
+            AndroidUtils.runOnUiThread(() -> listener.onError("HTTP " + respCode));
             return;
         }
 
