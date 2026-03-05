@@ -37,6 +37,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -60,6 +61,7 @@ import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.core.site.SiteRegistry;
 import org.otacoo.chan.ui.adapter.DrawerAdapter;
 import org.otacoo.chan.utils.AndroidUtils;
 
@@ -155,51 +157,78 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
 
     @Override
     public void onPinClicked(Pin pin) {
-        // Post it to avoid animation jumping because the first frame is heavy.
-        // TODO: probably twice because of some force redraw, fix that.
-        drawerLayout.post(() -> drawerLayout.post(() -> drawerLayout.closeDrawer(drawer)));
-
-        openPin(pin);
+        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                drawerLayout.removeDrawerListener(this);
+                openPin(pin);
+            }
+        });
+        drawerLayout.closeDrawer(drawer);
     }
 
     @Override
     public void onPinnedSearchClicked(ChanSettings.PinnedSearch search) {
-        drawerLayout.post(() -> drawerLayout.post(() -> drawerLayout.closeDrawer(drawer)));
-
-        Site site = siteRepository.all().getAll().get(0); // Get the first available site dynamically
-        Board board = boardManager.getBoard(site, search.boardCode);
-        if (board == null) {
-            // If not found, try to create it (site 0 is 4chan)
-            board = site.board(search.boardCode);
-        }
-        
-        if (board != null) {
-            Loadable loadable = Loadable.forCatalog(board);
-            loadable.searchQuery = Uri.decode(search.searchTerm);
-
-            Controller top = getTop();
-            if (top instanceof DoubleNavigationController) {
-                DoubleNavigationController dnc = (DoubleNavigationController) top;
-                if (dnc.getLeftController() instanceof BrowseController) {
-                    BrowseController bc = (BrowseController) dnc.getLeftController();
-                    bc.setBoard(board);
-                    bc.loadBoard(loadable);
-                    dnc.switchToController(true);
-                }
-            } else if (top instanceof ToolbarNavigationController) {
-                ToolbarNavigationController tnc = (ToolbarNavigationController) top;
-                if (tnc.getTop() instanceof BrowseController) {
-                    BrowseController bc = (BrowseController) tnc.getTop();
-                    bc.setBoard(board);
-                    bc.loadBoard(loadable);
-                } else {
-                    BrowseController browseController = new BrowseController(context);
-                    tnc.pushController(browseController);
-                    browseController.setBoard(board);
-                    browseController.loadBoard(loadable);
-                }
+        // Resolve board first (cheap), then animate drawer closed, navigate after.
+        // Look up the site by its stable SiteRegistry class ID.
+        // siteClassId defaults to 0 (4chan) for entries saved before this field existed.
+        List<Site> allSites = siteRepository.all().getAll();
+        Class<? extends Site> siteClass = SiteRegistry.SITE_CLASSES.get(search.siteClassId);
+        Site site = null;
+        if (siteClass != null) {
+            for (Site s : allSites) {
+                if (s.getClass() == siteClass) { site = s; break; }
             }
         }
+        if (site == null) {
+            // Fallback: scan all sites for a board with this code
+            for (Site s : allSites) {
+                if (boardManager.getBoard(s, search.boardCode) != null) { site = s; break; }
+            }
+        }
+        if (site == null) site = allSites.get(0);
+
+        Board board = boardManager.getBoard(site, search.boardCode);
+        if (board == null) board = site.board(search.boardCode);
+
+        if (board == null) {
+            Toast.makeText(context, "Board /" + search.boardCode + "/ not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final Board finalBoard = board;
+        final Loadable loadable = Loadable.forCatalog(board);
+        loadable.searchQuery = Uri.decode(search.searchTerm);
+
+        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                drawerLayout.removeDrawerListener(this);
+                Controller top = getTop();
+                if (top instanceof DoubleNavigationController) {
+                    DoubleNavigationController dnc = (DoubleNavigationController) top;
+                    if (dnc.getLeftController() instanceof BrowseController) {
+                        BrowseController bc = (BrowseController) dnc.getLeftController();
+                        bc.setBoard(finalBoard);
+                        bc.loadBoard(loadable);
+                        dnc.switchToController(true);
+                    }
+                } else if (top instanceof ToolbarNavigationController) {
+                    ToolbarNavigationController tnc = (ToolbarNavigationController) top;
+                    if (tnc.getTop() instanceof BrowseController) {
+                        BrowseController bc = (BrowseController) tnc.getTop();
+                        bc.setBoard(finalBoard);
+                        bc.loadBoard(loadable);
+                    } else {
+                        BrowseController browseController = new BrowseController(context);
+                        tnc.pushController(browseController);
+                        browseController.setBoard(finalBoard);
+                        browseController.loadBoard(loadable);
+                    }
+                }
+            }
+        });
+        drawerLayout.closeDrawer(drawer);
     }
 
     public void openPin(Pin pin) {
@@ -312,13 +341,19 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
                     int selectedPos = boardSpinner.getSelectedItemPosition();
                     if (selectedPos < 0 || selectedPos >= finalBoards.size()) return;
 
-                    String boardCode = finalBoards.get(selectedPos).code;
                     String term = termInput.getText().toString().trim();
 
-                    if (!TextUtils.isEmpty(boardCode) && !TextUtils.isEmpty(term)) {
+                    if (!TextUtils.isEmpty(term)) {
+                        Board selectedBoard = finalBoards.get(selectedPos);
                         String encodedTerm = Uri.encode(term);
+                        // Store the stable SiteRegistry class ID, not the volatile DB instance id.
+                        int classId = 0;
+                        if (selectedBoard.site != null) {
+                            int idx = SiteRegistry.SITE_CLASSES.indexOfValue(selectedBoard.site.getClass());
+                            if (idx >= 0) classId = SiteRegistry.SITE_CLASSES.keyAt(idx);
+                        }
                         List<ChanSettings.PinnedSearch> searches = ChanSettings.getPinnedSearches();
-                        searches.add(0, new ChanSettings.PinnedSearch(boardCode, encodedTerm));
+                        searches.add(0, new ChanSettings.PinnedSearch(selectedBoard.code, encodedTerm, classId));
                         ChanSettings.savePinnedSearches(searches);
                         drawerAdapter.setPinnedSearches(searches);
                     }
@@ -428,13 +463,9 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         List<Pin> list = watchManager.getWatchingPins();
         int count = 0;
         boolean color = false;
-        if (list.size() > 0) {
-            for (Pin p : list) {
-                count += p.getNewPostCount();
-                if (p.getNewQuoteCount() > 0) {
-                    color = true;
-                }
-            }
+        for (Pin p : list) {
+            count += p.getNewPostCount();
+            if (p.getNewQuoteCount() > 0) color = true;
         }
 
         if (getTop() != null) {
