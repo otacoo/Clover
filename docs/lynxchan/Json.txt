@@ -1,0 +1,240 @@
+Some data is also stored as static json files.
+Items inside '<>' are dynamic.
+To access the json version of overboard, multi-board and first page of boards, use 1.json as the file name and the board as the directory. Example: domain/a+b/1.json.
+These are as follows:
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::01
+
+Path: /index.json
+
+Root(Object):
+    topBoards(Array): Array with the chan top boards. Each element is an object with the following fields:
+        boardUri: uri of the board.
+        boardName: name of the board.
+    latestPosts(Array): Array with the global latest posts. Each element is an object with the following fields:
+        boardUri: uri of the board where the post was made.
+        threadId: id of the thread that either contains the post or that was posted.
+        postId: id of the post.
+        previewText: preview text of the post.
+    latestImages(Array): Array with the global latest images. Each element is an object with the following fields:
+        boardUri: uri of the board where the image is.
+        threadId: id of the thread that contains the image.
+        postId: id of the post that contains the image.
+        thumb: path of the image's thumbnail.
+    totalPosts(Number): total amount of posts made on existing boards.
+    totalIps(Number): total amount of unique ips on existing boards in the past 24 hours.
+    version: engine version used by the site.
+    totalPPH: current global PPH.
+    totalBoards(Number): amount of boards on the site.
+    totalFiles(Number): total amount of files on the server.
+    totalSize(Number): total size of stored files.
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::02
+
+Path:/<board>/res/<thread>.json
+
+Root(Object):
+    uniquePosters(Number): amount of unique posters in the thread.
+    reportCategories(Array): array with the available report categories.
+    wsPort(Number): port used for ws notifications.
+    wssPort(Number): port used for wss notifications.
+    noReportCaptcha(Boolean) : indicates no captcha is needed for reporting.
+    boardName: name of the board.
+    boardDescription: description of the board.
+    boardMarkdown: markdown of the board message.
+    usesCustomCss(Boolean): true of the board uses custom css.
+    maxMessageLength(Number): maximum allowed message length.
+    maxFileCount(Number): maximum amount of files allowed.
+    maxFileSize: maximimum size allowed for files.
+    trash(Boolean): true if the thread is trashed.
+    usesCustomJs(Boolean): true of the board uses custom js.
+    captcha(Boolean): true if the thread requires captcha to be replied to.
+    textBoard(Boolean): true if the board is a textboard.
+    forceAnonymity(Boolean): true if the board forces anonymity.
+    signedRole: role of the user that posted the thread.
+    banMessage: message to be displayed indicating this message was a cause to a ban.
+    id: thread-wise id of the poster.
+    boardUri: uri of the board where the thread belongs to.
+    email: email of the poster.
+    markdown: message with html markdown applied.
+    flag: url of the used flag.
+    flagData(Array): array with the available flags for the board. Each element contains the following fields:
+        _id: id of the flag.
+        name: name of the flag.
+    threadId(Number): unique id of the thread inside the board.
+    subject: subject of the thread.
+    lastEditTime(Date): date of the last time the message of the thread message was edited.
+    flagName: name of the used flag.
+    flagCode: location code of the flag.
+    lastEditLogin: Login of the last user to edit the thread message.
+    message: text of the post.
+    name: name of the poster.
+    creation(Date): time when the post was created.
+    autoSage(Boolean): indicates if the thread is bumplocked.
+    locked(Boolean: indicates if the thread is locked and cannot be replied to.
+    cyclic(Boolean): indicates if the thread is cyclic.
+    archived(Boolean): indicates if the thread has been archived.
+    pinned(Boolean): indicates if the thread is pinned and will be listed on top of unpinned threads.
+    files(Array): files uploaded with the thread. Each object contains the following fields:
+        originalName: original name of the upload.
+        path: path for the file.
+        thumb: path for the file's thumbnail.
+        size(Number) size in bytes of the file.
+        mime: mime of the file.
+        width(Number): width of the file, if image.
+        height(Number): size of the file, if image.
+    posts(Array): array of the posts in this thread. Each object contains the following fields:
+        name: name of the poster.
+        trash(Boolean): true if the post is trashed.
+        signedRole: role of the user that posted the thread.
+        email: email of the poster.
+        flag: url of the used flag.
+        flagCode: location code of the flag.
+        flagName: name of the used flag.
+        lastEditTime(Date): date of the last time the message of the thread message was edited.
+        lastEditLogin: Login of the last user to edit the thread message.
+        postId(Number): unique id of the post inside the board.
+        id: thread-wise id of the poster.
+        markdown: message with html markdown applied.
+        subject: subject of the thread.
+        message: text of the post.
+        banMessage: message to be displayed indicating this message was a cause to a ban.
+        creation(Date): time when the post was created.
+        files(Array): pre-aggregated array of files uploaded with the post. Each object contains the following fields:
+            originalName: original name of the upload.
+            path: path for the file.
+            thumb: path for the file's thumbnail.
+            size(Number) size in bytes of the file.
+            width(Number): width of the file, if any.
+            mime: mime of the file.
+            height(Number): size of the file, if any.
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::03
+
+Path:/<board>/<page>.json
+
+Root(Object):
+    reportCategories(Array): array with the available report categories.
+    pageCount(Number): amount of pages this board has.
+    noReportCaptcha(Boolean) : indicates no captcha is needed for reporting.
+    boardName: name of the board.
+    globalCaptcha(Boolean): indicates if the site has global captcha turned on.
+    captchaMode(Number): indicates the captcha mode for the board. 0 means no captcha, 1 means only for new threads and 2 means for all posts on the board.
+    maxMessageLength(Number): maximum allowed size for posted messages.
+    maxFileCount(Number): maximum allowed amount of files per post, may vary from board to board.
+    maxFileSize: label indicating the maximum allowed size for individual posted files, may vary from board to board.
+    flagData(Array): array with the available flags for the board. Each element contains the following fields:
+        _id: id of the flag.
+        name: name of the flag.
+    boardDescription: description of the board.
+    settings: settings enabled in the board.
+    threads(Array): threads in this page. Each object contains the following fields:
+        signedRole: role of the user that posted the thread.
+        omittedPosts(Number): ammount of posts in this thread that are not being shown.
+        omittedFiles(Number): amount of files in this thread that are not being shown.
+        boardUri: uri of the board where the thread belongs to.
+        banMessage: message to be displayed indicating this message was a cause to a ban.
+        id: thread-wise id of the poster.
+        trash(Boolean): true of the thread is trashed.
+        email: email of the poster.
+        markdown: message with html markdown applied.
+        threadId(Number): unique id of the thread inside the board.
+        subject: subject of the thread.
+        message: text of the post.
+        flag: url of the used flag.
+        flagName: name of the used flag.
+        flagCode: location code of the flag.
+        lastEditTime(Date): date of the last time the message of the thread message was edited.
+        lastEditLogin: Login of the last user to edit the thread message.
+        name: name of the poster.
+        autoSage(Boolean): indicates if the thread is bumplocked.
+        cyclic(Boolean): indicates if the thread is cyclic.
+        creation(Date): time when the post was created.
+        locked(Boolean: indicates if the thread is locked and cannot be replied to.
+        archived(Boolean): indicates if the thread has been archived.
+        pinned(Boolean): indicates if the thread is pinned and will be listed on top of unpinned threads.
+        files(Array): files uploaded with the thread. Each object contains the following fields:
+            originalName: original name of the upload.
+            path: path for the file.
+            mime: mime of the file.
+            thumb: path for the file's thumbnail.
+            size(Number) size in bytes of the file.
+            width(Number): width of the file, if image.
+            height(Number): size of the file, if image.
+        posts(Array): array of the posts in this thread. Each object contains the following fields:
+            name: name of the poster.
+            trash(Boolean): true if the post is trashed.
+            signedRole: role of the user that posted the thread.
+            markdown: message with html markdown applied.
+            email: email of the poster.
+            flagCode: location code of the flag.
+            flag: url of the used flag.
+            flagName: name of the used flag.
+            lastEditTime(Date): date of the last time the message of the thread message was edited.
+            lastEditLogin: Login of the last user to edit the thread message.
+            postId(Number): unique id of the post inside the board.
+            id: thread-wise id of the poster.
+            subject: subject of the thread.
+            message: text of the post.
+            banMessage: message to be displayed indicating this message was a cause to a ban.
+            creation(Date): time when the post was created.
+            files(Array): pre-aggregated array of files uploaded with the post. Each object contains the following fields:
+                originalName: original name of the upload.
+                path: path for the file.
+                thumb: path for the file's thumbnail.
+                mime: mime of the file.
+                size(Number) size in bytes of the file.
+                width(Number): width of the file, if image.
+                height(Number): size of the file, if image. 
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::04
+
+Path:/<board>/catalog.json
+
+Root(Array): array of objects representing threads. Each element contains the following fields:
+    message: message of the thread.
+    markdown: message with html markdown applied.
+    threadId(Number): id of the thread.
+    postCount(Number): how many replies the thread has.
+    fileCount(Number): how many files were posted in replies in this thread.
+    page(Number): which thread of the board the thread is.
+    subject: subject of the thread.
+    locked(Boolean): indicates of the thread is locked.
+    pinned(Boolean): indicates if the thread is pinned.
+    cyclic(Boolean): indicates if the thread is cyclic.
+    thumb: path to the thumbnail of the first image posted in this thread, if any.
+    mime: mimetype of the first file posted in the thread, if any.
+    lastBump(Date): last time this thread was bumped.
+    autoSage(Boolean): indicates if the thread is bumplocked.
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::05
+
+Path:/<board>/rules.json
+
+Root(Array): array of strings, each one being a rule of the board.
+
+------------------------------------------------------------------------------------------
+
+JSO_ID::06
+
+Path:/.global/logs/<board>/<yyyy-MM-dd>.json
+
+Root(Array): array with the logs of the day. Each object contains the following fields:
+    user: login of the user that performed the action.
+    type: type of action performed.
+    time(Date): date and time of when the event occurred.
+    boardUri: board related to the event.
+    description: string describing the event.
+    global(Boolean): indicates if the event was global. 
+
+------------------------------------------------------------------------------------------

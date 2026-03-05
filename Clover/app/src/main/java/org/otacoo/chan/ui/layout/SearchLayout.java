@@ -38,6 +38,7 @@ import org.otacoo.chan.utils.AndroidUtils;
 public class SearchLayout extends LinearLayout {
     private EditText searchView;
     private ImageView clearButton;
+    private String initialHint = null;
 
     public SearchLayout(Context context) {
         super(context);
@@ -55,7 +56,7 @@ public class SearchLayout extends LinearLayout {
         searchView = new EditText(getContext());
         searchView.setImeOptions(EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_ACTION_DONE);
         searchView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        searchView.setHint(getString(R.string.search_hint));
+        searchView.setHint(initialHint != null ? initialHint : getString(R.string.search_hint));
         searchView.setHintTextColor(getAttrColor(getContext(), R.attr.text_color_hint));
         searchView.setTextColor(getAttrColor(getContext(), R.attr.text_color_primary));
         searchView.setSingleLine(true);
@@ -101,6 +102,16 @@ public class SearchLayout extends LinearLayout {
 
     public void setText(String text) {
         searchView.setText(text);
+    }
+
+    public void setHint(String hint) {
+        // may be called before or after the internal view is created
+        if (searchView != null) {
+            searchView.setHint(hint);
+        } else {
+            // store for later initialization
+            initialHint = hint;
+        }
     }
 
     public String getText() {

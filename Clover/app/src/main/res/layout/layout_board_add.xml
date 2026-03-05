@@ -24,7 +24,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     android:paddingLeft="16dp"
     android:paddingRight="16dp">
 
+    <!-- manual entry group shown for Chan8: name then description then add button -->
     <LinearLayout
+        android:id="@+id/manual_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:paddingBottom="8dp"
+        android:paddingTop="8dp">
+
+        <EditText
+            android:id="@+id/manual_board_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Board code (e.g. tech)" />
+
+        <EditText
+            android:id="@+id/manual_board_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description" />
+
+        <Button
+            android:id="@+id/add_board"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:text="@string/setup_board_add_board" />
+
+    </LinearLayout>
+
+    <!-- search row for non-Chan8 sites -->
+    <LinearLayout
+        android:id="@+id/search_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">

@@ -170,12 +170,23 @@ public class BoardSetupController extends Controller implements View.OnClickList
 
         boardAddLayout.setPresenter(presenter);
 
-        AlertDialog dialog = new AlertDialog.Builder(context)
-                .setView(boardAddLayout)
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setView(boardAddLayout);
 //                .setTitle(R.string.setup_board_add)
-                .setPositiveButton(R.string.add, (dialog1, which) -> boardAddLayout.onPositiveClicked())
-                .setNegativeButton(R.string.cancel, null)
-                .create();
+        if (presenter.allowCustomBoardCode()) {
+            builder.setNeutralButton(R.string.setup_board_select_all,
+                    (dialog1, which) -> presenter.onSelectAllClicked());
+        }
+        builder.setPositiveButton(R.string.add, (dialog1, which) -> boardAddLayout.onPositiveClicked())
+               .setNegativeButton(R.string.cancel, null);
+        AlertDialog dialog = builder.create();
+
+        if (presenter.allowCustomBoardCode()) {
+            dialog.setOnShowListener(d -> {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                        .setOnClickListener(v -> presenter.onSelectAllClicked());
+            });
+        }
 
         boardAddLayout.setDialog(dialog);
 

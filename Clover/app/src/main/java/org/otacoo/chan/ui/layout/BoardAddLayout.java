@@ -27,6 +27,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -41,9 +42,15 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
     private SuggestionsAdapter suggestionsAdapter;
 
     private SearchLayout search;
-    private Button checkAllButton;
     private RecyclerView suggestionsRecycler;
     private TextView hintText;
+    private Button selectAllButton; // top-row button for non-Chan8 sites
+
+    // manual entry UI for Chan8
+    private View manualContainer;
+    private android.widget.EditText manualName;
+    private android.widget.EditText manualDescription;
+    private Button addBoardButton;
 
     private AlertDialog dialog;
 
@@ -66,8 +73,13 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
         // View binding
         search = findViewById(R.id.search);
         suggestionsRecycler = findViewById(R.id.suggestions);
-        checkAllButton = findViewById(R.id.select_all);
         hintText = findViewById(R.id.board_add_hint);
+        selectAllButton = findViewById(R.id.select_all);
+
+        manualContainer = findViewById(R.id.manual_container);
+        manualName = findViewById(R.id.manual_board_name);
+        manualDescription = findViewById(R.id.manual_board_desc);
+        addBoardButton = findViewById(R.id.add_board);
 
         // Adapters
         suggestionsAdapter = new SuggestionsAdapter();
@@ -75,7 +87,9 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
         // View setup
         search.setCallback(this);
 
-        checkAllButton.setOnClickListener(this);
+        addBoardButton.setOnClickListener(this);
+        selectAllButton.setOnClickListener(v -> presenter.onSelectAllClicked());
+
         suggestionsRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
         suggestionsRecycler.setAdapter(suggestionsAdapter);
 
@@ -96,8 +110,22 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
 
     @Override
     public void onClick(View v) {
-        if (v == checkAllButton) {
-            presenter.onSelectAllClicked();
+        if (v == addBoardButton) {
+            String code = manualName.getText().toString().trim();
+            String desc = manualDescription.getText().toString().trim();
+            if (!code.isEmpty()) {
+                // validate alphanumeric only
+                if (!code.matches("[A-Za-z0-9]+")) {
+                    Toast.makeText(getContext(), "Board code may only contain letters and numbers", Toast.LENGTH_SHORT).show();
+                    manualName.setText("");
+                    manualDescription.setText("");
+                } else {
+                    presenter.addManualBoard(code, desc);
+                    // clear inputs for next entry
+                    manualName.setText("");
+                    manualDescription.setText("");
+                }
+            }
         }
     }
 
@@ -114,18 +142,28 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
     public void setPresenter(BoardSetupPresenter presenter) {
         this.presenter = presenter;
 
+        boolean custom = presenter.allowCustomBoardCode();
+        // toggle manual vs search UI
+        manualContainer.setVisibility(custom ? VISIBLE : GONE);
+        View searchContainer = findViewById(R.id.search_container);
+        searchContainer.setVisibility(custom ? GONE : VISIBLE);
+        selectAllButton.setVisibility(custom ? GONE : VISIBLE);
+
+        if (custom) {
+            manualName.setText("");
+            manualDescription.setText("");
+        }
+
         // Show a hint for sites where boards can't be listed (e.g. INFINITE).
         String hint = presenter.getAddDialogHint();
-        if (hint != null) {
+        if (hint != null && !custom) {
             hintText.setText(hint);
             hintText.setVisibility(VISIBLE);
-            checkAllButton.setVisibility(GONE);
             suggestionsRecycler.setVisibility(GONE);
             setMinimumHeight(0);
             setMinimumWidth(0);
         } else {
             hintText.setVisibility(GONE);
-            checkAllButton.setVisibility(VISIBLE);
             suggestionsRecycler.setVisibility(VISIBLE);
         }
     }
@@ -168,8 +206,22 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
         public void onBindViewHolder(SuggestionCell holder, int position) {
             BoardSetupPresenter.BoardSuggestion boardSuggestion = presenter.getSuggestions().get(position);
             holder.setSuggestion(boardSuggestion);
+        if (!boardSuggestion.hasBoard()) {
+            // manual entry
+            String desc = boardSuggestion.getDescription();
+            holder.text.setText(boardSuggestion.getName()
+                    + (desc != null && !desc.isEmpty() ? " - " + desc : ""));
+            holder.description.setVisibility(View.GONE);
+        } else {
             holder.text.setText(boardSuggestion.getName());
-            holder.description.setText(boardSuggestion.getDescription());
+            String desc = boardSuggestion.getDescription();
+            if (desc != null && !desc.isEmpty()) {
+                holder.description.setVisibility(View.VISIBLE);
+                holder.description.setText(desc);
+            } else {
+                holder.description.setVisibility(View.GONE);
+            }
+        }
         }
     }
 

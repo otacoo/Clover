@@ -22,6 +22,7 @@ import android.util.SparseArray;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.core.site.sites.lainchan.Lainchan;
 import org.otacoo.chan.core.site.sites.sushichan.Sushichan;
+import org.otacoo.chan.core.site.sites.chan8.Chan8;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SiteRegistry {
         URL_HANDLERS.add(Chan4.URL_HANDLER);
         URL_HANDLERS.add(Sushichan.URL_HANDLER);
         URL_HANDLERS.add(Lainchan.URL_HANDLER);
+        URL_HANDLERS.add(Chan8.URL_HANDLER);
     }
 
     static {
@@ -46,5 +48,6 @@ public class SiteRegistry {
         SITE_CLASSES.put(0, Chan4.class);
         SITE_CLASSES.put(1, Sushichan.class);
         SITE_CLASSES.put(10, Lainchan.class);
+        SITE_CLASSES.put(20, Chan8.class);
     }
 }

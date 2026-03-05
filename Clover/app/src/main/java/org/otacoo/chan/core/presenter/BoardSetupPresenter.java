@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -58,6 +59,7 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
     private BackgroundUtils.Cancelable suggestionCall;
 
     private List<BoardSuggestion> suggestions = new ArrayList<>();
+    private List<BoardSuggestion> customSuggestions = new ArrayList<>();
     private List<String> selectedSuggestions = new LinkedList<>();
 
     private String suggestionsQuery = null;
@@ -110,6 +112,12 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
     public void bindAddDialog(AddCallback addCallback) {
         this.addCallback = addCallback;
 
+        // ensure previous search state doesn't leak into a new dialog instance
+        suggestionsQuery = null;
+        selectedSuggestions.clear();
+        suggestions.clear();
+        customSuggestions.clear();
+
         queryBoardsWithQueryAndShowInAddDialog();
     }
 
@@ -137,6 +145,24 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
         }
     }
 
+    // Add a board code manually (used by Chan8).
+    public void addManualBoard(String code, String description) {
+        String normalized = code.replace("/", "").trim();
+        if (normalized.isEmpty()) return;
+
+        BoardSuggestion suggestion = new BoardSuggestion(normalized);
+        suggestion.checked = true;
+        suggestion.setCustomDescription(description);
+        customSuggestions.add(suggestion);
+        suggestions.add(0, suggestion);
+        if (!selectedSuggestions.contains(normalized)) {
+            selectedSuggestions.add(normalized);
+        }
+        if (addCallback != null) {
+            addCallback.suggestionsWereChanged();
+        }
+    }
+
     public List<BoardSuggestion> getSuggestions() {
         return suggestions;
     }
@@ -153,6 +179,11 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
         return null;
     }
 
+    public boolean allowCustomBoardCode() {
+        // right now only Chan8 needs this behaviour, but the check is generic
+        return site.getClass().getSimpleName().equals("Chan8");
+    }
+
     public void onAddDialogPositiveClicked() {
         int count = 0;
 
@@ -166,11 +197,25 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
             }
             for (String selectedSuggestion : selectedSuggestions) {
                 Board board = siteBoardsByCode.get(selectedSuggestion);
-                if (board != null) {
-                    boardsToSave.add(board);
-                    savedBoards.add(board);
-                    count++;
+                if (board == null) {
+                    // not in the fetched list – manual entry (Chan8 custom code)
+                    String name = selectedSuggestion; // fallback
+                    String desc = null;
+                    for (BoardSuggestion sug : customSuggestions) {
+                        if (sug.getCode().equalsIgnoreCase(selectedSuggestion)) {
+                            desc = sug.getDescription();
+                            if (desc != null && !desc.isEmpty()) {
+                                name = desc; // use description as display name
+                            }
+                            break;
+                        }
+                    }
+                    board = site.createBoard(name, selectedSuggestion);
+                    board.description = desc;
                 }
+                boardsToSave.add(board);
+                savedBoards.add(board);
+                count++;
             }
         } else {
             for (String suggestion : selectedSuggestions) {
@@ -248,6 +293,56 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
                     BoardSuggestion suggestion = new BoardSuggestion(board);
                     suggestions.add(suggestion);
                 }
+
+                if (site.getClass().getSimpleName().equals("Chan8")) {
+                    // if user is on Chan8 and typed something, ensure a custom suggestion exists
+                    if (query != null && !query.equals("")) {
+                        boolean exists = false;
+                        for (BoardSuggestion s : suggestions) {
+                            if (s.getCode().equalsIgnoreCase(query)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            // record the custom code for future queries
+                            BoardSuggestion manual = new BoardSuggestion(query);
+                            manual.checked = true;
+                            customSuggestions.add(manual);
+                        }
+                    }
+
+                    // merge persistent custom suggestions into the result list (preserve order added).
+                    // drop any codes that have already been saved since they no longer apply.
+                    Iterator<BoardSuggestion> it = customSuggestions.iterator();
+                    while (it.hasNext()) {
+                        BoardSuggestion custom = it.next();
+                        Board existing = boardManager.getBoard(site, custom.getCode());
+                        if (existing != null && existing.saved) {
+                            // prune so we don't carry around stale entries
+                            it.remove();
+                            continue;
+                        }
+
+                        boolean already = false;
+                        for (BoardSuggestion s : suggestions) {
+                            if (s.getCode().equalsIgnoreCase(custom.getCode())) {
+                                already = true;
+                                break;
+                            }
+                        }
+                        if (!already) {
+                            suggestions.add(0, custom);
+                        }
+                    }
+                } else {
+                    // non Chan8 behaviour: if nothing matched and query non-empty, allow manual entry
+                    if (query != null && !query.equals("") && toSuggest.isEmpty()) {
+                        BoardSuggestion manual = new BoardSuggestion(query);
+                        manual.checked = true;
+                        suggestions.add(manual);
+                    }
+                }
             } else {
                 if (query != null && !query.equals("")) {
                     suggestions.add(new BoardSuggestion(query));
@@ -274,6 +369,11 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
             }
         }
         for (BoardSuggestion suggestion : this.suggestions) {
+            if (suggestion.board == null && suggestion.checked) {
+                if (!selectedSuggestions.contains(suggestion.getCode())) {
+                    selectedSuggestions.add(suggestion.getCode());
+                }
+            }
             suggestion.checked = selectedSuggestions.contains(suggestion.getCode());
         }
     }
@@ -302,6 +402,15 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
     public static class BoardSuggestion {
         private final Board board;
         private final String code;
+        private String customDescription; // only used when board == null
+
+        public boolean hasBoard() {
+            return board != null;
+        }
+
+        public Board getBoard() {
+            return board;
+        }
 
         private boolean checked = false;
 
@@ -313,6 +422,10 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
         BoardSuggestion(String code) {
             this.board = null;
             this.code = code;
+        }
+
+        public void setCustomDescription(String desc) {
+            this.customDescription = desc;
         }
 
         public String getName() {
@@ -327,7 +440,7 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
             if (board != null) {
                 return BoardHelper.getDescription(board);
             } else {
-                return "";
+                return customDescription != null ? customDescription : "";
             }
         }
 
