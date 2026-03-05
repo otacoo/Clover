@@ -490,10 +490,16 @@ public class ChanSettings {
     public static class PinnedSearch {
         public String boardCode;
         public String searchTerm;
+        public int siteClassId;
 
         public PinnedSearch(String boardCode, String searchTerm) {
+            this(boardCode, searchTerm, 0);
+        }
+
+        public PinnedSearch(String boardCode, String searchTerm, int siteClassId) {
             this.boardCode = boardCode;
             this.searchTerm = searchTerm;
+            this.siteClassId = siteClassId;
         }
 
         @Override
@@ -501,13 +507,16 @@ public class ChanSettings {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PinnedSearch that = (PinnedSearch) o;
-            return TextUtils.equals(boardCode, that.boardCode) && TextUtils.equals(searchTerm, that.searchTerm);
+            return siteClassId == that.siteClassId
+                    && TextUtils.equals(boardCode, that.boardCode)
+                    && TextUtils.equals(searchTerm, that.searchTerm);
         }
 
         @Override
         public int hashCode() {
             int result = boardCode != null ? boardCode.hashCode() : 0;
             result = 31 * result + (searchTerm != null ? searchTerm.hashCode() : 0);
+            result = 31 * result + siteClassId;
             return result;
         }
     }
