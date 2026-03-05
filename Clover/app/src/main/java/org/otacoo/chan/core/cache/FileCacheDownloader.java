@@ -333,14 +333,13 @@ public class FileCacheDownloader implements Runnable {
                         .header("Referer", getBaseUrl(reqUrl))
                         .header("Cookie", cookies)
                         .build();
-                try {
-                    Response rootResponse = client.newCall(rootRequest).execute();
+                try (Response rootResponse = client.newCall(rootRequest).execute()) {
                     List<String> cookieHeaders = rootResponse.headers("Set-Cookie");
-                    rootResponse.close();
                     for (String header : cookieHeaders) {
                         android.webkit.CookieManager.getInstance().setCookie(getBaseUrl(reqUrl), header);
                     }
-                    extResp.close();
+                } catch (IOException e) {
+                    log("Failed to refresh session", e);
                 }
                 
                 // Retry the original request
