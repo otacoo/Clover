@@ -70,7 +70,7 @@ public class ChanLoaderException extends Exception {
                 return R.string.thread_load_failed_server;
             }
         } else {
-            return R.string.thread_load_failed_parsing;
+            return R.string.thread_load_failed_not_found;
         }
     }
 }
