@@ -338,6 +338,8 @@ public final class SettingsBackupRestore {
                                 Board board = siteObj.board(code);
                                 if (board == null) {
                                     board = siteObj.createBoard(name, code);
+                                } else {
+                                    board.name = name;
                                 }
                                 board.saved = bo.optBoolean("saved", true);
                                 board.order = bo.optInt("order", 0);
@@ -377,7 +379,9 @@ public final class SettingsBackupRestore {
                     int no = o.getInt("no");
                     String title = o.optString("title", "");
                     Site site = SiteRepository.forId(siteId);
-                    Board board = site.board(boardCode);
+                    // Query the DB directly so we get the properly-named board.
+                    Board board = databaseManager.runTask(
+                            databaseManager.getDatabaseBoardManager().getBoard(site, boardCode));
                     if (board == null) {
                         board = site.createBoard(boardCode, boardCode);
                     }
