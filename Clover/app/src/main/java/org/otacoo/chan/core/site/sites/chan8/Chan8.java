@@ -68,7 +68,7 @@ public class Chan8 extends CommonSite {
 
     @Override
     public void setup() {
-        setName("8chan.moe");
+        setName("8chan");
         setIcon(SiteIcon.fromAssets("icons/8chan.webp"));
         setResolvable(URL_HANDLER);
 
@@ -93,7 +93,7 @@ public class Chan8 extends CommonSite {
         setConfig(new CommonConfig() {
             @Override
             public boolean feature(Feature feature) {
-                return feature == Feature.POSTING;
+                return feature == Feature.POSTING || feature == Feature.LOGIN;
             }
         });
     }

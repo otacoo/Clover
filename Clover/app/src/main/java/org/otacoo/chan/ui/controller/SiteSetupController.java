@@ -55,6 +55,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
     private Site site;
     private LinkSettingView boardsLink;
     private LinkSettingView loginLink;
+    private LinkSettingView verificationLink;
 
     public SiteSetupController(Context context) {
         super(context);
@@ -94,15 +95,17 @@ public class SiteSetupController extends SettingsController implements SiteSetup
 
     @Override
     public void setIsLoggedIn(boolean isLoggedIn) {
-        String text;
-        if ((site.name().equals("8chan.moe") || site.name().equals("8chan")) && isLoggedIn) {
-            text = context.getString(R.string.setup_site_login_description_valid);
+        if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+            if (verificationLink != null) {
+                verificationLink.setDescription(context.getString(isLoggedIn ?
+                        R.string.setup_site_login_description_valid :
+                        R.string.setup_site_login_description_disabled));
+            }
         } else {
-            text = context.getString(isLoggedIn ?
+            loginLink.setDescription(context.getString(isLoggedIn ?
                     R.string.setup_site_login_description_enabled :
-                    R.string.setup_site_login_description_disabled);
+                    R.string.setup_site_login_description_disabled));
         }
-        loginLink.setDescription(text);
     }
     @Override
     public void setBoardCount(int boardCount) {
@@ -157,33 +160,40 @@ public class SiteSetupController extends SettingsController implements SiteSetup
     @Override
     public void showLogin() {
         int loginGroupTitle = R.string.setup_site_group_login;
-        String loginLabel = context.getString(R.string.setup_site_login);
 
         if (site.name().equals("4chan")) {
             loginGroupTitle = R.string.setup_site_group_login_4chan;
-        } else if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
-            loginLabel = context.getString(R.string.setup_site_login_8chan);
         }
 
         SettingsGroup login = new SettingsGroup(loginGroupTitle);
-        loginLink = new LinkSettingView(
-                this,
-                loginLabel,
-                "",
-                v -> {
-                    if (site.name().toLowerCase(Locale.US).contains("8chan")) {
+
+        if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
+            verificationLink = new LinkSettingView(
+                    this,
+                    context.getString(R.string.setup_site_login_8chan),
+                    "",
+                    v -> {
                         HttpUrl loginUrl = site.endpoints().login();
                         EmailVerificationController webController = new EmailVerificationController(context, loginUrl.toString(), site.name() + " Verification");
                         webController.setRequiredCookies("TOS", "POW_TOKEN", "POW_ID");
                         navigationController.pushController(webController);
-                    } else {
+                    }
+            );
+            login.add(verificationLink);
+        } else {
+            loginLink = new LinkSettingView(
+                    this,
+                    context.getString(R.string.setup_site_login),
+                    "",
+                    v -> {
                         LoginController loginController = new LoginController(context);
                         loginController.setSite(site);
                         navigationController.pushController(loginController);
                     }
-                }
-        );
-        login.add(loginLink);
+            );
+            login.add(loginLink);
+        }
+
         groups.add(login);
         
         // Add email verification for 4chan
