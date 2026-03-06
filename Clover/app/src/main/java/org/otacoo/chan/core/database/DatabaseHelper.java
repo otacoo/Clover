@@ -291,6 +291,16 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
                 Logger.e(TAG, "Error upgrading to version 28", e);
             }
         }
+
+        if (oldVersion < 29) {
+            // this is only here because of the dev version of the app
+            Logger.i(TAG, "Error upgrading to version 29");
+        }
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+        Logger.w(TAG, "Downgrading database from " + oldVersion + " to " + newVersion + ". Doing nothing.");
     }
 
     public void reset() {
