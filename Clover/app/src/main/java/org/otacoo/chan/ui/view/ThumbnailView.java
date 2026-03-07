@@ -296,20 +296,20 @@ public class ThumbnailView extends View {
         int width = getWidth() - getPaddingLeft() - getPaddingRight();
         int height = getHeight() - getPaddingTop() - getPaddingBottom();
 
+        outputRect.set(getPaddingLeft(), getPaddingTop(),
+                getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
+
         if (error) {
             // Render a simple text if there was an error.
             canvas.save();
 
             textPaint.getTextBounds(errorText, 0, errorText.length(), tmpTextRect);
-            float x = width / 2f - tmpTextRect.exactCenterX();
-            float y = height / 2f - tmpTextRect.exactCenterY();
-            canvas.drawText(errorText, x + getPaddingLeft(), y + getPaddingTop(), textPaint);
+            float x = outputRect.centerX();
+            float y = outputRect.centerY() - tmpTextRect.exactCenterY();
+            canvas.drawText(errorText, x, y, textPaint);
 
             canvas.restore();
         } else {
-            outputRect.set(getPaddingLeft(), getPaddingTop(),
-                    getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
-
             // Gray background if thumbnail is not yet loaded and no foreground icon is set.
             if (bitmap == null && foreground == null) {
                 if (circular) {
@@ -333,12 +333,12 @@ public class ThumbnailView extends View {
 
                 if (labelText != null && labelText.length() > 0) {
                     canvas.save();
-                    float x = (outputRect.left + outputRect.right) / 2f;
+                    float x = outputRect.centerX();
                     // Vertical centering of text
                     textPaint.setColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_secondary));
                     textPaint.setTextSize(sp(11));
                     textPaint.getTextBounds(labelText, 0, labelText.length(), tmpTextRect);
-                    float y = (outputRect.top + outputRect.bottom) / 2f - (tmpTextRect.top + tmpTextRect.bottom) / 2f;
+                    float y = outputRect.centerY() - (tmpTextRect.top + tmpTextRect.bottom) / 2f;
                     canvas.drawText(labelText, x, y, textPaint);
                     canvas.restore();
                 }
