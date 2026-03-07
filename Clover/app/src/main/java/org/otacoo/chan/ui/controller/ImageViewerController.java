@@ -52,6 +52,7 @@ import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.animation.PathInterpolator;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -183,6 +184,20 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             presenter.onViewMeasured();
             return true;
         });
+
+        updateViewMargins();
+    }
+
+    private void updateViewMargins() {
+        if (view == null) return;
+        boolean immersive = ChanSettings.useImmersiveModeForGallery.get();
+        int topMargin = immersive ? 0 : toolbar.getToolbarHeight();
+        FrameLayout.LayoutParams previewParams = (FrameLayout.LayoutParams) previewImage.getLayoutParams();
+        previewParams.topMargin = topMargin;
+        previewImage.setLayoutParams(previewParams);
+        FrameLayout.LayoutParams pagerParams = (FrameLayout.LayoutParams) pager.getLayoutParams();
+        pagerParams.topMargin = topMargin;
+        pager.setLayoutParams(pagerParams);
     }
 
     private void goPostClicked(ToolbarMenuItem item) {
@@ -684,6 +699,8 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         navigationController.getToolbar().setLayoutParams(params);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             navigationController.getToolbar().bringToFront();
+
+        updateViewMargins();
     }
 
     @Override
@@ -722,6 +739,8 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         ViewGroup.LayoutParams params = navigationController.getToolbar().getLayoutParams();
         params.height = getDimen(context, R.dimen.toolbar_height);
         navigationController.getToolbar().setLayoutParams(params);
+
+        updateViewMargins();
     }
 
     private Window getWindow() {
