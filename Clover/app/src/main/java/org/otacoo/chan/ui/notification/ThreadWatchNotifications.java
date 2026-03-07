@@ -96,7 +96,7 @@ public class ThreadWatchNotifications extends NotificationHelper {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(applicationContext, channelId);
 
-        Person user = new Person.Builder().setName("").build();
+        Person user = new Person.Builder().setName("Me").build();
         NotificationCompat.MessagingStyle messagingStyle =
                 new NotificationCompat.MessagingStyle(user);
 
@@ -149,14 +149,11 @@ public class ThreadWatchNotifications extends NotificationHelper {
                     .replaceAll(">$1");
 
             CharSequence name = post.nameTripcodeIdCapcodeSpan;
-//            if (name.length() == 0) {
-//                name = "Anonymous";
-//            }
-            Person.Builder personBuilder = new Person.Builder();
-            if (name != null) {
-                personBuilder.setName(name);
+            if (name == null || name.length() == 0) {
+                name = "Anonymous";
             }
-            messagingStyle.addMessage(comment, post.time, personBuilder.build());
+            Person person = new Person.Builder().setName(name).build();
+            messagingStyle.addMessage(comment, post.time, person);
         }
     }
 
