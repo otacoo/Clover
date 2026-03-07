@@ -418,7 +418,7 @@ public class Chan4 extends SiteBase {
                 public void onError(String error) {
                     Logger.e(TAG, "Failed to get boards from server: " + error);
                     android.widget.Toast.makeText(AndroidUtils.getAppContext(),
-                            "Unable to load board list, please try again. No connection or 4chan server issue?",
+                            "Unable to load board list. No connection or 4chan server issue?",
                             android.widget.Toast.LENGTH_LONG).show();
                     listener.onBoardsReceived(new Boards(new ArrayList<>()));
                 }
