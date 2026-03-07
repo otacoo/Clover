@@ -138,7 +138,10 @@ public class ThreadPresenter implements
 
             chanLoader = chanLoaderFactory.obtain(loadable, this);
 
-            threadPresenterCallback.showLoading();
+            // Avoid showing the loading screen if we already have the thread in memory (Quick Load)
+            if (chanLoader.getThread() == null) {
+                threadPresenterCallback.showLoading();
+            }
         }
     }
 
