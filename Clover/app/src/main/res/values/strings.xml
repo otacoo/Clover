@@ -514,7 +514,7 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_never_hide_toolbar">Never hide the toolbar</string>
     <string name="setting_toolbar_bottom">Move toolbar to the bottom</string>
     <string name="setting_toolbar_bottom_description">Shows the toolbar at the bottom of the screen</string>
-    <string name="setting_enable_reply_fab">Enable the reply button (FAB)</string>
+    <string name="setting_enable_reply_fab">Enable the floating reply button</string>
     <string name="setting_enable_reply_fab_description">Disabling replaces the round button with a menu option</string>
     <string name="setting_enable_top_bottom_fab">Enable Top and Bottom buttons</string>
     <string name="setting_enable_top_bottom_fab_description">Easy up and down navigation</string>
