@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <org.videolan.libvlc.util.VLCVideoLayout
-        android:id="@+id/vlc_video_layout"
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/exo_player_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="#000000"
+        app:use_controller="false" />
 
     <RelativeLayout
-        android:id="@+id/vlc_controller_container"
+        android:id="@+id/player_controller_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
 
         <LinearLayout
-            android:id="@+id/vlc_top_controller"
+            android:id="@+id/player_top_controller"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
@@ -25,7 +28,7 @@
             android:padding="8dp">
 
             <ImageButton
-                android:id="@+id/vlc_back"
+                android:id="@+id/player_back"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
@@ -37,7 +40,7 @@
                 android:layout_weight="1" />
 
             <ImageButton
-                android:id="@+id/vlc_download"
+                android:id="@+id/player_download"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
@@ -45,7 +48,7 @@
                 android:visibility="gone" />
 
             <ImageButton
-                android:id="@+id/vlc_mute"
+                android:id="@+id/player_mute"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
@@ -55,7 +58,7 @@
         </LinearLayout>
 
         <include
-            android:id="@+id/vlc_controller"
+            android:id="@+id/player_controller"
             layout="@layout/custom_exo_controller"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
