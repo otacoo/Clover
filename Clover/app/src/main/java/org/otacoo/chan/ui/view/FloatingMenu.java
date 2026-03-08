@@ -35,6 +35,7 @@ import android.widget.TextView;
 import androidx.appcompat.widget.ListPopupWindow;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.ui.theme.ThemeHelper;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
@@ -162,9 +163,9 @@ public class FloatingMenu {
             popupWindow.setHeight(popupHeight);
         }
 
-        if (backgroundColor != null) {
-            popupWindow.setBackgroundDrawable(new ColorDrawable(backgroundColor));
-        }
+        int themeBg = ThemeHelper.getThemeBackgroundForeground(context).bgInt;
+        int resolvedBg = backgroundColor != null ? backgroundColor : themeBg;
+        popupWindow.setBackgroundDrawable(new ColorDrawable(resolvedBg));
 
         int selection = 0;
         if (manageItems) {
@@ -228,7 +229,7 @@ public class FloatingMenu {
 
         popupWindow.show();
 
-        if (backgroundColor != null && popupWindow.getListView() != null) {
+        if (popupWindow.getListView() != null) {
             popupWindow.getListView().setBackgroundColor(0);
         }
 
