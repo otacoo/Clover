@@ -1,3 +1,35 @@
+## 2026-03-09 – v3.2.0
+
+- **New feature:** Clover now ships with a VP9 decoder
+  - Increased the APK size to ~9MB
+  - Clover should now be able to play VP9 WebMs if your hardware doesn't support VP9 or is buggy
+  - If it crashes with VP9 videos, please open an issue with the logs
+- **New feature:** Clover will now save a draft of whatever is written in the posting form (thread specific) when closing the app
+- Video ExoPlayer
+  - Will now better catch player errors instead of crashing the app
+  - Swiping from a video to another will no longer keep the previous video playing in the background
+  - Gave the seekbar more touching space
+- 4chan: added a /ban/ entry to the boardlist to check for bans right from the drawer
+- 4chan captcha: fixed an issue with certain phones forcing dark mode on the captcha, making the app crash
+- 4chan captcha: fixed an issue where a user could get stuck in an infinite loop of refreshing captchas
+- Floating menus will now use the Theme's background color
+- Bottom toolbar option will now correctly allow refresh by swiping down
+- Smaller images can now be zoomed in
+- Improved the "Immersive mode" viewer
+  - Opaque overlay
+  - Smoother hiding of toolbar
+  - Now shows useful buttons when touched
+- Improved or removed certain animations
+  - Smoother image viewing fade in/out
+  - Smoother menus and drawers
+  - Faster thread loading
+  - Removed animation for thumbnail loading
+  - Fixed certain animations flashing briefly
+- Rewrote certain strings for better clarity
+- Fixed a bug where the app could crash when restoring backups from older (or newer versions)
+- Fixed an issue where upon restoring a backup certain board descriptions in the drawer would be lost
+- A bunny has dropped an egg
+
 ## 2026-03-05 – v3.1.5
 
 - **New option:** Pinned Searches (under Appearance)
