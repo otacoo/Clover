@@ -35,7 +35,7 @@ public class BrowsingSettingsController extends SettingsController {
     @Override
     public void onCreate() {
         super.onCreate();
-        navigation.setTitle(R.string.settings_screen_boards_threads_posts);
+        navigation.setTitle(R.string.settings_screen_browsing);
 
         setupLayout();
         populatePreferences();

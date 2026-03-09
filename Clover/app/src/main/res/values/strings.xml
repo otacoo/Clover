@@ -492,8 +492,7 @@ Crash reports do not collect any personally identifiable information."
     <string name="settings_group_threads">Threads</string>
     <string name="settings_group_posts">Posts &amp; replies</string>
 
-    <string name="settings_screen_boards_threads_posts">Browsing Experience</string>
-    <string name="settings_group_boards_threads_posts">Browsing Experience</string>
+    <string name="settings_screen_browsing">Browsing</string>
 
     <string name="settings_screen_misc">Misc</string>
     <string name="settings_group_misc">Misc</string>
