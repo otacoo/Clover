@@ -74,7 +74,17 @@ public final class SettingsBackupRestore {
         // Site-specific settings are now primarily handled via SiteModel.userSettings in the sites array.
         if (key.startsWith("preference_")) {
             String remainder = key.substring("preference_".length());
-            return remainder.length() > 0 && Character.isDigit(remainder.charAt(0));
+            
+            // Numeric site IDs: preference_<id>_<key>
+            int firstUnderscore = remainder.indexOf('_');
+            if (firstUnderscore > 0) {
+                String potentialId = remainder.substring(0, firstUnderscore);
+                try {
+                    Integer.parseInt(potentialId);
+                    return true;
+                } catch (NumberFormatException ignored) {
+                }
+            }
         }
 
         return false;
