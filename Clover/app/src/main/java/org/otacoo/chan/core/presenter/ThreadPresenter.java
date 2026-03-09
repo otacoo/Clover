@@ -116,32 +116,30 @@ public class ThreadPresenter implements
     }
 
     public void bindLoadable(Loadable loadable) {
-        if (!loadable.equals(this.loadable)) {
-            if (chanLoader != null) {
-                unbindLoadable();
-            }
+        if (chanLoader != null) {
+            unbindLoadable();
+        }
 
-            // Reset search state so a catalog search filter doesn't bleed into threads
-            searchOpen = !TextUtils.isEmpty(loadable.searchQuery);
-            searchQuery = loadable.searchQuery;
-            threadPresenterCallback.showSearch(searchOpen);
+        // Reset search state so a catalog search filter doesn't bleed into threads
+        searchOpen = !TextUtils.isEmpty(loadable.searchQuery);
+        searchQuery = loadable.searchQuery;
+        threadPresenterCallback.showSearch(searchOpen);
 
-            Pin pin = watchManager.findPinByLoadable(loadable);
-            // TODO this isn't true anymore, because all loadables come from one location.
-            if (pin != null) {
-                // Use the loadable from the pin.
-                // This way we can store the list position in the pin loadable,
-                // and not in a separate loadable instance.
-                loadable = pin.loadable;
-            }
-            this.loadable = loadable;
+        Pin pin = watchManager.findPinByLoadable(loadable);
+        // TODO this isn't true anymore, because all loadables come from one location.
+        if (pin != null) {
+            // Use the loadable from the pin.
+            // This way we can store the list position in the pin loadable,
+            // and not in a separate loadable instance.
+            loadable = pin.loadable;
+        }
+        this.loadable = loadable;
 
-            chanLoader = chanLoaderFactory.obtain(loadable, this);
+        chanLoader = chanLoaderFactory.obtain(loadable, this);
 
-            // Avoid showing the loading screen if we already have the thread in memory (Quick Load)
-            if (chanLoader.getThread() == null) {
-                threadPresenterCallback.showLoading();
-            }
+        // Avoid showing the loading screen if we already have the thread in memory (Quick Load)
+        if (chanLoader.getThread() == null) {
+            threadPresenterCallback.showLoading();
         }
     }
 
@@ -157,7 +155,6 @@ public class ThreadPresenter implements
             historyAdded = false;
 
             threadPresenterCallback.showNewPostsNotification(false, -1);
-            threadPresenterCallback.showLoading();
         }
     }
 
