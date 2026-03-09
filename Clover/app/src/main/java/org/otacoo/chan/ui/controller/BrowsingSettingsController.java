@@ -17,14 +17,20 @@
  */
 package org.otacoo.chan.ui.controller;
 
+import static org.otacoo.chan.utils.AndroidUtils.getString;
+
 import android.content.Context;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.settings.BooleanSettingView;
+import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
 import org.otacoo.chan.ui.settings.StringSettingView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BrowsingSettingsController extends SettingsController {
 
@@ -129,6 +135,8 @@ public class BrowsingSettingsController extends SettingsController {
                     ChanSettings.anonymizeIds,
                     R.string.setting_anonymize_ids, 0)));
 
+            setupHideFlagsSetting(misc);
+
             requiresUiRefresh.add(misc.add(new BooleanSettingView(this,
                     ChanSettings.textOnly,
                     R.string.setting_text_only, R.string.setting_text_only_description)));
@@ -140,5 +148,31 @@ public class BrowsingSettingsController extends SettingsController {
 
             groups.add(misc);
         }
+    }
+
+    private void setupHideFlagsSetting(SettingsGroup misc) {
+        List<ListSettingView.Item> hideFlagsModes = new ArrayList<>();
+        for (ChanSettings.HideFlagsMode mode : ChanSettings.HideFlagsMode.values()) {
+            int name = 0;
+            switch (mode) {
+                case DISABLED:
+                    name = R.string.setting_hide_flags_disabled;
+                    break;
+                case ALL:
+                    name = R.string.setting_hide_flags_all;
+                    break;
+                case CATALOG:
+                    name = R.string.setting_hide_flags_catalog;
+                    break;
+                case THREAD:
+                    name = R.string.setting_hide_flags_thread;
+                    break;
+            }
+            hideFlagsModes.add(new ListSettingView.Item<>(getString(name), mode));
+        }
+
+        requiresUiRefresh.add(misc.add(new ListSettingView<>(this,
+                ChanSettings.hideFlags,
+                R.string.setting_hide_flags, hideFlagsModes)));
     }
 }

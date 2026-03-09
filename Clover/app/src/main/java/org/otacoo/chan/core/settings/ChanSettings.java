@@ -143,6 +143,24 @@ public class ChanSettings {
         }
     }
 
+    public enum HideFlagsMode implements OptionSettingItem {
+        DISABLED("disabled"),
+        ALL("all"),
+        CATALOG("catalog"),
+        THREAD("thread");
+
+        String name;
+
+        HideFlagsMode(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getKey() {
+            return name;
+        }
+    }
+
     private static Proxy proxy;
 
     private static final StringSetting theme;
@@ -185,6 +203,7 @@ public class ChanSettings {
     public static final BooleanSetting useImmersiveModeForGallery;
     public static final BooleanSetting anonymize;
     public static final BooleanSetting anonymizeIds;
+    public static final OptionsSetting<HideFlagsMode> hideFlags;
     public static final BooleanSetting showAnonymousName;
     public static final BooleanSetting revealImageSpoilers;
     public static final BooleanSetting revealTextSpoilers;
@@ -288,6 +307,7 @@ public class ChanSettings {
         enableTopBottomFab = new BooleanSetting(p, "preference_enable_top_bottom_fab", false);
         anonymize = new BooleanSetting(p, "preference_anonymize", false);
         anonymizeIds = new BooleanSetting(p, "preference_anonymize_ids", false);
+        hideFlags = new OptionsSetting<>(p, "preference_hide_flags", HideFlagsMode.class, HideFlagsMode.DISABLED);
         showAnonymousName = new BooleanSetting(p, "preference_show_anonymous_name", true);
         revealImageSpoilers = new BooleanSetting(p, "preference_reveal_image_spoilers", false);
         revealTextSpoilers = new BooleanSetting(p, "preference_reveal_text_spoilers", false);

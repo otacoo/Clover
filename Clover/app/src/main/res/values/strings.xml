@@ -566,6 +566,11 @@ Crash reports do not collect any personally identifiable information."
     <string name="settings_reveal_text_spoilers_description">Makes the spoiler text appear tapped</string>
     <string name="setting_anonymize">Make everyone Anonymous</string>
     <string name="setting_anonymize_ids">Hide IDs</string>
+    <string name="setting_hide_flags">Hide flags</string>
+    <string name="setting_hide_flags_disabled">Disabled</string>
+    <string name="setting_hide_flags_all">All</string>
+    <string name="setting_hide_flags_catalog">Catalog</string>
+    <string name="setting_hide_flags_thread">Thread</string>
     <string name="setting_show_anonymous_name">Always show \"Anonymous\" name</string>
     <string name="setting_buttons_bottom">Reply buttons on the bottom</string>
     <string name="setting_volume_key_scrolling">Volume keys scroll content</string>

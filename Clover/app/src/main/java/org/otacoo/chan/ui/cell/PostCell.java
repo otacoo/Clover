@@ -419,9 +419,20 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         icons.set(PostIcons.CLOSED, post.isClosed());
         icons.set(PostIcons.DELETED, post.deleted.get());
         icons.set(PostIcons.ARCHIVED, post.isArchived());
-        icons.set(PostIcons.HTTP_ICONS, post.httpIcons != null);
 
-        if (post.httpIcons != null) {
+        boolean showFlags = true;
+        ChanSettings.HideFlagsMode hideFlagsMode = ChanSettings.hideFlags.get();
+        if (hideFlagsMode == ChanSettings.HideFlagsMode.ALL) {
+            showFlags = false;
+        } else if (hideFlagsMode == ChanSettings.HideFlagsMode.THREAD && threadMode) {
+            showFlags = false;
+        } else if (hideFlagsMode == ChanSettings.HideFlagsMode.CATALOG && !threadMode) {
+            showFlags = false;
+        }
+
+        icons.set(PostIcons.HTTP_ICONS, showFlags && post.httpIcons != null);
+
+        if (showFlags && post.httpIcons != null) {
             icons.setHttpIcons(post.httpIcons, theme, iconSizePx);
         }
 
