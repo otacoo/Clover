@@ -26,6 +26,7 @@ import android.os.StrictMode;
 import android.webkit.WebSettings;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.codejargon.feather.Feather;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -191,13 +192,19 @@ public class Chan extends Application implements
     }
 
     public RuntimePermissionsHelper getRuntimePermissionsHelper() {
-        for (int i = activities.size() - 1; i >= 0; i--) {
-            Activity activity = activities.get(i);
-            if (activity instanceof StartActivity) {
-                return ((StartActivity) activity).getRuntimePermissionsHelper();
-            }
+        Activity activity = getTopActivity();
+        if (activity instanceof StartActivity) {
+            return ((StartActivity) activity).getRuntimePermissionsHelper();
         }
         return null;
+    }
+
+    @Nullable
+    public Activity getTopActivity() {
+        if (activities.isEmpty()) {
+            return null;
+        }
+        return activities.get(activities.size() - 1);
     }
 
     @Override

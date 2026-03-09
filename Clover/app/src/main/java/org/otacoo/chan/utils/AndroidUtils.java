@@ -61,6 +61,7 @@ import androidx.core.app.ActivityManagerCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
 import org.otacoo.chan.ui.theme.ThemeHelper;
 
@@ -108,6 +109,14 @@ public class AndroidUtils {
 
     public static Context getAppContext() {
         return application;
+    }
+
+    public static Context getUIContext() {
+        Activity activity = Chan.getInstance().getTopActivity();
+        if (activity != null) {
+            return activity;
+        }
+        return getAppContext();
     }
 
     public static String getString(int res) {
@@ -225,7 +234,7 @@ public class AndroidUtils {
     }
 
     private static void openIntentFailed() {
-        Toast.makeText(getAppContext(), R.string.open_link_failed, Toast.LENGTH_LONG).show();
+        Toast.makeText(getUIContext(), R.string.open_link_failed, Toast.LENGTH_LONG).show();
     }
 
     public static int getAttrColor(Context context, int attr) {
