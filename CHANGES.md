@@ -1,3 +1,11 @@
+## 2026-03-09 – v3.2.1
+
+- **Crash on startup:** Fix an issue where the app was missing database entries for the new **comment draft** feature
+- Toasts on certain devices should now be properly styled according to Dark/Light mode
+- Fix an issue where certain preferences dealing with Sites weren't being backed up
+- Fix an issue where pinned searches weren't being properly backed up and restored (showing >>>/null/null)
+- Improve VP9 codec
+
 ## 2026-03-09 – v3.2.0
 
 - **New feature:** Clover now ships with a VP9 decoder
