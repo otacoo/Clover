@@ -4,7 +4,7 @@
   - Add an option to force 8chan to use a particular domain (.moe, .st, .cc) (issue #7)
   - Supports DOOM, SRZ BIZNIZ, pink text, flags
   - Detects when user is being rated-limited or needs to pass POWBlock
-  - TODO: various posting shenanings like post form tags, certain text formatting, automatic POWBlock bypass, better flow and issue detection
+  - TODO: various posting shenanigans like post form tags, certain text formatting, automatic POWBlock bypass, better flow and issue detection
 - **New feature:** Hide flags (issue #6)
 - **App performance (on-going):**
   - Improved background/main thread separation and loading responsiveness, Clover should feel a bit snappier
@@ -15,7 +15,7 @@
 - Improve scroll position saving (issue #8)
 - Improve how the unread line is inserted and cleared (issue #8)
 - Improve how (You)s are cleared from the bookmarks (issue #5 and #8)
-- More dialogs will now correctly use the Theme's backgroung color
+- More dialogs will now correctly use the Theme's background color
 - Seeking videos will now be more responsive and less laggy by using NEAREST KEYFRAME instead of EXACT
 - Add possible mitigations for posts going into the wrong thread after the captcha flow (issue #8)
 - Fix an issue with the Dark Mode on older devices aggressively trying to apply dark mode to the captcha, causing repeat reloads
