@@ -48,6 +48,9 @@ public class CommentParserHelper {
      * @param spannable Spannable to set the spans on.
      */
     public static void detectLinks(Theme theme, Post.Builder post, String text, SpannableString spannable) {
+        if (text.length() < 8 || (!text.contains("http") && !text.contains("www."))) {
+            return;
+        }
         final Iterable<LinkSpan> links = LINK_EXTRACTOR.extractLinks(text);
         for (final LinkSpan link : links) {
             final String linkText = text.substring(link.getBeginIndex(), link.getEndIndex());

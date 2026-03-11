@@ -67,7 +67,7 @@ public class DatabaseLoadableManager {
                 }
 
                 if (!toFlush.isEmpty()) {
-                    Logger.d(TAG, "Flushing " + toFlush.size() + " loadable(s)");
+                    //Logger.d(TAG, "Flushing " + toFlush.size() + " loadable(s)");
                     long start = Time.startTiming();
                     for (int i = 0; i < toFlush.size(); i++) {
                         Loadable loadable = toFlush.get(i);
@@ -149,7 +149,7 @@ public class DatabaseLoadableManager {
             public Loadable call() throws Exception {
                 Loadable cachedLoadable = cachedLoadables.get(loadable);
                 if (cachedLoadable != null) {
-                    Logger.v(TAG, "Cached loadable found");
+                    //Logger.v(TAG, "Cached loadable found");
                     return cachedLoadable;
                 } else {
                     QueryBuilder<Loadable, Integer> builder = helper.loadableDao.queryBuilder();
