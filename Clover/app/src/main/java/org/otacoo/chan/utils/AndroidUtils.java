@@ -465,7 +465,7 @@ public class AndroidUtils {
 
     public static void fixSnackbarText(Context context, Snackbar snackbar) {
         ((TextView) snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setTextColor(0xffffffff);
-        snackbar.setActionTextColor(org.otacoo.chan.ui.theme.ThemeHelper.theme().accentColor.color);
+        snackbar.setActionTextColor(0xffffffff);
     }
 
     public static ConnectivityManager getConnectivityManager() {
