@@ -378,7 +378,7 @@ public class LynxchanActions extends CommonSite.CommonActions {
         if (cookies.isEmpty()) return false;
         
         // Match any TOS cookie (e.g., TOS, TOS20250418) and POW_TOKEN
-        boolean hasTOS = java.util.regex.Pattern.compile("\\bTOS\\d+=").matcher(cookies).find();
+        boolean hasTOS = java.util.regex.Pattern.compile("\\bTOS\\w*=").matcher(cookies).find();
         return hasTOS && cookies.contains("POW_TOKEN");
     }
 }
