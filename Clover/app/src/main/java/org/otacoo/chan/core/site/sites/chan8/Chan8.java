@@ -211,8 +211,18 @@ public class Chan8 extends CommonSite {
 
         @Override
         public String verificationUrl() {
-            return isLoggedIn() ? null
-                    : ((LynxchanEndpoints) site.endpoints()).root().toString();
+            // Check WebView CookieManager directly — it is the authoritative store on the main
+            // thread and is always up to date after a verification session.
+            String[] checkUrls = {"https://8chan.moe/", "https://8chan.st/", "https://8chan.cc/"};
+            for (String url : checkUrls) {
+                String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+                if (cookies != null
+                        && cookies.contains("POW_TOKEN")
+                        && java.util.regex.Pattern.compile("\\bTOS\\w*=").matcher(cookies).find()) {
+                    return null;
+                }
+            }
+            return ((LynxchanEndpoints) site.endpoints()).root().toString();
         }
     }
 }

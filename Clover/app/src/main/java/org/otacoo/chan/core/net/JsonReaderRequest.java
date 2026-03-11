@@ -95,7 +95,7 @@ public abstract class JsonReaderRequest<T> implements Callback {
                     if (m.find()) {
                         pageTitle = " (Title: " + m.group(1).trim() + ")";
                     }
-                    errorMsg = "Received HTML instead of JSON" + pageTitle + ". The site may be showing a challenge or error page. Use 'Login' to verify.";
+                    errorMsg = "Received HTML instead of JSON" + pageTitle + ". The site may be showing a challenge or error page. Use 'Verification' button to verify.";
                 }
                 AndroidUtils.runOnUiThread(() -> listener.onError(errorMsg));
                 return;

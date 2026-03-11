@@ -375,8 +375,23 @@ public class LynxchanActions extends CommonSite.CommonActions {
         }
         
         String cookies = allCookies.toString();
+
+        // Also check the WebView CookieManager as a fallback — the java.net CookieStore uses
+        // RFC 2965 domain matching which can miss cookies stored without a leading dot.
+        if (cookies.isEmpty() || !(cookies.contains("POW_TOKEN"))) {
+            CookieManager cm = CookieManager.getInstance();
+            for (String url : urls) {
+                String c = cm.getCookie(url);
+                if (c != null && !c.isEmpty()) {
+                    if (allCookies.length() > 0) allCookies.append("; ");
+                    allCookies.append(c);
+                }
+            }
+            cookies = allCookies.toString();
+        }
+
         if (cookies.isEmpty()) return false;
-        
+
         // Match any TOS cookie (e.g., TOS, TOS20250418) and POW_TOKEN
         boolean hasTOS = java.util.regex.Pattern.compile("\\bTOS\\w*=").matcher(cookies).find();
         return hasTOS && cookies.contains("POW_TOKEN");
