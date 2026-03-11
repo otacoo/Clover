@@ -63,6 +63,7 @@ import androidx.media3.common.Tracks;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
 import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
@@ -706,20 +707,29 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
         if (playerSeekBar != null) {
             playerSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                private int pendingSeekPosition = -1;
+
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    if (fromUser && exoPlayer != null) {
-                        exoPlayer.seekTo(progress);
+                    if (fromUser) {
+                        pendingSeekPosition = progress;
+                        if (playerPosition != null) playerPosition.setText(formatTime(progress));
                     }
                 }
 
                 @Override
                 public void onStartTrackingTouch(SeekBar seekBar) {
                     handler.removeCallbacks(updateTimeTask);
+                    pendingSeekPosition = -1;
                 }
 
                 @Override
                 public void onStopTrackingTouch(SeekBar seekBar) {
+                    if (exoPlayer != null && pendingSeekPosition >= 0) {
+                        exoPlayer.setSeekParameters(SeekParameters.CLOSEST_SYNC);
+                        exoPlayer.seekTo(pendingSeekPosition);
+                    }
+                    pendingSeekPosition = -1;
                     handler.post(updateTimeTask);
                 }
             });
