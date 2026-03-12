@@ -23,7 +23,6 @@ There has been an extensive backend overhaul and modernization of the app while 
 
 **TODO:**
 - Replace Jsoup with a more lightweight HTML parser 
-- Automate POWBlock bypass
 - Improve performance of the app
 
 ## About Clover
@@ -39,13 +38,15 @@ Clover is a fast Android app for browsing imageboards, such as 4chan and 8chan. 
 
 ## Issues and features
 Issues can be reported here at the [Issues page](https://github.com/otacoo/Clover/issues).\
+Provide as much detailed info as possible, logs, screenshots etc.
+
 Please search before reporting an issue to avoid duplicates!
 
 
 ## Contributing & Building
 
 **Note:**\
-I'll only accept [pull requests](https://github.com/otacoo/Clover/pulls) for adding *site support*.
+I'll accept [pull requests](https://github.com/otacoo/Clover/pulls) for adding [*site support*](docs/site_support.md).
 
 To build and test locally, see the [BUILD.md](docs/BUILD.md) instructions.
 
