@@ -976,7 +976,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         visibleInstances.remove(this);
     }
 
-    @Override public void onDestroy() {
+    @Override 
+    public void onDestroy() {
+        reportedCompletion = true;
+        callback = null;
         showingActiveCaptcha = false;
         visibleInstances.remove(this);
     }
