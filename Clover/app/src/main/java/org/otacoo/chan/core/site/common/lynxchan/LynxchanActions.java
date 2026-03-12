@@ -182,8 +182,13 @@ public class LynxchanActions extends CommonSite.CommonActions {
         String trimmed = result.trim();
         if (trimmed.startsWith("<") || trimmed.contains("<html") || trimmed.contains("<!DOCTYPE")) {
             replyResponse.requireAuthentication = true;
-            replyResponse.errorMessage = "Session challenge page returned — please re-verify via Login.";
-            Logger.w(TAG, "handlePost: received HTML response, treating as auth required");
+            boolean powHtml = trimmed.contains("X-PoWBlock") || trimmed.contains("Proof of Work")
+                    || trimmed.contains("pow=") || trimmed.contains("captcha.js");
+            replyResponse.errorMessage = powHtml
+                    ? "8chan security check could not be completed automatically. Tap Login to verify."
+                    : "Unexpected page returned from server \u2014 please re-verify via Login.";
+            Logger.w(TAG, "handlePost: HTML response (powHtml=" + powHtml + ") start="
+                    + trimmed.substring(0, Math.min(trimmed.length(), 120)));
             return;
         }
 

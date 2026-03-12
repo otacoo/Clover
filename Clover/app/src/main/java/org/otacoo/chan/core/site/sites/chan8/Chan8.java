@@ -158,13 +158,40 @@ public class Chan8 extends CommonSite {
 
     private static class Chan8Actions extends LynxchanActions {
         private static final String TAG = "Chan8Actions";
+        private static volatile boolean powPreWarmFired = false;
 
         Chan8Actions(CommonSite site) {
             super(site);
         }
 
+        private void triggerPowPreWarm() {
+            if (powPreWarmFired) return;
+            powPreWarmFired = true;
+            HttpUrl captchaUrl = ((LynxchanEndpoints) site.endpoints()).root()
+                    .newBuilder().addPathSegment("captcha.js").build();
+            HttpCall warmCall = new HttpCall(site) {
+                @Override
+                public void setup(Request.Builder requestBuilder,
+                        ProgressRequestBody.ProgressRequestListener progressListener) {}
+
+                @Override
+                public void process(Response response, String result) {}
+            };
+            warmCall.url(captchaUrl.toString());
+            site.getHttpCallManager().makeHttpCall(warmCall, new HttpCall.HttpCallback<HttpCall>() {
+                @Override
+                public void onHttpSuccess(HttpCall httpCall) {}
+
+                @Override
+                public void onHttpFail(HttpCall httpCall, Exception e) {
+                    Logger.d(TAG, "pow pre-warm failed: " + e.getMessage());
+                }
+            });
+        }
+
         @Override
         public void boards(BoardsListener boardsListener) {
+            triggerPowPreWarm();
             HttpCall call = new HttpCall(site) {
                 @Override
                 public void setup(Request.Builder requestBuilder,

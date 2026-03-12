@@ -123,13 +123,15 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(drawerAdapter.getItemTouchHelperCallback());
         itemTouchHelper.attachToRecyclerView(recyclerView);
 
+        org.otacoo.chan.core.net.Chan8PowNotifier.setRootView(drawerLayout);
+
         updateBadge();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
+        org.otacoo.chan.core.net.Chan8PowNotifier.setRootView(null);
         EventBus.getDefault().unregister(this);
     }
 

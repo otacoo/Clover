@@ -122,6 +122,7 @@ public class Chan8PowInterceptor implements Interceptor {
         }
 
         String powStatus = resp.header("X-PoWBlock-Status");
+        if (powStatus == null) powStatus = resp.header("X-PoW-Status");
         boolean xBlockRequired = powStatus != null && powStatus.equalsIgnoreCase("required");
         // Also handle Varnish 403 "Proof of Work required" (expired POW_TOKEN).
         boolean is403Pow = !xBlockRequired && resp.code() == 403
@@ -168,6 +169,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 html = fetchPowChallenge(req.url());
                 if (html == null) {
                     org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "403 POW: could not retrieve fresh challenge");
+                    org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
                     return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 }
             }
@@ -177,9 +179,12 @@ public class Chan8PowInterceptor implements Interceptor {
 
             if (token == null || difficulty == null) {
                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW required but challenge parse failed; user must Login via WebView");
+                org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
                 if (is403Pow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }
+
+            org.otacoo.chan.core.net.Chan8PowNotifier.onPowStarted();
 
             long t0 = System.currentTimeMillis();
             org.otacoo.chan.core.net.pow.Chan8ProofOfWork solver = new org.otacoo.chan.core.net.pow.Chan8ProofOfWork(token, difficulty, 256);
@@ -187,6 +192,7 @@ public class Chan8PowInterceptor implements Interceptor {
             long elapsed = System.currentTimeMillis() - t0;
             if (solution == null) {
                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW solver failed after " + elapsed + "ms");
+                org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
                 if (is403Pow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }
@@ -215,6 +221,7 @@ public class Chan8PowInterceptor implements Interceptor {
             // If we get rate-limited on the POW submission, abandon and return the original 403/required response.
             if (submitCode == 429) {
                 submitResp.close();
+                org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
                 return new okhttp3.Response.Builder()
                         .request(req)
                         .protocol(okhttp3.Protocol.HTTP_1_1)
@@ -229,6 +236,11 @@ public class Chan8PowInterceptor implements Interceptor {
             List<String> setCookies = submitResp.headers("Set-Cookie");
             if (!setCookies.isEmpty()) {
                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW submit Set-Cookie count=" + setCookies.size());
+            }
+            String completeStatus = submitResp.header("X-PoWBlock-Status");
+            if (completeStatus == null) completeStatus = submitResp.header("X-PoW-Status");
+            if (completeStatus != null && !completeStatus.equalsIgnoreCase("complete")) {
+                org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW submit 302 missing X-PoWBlock-Status: complete (got: " + completeStatus + ")");
             }
             submitResp.close();
 
@@ -276,6 +288,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 }
             } catch (Exception ignored) {}
 
+            org.otacoo.chan.core.net.Chan8PowNotifier.onPowSolved();
             Request retryReq = req.newBuilder().removeHeader("Cookie").header(POW_BYPASS_HEADER, "1").build();
             return chain.proceed(retryReq);
         } finally {
