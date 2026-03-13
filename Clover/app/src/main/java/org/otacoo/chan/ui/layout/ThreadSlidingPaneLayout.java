@@ -20,10 +20,14 @@ package org.otacoo.chan.ui.layout;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 
 import android.content.Context;
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
+
+import java.util.Collections;
 
 import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
@@ -84,6 +88,17 @@ public class ThreadSlidingPaneLayout extends SlidingPaneLayout {
     }
 
     @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // ViewDragHelper can receive horizontal drag events on Android 10+.
+            int edgeWidth = dp(20);
+            setSystemGestureExclusionRects(
+                    Collections.singletonList(new Rect(0, 0, edgeWidth, getHeight())));
+        }
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -93,12 +108,14 @@ public class ThreadSlidingPaneLayout extends SlidingPaneLayout {
         ViewGroup.LayoutParams leftParams = leftPane.getLayoutParams();
         ViewGroup.LayoutParams rightParams = rightPane.getLayoutParams();
 
-        if (width < dp(500)) {
-            leftParams.width = width - dp(30);
-            rightParams.width = width;
-        } else {
-            leftParams.width = width - dp(60);
-            rightParams.width = width;
+        if (width > 0) {
+            if (width < dp(500)) {
+                leftParams.width = Math.max(0, width - dp(30));
+                rightParams.width = width;
+            } else {
+                leftParams.width = Math.max(0, width - dp(60));
+                rightParams.width = width;
+            }
         }
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
