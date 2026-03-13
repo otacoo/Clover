@@ -84,16 +84,19 @@ public class NavigationControllerContainerLayout extends FrameLayout {
     private Rect shadowRect = new Rect();
     private int shadowPosition;
 
+    @SuppressWarnings("this-escape")
     public NavigationControllerContainerLayout(Context context) {
         super(context);
         init();
     }
 
+    @SuppressWarnings("this-escape")
     public NavigationControllerContainerLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
+    @SuppressWarnings("this-escape")
     public NavigationControllerContainerLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();

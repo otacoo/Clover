@@ -236,6 +236,7 @@ public class StartActivity extends AppCompatActivity implements
         return handled;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean restoreFromSavedState(Bundle savedInstanceState) {
         boolean handled = false;
 

@@ -34,7 +34,7 @@ public class Chan4PagePositionFooter {
             }
 
             // if we couldn't return a page position, reload the cache
-            OkHttpClient client = Chan.getInstance().injector().instance(OkHttpClient.class);
+            OkHttpClient client = Chan.injector().instance(OkHttpClient.class);
             Request request = new Request.Builder()
                     .url("https://a.4cdn.org/" + board + "/threads.json")
                     .build();

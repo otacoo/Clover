@@ -228,8 +228,8 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         } else {
             anchorPos[1] += dp(OFFSET_Y_DP);
         }
-        recyclerViewPos[0] += -recyclerView.getTranslationX() - getTranslationX();
-        recyclerViewPos[1] += -recyclerView.getTranslationY() - getTranslationY();
+        recyclerViewPos[0] += (int) (-recyclerView.getTranslationX() - getTranslationX());
+        recyclerViewPos[1] += (int) (-recyclerView.getTranslationY() - getTranslationY());
 
         int x = anchorPos[0] - recyclerViewPos[0];
         int y = anchorPos[1] - recyclerViewPos[1];

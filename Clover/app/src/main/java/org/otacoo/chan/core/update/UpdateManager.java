@@ -65,6 +65,7 @@ public class UpdateManager {
 
     private UpdateCallback callback;
 
+    @SuppressWarnings("this-escape")
     public UpdateManager(UpdateCallback callback) {
         inject(this);
         this.callback = callback;

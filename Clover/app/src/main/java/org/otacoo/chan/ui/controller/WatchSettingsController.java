@@ -120,7 +120,8 @@ public class WatchSettingsController extends SettingsController implements Compo
                 60 * 60 * 1000,
                 2 * 60 * 60 * 1000
         };
-        ListSettingView.Item[] timeoutsItems = new ListSettingView.Item[timeouts.length];
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        ListSettingView.Item<Integer>[] timeoutsItems = new ListSettingView.Item[timeouts.length];
         for (int i = 0; i < timeouts.length; i++) {
             int value = timeouts[i] / 1000 / 60;
             String name = context.getResources().getQuantityString(R.plurals.minutes, value, value);

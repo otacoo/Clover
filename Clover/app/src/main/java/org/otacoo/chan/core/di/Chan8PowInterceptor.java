@@ -272,12 +272,12 @@ public class Chan8PowInterceptor implements Interceptor {
                 if (!toPersist.isEmpty()) {
                     try {
                         org.otacoo.chan.Chan injectorOwner = org.otacoo.chan.Chan.getInstance();
-                        if (injectorOwner != null && injectorOwner.injector() != null) {
-                            org.otacoo.chan.core.site.SiteResolver resolver = injectorOwner.injector().instance(org.otacoo.chan.core.site.SiteResolver.class);
+                        if (injectorOwner != null && org.otacoo.chan.Chan.injector() != null) {
+                            org.otacoo.chan.core.site.SiteResolver resolver = org.otacoo.chan.Chan.injector().instance(org.otacoo.chan.core.site.SiteResolver.class);
                             org.otacoo.chan.core.site.Site site = resolver.findSiteForUrl(req.url().toString());
                             if (site != null) {
                                 org.otacoo.chan.core.settings.json.JsonSettings js = org.otacoo.chan.core.settings.json.JsonSettingsUtil.fromMap(toPersist);
-                                org.otacoo.chan.core.site.SiteService svc = injectorOwner.injector().instance(org.otacoo.chan.core.site.SiteService.class);
+                                org.otacoo.chan.core.site.SiteService svc = org.otacoo.chan.Chan.injector().instance(org.otacoo.chan.core.site.SiteService.class);
                                 svc.updateUserSettings(site, js);
                                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "Persisted POW cookies to site settings for " + site.name());
                             }

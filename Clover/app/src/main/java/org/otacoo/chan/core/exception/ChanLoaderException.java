@@ -25,6 +25,8 @@ import java.util.Locale;
 import javax.net.ssl.SSLException;
 
 public class ChanLoaderException extends Exception {
+    private static final long serialVersionUID = 1L;
+
     private int statusCode = -1;
 
     public ChanLoaderException(String message) {

@@ -317,11 +317,15 @@ public class FileCacheDownloader implements Runnable {
     }
 
     private static class CancelException extends IOException {
+        private static final long serialVersionUID = 1L;
+
         public CancelException() {
         }
     }
 
     private static class HttpCodeIOException extends IOException {
+        private static final long serialVersionUID = 1L;
+
         private final int code;
 
         public HttpCodeIOException(int code) {

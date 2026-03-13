@@ -142,6 +142,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public ThreadLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         inject(this);

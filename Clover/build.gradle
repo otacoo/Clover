@@ -2,7 +2,7 @@
 
 buildscript {
     ext {
-        agp_version = '8.7.3'
+        agp_version = '8.8.0'
     }
     repositories {
         google()
@@ -17,5 +17,9 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs << "-Xlint:all" << "-Xlint:-options" << "-Xlint:-path"
     }
 }

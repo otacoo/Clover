@@ -591,6 +591,7 @@ public class ReplyLayout extends LoadView implements
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setPage(ReplyPresenter.Page page, boolean animate) {
         if (page != ReplyPresenter.Page.AUTHENTICATION && getContext() instanceof Activity) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {

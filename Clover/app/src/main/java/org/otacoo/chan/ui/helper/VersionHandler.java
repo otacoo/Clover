@@ -87,6 +87,7 @@ public class VersionHandler implements UpdateManager.UpdateCallback {
     private AlertDialog updateDownloadDialog;
     private ProgressBar updateDownloadProgress;
 
+    @SuppressWarnings("this-escape")
     public VersionHandler(Context context, RuntimePermissionsHelper runtimePermissionsHelper) {
         this.context = context;
         this.runtimePermissionsHelper = runtimePermissionsHelper;

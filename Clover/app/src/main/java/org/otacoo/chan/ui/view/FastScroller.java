@@ -252,6 +252,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     }
 
 
+    @SuppressWarnings("fallthrough")
     public void show() {
         switch (mAnimationState) {
             case ANIMATION_STATE_FADING_OUT:
@@ -272,6 +273,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     }
 
     @VisibleForTesting
+    @SuppressWarnings("fallthrough")
     void hide(int duration) {
         switch (mAnimationState) {
             case ANIMATION_STATE_FADING_IN:

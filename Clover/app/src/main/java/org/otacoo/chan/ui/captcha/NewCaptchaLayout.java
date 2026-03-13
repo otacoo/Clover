@@ -125,16 +125,19 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     /** Remembers the last payload applied to the UI to prevent redundant redraws or infinite loops. */
     private String lastAppliedPayload;
 
+    @SuppressWarnings("this-escape")
     public NewCaptchaLayout(Context context) {
         super(context);
         commonInit();
     }
 
+    @SuppressWarnings("this-escape")
     public NewCaptchaLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         commonInit();
     }
 
+    @SuppressWarnings("this-escape")
     public NewCaptchaLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         commonInit();
@@ -142,12 +145,12 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Configures basic WebView settings and JS interfaces
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    @SuppressWarnings("deprecation")
     private void commonInit() {
         inject(this);
         WebSettings settings = getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         
         // Disable system Force Dark to avoid interference with our manual dark mode implementation
