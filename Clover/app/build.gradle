@@ -36,6 +36,7 @@ android {
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
         versionCode = 30303
+        buildConfigField "String", "UPDATE_API_ENDPOINT", '"https://raw.githubusercontent.com/otacoo/Clover/main/docs/update_api.json"'
     }
 
     compileOptions {
@@ -101,7 +102,6 @@ android {
             resValue "string", "app_name", "Clover"
             resValue "string", "app_flavor_name", "(build $timestamp)"
             buildConfigField "String", "BUILD_HASH", "\"$timestamp\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"https://raw.githubusercontent.com/otacoo/Clover/main/docs/update_api.json\""
         }
 
         dev {
@@ -109,7 +109,6 @@ android {
             resValue "string", "app_name", "Clover"
             resValue "string", "app_flavor_name", "(build $timestamp-dev)"
             buildConfigField "String", "BUILD_HASH", "\"\""
-            buildConfigField "String", "UPDATE_API_ENDPOINT", "\"\""
         }
     }
 
