@@ -1,3 +1,18 @@
+## 2026-03-12 – v3.3.3
+
+- Trimmed the VP9 decoder by ~1.3MB, Clover APK now half the previous size
+- **4chan captcha:** further refinement of the flow again
+  - Will no longer nuke everything when it detects stale fingerprinting
+  - Will no longer clear the localStorage to avoid running into 4chan abuse issues
+- Gave the posting form some slightly bigger buttons
+- Added a title for long-press to post from an URL (yes, this is a thing that existed in Clover)
+- Fix issues with the bottom toolbar cutting off certain views like the 4chan captcha
+- Force media files to be better recycled from memory
+- Possible fix for posts in a pinned thread going into a different pinned thread
+- Add safety checks for restoring a backup: will only accept JSON files now
+- Add a signature key to Clover backup files so they can be identified instantly by the app
+- Fix an issue where navigating back (<-) while the thread was being recycled could cause a crash (issue #9)
+
 ## 2026-03-12 – v3.3.2
 
 - Refactor and simplify some of the 4chan captcha code

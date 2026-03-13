@@ -32,10 +32,10 @@ android {
         //noinspection ExpiredTargetSdkVersion
         multiDexEnabled true
 
-        versionName "v3.3.2"
+        versionName "v3.3.3"
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
-        versionCode 30302
+        versionCode 30303
     }
 
     repositories {
@@ -152,7 +152,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
-    implementation 'androidx.legacy:legacy-support-v13:1.0.0'
     //noinspection GradleDependency
     implementation 'androidx.appcompat:appcompat:1.5.1'
     //noinspection GradleDependency
@@ -166,6 +165,11 @@ dependencies {
     implementation 'androidx.browser:browser:1.8.0'
     //noinspection GradleDependency
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+
+    implementation 'androidx.slidingpanelayout:slidingpanelayout:1.0.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'
+    implementation 'androidx.drawerlayout:drawerlayout:1.1.0'
+    implementation 'androidx.viewpager:viewpager:1.0.0'
 
     implementation 'androidx.media3:media3-exoplayer:1.4.1'
     implementation 'androidx.media3:media3-ui:1.4.1'
