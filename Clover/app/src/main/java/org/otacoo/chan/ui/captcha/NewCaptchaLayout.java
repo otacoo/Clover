@@ -69,6 +69,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -382,7 +383,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
                 if (isCaptchaRequest && isMainFrame && !skipInterceptNextLoad) {
                     if (hasCloudflareClearance() && hasFingerprintCookies()) {
-                        return interceptCaptchaRequest(url);
+                        return interceptCaptchaRequest(request);
                     } else {
                         // missing clearance or fingerprint – fall back to native page so
                         // mcl.js / cloudflare can run and issue required cookies.
@@ -500,16 +501,29 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     }
 
     // Uses OkHttp to fetch captcha data in the background to avoid blank pages
-    private WebResourceResponse interceptCaptchaRequest(String url) {
+    private WebResourceResponse interceptCaptchaRequest(WebResourceRequest webRequest) {
+        String url = webRequest.getUrl().toString();
         try {
-            String cookies = get4chanCookieHeader();
-            String userAgent = getSettings().getUserAgentString();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header("User-Agent", userAgent != null ? userAgent : cachedUserAgent)
-                    .header("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id)
-                    .header("Cookie", cookies != null ? cookies : "")
-                    .build();
+            Request.Builder builder = new Request.Builder().url(url);
+            
+            //Copy all headers exactly as the WebView intended them to ensure consistent fingerprints (Client Hints, Accept-Language, etc.)
+            Map<String, String> headers = webRequest.getRequestHeaders();
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+            
+            //Override cookies with Clover's aggregated version (ensures cross-subdomain consistency)
+            String aggregatedCookies = get4chanCookieHeader();
+            if (aggregatedCookies != null) {
+                builder.header("Cookie", aggregatedCookies);
+            }
+            
+            // Ensure Referer is set if missing
+            if (!headers.containsKey("Referer")) {
+                builder.header("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id);
+            }
+
+            Request request = builder.build();
 
             try (Response response = okHttpClient.newCall(request).execute()) {
                 String body = response.body() != null ? response.body().string() : "";
