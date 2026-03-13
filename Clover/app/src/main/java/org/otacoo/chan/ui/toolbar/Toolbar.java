@@ -86,6 +86,7 @@ public class Toolbar extends LinearLayout implements
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public Toolbar(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 

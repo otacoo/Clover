@@ -59,6 +59,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private ChanSettings.PostViewMode postViewMode;
     private boolean compact = false;
 
+    @SuppressWarnings("this-escape")
     public PostAdapter(RecyclerView recyclerView, PostAdapterCallback postAdapterCallback, PostCellInterface.PostCellCallback postCellCallback, ThreadStatusCell.Callback statusCellCallback) {
         this.recyclerView = recyclerView;
         this.postAdapterCallback = postAdapterCallback;

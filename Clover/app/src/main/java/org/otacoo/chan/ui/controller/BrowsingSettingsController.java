@@ -151,7 +151,7 @@ public class BrowsingSettingsController extends SettingsController {
     }
 
     private void setupHideFlagsSetting(SettingsGroup misc) {
-        List<ListSettingView.Item> hideFlagsModes = new ArrayList<>();
+        List<ListSettingView.Item<?>> hideFlagsModes = new ArrayList<>();
         for (ChanSettings.HideFlagsMode mode : ChanSettings.HideFlagsMode.values()) {
             int name = 0;
             switch (mode) {

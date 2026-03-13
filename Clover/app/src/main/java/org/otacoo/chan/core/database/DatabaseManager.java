@@ -73,6 +73,7 @@ public class DatabaseManager {
     private final DatabaseHideManager databaseHideManager;
 
     @Inject
+    @SuppressWarnings("this-escape")
     public DatabaseManager(Context context) {
         backgroundExecutor = new ThreadPoolExecutor(
                 1, 1,
@@ -269,6 +270,7 @@ public class DatabaseManager {
      * @param trigger Trim if there are more rows than {@code trigger}.
      * @param trim    Count of rows to trim.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     /*package*/ void trimTable(Dao dao, String table, long trigger, long trim) {
         try {
             long count = dao.countOf();

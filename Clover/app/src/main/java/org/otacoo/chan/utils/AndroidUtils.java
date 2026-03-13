@@ -490,6 +490,7 @@ public class AndroidUtils {
         return !ActivityManagerCompat.isLowRamDevice(activityManager);
     }
 
+    @SuppressWarnings("deprecation")
     public static void animateStatusBar(Window window, boolean in, final int originalColor, int duration) {
         ValueAnimator statusBar = ValueAnimator.ofFloat(in ? 0f : 0.5f, in ? 0.5f : 0f);
         statusBar.addUpdateListener(animation -> {

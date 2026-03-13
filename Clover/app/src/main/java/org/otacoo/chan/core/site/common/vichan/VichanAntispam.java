@@ -72,6 +72,7 @@ public class VichanAntispam {
 
     private List<String> fieldsToIgnore = new ArrayList<>();
 
+    @SuppressWarnings("this-escape")
     public VichanAntispam(HttpUrl url) {
         this.url = url;
         inject(this);

@@ -66,6 +66,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public LynxchanBypassLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         inject(this);

@@ -81,6 +81,7 @@ public class ImageReencodeOptionsController extends Controller implements
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onCreate() {
         super.onCreate();
 

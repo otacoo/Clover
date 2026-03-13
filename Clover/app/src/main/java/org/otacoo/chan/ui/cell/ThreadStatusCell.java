@@ -49,6 +49,7 @@ public class ThreadStatusCell extends LinearLayout implements View.OnClickListen
 
     private TextView text;
     private String error;
+    @SuppressWarnings("this-escape")
     private Handler handler = new Handler(Looper.getMainLooper(), msg -> {
         if (msg.what == MESSAGE_INVALIDATE) {
             if (running && update()) {
@@ -61,6 +62,7 @@ public class ThreadStatusCell extends LinearLayout implements View.OnClickListen
         }
     });
 
+    @SuppressWarnings("this-escape")
     public ThreadStatusCell(Context context, AttributeSet attrs) {
         super(context, attrs);
 

@@ -33,6 +33,7 @@ public class WatchUpdateReceiver extends BroadcastReceiver {
     @Inject
     WatchManager watchManager;
 
+    @SuppressWarnings("this-escape")
     public WatchUpdateReceiver() {
         inject(this);
     }

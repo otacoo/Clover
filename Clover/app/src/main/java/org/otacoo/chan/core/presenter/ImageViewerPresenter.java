@@ -68,6 +68,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
 
     private boolean muted;
 
+    @SuppressWarnings("this-escape")
     public ImageViewerPresenter(Callback callback) {
         this.callback = callback;
         inject(this);

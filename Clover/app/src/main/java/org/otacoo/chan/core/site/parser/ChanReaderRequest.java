@@ -87,6 +87,7 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
     private List<Filter> filters;
     private long startLoad;
 
+    @SuppressWarnings("this-escape")
     public ChanReaderRequest(ChanLoaderRequestParams request, RequestListener<ChanLoaderResponse> listener) {
         super(listener);
         inject(this);

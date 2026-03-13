@@ -503,11 +503,19 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private WebResourceResponse interceptCaptchaRequest(String url) {
         try {
             String cookies = get4chanCookieHeader();
+            String userAgent = getSettings().getUserAgentString();
             Request request = new Request.Builder()
                     .url(url)
-                    .header("Cookie", cookies != null ? cookies : "")
+                    .header("User-Agent", userAgent != null ? userAgent : cachedUserAgent)
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                    .header("Accept-Language", "en-US,en;q=0.9")
                     .header("Referer", "https://boards.4chan.org/" + board + "/thread/" + thread_id)
-                    .header("User-Agent", cachedUserAgent)
+                    .header("Upgrade-Insecure-Requests", "1")
+                    .header("Sec-Fetch-Dest", "document")
+                    .header("Sec-Fetch-Mode", "navigate")
+                    .header("Sec-Fetch-Site", "same-site")
+                    .header("Sec-Fetch-User", "?1")
+                    .header("Cookie", cookies != null ? cookies : "")
                     .build();
 
             try (Response response = okHttpClient.newCall(request).execute()) {

@@ -91,6 +91,7 @@ public class Chan8PowInterceptor implements Interceptor {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Response intercept(Chain chain) throws java.io.IOException {
         Request req = chain.request();
 

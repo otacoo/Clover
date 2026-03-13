@@ -133,6 +133,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
     private Call inTransitionCall;
 
+    @SuppressWarnings("this-escape")
     public ImageViewerController(Context context, Toolbar toolbar) {
         super(context);
         inject(this);
@@ -487,6 +488,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         return ChanSettings.useImmersiveModeForGallery.get() && isInImmersiveMode;
     }
 
+    @SuppressWarnings("deprecation")
     public void startPreviewInTransition(PostImage postImage) {
         ThumbnailView startImageView = getTransitionImageView(postImage);
 
@@ -701,6 +703,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         setToolbarBackgroundAlpha(alpha);
     }
 
+    @SuppressWarnings("deprecation")
     private void setStatusBarColor(int color) {
         Window window = getWindow();
         if (window != null) {
@@ -717,6 +720,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         return imageViewerCallback.getPreviewImageTransitionView(this, postImage);
     }
 
+    @SuppressWarnings("deprecation")
     private void hideSystemUI() {
         if (!ChanSettings.useImmersiveModeForGallery.get() || isInImmersiveMode) {
             return;
@@ -766,6 +770,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void showSystemUI() {
         if (!ChanSettings.useImmersiveModeForGallery.get() || !isInImmersiveMode) {
             return;

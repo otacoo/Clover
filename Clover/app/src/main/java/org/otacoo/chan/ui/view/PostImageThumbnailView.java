@@ -47,6 +47,7 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public PostImageThumbnailView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         setOnLongClickListener(this);

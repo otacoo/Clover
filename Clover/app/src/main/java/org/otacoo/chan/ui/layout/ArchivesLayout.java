@@ -32,6 +32,7 @@ public class ArchivesLayout extends LinearLayout {
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public ArchivesLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         inject(this);

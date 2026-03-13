@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ListSettingView<T> extends SettingView implements FloatingMenu.FloatingMenuCallback, View.OnClickListener {
-    public final List<Item> items;
+    public final List<Item<?>> items;
 
     public int selected;
 
@@ -42,6 +42,7 @@ public class ListSettingView<T> extends SettingView implements FloatingMenu.Floa
         this(settingsController, setting, getString(name), itemNames, keys);
     }
 
+    @SuppressWarnings("this-escape")
     public ListSettingView(SettingsController settingsController, Setting<T> setting, String name, String[] itemNames, String[] keys) {
         super(settingsController, name);
 
@@ -55,19 +56,22 @@ public class ListSettingView<T> extends SettingView implements FloatingMenu.Floa
         updateSelection();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public ListSettingView(SettingsController settingsController, Setting<T> setting, int name, Item[] items) {
         this(settingsController, setting, getString(name), items);
     }
 
-    public ListSettingView(SettingsController settingsController, Setting<T> setting, int name, List<Item> items) {
+    public ListSettingView(SettingsController settingsController, Setting<T> setting, int name, List<Item<?>> items) {
         this(settingsController, setting, getString(name), items);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public ListSettingView(SettingsController settingsController, Setting<T> setting, String name, Item[] items) {
         this(settingsController, setting, name, Arrays.asList(items));
     }
 
-    public ListSettingView(SettingsController settingsController, Setting<T> setting, String name, List<Item> items) {
+    @SuppressWarnings("this-escape")
+    public ListSettingView(SettingsController settingsController, Setting<T> setting, String name, List<Item<?>> items) {
         super(settingsController, name);
         this.setting = setting;
         this.items = items;
@@ -102,7 +106,7 @@ public class ListSettingView<T> extends SettingView implements FloatingMenu.Floa
     @Override
     public void onClick(View v) {
         List<FloatingMenuItem> menuItems = new ArrayList<>(items.size());
-        for (Item item : items) {
+        for (Item<?> item : items) {
             menuItems.add(new FloatingMenuItem(item.key, item.name, item.enabled));
         }
 

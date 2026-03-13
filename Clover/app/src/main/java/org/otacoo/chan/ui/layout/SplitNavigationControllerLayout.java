@@ -42,6 +42,7 @@ public class SplitNavigationControllerLayout extends LinearLayout {
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public SplitNavigationControllerLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 

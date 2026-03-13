@@ -63,6 +63,7 @@ public class ImageOptionsController extends Controller implements
 
     private int statusBarColorPrevious;
 
+    @SuppressWarnings("this-escape")
     public ImageOptionsController(
             Context context,
             ImageOptionsHelper imageReencodingHelper,
@@ -77,6 +78,7 @@ public class ImageOptionsController extends Controller implements
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onCreate() {
         super.onCreate();
 

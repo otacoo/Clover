@@ -47,6 +47,7 @@ public abstract class HttpCall implements Callback {
     protected Site site;
 
     private Handler handler = new Handler(Looper.getMainLooper());
+    @SuppressWarnings("rawtypes")
     private HttpCallback callback;
     private Exception exception;
     private String url;

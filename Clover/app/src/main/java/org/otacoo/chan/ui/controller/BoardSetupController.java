@@ -163,6 +163,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void showAddDialog() {
         @SuppressLint("InflateParams") final BoardAddLayout boardAddLayout =
                 (BoardAddLayout) LayoutInflater.from(context)

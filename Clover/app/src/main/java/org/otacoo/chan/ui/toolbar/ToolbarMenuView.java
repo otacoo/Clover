@@ -45,6 +45,7 @@ public class ToolbarMenuView extends LinearLayout {
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public ToolbarMenuView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 

@@ -97,7 +97,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
     @Override
     public void onClick(View v) {
         if (v == checkAllButton) {
-            for (SelectItem item : items) {
+            for (SelectItem<T> item : items) {
                 item.checked = !allChecked;
             }
 
@@ -112,7 +112,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
 
     private void updateAllSelected() {
         int checkedCount = 0;
-        for (SelectItem item : items) {
+        for (SelectItem<T> item : items) {
             if (item.checked) {
                 checkedCount++;
             }
@@ -123,8 +123,8 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
     }
 
     private class SelectAdapter extends RecyclerView.Adapter<BoardSelectViewHolder> {
-        private List<SelectItem> sourceList = new ArrayList<>();
-        private List<SelectItem> displayList = new ArrayList<>();
+        private List<SelectItem<T>> sourceList = new ArrayList<>();
+        private List<SelectItem<T>> displayList = new ArrayList<>();
         private String searchQuery;
 
         public SelectAdapter() {
@@ -138,7 +138,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
 
         @Override
         public void onBindViewHolder(BoardSelectViewHolder holder, int position) {
-            SelectItem item = displayList.get(position);
+            SelectItem<T> item = displayList.get(position);
             holder.checkBox.setChecked(item.checked);
             holder.text.setText(item.name);
             if (item.description != null) {
@@ -176,7 +176,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
             if (!TextUtils.isEmpty(searchQuery)) {
                 String query = searchQuery.toLowerCase(Locale.ENGLISH);
                 for (int i = 0; i < sourceList.size(); i++) {
-                    SelectItem item = sourceList.get(i);
+                    SelectItem<T> item = sourceList.get(i);
                     if (item.searchTerm.toLowerCase(Locale.ENGLISH).contains(query)) {
                         displayList.add(item);
                     }
@@ -208,7 +208,7 @@ public class SelectLayout<T> extends LinearLayout implements SearchLayout.Search
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             if (buttonView == checkBox) {
-                SelectItem board = adapter.displayList.get(getBindingAdapterPosition());
+                SelectItem<T> board = adapter.displayList.get(getBindingAdapterPosition());
                 board.checked = isChecked;
                 updateAllSelected();
             }

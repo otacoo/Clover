@@ -510,7 +510,7 @@ public class MainSettingsController extends SettingsController implements Settin
                     for (int p = 0; p < PETAL_COUNT; p++) {
                         final ImageView petal = new ImageView(context);
                         petal.setImageResource(R.drawable.ic_task_description);
-                        petal.setColorFilter(petalColors[p % petalColors.length], android.graphics.PorterDuff.Mode.SRC_IN);
+                        petal.setColorFilter(new android.graphics.PorterDuffColorFilter(petalColors[p % petalColors.length], android.graphics.PorterDuff.Mode.SRC_IN));
 
                         float startX = rng.nextInt(Math.max(1, containerW));
                         float driftX = (rng.nextFloat() - 0.5f) * containerW * 0.4f;

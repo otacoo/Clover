@@ -199,6 +199,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public MultiImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
@@ -913,8 +914,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 gifView.getDrawable().setColorFilter(new BlendModeColorFilter(backgroundColor, BlendMode.DST_OVER));
             } else {
-                //noinspection deprecation
-                gifView.getDrawable().setColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
+                @SuppressWarnings("deprecation")
+                android.graphics.ColorFilter legacyFilter = new android.graphics.PorterDuffColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
+                gifView.getDrawable().setColorFilter(legacyFilter);
             }
         }
         backgroundToggle = !backgroundToggle;

@@ -59,6 +59,7 @@ public class ArrowMenuDrawable extends Drawable {
     private Paint badgePaint = new Paint();
     private Rect badgeTextBounds = new Rect();
 
+    @SuppressWarnings("this-escape")
     public ArrowMenuDrawable() {
         mPaint.setColor(0xffffffff);
         mPaint.setAntiAlias(true);

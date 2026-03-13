@@ -35,6 +35,7 @@ public class BitmapUtils {
 
     private static final Random random = new Random();
 
+    @SuppressWarnings("deprecation")
     public static File reencodeBitmapFile(
             @NonNull File inputBitmapFile,
             boolean fixExif,
@@ -216,6 +217,7 @@ public class BitmapUtils {
         bitmap.setPixel(randomX, randomY, pixel);
     }
 
+    @SuppressWarnings("deprecation")
     public static Bitmap.CompressFormat getImageFormat(File file) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             byte[] header = new byte[16];

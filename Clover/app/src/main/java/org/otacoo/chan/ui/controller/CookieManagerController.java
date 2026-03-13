@@ -21,14 +21,12 @@ import static org.otacoo.chan.Chan.injector;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Build;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -187,13 +185,8 @@ public class CookieManagerController extends StyledToolbarNavigationController i
             new AlertDialog.Builder(context)
                     .setMessage(R.string.setting_confirm_clear_cookies)
                     .setPositiveButton(R.string.ok, (dialog, which) -> {
-                        CookieSyncManager.createInstance(context);
                         CookieManager cookieManager = CookieManager.getInstance();
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            cookieManager.removeAllCookies(null);
-                        } else {
-                            cookieManager.removeAllCookie();
-                        }
+                        cookieManager.removeAllCookies(null);
                         Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG).show();
                         adapter.notifyDataSetChanged();
                     })

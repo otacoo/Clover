@@ -93,6 +93,7 @@ public class Theme {
     
     public Map<String, Integer> colorOverrides = new HashMap<>();
 
+    @SuppressWarnings("this-escape")
     public Theme(String displayName, String name, int resValue, ThemeHelper.PrimaryColor primaryColor) {
         this.displayName = displayName;
         this.name = name;

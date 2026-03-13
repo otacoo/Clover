@@ -55,6 +55,7 @@ public class ThemeHelper {
 
     private Theme theme;
 
+    @SuppressWarnings("this-escape")
     public ThemeHelper() {
         // Note: PrimaryColor parameters below are fallback defaults only; actual colors come from styles.xml
         themes.add(new Theme("Auto (System)", "auto", R.style.Chan_Theme, PrimaryColor.BLUE));
@@ -261,6 +262,7 @@ public class ThemeHelper {
         return themes;
     }
 
+    @SuppressWarnings("deprecation")
     public void setupContext(Activity context) {
         updateCurrentTheme();
 

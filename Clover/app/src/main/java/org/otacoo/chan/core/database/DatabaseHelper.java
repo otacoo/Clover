@@ -62,6 +62,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
     private final Context context;
 
+    @SuppressWarnings("this-escape")
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
 

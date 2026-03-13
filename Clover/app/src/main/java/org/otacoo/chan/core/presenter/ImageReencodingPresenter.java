@@ -56,6 +56,7 @@ public class ImageReencodingPresenter {
     private ImageOptions imageOptions;
     private BackgroundUtils.Cancelable cancelable;
 
+    @SuppressWarnings("this-escape")
     public ImageReencodingPresenter(ImageReencodingPresenterCallback callback, Loadable loadable) {
         inject(this);
 

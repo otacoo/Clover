@@ -84,6 +84,7 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private Pin highlighted;
     private Pin previousHighlighted;
 
+    @SuppressWarnings("this-escape")
     public DrawerAdapter(Callback callback) {
         inject(this);
         this.callback = callback;

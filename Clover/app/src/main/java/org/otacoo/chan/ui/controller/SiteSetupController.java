@@ -117,6 +117,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public void showSettings(List<SiteSetting> settings) {
         SettingsGroup group = new SettingsGroup("Additional settings");
 
@@ -146,7 +147,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
         groups.add(group);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @NonNull
     private ListSettingView<?> getListSettingView(
             SiteSetting setting,

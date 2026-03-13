@@ -208,8 +208,8 @@ public class MediaSettingsController extends SettingsController implements
     }
 
     private void setupMediaLoadTypesSetting(SettingsGroup loading) {
-        List<ListSettingView.Item> imageAutoLoadTypes = new ArrayList<>();
-        List<ListSettingView.Item> videoAutoLoadTypes = new ArrayList<>();
+        List<ListSettingView.Item<?>> imageAutoLoadTypes = new ArrayList<>();
+        List<ListSettingView.Item<?>> videoAutoLoadTypes = new ArrayList<>();
         for (ChanSettings.MediaAutoLoadMode mode : ChanSettings.MediaAutoLoadMode.values()) {
             int name = 0;
             switch (mode) {
@@ -280,8 +280,8 @@ public class MediaSettingsController extends SettingsController implements
         });
     }
 
-    private List<ListSettingView.Item> createDestinationFolderList() {
-        List<ListSettingView.Item> folderModes = new ArrayList<>();
+    private List<ListSettingView.Item<?>> createDestinationFolderList() {
+        List<ListSettingView.Item<?>> folderModes = new ArrayList<>();
         for (ChanSettings.DestinationFolderMode mode : ChanSettings.DestinationFolderMode.values()) {
             int name = 0;
             switch (mode) {

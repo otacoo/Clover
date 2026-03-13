@@ -51,6 +51,7 @@ public class GenericWebViewAuthenticationLayout extends WebView implements Authe
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public GenericWebViewAuthenticationLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 

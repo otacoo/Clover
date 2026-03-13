@@ -68,6 +68,7 @@ public class PostRepliesController extends Controller {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onCreate() {
         super.onCreate();
 

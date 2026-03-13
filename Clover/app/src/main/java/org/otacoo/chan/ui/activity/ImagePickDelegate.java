@@ -67,6 +67,7 @@ public class ImagePickDelegate implements Runnable {
     private int pendingCount = 0;
     private int completedCount = 0;
 
+    @SuppressWarnings("this-escape")
     public ImagePickDelegate(Activity activity) {
         this.activity = activity;
         inject(this);

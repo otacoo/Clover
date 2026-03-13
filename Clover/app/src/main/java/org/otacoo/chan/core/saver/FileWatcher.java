@@ -112,10 +112,12 @@ public class FileWatcher {
     }
 
     private class AFileObserver extends FileObserver {
+        @SuppressWarnings("deprecation")
         public AFileObserver(String path) {
             super(path);
         }
 
+        @SuppressWarnings("deprecation")
         public AFileObserver(String path, int mask) {
             super(path, mask);
         }

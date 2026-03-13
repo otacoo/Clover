@@ -89,6 +89,7 @@ public class CaptchaLayout extends WebView implements AuthenticationLayoutInterf
 
         setWebViewClient(new WebViewClient() {
             @Override
+            @SuppressWarnings("deprecation")
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 String host = Uri.parse(url).getHost();
                 if (host == null) {

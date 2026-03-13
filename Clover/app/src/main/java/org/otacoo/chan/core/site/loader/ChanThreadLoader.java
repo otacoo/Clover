@@ -73,6 +73,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
     /**
      * <b>Do not call this constructor yourself, obtain ChanLoaders through {@link org.otacoo.chan.core.pool.ChanLoaderFactory}</b>
      */
+    @SuppressWarnings("this-escape")
     public ChanThreadLoader(Loadable loadable) {
         this.loadable = loadable;
 

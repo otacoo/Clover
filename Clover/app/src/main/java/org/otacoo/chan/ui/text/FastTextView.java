@@ -63,6 +63,7 @@ public class FastTextView extends View {
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public FastTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
@@ -236,6 +237,7 @@ public class FastTextView extends View {
         update = false;
     }
 
+    @SuppressWarnings("deprecation")
     private StaticLayout getStaticLayout(int layoutWidth) {
 //        Logger.test("new staticlayout width=%d", layoutWidth);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

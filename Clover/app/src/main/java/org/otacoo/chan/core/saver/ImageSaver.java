@@ -73,6 +73,7 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     private Storage storage;
     private FileCache fileCache;
 
+    @SuppressWarnings("this-escape")
     @Inject
     public ImageSaver(Storage storage, FileCache fileCache) {
         this.storage = storage;

@@ -7,6 +7,7 @@ import org.otacoo.chan.utils.AndroidUtils;
 import java.util.regex.Pattern;
 
 public class LynxchanCommentParser extends CommentParser {
+    @SuppressWarnings("this-escape")
     public LynxchanCommentParser() {
         addDefaultRules();
         

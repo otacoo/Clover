@@ -164,7 +164,7 @@ public class AppearanceSettingsController extends SettingsController {
     }
 
     private void setupAppIconSetting(SettingsGroup appearance) {
-        List<ListSettingView.Item> appIcons = new ArrayList<>();
+        List<ListSettingView.Item<?>> appIcons = new ArrayList<>();
         appIcons.add(new ListSettingView.Item<>("Blue", ChanSettings.AppIconMode.BLUE));
         appIcons.add(new ListSettingView.Item<>("Green", ChanSettings.AppIconMode.GREEN));
         appIcons.add(new ListSettingView.Item<>("Gold", ChanSettings.AppIconMode.GOLD));
@@ -216,7 +216,7 @@ public class AppearanceSettingsController extends SettingsController {
     }
 
     private void setupLayoutModeSetting(SettingsGroup layout) {
-        List<ListSettingView.Item> layoutModes = new ArrayList<>();
+        List<ListSettingView.Item<?>> layoutModes = new ArrayList<>();
         for (ChanSettings.LayoutMode mode : ChanSettings.LayoutMode.values()) {
             int name = 0;
             switch (mode) {
@@ -242,7 +242,7 @@ public class AppearanceSettingsController extends SettingsController {
     }
 
     private void setupGridColumnsSetting(SettingsGroup layout) {
-        List<ListSettingView.Item> gridColumns = new ArrayList<>();
+        List<ListSettingView.Item<?>> gridColumns = new ArrayList<>();
         gridColumns.add(new ListSettingView.Item<>(
                 getString(R.string.setting_board_grid_span_count_default), 0));
         for (int columns = 2; columns <= 5; columns++) {
@@ -256,7 +256,7 @@ public class AppearanceSettingsController extends SettingsController {
     }
 
     private void setupFontSizeSetting(SettingsGroup post) {
-        List<ListSettingView.Item> fontSizes = new ArrayList<>();
+        List<ListSettingView.Item<?>> fontSizes = new ArrayList<>();
         for (int size = 10; size <= 19; size++) {
             String name = size + (String.valueOf(size)
                     .equals(ChanSettings.fontSize.getDefault()) ?
@@ -268,11 +268,11 @@ public class AppearanceSettingsController extends SettingsController {
         requiresUiRefresh.add(post.add(new ListSettingView<>(this,
                 ChanSettings.fontSize,
                 R.string.setting_font_size,
-                fontSizes.toArray(new ListSettingView.Item[fontSizes.size()]))));
+                fontSizes)));
     }
 
     private void setupThumbnailScaleSetting(SettingsGroup post) {
-        List<ListSettingView.Item> imageSizes = new ArrayList<>();
+        List<ListSettingView.Item<?>> imageSizes = new ArrayList<>();
         for (int size = 25; size <= 250; size+=25) {
             String name = size + "%";
             imageSizes.add(new ListSettingView.Item<>(name, size));
@@ -281,6 +281,6 @@ public class AppearanceSettingsController extends SettingsController {
         requiresUiRefresh.add(post.add(new ListSettingView<>(this,
                 ChanSettings.thumbnailScale,
                 R.string.setting_thumbnail_scale,
-                imageSizes.toArray(new ListSettingView.Item[imageSizes.size()]))));
+                imageSizes)));
     }
 }

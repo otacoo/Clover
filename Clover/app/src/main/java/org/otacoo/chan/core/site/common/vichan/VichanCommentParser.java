@@ -23,6 +23,7 @@ import org.otacoo.chan.core.site.parser.StyleRule;
 import java.util.regex.Pattern;
 
 public class VichanCommentParser extends CommentParser {
+    @SuppressWarnings("this-escape")
     public VichanCommentParser() {
         addDefaultRules();
         setQuotePattern(Pattern.compile(".*#(\\d+)"));

@@ -64,6 +64,7 @@ public class DividerItemDecoration extends RecyclerView.ItemDecoration {
      * @param context Current context, it will be used to access resources.
      * @param orientation Divider orientation. Should be {@link #HORIZONTAL} or {@link #VERTICAL}.
      */
+    @SuppressWarnings("this-escape")
     public DividerItemDecoration(Context context, int orientation) {
         final TypedArray a = context.obtainStyledAttributes(ATTRS);
         mDivider = a.getDrawable(0);

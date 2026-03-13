@@ -153,6 +153,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
         }
     };
 
+    @SuppressWarnings("this-escape")
     public FastScroller(RecyclerView recyclerView, StateListDrawable verticalThumbDrawable,
                         Drawable verticalTrackDrawable, StateListDrawable horizontalThumbDrawable,
                         Drawable horizontalTrackDrawable, int defaultWidth, int scrollbarMinimumRange,

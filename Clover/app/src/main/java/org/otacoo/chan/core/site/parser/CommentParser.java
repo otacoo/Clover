@@ -66,6 +66,7 @@ public class CommentParser {
     private final Map<String, List<StyleRule>> rules = new HashMap<>();
     private final List<String> internalDomains = new ArrayList<>(0);
 
+    @SuppressWarnings("this-escape")
     public CommentParser() {
         // Required tags.
         rule(tagRule("p"));

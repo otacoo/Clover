@@ -67,6 +67,7 @@ public class PostsFilter {
     private Order order;
     private String query;
 
+    @SuppressWarnings("this-escape")
     public PostsFilter(Order order, String query) {
         this.order = order;
         this.query = query;

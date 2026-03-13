@@ -50,6 +50,7 @@ public class CacheHandler {
     private AtomicLong size = new AtomicLong();
     private AtomicBoolean trimRunning = new AtomicBoolean(false);
 
+    @SuppressWarnings("this-escape")
     public CacheHandler(File directory, long maxSize) {
         this.directory = directory;
         this.maxSize = maxSize;

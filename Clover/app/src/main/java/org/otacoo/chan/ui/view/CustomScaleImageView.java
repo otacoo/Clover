@@ -33,6 +33,7 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
         this(context, null);
     }
 
+    @SuppressWarnings("this-escape")
     public CustomScaleImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
 

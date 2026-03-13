@@ -75,6 +75,7 @@ public class PostIcons extends View {
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public PostIcons(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 

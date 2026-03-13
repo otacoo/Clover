@@ -124,6 +124,7 @@ public class ColorPickerView extends View {
     }
 
     @Override
+    @SuppressWarnings("fallthrough")
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         float x = event.getX();
         float y = event.getY();
@@ -160,7 +161,7 @@ public class ColorPickerView extends View {
                     float angle = (float) Math.atan2(dy, dx);
                     float unit = (float) (angle / (2.0 * Math.PI));
                     if (unit < 0.0) {
-                        unit += 1.0;
+                        unit += 1.0f;
                     }
                     int color = interpColor(COLORS, unit);
                     float[] tempHsv = new float[3];

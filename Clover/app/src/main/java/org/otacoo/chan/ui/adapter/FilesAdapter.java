@@ -127,6 +127,7 @@ public class FilesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         private ImageView image;
         private TextView text;
 
+        @SuppressWarnings("this-escape")
         public FileViewHolder(View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image);

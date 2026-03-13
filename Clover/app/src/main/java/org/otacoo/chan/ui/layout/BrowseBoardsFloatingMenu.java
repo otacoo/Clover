@@ -100,6 +100,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public BrowseBoardsFloatingMenu(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 

@@ -149,6 +149,7 @@ public class WatchManager {
 
     private ThreadWatchNotifications threadWatchNotifications;
 
+    @SuppressWarnings("this-escape")
     @Inject
     public WatchManager(Context applicationContext,
                         DatabaseManager databaseManager, ChanLoaderFactory chanLoaderFactory,
@@ -743,6 +744,7 @@ public class WatchManager {
         private Bitmap thumbnailBitmap = null;
         private Call currentThumbnailCall;
 
+        @SuppressWarnings("this-escape")
         public PinWatcher(Pin pin) {
             this.pin = pin;
             inject(this);

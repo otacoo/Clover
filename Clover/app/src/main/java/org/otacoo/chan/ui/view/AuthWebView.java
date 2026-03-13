@@ -24,7 +24,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -53,11 +52,13 @@ public class AuthWebView extends WebView {
         }
     }
 
+    @SuppressWarnings("this-escape")
     public AuthWebView(Context context) {
         super(context);
         init();
     }
 
+    @SuppressWarnings("this-escape")
     public AuthWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
@@ -68,14 +69,8 @@ public class AuthWebView extends WebView {
         WebSettings settings = getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        
+
         Context ctx = getContext();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            String databasePath = ctx.getDir("databases", 0).getPath();
-            settings.setDatabasePath(databasePath);
-        }
-        
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         
         CookieManager cookieManager = CookieManager.getInstance();
@@ -97,12 +92,7 @@ public class AuthWebView extends WebView {
     @Override
     public void destroy() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                CookieManager.getInstance().flush();
-            } else {
-                CookieSyncManager.createInstance(getContext());
-                CookieSyncManager.getInstance().sync();
-            }
+            CookieManager.getInstance().flush();
         } catch (Exception ignored) {}
         super.destroy();
     }

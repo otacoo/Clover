@@ -66,6 +66,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
         this(context, attrs, 0);
     }
 
+    @SuppressWarnings("this-escape")
     public LynxchanCaptchaLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         inject(this);
