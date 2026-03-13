@@ -261,10 +261,11 @@ public class Chan8PowInterceptor implements Interceptor {
                 if (cookieMap.containsKey("POW_TOKEN")) toPersist.put("POW_TOKEN", cookieMap.get("POW_TOKEN"));
                 if (cookieMap.containsKey("POW_ID")) toPersist.put("POW_ID", cookieMap.get("POW_ID"));
                 if (cookieMap.containsKey("TOS") || cookieMap.keySet().stream().anyMatch(k -> k.startsWith("TOS"))) {
-                    // pick first TOS* key
+                    // pick first TOS* key; also record the key name so Chan8 can restore it on startup
                     for (String k : cookieMap.keySet()) {
                         if (k.startsWith("TOS")) {
                             toPersist.put(k, cookieMap.get(k));
+                            toPersist.put("_TOS_KEY", k);
                             break;
                         }
                     }
