@@ -19,7 +19,6 @@ package org.otacoo.chan.ui.view;
 
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.Chan.injector;
-import static org.otacoo.chan.utils.AndroidUtils.dp;
 
 import android.content.ClipData;
 import android.content.Context;
@@ -60,7 +59,6 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
-import androidx.media3.common.Format;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
@@ -75,7 +73,6 @@ import org.otacoo.chan.core.cache.FileCache;
 import org.otacoo.chan.core.cache.FileCacheDownloader;
 import org.otacoo.chan.core.cache.FileCacheListener;
 import org.otacoo.chan.core.cache.FileCacheProvider;
-import org.otacoo.chan.core.di.UserAgentProvider;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -112,10 +109,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     @Inject
     FileCache fileCache;
 
-    @Inject
-    UserAgentProvider userAgent;
-
-    private ImageView playView;
+    private final ImageView playView;
 
     private PostImage postImage;
     private Callback callback;
@@ -350,7 +344,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                try {
+                try (response) {
                     if (response.isSuccessful()) {
                         try (ResponseBody body = response.body()) {
                             if (body != null) {
@@ -369,7 +363,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         }
                     }
                 } finally {
-                    response.close();
                     thumbnailCall = null;
                 }
             }
@@ -405,10 +398,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 } else {
                     onError(new Exception());
                 }
-            }
-
-            @Override
-            public void onCancel() {
             }
 
             @Override
@@ -454,10 +443,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 } else {
                     onError(new Exception());
                 }
-            }
-
-            @Override
-            public void onCancel() {
             }
 
             @Override
@@ -602,10 +587,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
         DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                        DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                        DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
-                        500,
-                        DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+                        30000,
+                        90000,
+                        2500,
+                        5000
+                )
                 .build();
 
         exoPlayer = new ExoPlayer.Builder(new NoMusicServiceCommandContext(getContext()), renderersFactory)
@@ -992,7 +978,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 gifView.getDrawable().setColorFilter(new BlendModeColorFilter(backgroundColor, BlendMode.DST_OVER));
             } else {
-                @SuppressWarnings("deprecation")
                 android.graphics.ColorFilter legacyFilter = new android.graphics.PorterDuffColorFilter(backgroundColor, PorterDuff.Mode.DST_OVER);
                 gifView.getDrawable().setColorFilter(legacyFilter);
             }
@@ -1052,12 +1037,12 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                     Matrix matrix = new Matrix();
                     if (orientation == 90 || orientation == 270) {
                         matrix.setRectToRect(new RectF(0, 0, ih, iw), dstRect, Matrix.ScaleToFit.CENTER);
-                        matrix.preRotate(90f, ih / 2, ih / 2);
+                        matrix.preRotate(90f, (float) ih / 2, (float) ih / 2);
                     } else {
                         matrix.setRectToRect(new RectF(0, 0, iw, ih), dstRect, Matrix.ScaleToFit.CENTER);
                     }
                     if (orientation >= 180)
-                        matrix.preRotate(180f, iw / 2, ih / 2);
+                        matrix.preRotate(180f, (float) iw / 2, (float) ih / 2);
                     gifView.setImageMatrix(matrix);
                 }
             }
@@ -1191,11 +1176,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     @Override
-    protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-        if (child instanceof GifImageView) {
-            GifImageView gif = (GifImageView) child;
-            if (gif.getDrawable() instanceof GifDrawable) {
-                GifDrawable drawable = (GifDrawable) gif.getDrawable();
+    protected boolean drawChild(@NonNull Canvas canvas, View child, long drawingTime) {
+        if (child instanceof GifImageView gif) {
+            if (gif.getDrawable() instanceof GifDrawable drawable) {
                 if (drawable.getFrameByteCount() > 100 * 1024 * 1024) { //max size from RecordingCanvas
                     onError(new Exception("Uncompressed GIF too large (>100MB)"));
                     return false;
