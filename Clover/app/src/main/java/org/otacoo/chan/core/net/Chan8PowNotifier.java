@@ -12,6 +12,8 @@ public final class Chan8PowNotifier {
     private static volatile WeakReference<View> rootViewRef = new WeakReference<>(null);
     private static volatile Snackbar activeSnackbar = null;
     private static volatile boolean powInProgress = false;
+    // One-shot: fired (on a background thread) the next time verification succeeds.
+    private static volatile Runnable pendingRetry = null;
 
     private Chan8PowNotifier() {}
 
@@ -36,8 +38,20 @@ public final class Chan8PowNotifier {
         });
     }
 
+    public static void scheduleRetryOnNextSolve(Runnable retry) {
+        pendingRetry = retry;
+    }
+
     public static void onPowSolved() {
         powInProgress = false;
+        Runnable retry = pendingRetry;
+        pendingRetry = null;
+        if (retry != null) {
+            Thread t = new Thread(retry);
+            t.setName("pow-retry");
+            t.setDaemon(true);
+            t.start();
+        }
         AndroidUtils.runOnUiThread(() -> {
             dismissActive();
             View root = rootViewRef.get();

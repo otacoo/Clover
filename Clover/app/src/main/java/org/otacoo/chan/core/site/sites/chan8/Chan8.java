@@ -124,6 +124,12 @@ public class Chan8 extends CommonSite {
                 } catch (Exception ignored) {}
             }
         }
+
+        // Also sync whatever TOS/bypass cookies the WebView has persisted from prior sessions.
+        for (String domain : domains) {
+            org.otacoo.chan.core.di.NetModule.syncCookiesToJar(domain);
+        }
+
         Logger.d("Chan8", "Restored POW session cookies from persistent settings");
     }
 
@@ -252,6 +258,10 @@ public class Chan8 extends CommonSite {
 
         @Override
         public void boards(BoardsListener boardsListener) {
+            boardsWithRetry(boardsListener, false);
+        }
+
+        private void boardsWithRetry(BoardsListener boardsListener, boolean isRetry) {
             triggerPowPreWarm();
             HttpCall call = new HttpCall(site) {
                 @Override
@@ -261,6 +271,11 @@ public class Chan8 extends CommonSite {
 
                 @Override
                 public void process(Response response, String result) throws IOException {
+                    String trimmed = result.trim();
+                    if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+                        Logger.w(TAG, "boards: non-JSON response (HTML/POW page), isRetry=" + isRetry);
+                        throw new IOException("non-JSON response");
+                    }
                     try {
                         JSONObject obj = new JSONObject(result);
                         JSONArray arr = obj.getJSONArray("topBoards");
@@ -290,9 +305,20 @@ public class Chan8 extends CommonSite {
 
                 @Override
                 public void onHttpFail(HttpCall httpCall, Exception e) {
-                    Logger.e(TAG, "boards: fetch failed", e);
-                    boardsListener.onBoardsFailed(
-                            "Could not load board list. Please do the 8chan verification first by" + "completing the security check (PoW bypass), then try again.");
+                    boolean isHtmlError = e.getMessage() != null
+                            && e.getMessage().contains("non-JSON response");
+                    if (isHtmlError && !isRetry) {
+                        // Schedule a single retry for when the user completes verification,
+                        // then prompt them to do so.
+                        Logger.w(TAG, "boards: scheduling retry on next verification");
+                        org.otacoo.chan.core.net.Chan8PowNotifier.scheduleRetryOnNextSolve(
+                                () -> boardsWithRetry(boardsListener, true));
+                        org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
+                    } else {
+                        Logger.e(TAG, "boards: fetch failed", e);
+                        boardsListener.onBoardsFailed(
+                                "Could not load board list. Please complete the 8chan security check (Verification), then try again.");
+                    }
                 }
             });
         }

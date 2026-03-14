@@ -128,13 +128,20 @@ public class Chan8PowInterceptor implements Interceptor {
         // Also handle Varnish 403 "Proof of Work required" (expired POW_TOKEN).
         boolean is403Pow = !xBlockRequired && resp.code() == 403
                 && resp.peekBody(256).string().contains("Proof of Work required");
-        if (!xBlockRequired && !is403Pow) {
+        // Also handle 200 HTML responses where no PoWBlock header was sent: any 8chan JSON
+        // endpoint returning HTML is a POW/TOS interstitial — JSON never starts with '<'.
+        boolean is200HtmlPow = false;
+        if (!xBlockRequired && !is403Pow && resp.code() == 200) {
+            String preview = resp.peekBody(16).string().trim();
+            is200HtmlPow = preview.startsWith("<");
+        }
+        if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
             return resp;
         }
 
-        // For X-PoWBlock-Status the challenge HTML is in this response body.
-        // For 403 we fetch it separately inside the acquired block.
-        String html = xBlockRequired ? resp.peekBody(64 * 1024).string() : null;
+        // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
+        // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
+        String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
 
         // Synchronize POW bypass so only one thread computes/submits the solution
         java.util.concurrent.CountDownLatch localLatch;
@@ -152,7 +159,7 @@ public class Chan8PowInterceptor implements Interceptor {
 
         try {
             if (!acquired) {
-                if (is403Pow) resp.close(); // abandon 403; wait for solver thread to refresh POW
+                if (is403Pow || is200HtmlPow) resp.close(); // abandon; wait for solver thread
                 // Wait for the thread that is performing POW to finish
                 try {
                     localLatch.await();
@@ -161,6 +168,10 @@ public class Chan8PowInterceptor implements Interceptor {
                 }
                 return chain.proceed(req);
             }
+
+            // useCaptchaJsSubmit: true when the challenge came from /captcha.js rather than
+            // being embedded in the original response body (affects the submit URL).
+            boolean useCaptchaJsSubmit = false;
 
             if (is403Pow) {
                 // Expired POW_TOKEN — clear it from the cookie store so the server
@@ -173,6 +184,27 @@ public class Chan8PowInterceptor implements Interceptor {
                     org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
                     return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 }
+                useCaptchaJsSubmit = true;
+            } else if (is200HtmlPow) {
+                // The body is a challenge or TOS/interstitial page.
+                // Try to parse a challenge token from it first.  If none is present
+                // (e.g. TOS acceptance page), fetch a fresh challenge via captcha.js.
+                String tokenCheck = NetModule.firstMatch(html,
+                        "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>");
+                resp.close();
+                if (tokenCheck == null) {
+                    org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor",
+                            "200 HTML POW: no challenge token in body, fetching from captcha.js");
+                    clearPowCookieStore(req.url().host());
+                    html = fetchPowChallenge(req.url());
+                    if (html == null) {
+                        org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor",
+                                "200 HTML POW: could not retrieve fresh challenge");
+                        org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
+                        return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
+                    }
+                    useCaptchaJsSubmit = true;
+                }
             }
 
             String token = NetModule.firstMatch(html, "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>");
@@ -181,7 +213,7 @@ public class Chan8PowInterceptor implements Interceptor {
             if (token == null || difficulty == null) {
                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW required but challenge parse failed; user must Login via WebView");
                 org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
-                if (is403Pow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
+                if (is403Pow || is200HtmlPow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }
 
@@ -194,17 +226,18 @@ public class Chan8PowInterceptor implements Interceptor {
             if (solution == null) {
                 org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW solver failed after " + elapsed + "ms");
                 org.otacoo.chan.core.net.Chan8PowNotifier.onPowFailed();
-                if (is403Pow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
+                if (is403Pow || is200HtmlPow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }
 
-            // For the 403/expired-token case the challenge came from captcha.js, so the
-            // solution must be submitted back to captcha.js, not to blockBypass.js.
-            String submitPath = is403Pow ? "/captcha.js" : req.url().encodedPath();
+            // Submit back to the endpoint that issued the challenge.
+            // – xBlockRequired or is200HtmlPow-with-body: same path as the original request
+            // – is403Pow or is200HtmlPow-fallback-via-captcha.js: /captcha.js
+            String submitPath = useCaptchaJsSubmit ? "/captcha.js" : req.url().encodedPath();
             String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + "?pow=" + solution + "&t=" + token;
             org.otacoo.chan.utils.Logger.w("Chan8PowInterceptor", "POW submit URL: " + (submitUrl.length() > 120 ? submitUrl.substring(0, 120) + "…" : submitUrl));
 
-            resp.close();
+            if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above
             // Clear stale POW cookies (e.g. from a restored backup) before submitting the
             // solution, so the server starts a clean session from the new tokens.
             clearPowCookieStore(req.url().host());

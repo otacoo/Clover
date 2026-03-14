@@ -117,7 +117,10 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         bound = true;
         this.loadable = loadable;
 
-        this.board = loadable.board;
+        // Prefer the repository's live board object (updated by the boards API fetch)
+        // over the possibly-stale snapshot stored in the loadable.
+        Board cachedBoard = loadable.getSite().board(loadable.boardCode);
+        this.board = (cachedBoard != null) ? cachedBoard : loadable.board;
         if (board == null) {
             Logger.e(TAG, "bindLoadable: board is null!");
             return;
@@ -360,7 +363,8 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         callback.loadViewsIntoDraft(draft);
 
         draft.loadable = loadable;
-        draft.spoilerImage = draft.spoilerImage && board.spoilers;
+        draft.spoilerImage = draft.spoilerImage
+                && loadable.getSite().boardFeature(Site.BoardFeature.POSTING_SPOILER, board);
         draft.captchaResponse = null;
 
         // For backwards compatibility with single-file mode
@@ -772,7 +776,10 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         callback.openPreview(true, file);
         if (moreOpen) {
             callback.openFileName(true);
-            callback.openSpoiler(board.spoilers, false);
+            callback.openSpoiler(
+                    loadable.getSite().boardFeature(Site.BoardFeature.POSTING_SPOILER, board)
+                            && isSingleFileMode(),
+                    false);
         }
         callback.setFileName(name);
         previewOpen = true;

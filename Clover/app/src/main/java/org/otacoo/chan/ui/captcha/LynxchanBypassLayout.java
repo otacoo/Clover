@@ -308,6 +308,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
                 // Some Lynxchan versions return an HTML success page.
                 if (respBody.contains("<title>Captcha solved.</title>")) {
                     storeCookiesFromResponse(resp);
+                    org.otacoo.chan.core.net.Chan8PowNotifier.onPowSolved();
                     Logger.i(TAG, "Bypass established via HTML success page");
                     mainHandler.post(() -> callback.onAuthenticationComplete(this, "", ""));
                     return;
@@ -344,6 +345,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
 
                     // Short bypass cookie or non-8chan -- treat as direct success.
                     storeCookiesFromResponse(resp);
+                    org.otacoo.chan.core.net.Chan8PowNotifier.onPowSolved();
                     Logger.i(TAG, "Bypass set directly (no POW required)");
                     mainHandler.post(() -> callback.onAuthenticationComplete(this, "", ""));
                     return;
@@ -417,6 +419,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
 
                 JSONObject vjson = new JSONObject(vBody);
                 if ("ok".equals(vjson.optString("status"))) {
+                    org.otacoo.chan.core.net.Chan8PowNotifier.onPowSolved();
                     Logger.i(TAG, "Bypass established after POW validation");
                     mainHandler.post(() -> callback.onAuthenticationComplete(this, "", ""));
                 } else {
