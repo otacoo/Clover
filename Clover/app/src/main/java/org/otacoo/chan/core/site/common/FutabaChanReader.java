@@ -222,6 +222,14 @@ public class FutabaChanReader implements ChanReader {
                 case "md5":
                     md5 = reader.nextString();
                     break;
+                case "custom_spoiler":
+                    int customSpoilerNum = reader.nextInt();
+                    if (customSpoilerNum > 0
+                            && builder.board != null
+                            && builder.board.customSpoilers < 0) {
+                        builder.board.customSpoilers = customSpoilerNum;
+                    }
+                    break;
                 default:
                     // Unknown/ignored key
                     reader.skipValue();

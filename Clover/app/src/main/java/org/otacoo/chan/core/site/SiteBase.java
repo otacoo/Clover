@@ -76,23 +76,8 @@ public abstract class SiteBase implements Site {
 
         initializeSettings();
 
-        // Lazy‑load available boards only when the board setup dialog is shown.
-        // Keeping this for later in case I need, for now we fetch on startup again.
-        //if (site.boardsType().canList && boardManager.getSiteBoards(site).isEmpty()) {
-        //    site.actions().boards(boards ->
-        //            boardManager.updateAvailableBoardsForSite(site, boards.boards));
-        //}
-
-        // Refresh available boards in the background at low priority.
-        // Only fires if the user has at least one board from this site already added,
-        // so sites the user hasn't set up (e.g. 8chan when only 4chan is used) are skipped.
-        if (boardsType().canList && !boardManager.getSiteSavedBoards(this).isEmpty()) {
-            Thread t = new Thread(() ->
-                    actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards)));
-            t.setName("board-refresh-" + name());
-            t.setDaemon(true);
-            t.setPriority(Thread.MIN_PRIORITY);
-            t.start();
+        if (boardsType().canList) {
+            actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards));
         }
 
         Time.endTiming("initialized " + name(), start);
