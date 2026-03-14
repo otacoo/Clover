@@ -496,6 +496,10 @@ public class ThreadPresenter implements
             }
         }
 
+        if (images.isEmpty()) {
+            images.add(postImage);
+            index = 0;
+        }
         threadPresenterCallback.showImages(images, index, chanLoader.getLoadable(), thumbnail);
     }
 
