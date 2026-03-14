@@ -32,10 +32,10 @@ android {
         //noinspection ExpiredTargetSdkVersion
         multiDexEnabled = true
 
-        versionName = "v3.3.4"
+        versionName = "v3.3.5"
         // of the format XXYYZZ, where XX is major, YY is minor, ZZ is patch
         // (watch out for octal notation, never start with a 0)
-        versionCode = 30304
+        versionCode = 30305
         buildConfigField "String", "UPDATE_API_ENDPOINT", '"https://raw.githubusercontent.com/otacoo/Clover/main/docs/update_api.json"'
     }
 
@@ -168,8 +168,8 @@ dependencies {
     implementation 'androidx.drawerlayout:drawerlayout:1.1.0'
     implementation 'androidx.viewpager:viewpager:1.0.0'
 
-    implementation 'androidx.media3:media3-exoplayer:1.9.2'
-    implementation 'androidx.media3:media3-ui:1.9.2'
+    implementation 'androidx.media3:media3-exoplayer:1.9.1'
+    implementation 'androidx.media3:media3-ui:1.9.1'
 
     compileOnly 'org.checkerframework:checker-qual:3.54.0'
 

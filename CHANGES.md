@@ -1,3 +1,18 @@
+## 2026-03-14 – v3.3.5
+
+- Increased video buffer size before a video starts playing, should help with stutters
+- Fix an issue with cross-board links not working on newer Android versions
+
+**8chan:**
+- Improve the syncing and storing of 8chan cookies, should no longer run into "Received HTML instead of JSON" error
+- Proof-of-work captcha now has an animated button to indicate it's working
+- Add support for picking board flags and a few formatting tags
+- Fix an issue where picking files for 8chan only allowed to pick images or videos
+
+**4chan:**
+- Images can now be spoilered
+- Formatting tags will now correctly appear per-board on startup
+
 ## 2026-03-13 – v3.3.4
 
 >[!WARNING]
