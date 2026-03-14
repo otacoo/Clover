@@ -68,7 +68,6 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecInfo;
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
-import androidx.media3.extractor.mkv.MatroskaExtractor;
 import androidx.media3.ui.PlayerView;
 
 import org.otacoo.chan.R;
@@ -628,9 +627,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 .setEnableDecoderFallback(true);
 
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
-        if (ChanSettings.vp9DisableSeekForCues.get()) {
-            extractorsFactory.setMatroskaExtractorFlags(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES);
-        }
         DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(getContext(), extractorsFactory);
 
         int bufferForPlayback = Math.max(100, Math.min(10000, ChanSettings.videoBufferForPlayback.get()));

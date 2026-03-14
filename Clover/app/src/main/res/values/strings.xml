@@ -676,8 +676,6 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_vp9_extension_mode_default">Default - try system first, fall back to libvpx on error</string>
     <string name="setting_vp9_extension_mode_prefer">Prefer - always use libvpx for every VP9 video</string>
     <string name="setting_vp9_extension_mode_off">Off - system decoders only</string>
-    <string name="setting_vp9_disable_seek_for_cues">Disable seek for cues (Matroska/WebM)</string>
-    <string name="setting_vp9_disable_seek_for_cues_description">Disable seeking for exact cues; may improve compatibility with some VP9 files</string>
     <string name="setting_video_buffer_for_playback">Buffer before playback (ms)</string>
     <string name="setting_video_buffer_for_playback_description">Milliseconds buffered before playback starts (100-10000)</string>
 

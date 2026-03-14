@@ -240,7 +240,6 @@ public class ChanSettings {
     public static final BooleanSetting videoAutoLoop;
     public static final IntegerSetting videoPlayerTimeout;
     public static final OptionsSetting<Vp9ExtensionMode> vp9ExtensionMode;
-    public static final BooleanSetting vp9DisableSeekForCues;
     public static final IntegerSetting videoBufferForPlayback;
 
     public static final BooleanSetting watchEnabled;
@@ -349,7 +348,6 @@ public class ChanSettings {
         videoAutoLoop = new BooleanSetting(p, "preference_video_loop", true);
         videoPlayerTimeout = new IntegerSetting(p, "preference_video_player_timeout", 5);
         vp9ExtensionMode = new OptionsSetting<>(p, "preference_vp9_extension_mode", Vp9ExtensionMode.class, Vp9ExtensionMode.DEFAULT);
-        vp9DisableSeekForCues = new BooleanSetting(p, "preference_vp9_disable_seek_for_cues", false);
         videoBufferForPlayback = new IntegerSetting(p, "preference_video_buffer_for_playback", 2500);
 
         watchEnabled = new BooleanSetting(p, "preference_watch_enabled", false);
