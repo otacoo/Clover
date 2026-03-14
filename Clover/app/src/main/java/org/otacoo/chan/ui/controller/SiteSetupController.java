@@ -176,6 +176,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                     v -> {
                         HttpUrl loginUrl = site.endpoints().root();
                         EmailVerificationController webController = new EmailVerificationController(context, loginUrl.toString(), site.name() + " Verification");
+                        webController.setSite(site);
                         webController.setRequiredCookies("TOS", "POW_TOKEN", "POW_ID");
                         navigationController.pushController(webController);
                     }
@@ -207,6 +208,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                     "Open email verification page",
                     v -> {
                         EmailVerificationController verificationController = new EmailVerificationController(context);
+                        verificationController.setSite(site);
                         navigationController.pushController(verificationController);
                     }
             );
@@ -236,6 +238,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                     if (verifUrl != null) {
                         EmailVerificationController webController =
                                 new EmailVerificationController(context, verifUrl, site.name() + " Verification");
+                        webController.setSite(site);
                         webController.setRequiredCookies("TOS", "POW_TOKEN", "POW_ID");
                         navigationController.pushController(webController);
                     } else {
@@ -283,6 +286,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                 }
                 
                 EmailVerificationController verificationController = new EmailVerificationController(context, url);
+                verificationController.setSite(site);
                 navigationController.pushController(verificationController);
             }
         });
