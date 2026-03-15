@@ -99,22 +99,26 @@ public class CookieManagerController extends StyledToolbarNavigationController i
         List<String> domains = new ArrayList<>();
         android.net.Uri uri = android.net.Uri.parse(url);
         String host = uri.getHost();
-        if (host != null) {
-            domains.add("https://" + host);
-            if (host.startsWith("www.")) {
-                domains.add("https://" + host.substring(4));
-            } else {
-                domains.add("https://www." + host);
-            }
-            // Add common subdomains for specific sites if needed
-            if (host.contains("4chan.org")) {
-                domains.add("https://boards.4chan.org");
-                domains.add("https://sys.4chan.org");
-            }
-            if (host.contains("4channel.org")) {
-                domains.add("https://boards.4channel.org");
-                domains.add("https://sys.4channel.org");
-            }
+        if (host == null) return domains;
+        // 4chan cookies are scoped to .4chan.org / .4channel.org (dot-prefix = all subdomains).
+        // Build the complete domain list explicitly; the generic www.<host> derivation produces
+        // wrong hosts like "www.boards.4chan.org" when the root URL is boards.4chan.org.
+        if (host.contains("4chan.org") || host.contains("4channel.org")) {
+            domains.add("https://4chan.org");
+            domains.add("https://www.4chan.org");
+            domains.add("https://boards.4chan.org");
+            domains.add("https://sys.4chan.org");
+            domains.add("https://4channel.org");
+            domains.add("https://www.4channel.org");
+            domains.add("https://boards.4channel.org");
+            domains.add("https://sys.4channel.org");
+            return domains;
+        }
+        domains.add("https://" + host);
+        if (host.startsWith("www.")) {
+            domains.add("https://" + host.substring(4));
+        } else {
+            domains.add("https://www." + host);
         }
         return domains;
     }
@@ -186,10 +190,23 @@ public class CookieManagerController extends StyledToolbarNavigationController i
             new AlertDialog.Builder(context)
                     .setMessage(R.string.setting_confirm_clear_cookies)
                     .setPositiveButton(R.string.ok, (dialog, which) -> {
-                        CookieManager cookieManager = CookieManager.getInstance();
-                        cookieManager.removeAllCookies(null);
-                        Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG).show();
-                        adapter.notifyDataSetChanged();
+                        // Clear Chan4 SharedPrefs tokens first; otherwise Chan4CookieStore.init()
+                        // and syncToWebView() will re-inject them on the next captcha or post,
+                        // making the deletion appear to have had no effect.
+                        for (Site s : sites) {
+                            if (s instanceof Chan4) {
+                                ((Chan4) s).getCookieStore().setPassId("");
+                                ((Chan4) s).getCookieStore().setChanPass("");
+                                break;
+                            }
+                        }
+                        // removeAllCookies is async; update the UI only after it completes
+                        // so the list does not re-render before the deletion takes effect.
+                        CookieManager.getInstance().removeAllCookies(success ->
+                                AndroidUtils.runOnUiThread(() -> {
+                                    Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG).show();
+                                    adapter.notifyDataSetChanged();
+                                }));
                     })
                     .setNegativeButton(R.string.cancel, null)
                     .show();
@@ -198,12 +215,15 @@ public class CookieManagerController extends StyledToolbarNavigationController i
         }
     }
 
-    private void syncChan4PassToSetting(String value) {
-        for (Site s : sites) {
-            if (s instanceof Chan4) {
-                ((Chan4) s).getPassWebCookie().set(value != null ? value : "");
-                break;
-            }
+    // Syncs a cookie value that is also persisted in SharedPrefs back to the store
+    // so that Chan4CookieStore stays consistent.
+    private void syncChan4CookieToSetting(Site site, String cookieName, String value) {
+        if (!(site instanceof Chan4)) return;
+        String v = value != null ? value : "";
+        if ("4chan_pass".equals(cookieName)) {
+            ((Chan4) site).getCookieStore().setChanPass(v);
+        } else if ("pass_id".equals(cookieName)) {
+            ((Chan4) site).getCookieStore().setPassId(v);
         }
     }
 
@@ -242,9 +262,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                             cm.setCookie(domain, name + "=" + val);
                         }
                         cm.flush();
-                        if ("4chan_pass".equals(name)) {
-                            syncChan4PassToSetting(val);
-                        }
+                        syncChan4CookieToSetting(site, name, val);
                         adapter.notifyDataSetChanged();
                     }
                 })
@@ -306,7 +324,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                 value.setText(valStr);
 
                 item.setOnClickListener(v -> {
-                    showEditCookieDialog(site.name(), domains, nameStr, valStr);
+                    showEditCookieDialog(site, domains, nameStr, valStr);
                 });
 
                 deleteBtn.setOnClickListener(v -> {
@@ -317,9 +335,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                                     cookieManager.setCookie(domain, nameStr + "=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
                                 }
                                 cookieManager.flush();
-                                if ("4chan_pass".equals(nameStr)) {
-                                    syncChan4PassToSetting("");
-                                }
+                                syncChan4CookieToSetting(site, nameStr, "");
                                 notifyDataSetChanged();
                             })
                             .setNegativeButton(R.string.cancel, null)
@@ -332,11 +348,11 @@ public class CookieManagerController extends StyledToolbarNavigationController i
             return scrollView;
         }
 
-        private void showEditCookieDialog(String siteName, List<String> domains, String name, String oldVal) {
+        private void showEditCookieDialog(Site site, List<String> domains, String name, String oldVal) {
             android.widget.EditText et = new android.widget.EditText(context);
             et.setText(oldVal);
             new AlertDialog.Builder(context)
-                    .setTitle("Edit " + name + " (" + siteName + ")")
+                    .setTitle("Edit " + name + " (" + site.name() + ")")
                     .setView(et)
                     .setPositiveButton(R.string.save, (d, w) -> {
                         String newVal = et.getText().toString();
@@ -345,9 +361,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                             cm.setCookie(domain, name + "=" + newVal);
                         }
                         cm.flush();
-                        if ("4chan_pass".equals(name)) {
-                            syncChan4PassToSetting(newVal);
-                        }
+                        syncChan4CookieToSetting(site, name, newVal);
                         notifyDataSetChanged();
                     })
                     .setNegativeButton(R.string.cancel, null)
