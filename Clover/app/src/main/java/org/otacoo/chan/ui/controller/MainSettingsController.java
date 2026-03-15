@@ -26,21 +26,21 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.view.animation.AccelerateInterpolator;
-import android.widget.ImageView;
-import java.util.Random;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -48,17 +48,14 @@ import org.otacoo.chan.core.presenter.SettingsPresenter;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.settings.SettingsBackupRestore;
 import org.otacoo.chan.ui.activity.ActivityResultHelper;
-import org.otacoo.chan.utils.Logger;
 import org.otacoo.chan.ui.activity.StartActivity;
-import org.otacoo.chan.ui.settings.BooleanSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
 import org.otacoo.chan.ui.settings.SplitBooleanSettingView;
 import org.otacoo.chan.utils.AndroidUtils;
-
-import androidx.appcompat.app.AlertDialog;
+import org.otacoo.chan.utils.Logger;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -68,6 +65,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -85,7 +83,6 @@ public class MainSettingsController extends SettingsController implements Settin
     private SettingView developerView;
     private LinkSettingView sitesSetting;
     private LinkSettingView filtersSetting;
-    private SettingView crashReportSetting;
 
     public MainSettingsController(Context context) {
         super(context);
@@ -141,15 +138,6 @@ public class MainSettingsController extends SettingsController implements Settin
     public void setWatchEnabled(boolean enabled) {
         watchLink.setDescription(enabled ?
                 R.string.setting_watch_summary_enabled : R.string.setting_watch_summary_disabled);
-    }
-
-    @Override
-    public void onPreferenceChange(SettingView item) {
-        super.onPreferenceChange(item);
-        if (item == crashReportSetting) {
-            Toast.makeText(context, R.string.settings_crash_reporting_toggle_notice,
-                    Toast.LENGTH_LONG).show();
-        }
     }
 
     private void populatePreferences() {
@@ -210,10 +198,6 @@ public class MainSettingsController extends SettingsController implements Settin
     }
 
     private void launchBackup() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            Toast.makeText(context, R.string.settings_backup_failed, Toast.LENGTH_SHORT).show();
-            return;
-        }
         // record current media save location so we can restore it after the picker
         String oldSaveLoc = ChanSettings.saveLocation.get();
 
@@ -246,10 +230,6 @@ public class MainSettingsController extends SettingsController implements Settin
     }
 
     private void launchRestore() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            Toast.makeText(context, R.string.settings_restore_failed, Toast.LENGTH_SHORT).show();
-            return;
-        }
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
@@ -399,8 +379,6 @@ public class MainSettingsController extends SettingsController implements Settin
 
         setupUpdateSetting(about);
 
-        setupCrashReportingSetting(about);
-
         setupExtraAboutSettings(about, version);
 
         about.add(new LinkSettingView(this,
@@ -426,48 +404,49 @@ public class MainSettingsController extends SettingsController implements Settin
     }
 
     private void setupExtraAboutSettings(SettingsGroup about, String version) {
-        int extraAbouts = context.getResources()
-                .getIdentifier("extra_abouts", "array", context.getPackageName());
+        String[] abouts;
+        try {
+            abouts = context.getResources().getStringArray(R.array.extra_abouts);
+        } catch (Exception e) {
+            return;
+        }
 
-        if (extraAbouts != 0) {
-            String[] abouts = context.getResources().getStringArray(extraAbouts);
-            if (abouts.length % 3 == 0) {
-                for (int i = 0, aboutsLength = abouts.length; i < aboutsLength; i += 3) {
-                    String aboutName = abouts[i];
-                    String aboutDescription = abouts[i + 1];
-                    if (TextUtils.isEmpty(aboutDescription)) {
-                        aboutDescription = null;
-                    }
-                    String aboutLink = abouts[i + 2];
-                    if (TextUtils.isEmpty(aboutLink)) {
-                        aboutLink = null;
-                    }
+        if (abouts.length % 3 == 0) {
+            for (int i = 0, aboutsLength = abouts.length; i < aboutsLength; i += 3) {
+                String aboutName = abouts[i];
+                String aboutDescription = abouts[i + 1];
+                if (TextUtils.isEmpty(aboutDescription)) {
+                    aboutDescription = null;
+                }
+                String aboutLink = abouts[i + 2];
+                if (TextUtils.isEmpty(aboutLink)) {
+                    aboutLink = null;
+                }
 
-                    final String finalAboutLink = aboutLink;
-                    View.OnClickListener clickListener = new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            if (finalAboutLink != null) {
-                                if (finalAboutLink.contains("__EMAIL__")) {
-                                    String[] email = finalAboutLink.split("__EMAIL__");
-                                    Intent intent = new Intent(Intent.ACTION_SENDTO);
-                                    intent.setData(Uri.parse("mailto:"));
-                                    intent.putExtra(Intent.EXTRA_EMAIL, new String[]{email[0]});
-                                    String subject = email[1];
-                                    subject = subject.replace("__VERSION__", version);
-                                    intent.putExtra(Intent.EXTRA_SUBJECT, subject);
-                                    AndroidUtils.openIntent(intent);
-                                } else {
-                                    AndroidUtils.openLink(finalAboutLink);
-                                }
+                final String finalAboutLink = aboutLink;
+                View.OnClickListener clickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (finalAboutLink != null) {
+                            if (finalAboutLink.contains("__EMAIL__")) {
+                                String[] email = finalAboutLink.split("__EMAIL__");
+                                Intent intent = new Intent(Intent.ACTION_SENDTO);
+                                intent.setData(Uri.parse("mailto:"));
+                                intent.putExtra(Intent.EXTRA_EMAIL, new String[]{email[0]});
+                                String subject = email[1];
+                                subject = subject.replace("__VERSION__", version);
+                                intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+                                AndroidUtils.openIntent(intent);
+                            } else {
+                                AndroidUtils.openLink(finalAboutLink);
                             }
                         }
-                    };
+                    }
+                };
 
-                    about.add(new LinkSettingView(this,
-                            aboutName, aboutDescription,
-                            clickListener));
-                }
+                about.add(new LinkSettingView(this,
+                        aboutName, aboutDescription,
+                        clickListener));
             }
         }
     }
@@ -484,7 +463,7 @@ public class MainSettingsController extends SettingsController implements Settin
         about.add(new LinkSettingView(this,
                 getString(R.string.app_name), userVersion,
                 v -> {
-                    if ((++clickCount) % 5 == 0) {
+                    if ((++clickCount) % 4 == 0) {
                         boolean developer = !ChanSettings.developer.get();
 
                         ChanSettings.developer.set(developer);
@@ -493,57 +472,58 @@ public class MainSettingsController extends SettingsController implements Settin
                                 " developer options", Toast.LENGTH_LONG).show();
 
                         developerView.view.setVisibility(developer ? View.VISIBLE : View.GONE);
-                    }
-                    final int PETAL_COUNT = 12;
-                    final int BASE_DURATION_MS = 5000;
-                    final Random rng = new Random();
-                    final int containerW = navigationController.view.getWidth();
-                    final int containerH = navigationController.view.getHeight();
-                    final int petalSize = AndroidUtils.dp(36);
 
-                    final int[] petalColors = {
-                            0xFF64B5F6, // light blue
-                            0xFFFFD54F, // gold
-                            0xFF81C784  // light green
-                    };
+                        final int PETAL_COUNT = 12;
+                        final int BASE_DURATION_MS = 5000;
+                        final Random rng = new Random();
+                        final int containerW = navigationController.view.getWidth();
+                        final int containerH = navigationController.view.getHeight();
+                        final int petalSize = AndroidUtils.dp(36);
 
-                    for (int p = 0; p < PETAL_COUNT; p++) {
-                        final ImageView petal = new ImageView(context);
-                        petal.setImageResource(R.drawable.ic_task_description);
-                        petal.setColorFilter(new android.graphics.PorterDuffColorFilter(petalColors[p % petalColors.length], android.graphics.PorterDuff.Mode.SRC_IN));
+                        final int[] petalColors = {
+                                0xFF64B5F6, // light blue
+                                0xFFFFD54F, // gold
+                                0xFF81C784  // light green
+                        };
 
-                        float startX = rng.nextInt(Math.max(1, containerW));
-                        float driftX = (rng.nextFloat() - 0.5f) * containerW * 0.4f;
-                        float startY = -petalSize - rng.nextInt(Math.max(1, containerH / 3));
-                        float endY = containerH + petalSize;
-                        int duration = BASE_DURATION_MS + rng.nextInt(2500);
+                        for (int p = 0; p < PETAL_COUNT; p++) {
+                            final ImageView petal = new ImageView(context);
+                            petal.setImageResource(R.drawable.ic_task_description);
+                            petal.setColorFilter(new android.graphics.PorterDuffColorFilter(petalColors[p % petalColors.length], android.graphics.PorterDuff.Mode.SRC_IN));
 
-                        petal.setX(startX);
-                        petal.setY(startY);
-                        navigationController.view.addView(petal, new ViewGroup.LayoutParams(petalSize, petalSize));
+                            float startX = rng.nextInt(Math.max(1, containerW));
+                            float driftX = (rng.nextFloat() - 0.5f) * containerW * 0.4f;
+                            float startY = -petalSize - rng.nextInt(Math.max(1, containerH / 3));
+                            float endY = containerH + petalSize;
+                            int duration = BASE_DURATION_MS + rng.nextInt(2500);
 
-                        AnimatorSet motionSet = new AnimatorSet();
-                        motionSet.playTogether(
-                                ObjectAnimator.ofFloat(petal, View.Y, startY, endY),
-                                ObjectAnimator.ofFloat(petal, View.X, startX, startX + driftX),
-                                ObjectAnimator.ofFloat(petal, View.ROTATION, 0f, (rng.nextFloat() - 0.5f) * 540f)
-                        );
-                        motionSet.setDuration(duration);
-                        motionSet.setInterpolator(new AccelerateInterpolator(1.1f));
-                        motionSet.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                if (petal.getParent() instanceof ViewGroup) {
-                                    ((ViewGroup) petal.getParent()).removeView(petal);
+                            petal.setX(startX);
+                            petal.setY(startY);
+                            navigationController.view.addView(petal, new ViewGroup.LayoutParams(petalSize, petalSize));
+
+                            AnimatorSet motionSet = new AnimatorSet();
+                            motionSet.playTogether(
+                                    ObjectAnimator.ofFloat(petal, View.Y, startY, endY),
+                                    ObjectAnimator.ofFloat(petal, View.X, startX, startX + driftX),
+                                    ObjectAnimator.ofFloat(petal, View.ROTATION, 0f, (rng.nextFloat() - 0.5f) * 540f)
+                            );
+                            motionSet.setDuration(duration);
+                            motionSet.setInterpolator(new AccelerateInterpolator(1.1f));
+                            motionSet.addListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    if (petal.getParent() instanceof ViewGroup) {
+                                        ((ViewGroup) petal.getParent()).removeView(petal);
+                                    }
                                 }
-                            }
-                        });
-                        motionSet.start();
+                            });
+                            motionSet.start();
 
-                        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(petal, View.ALPHA, 1f, 0f);
-                        fadeOut.setStartDelay((long) (duration * 0.55));
-                        fadeOut.setDuration((long) (duration * 0.45));
-                        fadeOut.start();
+                            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(petal, View.ALPHA, 1f, 0f);
+                            fadeOut.setStartDelay((long) (duration * 0.55));
+                            fadeOut.setDuration((long) (duration * 0.45));
+                            fadeOut.start();
+                        }
                     }
                 }));
 
@@ -557,15 +537,6 @@ public class MainSettingsController extends SettingsController implements Settin
                     R.string.settings_update_check,
                     R.string.settings_update_check_description,
                     v -> ((StartActivity) context).getVersionHandler().manualUpdateCheck()));
-        }
-    }
-
-    private void setupCrashReportingSetting(SettingsGroup about) {
-        if (ChanSettings.isCrashReportingAvailable()) {
-            crashReportSetting = about.add(new BooleanSettingView(this,
-                    ChanSettings.crashReporting,
-                    R.string.settings_crash_reporting,
-                    R.string.settings_crash_reporting_description));
         }
     }
 }
