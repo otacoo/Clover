@@ -114,11 +114,25 @@ public class CookieManagerController extends StyledToolbarNavigationController i
             domains.add("https://sys.4channel.org");
             return domains;
         }
+
         domains.add("https://" + host);
+
+        // Try to find apex domain for other sites
+        String[] parts = host.split("\\.");
+        if (parts.length >= 2) {
+            String apex = parts[parts.length - 2] + "." + parts[parts.length - 1];
+            String apexUrl = "https://" + apex;
+            if (!domains.contains(apexUrl)) domains.add(apexUrl);
+            String wwwApexUrl = "https://www." + apex;
+            if (!domains.contains(wwwApexUrl)) domains.add(wwwApexUrl);
+        }
+
         if (host.startsWith("www.")) {
-            domains.add("https://" + host.substring(4));
+            String noWww = "https://" + host.substring(4);
+            if (!domains.contains(noWww)) domains.add(noWww);
         } else {
-            domains.add("https://www." + host);
+            String www = "https://www." + host;
+            if (!domains.contains(www)) domains.add(www);
         }
         return domains;
     }
@@ -331,8 +345,19 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                     new AlertDialog.Builder(context)
                             .setTitle("Delete " + nameStr + "?")
                             .setPositiveButton(R.string.ok, (d, w) -> {
-                                for (String domain : domains) {
-                                    cookieManager.setCookie(domain, nameStr + "=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+                                for (String url : domains) {
+                                    // Try host, apex domain, and subdomains with various attributes
+                                    cookieManager.setCookie(url, nameStr + "=; Max-Age=0; path=/");
+                                    cookieManager.setCookie(url, nameStr + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/");
+
+                                    android.net.Uri dUri = android.net.Uri.parse(url);
+                                    String dHost = dUri.getHost();
+                                    if (dHost != null) {
+                                        cookieManager.setCookie(url, nameStr + "=; Max-Age=0; path=/; Domain=" + dHost);
+                                        cookieManager.setCookie(url, nameStr + "=; Max-Age=0; path=/; Domain=." + dHost);
+                                        cookieManager.setCookie(url, nameStr + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Domain=" + dHost);
+                                        cookieManager.setCookie(url, nameStr + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Domain=." + dHost);
+                                    }
                                 }
                                 cookieManager.flush();
                                 syncChan4CookieToSetting(site, nameStr, "");
