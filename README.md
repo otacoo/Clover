@@ -1,4 +1,4 @@
-# ![clover_logo](docs/icon_64.png) Clover - imageboard browser for Android
+# ![clover_logo](docs/images/icon_64.png) Clover - imageboard browser for Android
 
 ### Download APK: [ [latest release](https://github.com/otacoo/Clover/releases/latest) | [all releases](https://github.com/otacoo/Clover/releases) ]
 
