@@ -96,6 +96,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     private static volatile String ticket = "";
 
+    private volatile boolean isDark = !ThemeHelper.theme().isLightTheme;
+
     /** The key used for global 4chan cooldown tracking across boards and threads. */
     private static final String GLOBAL_4CHAN_KEY = "global_4chan_cooldown";
     /** The key used for global tracking of the last "Get Captcha" request time. */
@@ -155,11 +157,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         settings.setDomStorageEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         
-        // Disable system Force Dark to avoid interference with our manual dark mode implementation
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            settings.setAlgorithmicDarkeningAllowed(false);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            settings.setForceDark(WebSettings.FORCE_DARK_OFF);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && isDark) {
+            settings.setForceDark(WebSettings.FORCE_DARK_ON);
         }
 
         // Ensure cookies are accepted and shared across sessions
@@ -448,7 +447,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Injects dark mode styles and JS message listeners into the page
     private void injectThemingAndHooks() {
-        boolean isDark = !ThemeHelper.theme().isLightTheme;
         boolean singleView = false;
         if (site != null && site.name().equalsIgnoreCase("4chan")) {
             // SitesSetupController uses the site to find settings
@@ -459,15 +457,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         final boolean finalSingleView = singleView;
 
         String js = "(function() {" +
-                "  var isDark = " + isDark + ";" +
                 "  var isSingleView = " + finalSingleView + ";" +
-                "  var meta = document.createElement('meta');" +
-                "  meta.name = 'color-scheme';" +
-                "  meta.content = isDark ? 'dark' : 'light';" +
-                "  document.head.appendChild(meta);" +
-                "  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';" +
                 "  var cf = document.querySelector('.cf-turnstile');" +
-                "  if (cf && !cf.hasAttribute('data-theme')) cf.setAttribute('data-theme', isDark ? 'dark' : 'light');" +
+                "  if (cf) cf.setAttribute('data-theme', 'auto');" +
                 "  if (window.parent && !window.__postMessageHookInstalled) {" +
                 "    window.__postMessageHookInstalled = true;" +
                 "    var original = window.parent.postMessage.bind(window.parent);" +
