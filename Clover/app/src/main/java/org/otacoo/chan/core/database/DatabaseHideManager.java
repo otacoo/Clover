@@ -62,8 +62,9 @@ public class DatabaseHideManager {
      */
     public boolean isThreadHidden(Post post) {
         synchronized (hides) {
-            if (hides.containsKey(post.no)) {
-                for (ThreadHide threadHide : hides.get(post.no)) {
+            List<ThreadHide> hidesForId = hides.get(post.no);
+            if (hidesForId != null) {
+                for (ThreadHide threadHide : hidesForId) {
                     if (threadHide.equalsPost(post)) {
                         return true;
                     }
@@ -74,34 +75,50 @@ public class DatabaseHideManager {
     }
 
     public Callable<Void> addThreadHide(ThreadHide hide) {
-        return () -> {
-            helper.threadHideDao.create(hide);
-
-            synchronized (hides) {
-                List<ThreadHide> hidesForId = hides.get(hide.no);
-                if (hidesForId == null) {
-                    hidesForId = new ArrayList<>(1);
-                    hides.put(hide.no, hidesForId);
-                }
-
-                hidesForId.add(hide);
+        // Update the memory map immediately before the DB task is even run.
+        synchronized (hides) {
+            List<ThreadHide> hidesForId = hides.get(hide.no);
+            if (hidesForId == null) {
+                hidesForId = new ArrayList<>(1);
+                hides.put(hide.no, hidesForId);
             }
 
+            // Check if already present to avoid duplicates
+            boolean present = false;
+            for (ThreadHide h : hidesForId) {
+                if (h.equals(hide)) {
+                    present = true;
+                    break;
+                }
+            }
+
+            if (!present) {
+                hidesForId.add(hide);
+            }
+        }
+
+        return () -> {
+            helper.threadHideDao.createOrUpdate(hide);
             return null;
         };
     }
 
     public Callable<Void> removeThreadHide(ThreadHide hide) {
-        return () -> {
-            helper.threadHideDao.delete(hide);
-
-            synchronized (hides) {
-                List<ThreadHide> hidesForId = hides.get(hide.no);
-                if (hidesForId != null) {
-                    hidesForId.remove(hide);
+        // Update the memory map immediately.
+        synchronized (hides) {
+            List<ThreadHide> hidesForId = hides.get(hide.no);
+            if (hidesForId != null) {
+                for (int i = 0; i < hidesForId.size(); i++) {
+                    if (hidesForId.get(i).equals(hide)) {
+                        hidesForId.remove(i);
+                        break;
+                    }
                 }
             }
+        }
 
+        return () -> {
+            helper.threadHideDao.delete(hide);
             return null;
         };
     }
@@ -123,6 +140,11 @@ public class DatabaseHideManager {
             DeleteBuilder<ThreadHide, Integer> builder = helper.threadHideDao.deleteBuilder();
             builder.where().eq("site", site.id());
             builder.delete();
+
+            synchronized (hides) {
+                // Easier to just reload if we delete many by site.
+                load().call();
+            }
 
             return null;
         };
