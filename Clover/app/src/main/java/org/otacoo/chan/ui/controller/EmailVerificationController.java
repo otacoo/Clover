@@ -18,19 +18,25 @@
 package org.otacoo.chan.ui.controller;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.text.InputType;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.ui.helper.RefreshUIMessage;
+import org.otacoo.chan.ui.toolbar.ToolbarMenu;
+import org.otacoo.chan.ui.toolbar.ToolbarMenuItem;
 import org.otacoo.chan.ui.view.AuthWebView;
 import org.otacoo.chan.utils.Logger;
 
@@ -41,7 +47,7 @@ public class EmailVerificationController extends Controller {
 
     private AuthWebView webView;
     private final String initialUrl;
-    private String title = "Email Verification";
+    private String title = "Verification";
     private String[] requiredCookies;
     private boolean isFinished = false;
     private Site site;
@@ -76,6 +82,21 @@ public class EmailVerificationController extends Controller {
         navigation.title = title;
         navigation.swipeable = false;
 
+        // Add overflow menu with Refresh and Open URL
+        navigation.buildMenu()
+                .withItem(R.drawable.ic_refresh_white_24dp, item -> {
+                    if (webView != null) webView.reload();
+                })
+                .withOverflow()
+                .withSubItem("Enter URL", item -> showUrlInputDialog())
+                .build() // Completes MenuOverflowBuilder, returns MenuBuilder
+                .build(); // Completes MenuBuilder, sets navigation.menu
+
+        ToolbarMenuItem overflowItem = navigation.findItem(ToolbarMenu.OVERFLOW_ID);
+        if (overflowItem != null) {
+            overflowItem.overflowStyle = true;
+        }
+
         // Set view synchronously so pushController doesn't crash with "Controller has no view".
         // The WebView will be added into this container after async cookie clearing.
         FrameLayout container = new FrameLayout(context);
@@ -87,17 +108,87 @@ public class EmailVerificationController extends Controller {
         AuthWebView.runOnWebViewThread(this::setupWebView);
     }
 
+    private void showUrlInputDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Enter URL");
+
+        final EditText input = new EditText(context);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        input.setText(webView != null ? webView.getUrl() : initialUrl);
+        builder.setView(input);
+
+        builder.setPositiveButton("Go", (dialog, which) -> {
+            String url = input.getText().toString().trim();
+            if (!url.isEmpty()) {
+                if (!url.startsWith("http")) {
+                    url = "https://" + url;
+                }
+                if (webView != null) {
+                    webView.loadUrl(url);
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         if (!alive) return;
+        clearCloudflareCookies();
+        AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
+    }
 
-        // Clear stale cookies before creating the WebView so the signin page gets a clean session.
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.removeAllCookies(success -> {
-            Logger.d(TAG, "removeAllCookies result=" + success);
-            cookieManager.flush();
-            AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
-        });
+    // Clear stale cookies before creating the WebView so the signin page gets a clean session.
+    private void clearCloudflareCookies() {
+        CookieManager cm = CookieManager.getInstance();
+        // Comprehensive list of Cloudflare and bot-protection cookie names.
+        String[] cfNames = {"cf_clearance", "__cf_bm", "__cfruid", "_cf_bm", "_tcm", "_cfuvid"};
+        
+        java.util.Set<String> apexes = new java.util.HashSet<>();
+        apexes.add("4chan.org");
+        apexes.add("4channel.org");
+
+        if (initialUrl != null) {
+            try {
+                android.net.Uri uri = android.net.Uri.parse(initialUrl);
+                String host = uri.getHost();
+                if (host != null) {
+                    if (host.endsWith("4chan.org")) {
+                        apexes.add("4chan.org");
+                    } else if (host.endsWith("4channel.org")) {
+                        apexes.add("4channel.org");
+                    } else {
+                        // For other domains, try to find the apex.
+                        String[] parts = host.split("\\.");
+                        if (parts.length >= 2) {
+                            apexes.add(parts[parts.length - 2] + "." + parts[parts.length - 1]);
+                        } else {
+                            apexes.add(host);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        for (String apex : apexes) {
+            String url = "https://" + apex;
+            for (String name : cfNames) {
+                // Cloudflare usually uses the apex domain with a leading dot.
+                cm.setCookie(url, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=." + apex);
+                cm.setCookie(url, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=" + apex);
+                cm.setCookie(url, name + "=; Max-Age=0; path=/");
+                
+                // Also attempt clearing for common subdomains explicitly.
+                for (String sub : new String[]{"sys", "boards", "www"}) {
+                    String subUrl = "https://" + sub + "." + apex;
+                    cm.setCookie(subUrl, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=." + sub + "." + apex);
+                    cm.setCookie(subUrl, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=" + sub + "." + apex);
+                    cm.setCookie(subUrl, name + "=; Max-Age=0; path=/");
+                }
+            }
+        }
+        cm.flush();
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -193,7 +284,7 @@ public class EmailVerificationController extends Controller {
 
         CookieManager.getInstance().flush();
 
-        // Only sync WebView cookies into the java.net/OkHttp jar for 8chan.
+        // Sync WebView cookies into the java.net/OkHttp jar for 8chan.
         boolean is8chan = initialUrl != null && (initialUrl.contains("8chan.moe") || initialUrl.contains("8chan.st") || initialUrl.contains("8chan.cc"));
         if (is8chan) {
             NetModule.syncCookiesToJar(initialUrl);
