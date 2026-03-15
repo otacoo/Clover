@@ -541,6 +541,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                         return new WebResourceResponse("text/html", "UTF-8", new ByteArrayInputStream(assetHtml.getBytes(StandardCharsets.UTF_8)));
                     }
                 } else {
+                    // Check if the server is telling us captcha is not needed before treating it as an error.
+                    String bodyLower = body.toLowerCase();
+                    if (bodyLower.contains("not required") || bodyLower.contains("verified")) {
+                        Logger.i(TAG, "interceptCaptchaRequest: server says verification not required, skipping captcha");
+                        AndroidUtils.runOnUiThread(() -> onCaptchaEntered("", ""));
+                        return new WebResourceResponse("text/plain", "UTF-8",
+                                new ByteArrayInputStream(new byte[0]));
+                    }
                     Logger.i(TAG, "interceptCaptchaRequest: No payload found in response body");
                     handleSiteErrorInIntercept(body);
                 }
