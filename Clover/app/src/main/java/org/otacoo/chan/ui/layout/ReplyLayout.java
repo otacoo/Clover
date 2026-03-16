@@ -772,7 +772,7 @@ public class ReplyLayout extends LoadView implements
             captchaContainer.removeView((View) authenticationLayout);
             authenticationLayout = null;
         }
-        Snackbar postSuccessfulNotification = Snackbar.make(this, R.string.reply_success, 4000);
+        Snackbar postSuccessfulNotification = Snackbar.make(this, R.string.reply_success, 4500);
         postSuccessfulNotification.setAction(R.string.reply_success_recover, new OnClickListener() {
             @Override
             public void onClick(View v) {

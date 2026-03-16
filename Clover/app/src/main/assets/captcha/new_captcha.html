@@ -255,13 +255,27 @@
             object-fit: contain;
         }
 
+        #t-native-btn-row {
+            display: flex;
+            gap: 10px;
+            margin: 12px auto 0 auto;
+            max-width: 340px;
+            width: 100%;
+        }
+        #t-native-back {
+            font-size: 16px;
+            padding: 14px 20px;
+            flex: 1;
+            background: transparent;
+            color: var(--c-fg);
+            border: 1px solid var(--c-btn-border);
+            border-radius: 6px;
+            font-weight: 500;
+        }
         #t-native-next {
             font-size: 16px;
             padding: 14px 20px;
-            margin: 12px auto 0 auto;
-            display: block;
-            width: 100%;
-            max-width: 240px;
+            flex: 2;
             background: var(--c-btn-bg);
             color: var(--c-btn-fg);
             border: 1px solid var(--c-btn-border);
@@ -401,7 +415,10 @@
                 <div class="t-target-wrap" id="t-native-target-wrap"><img id="t-native-target" src="" alt="Target"></div>
             </div>
             <div id="t-native-choices-wrap"><div id="t-native-choices"></div></div>
-            <button id="t-native-next" type="button">Next</button>
+            <div id="t-native-btn-row">
+                <button id="t-native-back" type="button" style="display:none;">Back</button>
+                <button id="t-native-next" type="button">Next</button>
+            </div>
         </div>
         <!-- Single view UI -->
         <div id="t-single-ui" style="display:none;">
@@ -992,7 +1009,17 @@ function buildNativeTasksUI(data) {
         var btn = document.getElementById('t-native-next');
         btn.disabled = answers[currentIndex] === undefined;
         btn.textContent = (currentIndex === total - 1) ? 'Submit' : 'Next';
+
+        var backBtn = document.getElementById('t-native-back');
+        if (backBtn) backBtn.style.display = currentIndex > 0 ? 'block' : 'none';
     }
+
+    document.getElementById('t-native-back').onclick = function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderChallenge();
+        }
+    };
 
     document.getElementById('t-native-next').onclick = function() {
         if (answers[currentIndex] === undefined) return;
