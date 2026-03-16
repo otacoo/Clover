@@ -301,6 +301,16 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         setFastScroll(true);
 
         postAdapter.setThread(thread, filter, threadLastViewed);
+        
+        recyclerView.post(() -> {
+            if (scrolledToBottom()) {
+                int bottom = postAdapter.getItemCount() - 1;
+                if (bottom > lastPostCount) {
+                    lastPostCount = bottom;
+                    callback.onListScrolledToBottom();
+                }
+            }
+        });
     }
 
     public boolean onBack() {
