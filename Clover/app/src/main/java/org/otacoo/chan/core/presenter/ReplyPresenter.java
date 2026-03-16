@@ -384,6 +384,11 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
     @Override
     public void onPostComplete(HttpCall httpCall, ReplyResponse replyResponse) {
+        // Guard against the user navigating away before the async callback arrived
+        if (!bound || loadable == null || board == null) {
+            //Logger.w(TAG, "onPostComplete: ignoring callback");
+            return;
+        }
         if (replyResponse.posted) {
             if (ChanSettings.postPinThread.get()) {
                 if (loadable.isThreadMode()) {
