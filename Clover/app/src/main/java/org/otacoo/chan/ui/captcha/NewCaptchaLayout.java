@@ -782,21 +782,22 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             boolean isDark = !ThemeHelper.theme().isLightTheme;
             
             boolean singleView = false;
+            boolean autoSkip = false;
             if (site != null && site.name().equalsIgnoreCase("4chan")) {
                 org.otacoo.chan.core.site.sites.chan4.Chan4 chan4 = (org.otacoo.chan.core.site.sites.chan4.Chan4) site;
                 singleView = chan4.getSingleViewCaptchas().get();
+                autoSkip = chan4.getCaptchaAutoSkip().get();
             }
             
-            // Add single_view flag to JSON if not present
-            if (singleView) {
+            // Add single_view and auto_skip_challenge flags to JSON if needed
+            if (singleView || autoSkip) {
                 try {
                     JSONObject obj = new JSONObject(json);
                     JSONObject inner = obj.optJSONObject("twister");
-                    if (inner != null) {
-                        inner.put("single_view", true);
-                        json = obj.toString();
-                    } else if (obj.has("tasks")) {
-                        obj.put("single_view", true);
+                    JSONObject target = (inner != null) ? inner : (obj.has("tasks") ? obj : null);
+                    if (target != null) {
+                        if (singleView) target.put("single_view", true);
+                        if (autoSkip) target.put("auto_skip_challenge", true);
                         json = obj.toString();
                     }
                 } catch (Exception ignored) {}

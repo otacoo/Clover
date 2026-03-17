@@ -478,6 +478,7 @@ public class Chan4 extends SiteBase {
     private final Chan4CookieStore cookieStore;
     private final BooleanSetting showCooldownToast;
     private final BooleanSetting singleViewCaptchas;
+    private final BooleanSetting captchaAutoSkip;
 
     public Chan4() {
         // we used these before multisite, and lets keep using them.
@@ -487,6 +488,7 @@ public class Chan4 extends SiteBase {
         cookieStore = new Chan4CookieStore();
         showCooldownToast = new BooleanSetting(p, "preference_4chan_cooldown_toast", false);
         singleViewCaptchas = new BooleanSetting(p, "preference_4chan_single_view_captchas", false);
+        captchaAutoSkip = new BooleanSetting(p, "preference_4chan_captcha_auto_skip", false);
     }
 
     @Override
@@ -499,6 +501,7 @@ public class Chan4 extends SiteBase {
     public List<SiteSetting> settings() {
         List<SiteSetting> list = new ArrayList<>();
         list.add(SiteSetting.forBoolean(singleViewCaptchas, "Single page captchas", "Show all captcha challenges in a single page"));
+        list.add(SiteSetting.forBoolean(captchaAutoSkip, "Automatically skip to next challenge", "Skips to the next challenge after picking one"));
         list.add(SiteSetting.forBoolean(showCooldownToast, "Captcha info toasts", "Informs about captcha state"));
         return list;
     }
@@ -509,6 +512,10 @@ public class Chan4 extends SiteBase {
 
     public BooleanSetting getSingleViewCaptchas() {
         return singleViewCaptchas;
+    }
+
+    public BooleanSetting getCaptchaAutoSkip() {
+        return captchaAutoSkip;
     }
 
     public Chan4CookieStore getCookieStore() {

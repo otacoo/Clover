@@ -430,6 +430,7 @@
 <script>
 
 var isSingleView = false;
+var autoSkipChallenge = false;
 var useSliderMode = false;
 var EMPTY_IMG_SRC = 'data:image/gif;base64,R0lGOODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
@@ -790,6 +791,7 @@ var cooldownInterval = null;
 function buildFromJson(data) {
     if (data.twister) data = data.twister;
     if (data.single_view !== undefined) isSingleView = !!data.single_view;
+    if (data.auto_skip_challenge !== undefined) autoSkipChallenge = !!data.auto_skip_challenge;
 
     // Overlay mode: Java sends { overlay: { message, title, isError, showGetCaptcha, showReset } }
     if (data.overlay) {
@@ -1009,6 +1011,9 @@ function buildNativeTasksUI(data) {
                     for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
                     div.classList.add('selected');
                     document.getElementById('t-native-next').disabled = false;
+                    if (autoSkipChallenge && currentIndex < total - 1) {
+                        setTimeout(advanceChallenge, 150);
+                    }
                 };
                 wrap.appendChild(div);
             });
@@ -1022,14 +1027,7 @@ function buildNativeTasksUI(data) {
         if (backBtn) backBtn.style.display = currentIndex > 0 ? 'block' : 'none';
     }
 
-    document.getElementById('t-native-back').onclick = function() {
-        if (currentIndex > 0) {
-            currentIndex--;
-            renderChallenge();
-        }
-    };
-
-    document.getElementById('t-native-next').onclick = function() {
+    function advanceChallenge() {
         if (answers[currentIndex] === undefined) return;
         if (currentIndex === total - 1) {
             var challengeEl = document.getElementById('t-challenge');
@@ -1046,7 +1044,16 @@ function buildNativeTasksUI(data) {
         }
         currentIndex++;
         renderChallenge();
+    }
+
+    document.getElementById('t-native-back').onclick = function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderChallenge();
+        }
     };
+
+    document.getElementById('t-native-next').onclick = advanceChallenge;
 
     renderChallenge();
     CaptchaCallback.onCaptchaLoaded();
@@ -1168,6 +1175,12 @@ function buildSingleViewTasksUI(data) {
                     for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
                     choiceDiv.classList.add('selected');
                     updateSubmitButtonStatus();
+                    if (autoSkipChallenge) {
+                        var tasks = container.querySelectorAll('.t-single-task');
+                        if (taskIdx + 1 < tasks.length) {
+                            tasks[taskIdx + 1].scrollIntoView({behavior: 'smooth', block: 'start'});
+                        }
+                    }
                 };
                 choicesGrid.appendChild(choiceDiv);
             });
