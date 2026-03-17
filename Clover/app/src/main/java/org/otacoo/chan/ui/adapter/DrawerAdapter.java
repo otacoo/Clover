@@ -25,6 +25,9 @@ import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -341,7 +344,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         int offset = getPinOffset();
         for (int i = 0; i < pins.size(); i++) {
             Pin pin = pins.get(i);
-            if (pin != highlighted && pin != previousHighlighted) continue;
+            boolean isTarget = (highlighted != null && pin.id == highlighted.id)
+                    || (previousHighlighted != null && pin.id == previousHighlighted.id);
+            if (!isTarget) continue;
             PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(i + offset);
             if (holder != null) {
                 updatePinViewHolder(holder, pin);
@@ -385,11 +390,13 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     dp(16), holder.textView.getPaddingBottom());
         }
 
-        boolean highlighted = pin == this.highlighted;
-        if (highlighted && !holder.highlighted) {
-            holder.itemView.setBackgroundColor(0x22000000);
+        boolean isHighlighted = this.highlighted != null && pin.id == this.highlighted.id;
+        if (isHighlighted && !holder.highlighted) {
+            Drawable highlight = new ColorDrawable(0x33888888);
+            Drawable ripple = AndroidUtils.getAttrDrawable(holder.itemView.getContext(), android.R.attr.selectableItemBackground);
+            holder.itemView.setBackground(new LayerDrawable(new Drawable[]{highlight, ripple}));
             holder.highlighted = true;
-        } else if (!highlighted && holder.highlighted) {
+        } else if (!isHighlighted && holder.highlighted) {
             holder.itemView.setBackground(AndroidUtils.getAttrDrawable(holder.itemView.getContext(), android.R.attr.selectableItemBackground));
             holder.highlighted = false;
         }

@@ -124,6 +124,13 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         drawerAdapter.setPinnedSearches(ChanSettings.getPinnedSearches());
         drawerAdapter.onPinsChanged(watchManager.getAllPins());
 
+        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                drawerAdapter.updateHighlighted(recyclerView);
+            }
+        });
+
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(drawerAdapter.getItemTouchHelperCallback());
         itemTouchHelper.attachToRecyclerView(recyclerView);
 

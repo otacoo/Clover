@@ -566,13 +566,14 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_post_file_info">Show file info on posts</string>
     <string name="setting_post_filename">Show filename on posts</string>
 
-    <!-- Behavior -->
-    <string name="settings_screen_behavior">Behavior</string>
+    <!-- Browsing -->
+    <string name="settings_screen_Browsing">Browsing</string>
 
-    <!-- Behavior general group -->
+    <!-- Browsing general group -->
     <string name="settings_group_general">General</string>
     <string name="setting_auto_refresh_thread">Auto refresh threads</string>
     <string name="setting_confirm_exit">Confirm before exit</string>
+    <string name="setting_highlight_open_thread">Highlight currently open thread</string>
     <string name="setting_controller_swipeable">Allow screens to be swiped away</string>
     <string name="setting_clear_thread_hides">Clear all thread hides</string>
     <string name="setting_cleared_thread_hides">Cleared all thread hides</string>
@@ -584,13 +585,13 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_confirm_clear_hides">Are you sure you want to clear all thread hides?</string>
     <string name="setting_confirm_clear_cookies">This will clear all sites\' cookies. Are you sure?</string>
 
-    <!-- Behavior reply group -->
+    <!-- Browsing reply group -->
     <string name="settings_group_reply">Reply</string>
     <string name="setting_post_pin">Bookmark thread on post</string>
     <string name="setting_post_default_name">Default post name</string>
     <string name="setting_always_show_reply_tags">Always show formatting tags</string>
 
-    <!-- Behavior post group -->
+    <!-- Browsing post group -->
     <string name="setting_text_only">Text only mode</string>
     <string name="setting_text_only_description">Hide images when in board and thread view</string>
     <string name="settings_reveal_text_spoilers">Reveal text spoilers</string>
@@ -610,18 +611,18 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_open_link_browser">Always open links in external browser</string>
 
 
-    <!-- Behavior proxy group -->
+    <!-- Misc proxy group -->
     <string name="settings_group_proxy">HTTP Proxy</string>
     <string name="setting_proxy_enabled">Enable proxy</string>
     <string name="setting_proxy_address">Proxy server address</string>
     <string name="setting_proxy_port">Proxy server port</string>
 
-    <!-- Behavior DNS over HTTPS group -->
+    <!-- Misc DNS over HTTPS group -->
     <string name="setting_group_dns_over_https">DNS over HTTPS</string>
     <string name="setting_group_dns_enable">Enable DOH (Cloudflare)</string>
     <string name="setting_group_dns_enable_description">Requires app restart to take effect</string>
 
-    <!-- Custom User-Agent group -->
+    <!-- Misc User-Agent group -->
     <string name="setting_group_user_agent">Custom User-Agent</string>
     <string name="setting_group_user_agent_ua">Set custom User-Agent</string>
     <string name="setting_group_user_agent_ua_desc">Empty for system, requires restart</string>

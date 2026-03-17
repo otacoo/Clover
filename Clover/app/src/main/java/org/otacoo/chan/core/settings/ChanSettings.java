@@ -244,6 +244,7 @@ public class ChanSettings {
 
     public static final BooleanSetting watchEnabled;
     public static final BooleanSetting watchCountdown;
+    public static final BooleanSetting highlightOpenThread;
     public static final BooleanSetting watchBackground;
     public static final IntegerSetting watchBackgroundInterval;
     public static final StringSetting watchNotifyMode;
@@ -354,6 +355,9 @@ public class ChanSettings {
         watchEnabled.addCallback((setting, value) ->
                 EventBus.getDefault().post(new SettingChanged<>(watchEnabled)));
         watchCountdown = new BooleanSetting(p, "preference_watch_countdown", false);
+        highlightOpenThread = new BooleanSetting(p, "preference_highlight_open_thread", false);
+        highlightOpenThread.addCallback((setting, value) ->
+                EventBus.getDefault().post(new SettingChanged<>(highlightOpenThread)));
         watchBackground = new BooleanSetting(p, "preference_watch_background_enabled", false);
         watchBackground.addCallback((setting, value) ->
                 EventBus.getDefault().post(new SettingChanged<>(watchBackground)));

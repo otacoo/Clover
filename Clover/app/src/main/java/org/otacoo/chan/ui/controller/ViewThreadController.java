@@ -211,6 +211,12 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
         }
     }
 
+    public void onEvent(ChanSettings.SettingChanged<?> message) {
+        if (message.setting == ChanSettings.highlightOpenThread) {
+            updateDrawerHighlighting(loadable);
+        }
+    }
+
     @Override
     public void showThread(final Loadable threadLoadable) {
         if (threadLoadable.isCatalogMode()) {
@@ -307,7 +313,10 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
     }
 
     private void updateDrawerHighlighting(Loadable loadable) {
-        Pin pin = loadable == null ? null : watchManager.findPinByLoadable(loadable);
+        Pin pin = null;
+        if (ChanSettings.highlightOpenThread.get() && loadable != null) {
+            pin = watchManager.findPinByLoadable(loadable);
+        }
 
         if (navigationController.parentController instanceof DrawerController) {
             ((DrawerController) navigationController.parentController).setPinHighlighted(pin);
