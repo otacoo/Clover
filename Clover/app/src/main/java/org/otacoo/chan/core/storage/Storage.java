@@ -434,34 +434,20 @@ public class Storage {
         // causes a SecurityException ("obtain access using ACTION_OPEN_DOCUMENT or related APIs").
         Uri docUri = rootDocUri(treeUri);
 
-        // If that grant has since been revoked (e.g. app reinstall, user revocation), querying
-        // will throw SecurityException. Check first so we fail silently instead of logging an error.
-        String docUriString = docUri.toString();
-        boolean hasPermission = false;
-        for (android.content.UriPermission perm : contentResolver.getPersistedUriPermissions()) {
-            if (docUriString.startsWith(perm.getUri().toString())) {
-                hasPermission = true;
-                break;
-            }
-        }
-        if (!hasPermission) {
-            return null;
-        }
-
         Cursor c = null;
-        String name = null;
         try {
             c = contentResolver.query(docUri, new String[]{
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME,
                     DocumentsContract.Document.COLUMN_MIME_TYPE
             }, null, null, null);
 
+            String name = null;
             if (c != null && c.moveToNext()) {
                 name = c.getString(0);
-                // mime = c.getString(1);
             }
-
             return name;
+        } catch (SecurityException e) {
+            return null;
         } catch (Exception e) {
             Logger.e(TAG, "queryTreeName", e);
         } finally {
