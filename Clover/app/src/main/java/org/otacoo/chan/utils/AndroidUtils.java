@@ -68,14 +68,15 @@ import org.otacoo.chan.ui.theme.ThemeHelper;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AndroidUtils {
     private static final String TAG = "AndroidUtils";
 
-    private static final HashMap<String, Typeface> typefaceCache = new HashMap<>();
+    private static final Map<String, Typeface> typefaceCache = new ConcurrentHashMap<>();
 
     public static Typeface ROBOTO_MEDIUM;
     public static Typeface ROBOTO_MEDIUM_ITALIC;
@@ -271,11 +272,8 @@ public class AndroidUtils {
     }
 
     public static Typeface getTypeface(String name) {
-        if (!typefaceCache.containsKey(name)) {
-            Typeface typeface = Typeface.createFromAsset(getRes().getAssets(), "font/" + name);
-            typefaceCache.put(name, typeface);
-        }
-        return typefaceCache.get(name);
+        return typefaceCache.computeIfAbsent(name,
+                key -> Typeface.createFromAsset(getRes().getAssets(), "font/" + key));
     }
 
     /**
@@ -283,7 +281,11 @@ public class AndroidUtils {
      * be run on the ui thread.
      */
     public static void runOnUiThread(Runnable runnable) {
-        mainHandler.post(runnable);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runnable.run();
+        } else {
+            mainHandler.post(runnable);
+        }
     }
 
     public static void runOnUiThread(Runnable runnable, long delay) {
@@ -302,12 +304,19 @@ public class AndroidUtils {
 
     public static void requestKeyboardFocus(final View view) {
         InputMethodManager inputManager = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+        if (inputManager != null) {
+            inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+        }
     }
 
     public static void hideKeyboard(View view) {
+        if (view == null || view.getWindowToken() == null) {
+            return;
+        }
         InputMethodManager inputManager = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        if (inputManager != null) {
+            inputManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     public static void requestViewAndKeyboardFocus(View view) {
@@ -316,7 +325,9 @@ public class AndroidUtils {
         if (view.requestFocus()) {
             InputMethodManager inputManager =
                     (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+            if (inputManager != null) {
+                inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+            }
         }
     }
 
