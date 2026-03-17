@@ -86,6 +86,10 @@ public class Chan4ReplyCall extends CommonReplyHttpCall {
             } else {
                 formBuilder.addFormDataPart("g-recaptcha-response", reply.captchaResponse);
             }
+        } else if (reply.captchaChallenge != null && !reply.captchaChallenge.isEmpty()) {
+            // Include challenge even if response is empty (e.g. for "noop" bypasses)
+            formBuilder.addFormDataPart("t-challenge", reply.captchaChallenge);
+            formBuilder.addFormDataPart("t-response", reply.captchaResponse != null ? reply.captchaResponse : "");
         }
 
         if (reply.spoilerImage) {
