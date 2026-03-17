@@ -159,12 +159,20 @@ public class Chan8 extends CommonSite {
 
         @Override
         public HttpUrl getUrl() {
-            return HttpUrl.parse("https://8chan.moe/");
+            return HttpUrl.parse("https://" + Chan8RateLimit.getActiveDomain() + "/");
         }
 
         @Override
         public String[] getNames() {
-            return new String[]{"8chan", "8chan.moe"};
+            return new String[]{"8chan", "8chan.moe", "8chan.st", "8chan.cc"};
+        }
+
+        @Override
+        public boolean respondsTo(HttpUrl url) {
+            String host = url.host();
+            return Chan8RateLimit.PRIMARY_DOMAIN.equals(host)
+                    || Chan8RateLimit.SECONDARY_DOMAIN.equals(host)
+                    || Chan8RateLimit.TERTIARY_DOMAIN.equals(host);
         }
 
         @Override
