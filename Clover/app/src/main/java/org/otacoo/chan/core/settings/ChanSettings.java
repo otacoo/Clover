@@ -349,7 +349,7 @@ public class ChanSettings {
         videoAutoLoop = new BooleanSetting(p, "preference_video_loop", true);
         videoPlayerTimeout = new IntegerSetting(p, "preference_video_player_timeout", 5);
         vp9ExtensionMode = new OptionsSetting<>(p, "preference_vp9_extension_mode", Vp9ExtensionMode.class, Vp9ExtensionMode.DEFAULT);
-        videoBufferForPlayback = new IntegerSetting(p, "preference_video_buffer_for_playback", 2500);
+        videoBufferForPlayback = new IntegerSetting(p, "preference_video_buffer_for_playback", 1500);
 
         watchEnabled = new BooleanSetting(p, "preference_watch_enabled", false);
         watchEnabled.addCallback((setting, value) ->
