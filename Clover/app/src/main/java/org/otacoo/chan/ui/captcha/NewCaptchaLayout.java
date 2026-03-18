@@ -524,9 +524,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
                 // if we see a Cloudflare challenge or fingerprint landing page, our cf_clearance
                 // is stale. Fall back to native WebView so Cloudflare can re-issue it.
-                if (body.contains("mcl.io") || body.contains("spur.us")
-                        || body.contains("cf-browser-verification") || body.contains("cf_chl_opt")
-                        || body.contains("jschl-answer") || body.contains("challenge-form")) {
+                if (body.contains("mcl.io") || body.contains("spur.us") || body.contains("cf-browser-verification")) {
                     Logger.i(TAG, "interceptCaptchaRequest: Cloudflare/fingerprint challenge detected, deferring to native load");
                     maybeToast("Session appears stale. Refreshing...", false);
                     refreshFingerprintSession();
