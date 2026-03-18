@@ -330,11 +330,10 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public void onPinChanged(RecyclerView recyclerView, Pin pin) {
         int index = pins.indexOf(pin);
         if (index != -1) {
-            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(index + getPinOffset());
-            if (holder != null) {
-                updatePinViewHolder(holder, pin);
-            }
-            else {
+            RecyclerView.ViewHolder vh = recyclerView.findViewHolderForAdapterPosition(index + getPinOffset());
+            if (vh instanceof PinViewHolder) {
+                updatePinViewHolder((PinViewHolder) vh, pin);
+            } else {
                 notifyItemChanged(index + getPinOffset());
             }
         }
@@ -347,9 +346,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             boolean isTarget = (highlighted != null && pin.id == highlighted.id)
                     || (previousHighlighted != null && pin.id == previousHighlighted.id);
             if (!isTarget) continue;
-            PinViewHolder holder = (PinViewHolder) recyclerView.findViewHolderForAdapterPosition(i + offset);
-            if (holder != null) {
-                updatePinViewHolder(holder, pin);
+            RecyclerView.ViewHolder vh = recyclerView.findViewHolderForAdapterPosition(i + offset);
+            if (vh instanceof PinViewHolder) {
+                updatePinViewHolder((PinViewHolder) vh, pin);
             }
         }
     }
