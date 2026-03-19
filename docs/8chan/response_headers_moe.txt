@@ -1,0 +1,25 @@
+Accept-Ranges	bytes
+Age	0
+Connection	keep-alive
+Content-Encoding	gzip
+Content-Length	17088
+Content-Security-Policy	default-src 'self'; script-src 'self' chrome-extension: moz-extension: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' chrome-extension: moz-extension:; img-src 'self' data: blob: chrome-extension: moz-extension:; media-src 'self' blob: chrome-extension: moz-extension: http://alephchvkipd2houttjirmgivro5pxullvcgm4c47ptm7mhubbja6kad.onion https://www.invidio.us https://invidious.snopyta.org https://yewtu.be https://8chan.tv https://liveleak.com https://www.bitchute.com https://www.youtube-nocookie.com https://www.youtube.com https://clips-media-assets2.twitch.tv; font-src 'self' data:; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://www.invidio.us https://invidious.snopyta.org https://yewtu.be https://www.bitchute.com https://player.twitch.tv https://clips.twitch.tv; worker-src 'self' blob: chrome-extension: moz-extension:; connect-src 'self' ws: wss: vt.rita.moe;, object-src blob: filesystem: *; frame-src blob: filesystem: *
+Content-Type	application/json; charset=utf-8
+Date	Wed, 18 Mar 2026 22:22:56 GMT
+Vary	Accept-Language, Accept-Encoding
+Via	1.1 Ayanami (Varnish/7.5)
+X-Varnish	265291378
+cache-control	no-cache
+last-modified	Wed, 18 Mar 2026 22:10:46 GMT
+Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Encoding	gzip, deflate, br, zstd
+Accept-Language	en-US,en;q=0.5
+Connection	keep-alive
+Host	8chan.moe
+Priority	u=0, i
+Sec-Fetch-Dest	document
+Sec-Fetch-Mode	navigate
+Sec-Fetch-Site	none
+Sec-Fetch-User	?1
+Upgrade-Insecure-Requests	1
+User-Agent	Mozilla/5.0
