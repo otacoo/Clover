@@ -1,3 +1,20 @@
+## 2026-03-19 – v3.3.9
+
+- **New option:** Highlight currently open thread (Browsing)
+- **New feature:** Clover will now ask which file picker a user wants to use (can be reset under Media options > Default file picker)
+- **4chan captcha:**
+  - Add an option to skip to the next captcha challenge automatically
+  - Add a back button in single page captcha mode
+  - Fix an issue where hiding the keyboard during the captcha could make the app crash on certain devices
+  - Add mitigations for "You seem to have mistyped the CAPTCHA" error... again, a big thank you to cookie anon (@ling-mjg) for putting up with me (issue #11).
+- **8chan:** Fix an issue where domains where hardcoded for `.moe` instead of respecting the forced domain option *(Note: POWBlock passing is finnicky due to constant changes to how POWBlock operates, this will have to be rewritten in one of the next releases but for now it works for all domains)*
+- *Tap post number to reply* will now correctly scroll to the bottom of the posting form when an image has been picked
+- Fix an issue where the *Remove filename* was breaking the file's extension and preventing upload
+- Fix an issue where devices using custom overlays or themes could make the app crash (issue #12)
+- Fix an issue where posts were not hiding instantly
+- Fixed easter egg triggering on every touch
+- Misc adjustments and cleanups
+
 ## 2026-03-15 – v3.3.8
 
 - Clover now supports adaptive Android icons
