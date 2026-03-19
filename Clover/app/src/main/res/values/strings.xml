@@ -211,7 +211,7 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="setup_site_4chan_verify_email">Verify your email</string>
     <string name="setup_site_4chan_verify_email_description">Open email verification page</string>
     <string name="setup_site_4chan_verify_email_warning_title">Email verification</string>
-    <string name="setup_site_4chan_verify_email_warning_body">Opening this page will clear all Cloudflare cookies.\n\nIf the 4chan page shows an error about \"scripts and cookies\", try to refresh the page. \n\nDo you want to continue?</string>
+    <string name="setup_site_4chan_verify_email_warning_body">Opening this page will clear all Cloudflare cookies.\n\nIf the 4chan page shows an error about \"scripts and cookies\", try to refresh the page. \n\nRemember, the email verification needs to be opened within Clover, not your regular browser. Please use the "Enter verification token" option below when you receive your email. \n\nDo you want to continue?</string>
     <string name="setup_site_4chan_verify_email_warning_open">Open</string>
     <string name="setup_site_4chan_enter_token">Enter verification token</string>
     <string name="setup_site_4chan_enter_token_description">Paste verification link or token</string>
