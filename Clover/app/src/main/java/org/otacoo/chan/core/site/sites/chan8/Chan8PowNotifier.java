@@ -47,7 +47,7 @@ public final class Chan8PowNotifier {
             dismissActive();
             View root = rootViewRef.get();
             if (root == null) return;
-            Snackbar sb = Snackbar.make(root, "8chan POWBlock check complete.", 3000);
+            Snackbar sb = Snackbar.make(root, "8chan POWBlock check complete.", 2500);
             AndroidUtils.fixSnackbarText(root.getContext(), sb);
             sb.show();
         });
