@@ -301,8 +301,6 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
             List<Board> siteSaved = boardManager.getSiteSavedBoards(site);
             if (!siteSaved.isEmpty()) {
                 boards.addAll(siteSaved);
-            } else {
-                boards.addAll(boardManager.getSiteBoards(site));
             }
         }
 
