@@ -52,6 +52,7 @@ public class FileCacheDownloader implements Runnable {
     private static final String TAG = "FileCacheDownloader";
     private static final long BUFFER_SIZE = 8192;
     private static final long NOTIFY_SIZE = BUFFER_SIZE * 8;
+    private static final int MAX_RETRIES = 1;
 
     private final OkHttpClient httpClient;
     private final String url;
@@ -150,72 +151,91 @@ public class FileCacheDownloader implements Runnable {
 
     @WorkerThread
     private void execute() {
-        Closeable sourceCloseable = null;
-        Closeable sinkCloseable = null;
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            Closeable sourceCloseable = null;
+            Closeable sinkCloseable = null;
 
-        try {
-            checkCancel();
+            try {
+                checkCancel();
 
-            ResponseBody body = getBody();
+                ResponseBody body = getBody();
 
-            Source source = body.source();
-            sourceCloseable = source;
+                Source source = body.source();
+                sourceCloseable = source;
 
-            BufferedSink sink = Okio.buffer(Okio.sink(output));
-            sinkCloseable = sink;
+                BufferedSink sink = Okio.buffer(Okio.sink(output));
+                sinkCloseable = sink;
 
-            checkCancel();
+                checkCancel();
 
-            pipeBody(source, sink);
+                pipeBody(source, sink);
 
-            post(() -> {
-                callback.downloaderAddedFile(output);
-                callback.downloaderFinished(this);
-                for (FileCacheListener callback : listeners) {
-                    callback.onSuccess(output);
-                    callback.onEnd();
-                }
-            });
-        } catch (IOException e) {
-            boolean isNotFound = false;
-            boolean cancelled = false;
-            if (e instanceof HttpCodeIOException) {
-                int code = ((HttpCodeIOException) e).code;
-                log("exception: http error, code: " + code, e);
-                isNotFound = code == 404;
-            } else if (e instanceof CancelException) {
-                // Don't log the stack.
-                log("exception: cancelled");
-                cancelled = true;
-            } else {
-                log("exception", e);
-            }
-
-            final boolean finalIsNotFound = isNotFound;
-            final boolean finalCancelled = cancelled;
-            post(() -> {
-                purgeOutput();
-                for (FileCacheListener callback : listeners) {
-                    if (finalCancelled) {
-                        callback.onCancel();
-                    } else {
-                        callback.onFail(finalIsNotFound);
+                post(() -> {
+                    callback.downloaderAddedFile(output);
+                    callback.downloaderFinished(this);
+                    for (FileCacheListener callback : listeners) {
+                        callback.onSuccess(output);
+                        callback.onEnd();
                     }
-
-                    callback.onEnd();
+                });
+                return;
+            } catch (IOException e) {
+                boolean isNotFound = false;
+                boolean cancelled = false;
+                if (e instanceof HttpCodeIOException) {
+                    int code = ((HttpCodeIOException) e).code;
+                    log("exception: http error, code: " + code, e);
+                    isNotFound = code == 404;
+                } else if (e instanceof CancelException) {
+                    // Don't log the stack.
+                    log("exception: cancelled");
+                    cancelled = true;
+                } else {
+                    log("exception", e);
                 }
-                callback.downloaderFinished(this);
-            });
-        } finally {
-            IOUtils.closeQuietly(sourceCloseable);
-            IOUtils.closeQuietly(sinkCloseable);
 
-            if (call != null) {
-                call.cancel();
+                if (!cancelled && !isNotFound && attempt < MAX_RETRIES) {
+                    log("transient failure, will retry");
+                } else {
+                    final boolean finalIsNotFound = isNotFound;
+                    final boolean finalCancelled = cancelled;
+                    post(() -> {
+                        purgeOutput();
+                        for (FileCacheListener callback : listeners) {
+                            if (finalCancelled) {
+                                callback.onCancel();
+                            } else {
+                                callback.onFail(finalIsNotFound);
+                            }
+
+                            callback.onEnd();
+                        }
+                        callback.downloaderFinished(this);
+                    });
+                    return;
+                }
+            } finally {
+                IOUtils.closeQuietly(sourceCloseable);
+                IOUtils.closeQuietly(sinkCloseable);
+
+                if (call != null) {
+                    call.cancel();
+                    call = null;
+                }
+
+                if (body != null) {
+                    IOUtils.closeQuietly(body);
+                    body = null;
+                }
             }
 
-            if (body != null) {
-                IOUtils.closeQuietly(body);
+            // Retry: purge the partial file and wait briefly before the next attempt.
+            purgeOutput();
+            try {
+                Thread.sleep(2000L);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
             }
         }
     }

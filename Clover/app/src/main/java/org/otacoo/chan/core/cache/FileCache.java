@@ -32,7 +32,7 @@ import okhttp3.OkHttpClient;
 
 public class FileCache implements FileCacheDownloader.Callback {
     private static final String TAG = "FileCache";
-    private static final int DOWNLOAD_POOL_SIZE = 2;
+    private static final int DOWNLOAD_POOL_SIZE = 4;
 
     private final ExecutorService downloadPool = Executors.newFixedThreadPool(DOWNLOAD_POOL_SIZE);
     private String userAgent;
