@@ -1,3 +1,16 @@
+## 2026-03-21 – v3.3.10
+
+- **New option:** Enable localization
+  - Added machine translations for German, Spanish, French, Italian, Japanese, Portuguese, Russian
+  - Applying the localization correctly requires a *full* app closing and restarting
+- Improve image loading and retrying if an image fails to load
+- Fix an issue where all boards where getting added to the Pinned Searches list if no board was added for the site
+- Fix an issue where video controls weren't showing up for spoilered videos
+- **8chan:**
+  - Removed the .cc domain
+  - Improve response to rate-limiting and how the app deals with changing domains when using Auto (failover)
+  - Fix an issue with POWBlock check always using SHA-256
+
 ## 2026-03-19 – v3.3.9
 
 - **New option:** Highlight currently open thread (Browsing)
