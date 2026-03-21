@@ -21,9 +21,12 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static org.otacoo.chan.Chan.inject;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Pair;
@@ -66,6 +69,7 @@ import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -103,6 +107,17 @@ public class StartActivity extends AppCompatActivity implements
 
     @Inject
     SiteService siteService;
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(base);
+        if (!prefs.getBoolean("preference_enable_localization", false)) {
+            Configuration config = new Configuration(base.getResources().getConfiguration());
+            config.setLocale(Locale.ENGLISH);
+            base = base.createConfigurationContext(config);
+        }
+        super.attachBaseContext(base);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

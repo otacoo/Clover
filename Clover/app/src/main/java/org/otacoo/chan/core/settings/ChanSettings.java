@@ -280,6 +280,8 @@ public class ChanSettings {
 
     public static final OptionsSetting<AppIconMode> appIconMode;
 
+    public static final BooleanSetting enableLocalization;
+
     static {
         SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
 
@@ -398,6 +400,8 @@ public class ChanSettings {
         customCFClearanceCommand = new StringSetting(p, "custom_cfclearance_command", "");
 
         appIconMode = new OptionsSetting<>(p, "preference_app_icon_mode", AppIconMode.class, AppIconMode.BLUE);
+
+        enableLocalization = new BooleanSetting(p, "preference_enable_localization", false);
 
     }
 

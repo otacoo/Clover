@@ -53,6 +53,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import de.greenrobot.event.EventBus;
@@ -87,6 +88,18 @@ public class MiscSettingsController extends SettingsController {
         // Reset group
         {
             SettingsGroup reset = new SettingsGroup(R.string.setting_group_reset);
+
+            android.content.res.Resources sysRes = android.content.res.Resources.getSystem();
+            Locale sysLocale = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                    ? sysRes.getConfiguration().getLocales().get(0)
+                    : sysRes.getConfiguration().locale;
+            String localizationDesc = ChanSettings.enableLocalization.get()
+                    ? sysLocale.getDisplayName(sysLocale)
+                    : context.getString(R.string.setting_enable_localization_description);
+            requiresRestart.add(reset.add(new BooleanSettingView(this,
+                    ChanSettings.enableLocalization,
+                    context.getString(R.string.setting_enable_localization),
+                    localizationDesc)));            
 
             setupClearThreadHidesSetting(reset);
 

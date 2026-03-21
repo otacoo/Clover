@@ -21,8 +21,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.webkit.WebSettings;
 
 import androidx.annotation.NonNull;
@@ -45,6 +48,7 @@ import org.otacoo.chan.utils.Time;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -95,6 +99,12 @@ public class Chan extends Application implements
 
     @Override
     protected void attachBaseContext(Context base) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(base);
+        if (!prefs.getBoolean("preference_enable_localization", false)) {
+            Configuration config = new Configuration(base.getResources().getConfiguration());
+            config.setLocale(Locale.ENGLISH);
+            base = base.createConfigurationContext(config);
+        }
         super.attachBaseContext(base);
 
         AndroidUtils.init(this);

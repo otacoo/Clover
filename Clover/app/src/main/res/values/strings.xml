@@ -589,6 +589,8 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_cookies_view_edit">Manage site cookies</string>
 
     <string name="setting_group_reset">Privacy &amp; Data</string>
+    <string name="setting_enable_localization">Enable localization</string>
+    <string name="setting_enable_localization_description">English</string>
     <string name="setting_confirm_clear_hides">Are you sure you want to clear all thread hides?</string>
     <string name="setting_confirm_clear_cookies">This will clear all sites\' cookies. Are you sure?</string>
 
