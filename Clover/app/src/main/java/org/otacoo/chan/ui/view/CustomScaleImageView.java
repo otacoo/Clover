@@ -20,14 +20,12 @@ package org.otacoo.chan.ui.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 public class CustomScaleImageView extends SubsamplingScaleImageView {
     private Callback callback;
-    private final GestureDetector gestureDetector;
 
     public CustomScaleImageView(Context context) {
         this(context, null);
@@ -40,14 +38,6 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
         // Image zooming
         setMinimumDpi(60);
         setDoubleTapZoomDpi(120);
-
-        gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
-                performClick();
-                return true;
-            }
-        });
     }
 
     public void setCallback(Callback callback) {
@@ -73,9 +63,6 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Handle gestures (like single tap) separately
-        gestureDetector.onTouchEvent(event);
-
         // If we have multiple pointers, we are likely zooming/pinching.
         if (event.getPointerCount() > 1) {
             getParent().requestDisallowInterceptTouchEvent(true);
