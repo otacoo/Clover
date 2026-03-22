@@ -1,3 +1,11 @@
+## 2026-03-22 – v3.3.11
+
+- Bookmarked thread updates will now be fetched after 1 sec on startup or when the app comes to the foreground, after that the usual 15 sec update takes over
+- Fix for post reply anchor when a post has multiple images, or is using the *Alternate layout* option
+- Catch 4chan pass error when it's rejected by the site
+- Fix an issue with the database that could cause an app crash
+- Update locales
+
 ## 2026-03-21 – v3.3.10
 
 - **New option:** Enable localization
