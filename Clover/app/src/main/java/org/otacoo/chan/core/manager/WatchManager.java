@@ -116,6 +116,10 @@ public class WatchManager {
 
     private static final long FOREGROUND_INTERVAL = 15 * 1000;
     private static final long FOREGROUND_INITIAL_DELAY = 1 * 1000;
+    // Milliseconds between successive pin polling in a foreground update cycle.
+    // Spreads N pins evenly: pin-0 fires immediately, pin-1 fires 1.5s later, etc.
+    // Keeps all requests within the 15s window for up to 10 pins.
+    private static final long WATCHER_STAGGER_MS = 1500L;
     private static final int MESSAGE_UPDATE = 1;
     private static final int REQUEST_CODE_WATCH_UPDATE = 2;
     private static final String WATCHER_UPDATE_ACTION = getAppContext().getPackageName() + ".intent.action.WATCHER_UPDATE";
@@ -639,29 +643,38 @@ public class WatchManager {
                 break;
         }
 
-        // A set of watchers that all have to complete being updated
-        // before the wakelock is released again
-        waitingForPinWatchersForBackgroundUpdate = null;
-        if (fromBackground) {
-            waitingForPinWatchersForBackgroundUpdate = new HashSet<>();
-        }
-
         List<Pin> watchingPins = getWatchingPins();
-        for (int i = 0; i < watchingPins.size(); i++) {
-            Pin pin = watchingPins.get(i);
-            PinWatcher pinWatcher = getPinWatcher(pin);
-            if (pinWatcher != null && pinWatcher.update(fromBackground)) {
-                EventBus.getDefault().post(new PinChangedMessage(pin));
 
-                if (fromBackground) {
+        if (fromBackground) {
+            // Background updates fire synchronously so the wakelock tracks all completions.
+            waitingForPinWatchersForBackgroundUpdate = new HashSet<>();
+
+            for (int i = 0; i < watchingPins.size(); i++) {
+                Pin pin = watchingPins.get(i);
+                PinWatcher pinWatcher = getPinWatcher(pin);
+                if (pinWatcher != null && pinWatcher.update(true)) {
+                    EventBus.getDefault().post(new PinChangedMessage(pin));
                     waitingForPinWatchersForBackgroundUpdate.add(pinWatcher);
                 }
             }
-        }
 
-        if (fromBackground && !waitingForPinWatchersForBackgroundUpdate.isEmpty()) {
-            Logger.i(TAG, "Acquiring wakelock for pin watcher updates");
-            manageLock(true);
+            if (!waitingForPinWatchersForBackgroundUpdate.isEmpty()) {
+                Logger.i(TAG, "Acquiring wakelock for pin watcher updates");
+                manageLock(true);
+            }
+        } else {
+            // Foreground updates: stagger each pin by WATCHER_STAGGER_MS so all N requests
+            // are spread instead of all hitting the server simultaneously.
+            waitingForPinWatchersForBackgroundUpdate = null;
+            for (int i = 0; i < watchingPins.size(); i++) {
+                final Pin pin = watchingPins.get(i);
+                handler.postDelayed(() -> {
+                    PinWatcher pinWatcher = getPinWatcher(pin);
+                    if (pinWatcher != null && pinWatcher.update(false)) {
+                        EventBus.getDefault().post(new PinChangedMessage(pin));
+                    }
+                }, (long) i * WATCHER_STAGGER_MS);
+            }
         }
     }
 
@@ -754,6 +767,8 @@ public class WatchManager {
 
             // Logger.d(TAG, "PinWatcher: created for " + pin);
             chanLoader = chanLoaderFactory.obtain(pin.loadable, this);
+            // Start loading the stored Lrucache thumbnail first
+            loadThumbnailBitmapIfNeeded();
         }
 
         public int getPinId() {
