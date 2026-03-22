@@ -440,10 +440,20 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                         Loadable.forThread(loadable.site, loadable.board, replyResponse.postNo)));
             }
         } else if (replyResponse.requireAuthentication) {
-            // Store the error message to display in the authentication layout
-            authenticationErrorMessage = replyResponse.errorMessage != null ? 
-                replyResponse.errorMessage : "Captcha authentication failed.\nPlease solve the captcha again.";
-            switchPage(Page.AUTHENTICATION, true);
+            if (loadable.site.actions().postAuthenticate().type == SiteAuthentication.Type.NONE) {
+                // The user has a 4chan Pass but the server rejected it (expired/invalid).
+                // Fall back to the input page and surface the error instead.
+                String errorMessage = replyResponse.errorMessage != null
+                        ? replyResponse.errorMessage : getString(R.string.reply_error);
+                switchPage(Page.INPUT, true);
+                Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
+                callback.openMessage(true, false, errorMessage, true);
+            } else {
+                // Store the error message to display in the authentication layout
+                authenticationErrorMessage = replyResponse.errorMessage != null ?
+                    replyResponse.errorMessage : "Captcha authentication failed.\nPlease solve the captcha again.";
+                switchPage(Page.AUTHENTICATION, true);
+            }
         } else {
             String errorMessage = getString(R.string.reply_error);
             if (replyResponse.errorMessage != null) {
