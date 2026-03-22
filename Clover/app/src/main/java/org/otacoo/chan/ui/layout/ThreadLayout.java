@@ -676,7 +676,18 @@ public class ThreadLayout extends CoordinatorLayout implements
                         newPostsNotification = null;
                         presenter.onNewPostsViewClicked();
                     }
-                }).show();
+                });
+                newPostsNotification.addCallback(new Snackbar.Callback() {
+                    @Override
+                    public void onShown(Snackbar sb) {
+                        threadListLayout.setSnackbarBottomPadding(sb.getView().getHeight());
+                    }
+                    @Override
+                    public void onDismissed(Snackbar snackbar, int event) {
+                        threadListLayout.setSnackbarBottomPadding(0);
+                    }
+                });
+                newPostsNotification.show();
                 fixSnackbarText(getContext(), newPostsNotification);
             }
         } else {

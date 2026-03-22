@@ -309,13 +309,14 @@ public class ThreadPresenter implements
         showPosts();
 
         if (loadable.isThreadMode()) {
-            int lastLoaded = loadable.lastLoaded;
             List<Post> posts = result.posts;
+            // Use lastViewed (same as the thread watcher)
+            int lastViewed = loadable.lastViewed;
             int more = 0;
-            if (lastLoaded > 0) {
+            if (lastViewed > 0) {
                 for (int i = 0; i < posts.size(); i++) {
                     Post post = posts.get(i);
-                    if (post.no == lastLoaded) {
+                    if (post.no == lastViewed) {
                         more = posts.size() - i - 1;
                         break;
                     }

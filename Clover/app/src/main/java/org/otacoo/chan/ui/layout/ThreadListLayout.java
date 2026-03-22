@@ -495,6 +495,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         openSearch(false);
         showingThread = null;
         lastPostCount = 0;
+        snackbarBottomPadding = 0;
         noParty();
     }
 
@@ -707,6 +708,17 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         recyclerView.setVerticalScrollBarEnabled(!enabled);
     }
 
+    // Extra bottom padding reserved for the "N new posts" Snackbar, so it never
+    // overlaps thread content. Set/cleared by ThreadLayout via setSnackbarBottomPadding().
+    private int snackbarBottomPadding = 0;
+
+    public void setSnackbarBottomPadding(int pixels) {
+        if (snackbarBottomPadding != pixels) {
+            snackbarBottomPadding = pixels;
+            setRecyclerViewPadding();
+        }
+    }
+
     private void setRecyclerViewPadding() {
         int defaultPadding = 0;
         if (postViewMode == ChanSettings.PostViewMode.CARD) {
@@ -738,6 +750,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             }
         }
 
+        bottom += snackbarBottomPadding;
         recyclerView.setPadding(left, top, right, bottom);
     }
 
