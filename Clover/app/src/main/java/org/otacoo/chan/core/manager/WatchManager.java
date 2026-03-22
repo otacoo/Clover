@@ -51,6 +51,7 @@ import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.loader.ChanThreadLoader;
 import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.ui.notification.ThreadWatchNotifications;
+import org.otacoo.chan.ui.view.ThumbnailView;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
@@ -898,8 +899,17 @@ public class WatchManager {
              */
             pin.loadable.setTitle(PostHelper.getTitle(thread.op, pin.loadable));
 
-            if (pin.thumbnailUrl == null && thread.op != null && thread.op.image() != null) {
-                pin.thumbnailUrl = thread.op.image().getThumbnailUrl().toString();
+            if (thread.op != null && thread.op.image() != null) {
+                String freshUrl = thread.op.image().getThumbnailUrl().toString();
+                if (!freshUrl.equals(pin.thumbnailUrl)) {
+                    pin.thumbnailUrl = freshUrl;
+                    // Discard stale thumbnail
+                    thumbnailBitmap = null;
+                    if (currentThumbnailCall != null) {
+                        currentThumbnailCall.cancel();
+                        currentThumbnailCall = null;
+                    }
+                }
             }
 
             // Populate posts list
@@ -997,6 +1007,7 @@ public class WatchManager {
                             byte[] data = response.body().bytes();
                             thumbnailBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                             if (thumbnailBitmap != null) {
+                                ThumbnailView.putBitmap(pin.thumbnailUrl, thumbnailBitmap);
                                 requireNotificationUpdate = true;
                                 AndroidUtils.runOnUiThread(() -> pinWatcherUpdated(PinWatcher.this));
                             }

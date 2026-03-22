@@ -76,6 +76,11 @@ public class ThumbnailView extends View {
         return sMemoryCache.get(url);
     }
 
+    public static void putBitmap(String url, Bitmap bitmap) {
+        if (TextUtils.isEmpty(url) || bitmap == null) return;
+        sMemoryCache.put(url, bitmap);
+    }
+
     private Call currentCall;
     private String currentUrl;
     private boolean hidden = false;
