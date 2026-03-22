@@ -25,13 +25,12 @@ ALTER TABLE board ADD COLUMN userIds INTEGER;
 ALTER TABLE board ADD COLUMN codeTags INTEGER;
 ALTER TABLE board ADD COLUMN preuploadCaptcha INTEGER;
 ALTER TABLE board ADD COLUMN countryFlags INTEGER;
-ALTER TABLE board ADD COLUMN trollFlags INTEGER;
 ALTER TABLE board ADD COLUMN mathTags INTEGER;
 
 
 Changes in version 13:
 ALTER TABLE pin ADD COLUMN isError SMALLINT;
-ALTER TABLE board ADD COLUMN thumbnailUrl VARCHAR;
+ALTER TABLE pin ADD COLUMN thumbnailUrl VARCHAR;
 
 
 Changes in version 14:
@@ -101,8 +100,8 @@ ALTER TABLE filter ADD COLUMN "order" INTEGER default 0;
 
 
 Changes in version 29:
-ALTER TABLE loadable ADD COLUMN draftName VARCHAR;
-ALTER TABLE loadable ADD COLUMN draftSubject VARCHAR;
-ALTER TABLE loadable ADD COLUMN draftComment VARCHAR;
-ALTER TABLE loadable ADD COLUMN draftOptions VARCHAR;
-ALTER TABLE loadable ADD COLUMN draftFlag VARCHAR;
+ALTER TABLE loadable ADD COLUMN draftName VARCHAR DEFAULT '';
+ALTER TABLE loadable ADD COLUMN draftSubject VARCHAR DEFAULT '';
+ALTER TABLE loadable ADD COLUMN draftComment VARCHAR DEFAULT '';
+ALTER TABLE loadable ADD COLUMN draftOptions VARCHAR DEFAULT '';
+ALTER TABLE loadable ADD COLUMN draftFlag VARCHAR DEFAULT '';

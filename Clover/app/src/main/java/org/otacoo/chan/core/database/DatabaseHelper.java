@@ -295,11 +295,11 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
         if (oldVersion < 29) {
             try {
-                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftName VARCHAR;");
-                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftSubject VARCHAR;");
-                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftComment VARCHAR;");
-                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftOptions VARCHAR;");
-                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftFlag VARCHAR;");
+                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftName VARCHAR DEFAULT '';");
+                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftSubject VARCHAR DEFAULT '';");
+                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftComment VARCHAR DEFAULT '';");
+                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftOptions VARCHAR DEFAULT '';");
+                loadableDao.executeRawNoArgs("ALTER TABLE loadable ADD COLUMN draftFlag VARCHAR DEFAULT '';");
             } catch (SQLException e) {
                 Logger.e(TAG, "Error upgrading to version 29", e);
             }
