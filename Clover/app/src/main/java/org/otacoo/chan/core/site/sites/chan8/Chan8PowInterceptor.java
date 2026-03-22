@@ -252,7 +252,7 @@ public class Chan8PowInterceptor implements Interceptor {
             // If we get rate-limited on the POW submission, abandon and return the original 403/required response.
             if (submitCode == 429) {
                 submitResp.close();
-                Chan8PowNotifier.onPowFailed();
+                Chan8PowNotifier.onPowRateLimited();
                 return new okhttp3.Response.Builder()
                         .request(req)
                         .protocol(okhttp3.Protocol.HTTP_1_1)
