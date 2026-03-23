@@ -306,6 +306,11 @@ public class ThreadPresenter implements
             }
         }
 
+        if (loadable.isThreadMode() && (loadable.title == null || loadable.title.isEmpty())
+                && !result.posts.isEmpty()) {
+            loadable.title = PostHelper.getTitle(result.posts.get(0), loadable);
+        }
+
         showPosts();
 
         if (loadable.isThreadMode()) {
@@ -351,6 +356,7 @@ public class ThreadPresenter implements
     @Override
     public void onListScrolledToBottom() {
         if (loadable.isThreadMode() && !ignoreLastViewedUpdates) {
+            if (chanLoader == null || chanLoader.getThread() == null) return;
             List<Post> posts = chanLoader.getThread().posts;
             loadable.setLastViewed(posts.get(posts.size() - 1).no);
         }
