@@ -26,8 +26,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
-import android.preference.PreferenceManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Pair;
 import android.view.KeyEvent;
@@ -109,7 +107,7 @@ public class StartActivity extends AppCompatActivity implements
 
     @Override
     protected void attachBaseContext(Context base) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(base);
+        SharedPreferences prefs = base.getSharedPreferences(base.getPackageName() + "_preferences", Context.MODE_PRIVATE);
         if (!prefs.getBoolean("preference_enable_localization", false)) {
             Configuration config = new Configuration(base.getResources().getConfiguration());
             config.setLocale(Locale.ENGLISH);
@@ -250,16 +248,12 @@ public class StartActivity extends AppCompatActivity implements
         return handled;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean restoreFromSavedState(Bundle savedInstanceState) {
         boolean handled = false;
 
         // Restore the activity state from the previously saved state.
-        ChanState chanState;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            chanState = savedInstanceState.getParcelable(STATE_KEY, ChanState.class);
-        } else {
-            chanState = savedInstanceState.getParcelable(STATE_KEY);
-        }
+        ChanState chanState = savedInstanceState.getParcelable(STATE_KEY);
 
         if (chanState == null) {
             Logger.w(TAG, "savedInstanceState was not null, but no ChanState was found!");

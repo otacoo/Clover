@@ -21,7 +21,6 @@ import static org.otacoo.chan.Chan.injector;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Build;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -90,9 +89,7 @@ public class MiscSettingsController extends SettingsController {
             SettingsGroup reset = new SettingsGroup(R.string.setting_group_reset);
 
             android.content.res.Resources sysRes = android.content.res.Resources.getSystem();
-            Locale sysLocale = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-                    ? sysRes.getConfiguration().getLocales().get(0)
-                    : sysRes.getConfiguration().locale;
+            Locale sysLocale = sysRes.getConfiguration().getLocales().get(0);
             String localizationDesc = ChanSettings.enableLocalization.get()
                     ? sysLocale.getDisplayName(sysLocale)
                     : context.getString(R.string.setting_enable_localization_description);
