@@ -301,10 +301,13 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
         setFastScroll(true);
 
+        // wasAtBottom here ensures we call onListScrolledToBottom() even in a transient state.
+        final boolean wasAtBottom = !initial && !threadChanged && scrolledToBottom();
+
         postAdapter.setThread(thread, filter, threadLastViewed);
         
         recyclerView.post(() -> {
-            if (scrolledToBottom()) {
+            if (wasAtBottom || scrolledToBottom()) {
                 int bottom = postAdapter.getItemCount() - 1;
                 if (bottom > lastPostCount) {
                     lastPostCount = bottom;
