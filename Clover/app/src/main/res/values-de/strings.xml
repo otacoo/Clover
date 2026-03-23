@@ -341,7 +341,7 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="reply_picker_source_images">Galeriebilder</string>
     <string name="reply_picker_source_videos">Galerievideos</string>
     <string name="reply_success">Post erfolgreich</string>
-    <string name="reply_success_recover">Wiederherstellen</string>
+
     <string name="reply_captcha_text">Text eingeben</string>
 
     <string name="delete_confirm">Deinen Post löschen?</string>

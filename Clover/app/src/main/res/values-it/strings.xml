@@ -341,7 +341,7 @@ Se altri filtri sono abilitati per esso, non funzionerà.
     <string name="reply_picker_source_images">Immagini dalla galleria</string>
     <string name="reply_picker_source_videos">Video dalla galleria</string>
     <string name="reply_success">Post pubblicato con successo</string>
-    <string name="reply_success_recover">Recupera</string>
+
     <string name="reply_captcha_text">Inserisci testo</string>
 
     <string name="delete_confirm">Eliminare il tuo post?</string>

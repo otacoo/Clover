@@ -331,7 +331,7 @@
     <string name="reply_picker_source_images">ギャラリー画像</string>
     <string name="reply_picker_source_videos">ギャラリー動画</string>
     <string name="reply_success">投稿に成功しました</string>
-    <string name="reply_success_recover">回復</string>
+
     <string name="reply_captcha_text">テキストを入力</string>
 
     <string name="delete_confirm">自分のpostを削除しますか？</string>

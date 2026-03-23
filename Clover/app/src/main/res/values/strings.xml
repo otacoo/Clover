@@ -365,7 +365,7 @@ If any other filters are enabled for it, it will not work.
     <string name="reply_picker_source_images">Gallery images</string>
     <string name="reply_picker_source_videos">Gallery videos</string>
     <string name="reply_success">Post successful</string>
-    <string name="reply_success_recover">Recover</string>
+
     <string name="reply_captcha_text">Type the text</string>
     <string name="reply_comment_button_quote" translatable="false">&gt;</string>
     <string name="reply_comment_button_spoiler" translatable="false">[s]</string>

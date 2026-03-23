@@ -361,7 +361,7 @@
     <string name="reply_picker_source_images">Изображения галереи</string>
     <string name="reply_picker_source_videos">Видео галереи</string>
     <string name="reply_success">Пост опубликован</string>
-    <string name="reply_success_recover">Восстановить</string>
+
     <string name="reply_captcha_text">Введите текст</string>
 
     <string name="delete_confirm">Удалить свой пост?</string>

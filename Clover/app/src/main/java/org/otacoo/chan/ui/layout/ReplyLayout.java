@@ -775,13 +775,7 @@ public class ReplyLayout extends LoadView implements
 
         if (snackbarParent != null && snackbarParent.getWindowToken() != null) {
             Snackbar postSuccessfulNotification = Snackbar.make(snackbarParent, R.string.reply_success, 4500);
-            postSuccessfulNotification.setAction(R.string.reply_success_recover, new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    presenter.reloadLastReply();
-                    callback.openReply(true);
-                }
-            }).show();
+            postSuccessfulNotification.show();
             fixSnackbarText(getContext(), postSuccessfulNotification);
         } else {
             Toast.makeText(getContext().getApplicationContext(), R.string.reply_success, Toast.LENGTH_SHORT).show();
