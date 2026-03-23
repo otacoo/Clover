@@ -1,3 +1,18 @@
+## 2026-03-23 – v3.3.12
+
+- Clover will now try to load thumbnails and titles for bookmarks from the cache before trying to fetch them from the internet
+- Stagger bookmarked thread updates so they don't fire all at the same time, which could trigger anti-spam measures (1 fetch/sec)
+- Fix an issue with *Immersive mode* where images would close when tapped instead of showing the controls
+- Fix an issue where the snackbar indicating new posts would appear in the middle of the screen instead of being flush at the bottom, snackbar will now smootly fade in and out
+- Fix an issue with the new posts snackbar where it disappeared when scrolling then immediately showed up again
+- Remove the RECOVER button from the snackbar on post successful
+- Tentative fix for issue #13 where unread count isn't properly reset when at the bottom of the thread
+**8chan:**
+  - Add support for Story Spoilers on /gacha/
+  - Clover will now correctly show a snackbar informing the user is being rate-limited instead of just the regular "POWBlock check failed" 
+  - Fix an issue introduced in the last version where the reply anchor could show in the middle of the post for OP
+  - Lazy load 8chan thumbs to better prevent rate-limiting (should not be perciptible during regular browsing)
+
 ## 2026-03-22 – v3.3.11
 
 - Bookmarked thread updates will now be fetched after 1 sec on startup or when the app comes to the foreground, after that the usual 15 sec update takes over
