@@ -24,7 +24,6 @@ import static org.otacoo.chan.utils.AndroidUtils.getDimen;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -171,7 +170,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             mainHandler.removeCallbacks(saveScrollPositionRunnable);
             mainHandler.postDelayed(saveScrollPositionRunnable, SCROLL_SAVE_DELAY);
 
-            int last = getCompleteBottomAdapterPosition();
+            // Android 10+/15+ edge-to-edge) so it doesn't prevent the bottom-reached callback from firing.
+            int last = getBottomAdapterPosition();
             if (last == postAdapter.getItemCount() - 1 && last > lastPostCount) {
                 lastPostCount = last;
 
@@ -272,8 +272,6 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             threadLastViewed = thread.loadable.lastViewed;
             reply.bindLoadable(showingThread.loadable);
 
-            recyclerView.setLayoutManager(null);
-            recyclerView.setLayoutManager(layoutManager);
             recyclerView.getRecycledViewPool().clear();
 
             int index = thread.loadable.listViewIndex;
@@ -302,6 +300,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         setFastScroll(true);
 
         // wasAtBottom here ensures we call onListScrolledToBottom() even in a transient state.
+        // Use scrolledToBottom() which now uses findLastVisibleItemPosition so gesture-nav
+        // overlay on Android 10+/15+ doesn't suppress the bottom-reached callback.
         final boolean wasAtBottom = !initial && !threadChanged && scrolledToBottom();
 
         postAdapter.setThread(thread, filter, threadLastViewed);
@@ -489,7 +489,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     public boolean scrolledToBottom() {
-        return getCompleteBottomAdapterPosition() == postAdapter.getItemCount() - 1;
+        return getBottomAdapterPosition() == postAdapter.getItemCount() - 1;
     }
 
     public void cleanup() {
@@ -498,12 +498,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         openReply(false);
         openSearch(false);
         showingThread = null;
-        lastPostCount = 0;
-        if (snackbarPaddingAnimator != null) {
-            snackbarPaddingAnimator.cancel();
-            snackbarPaddingAnimator = null;
-        }
-        snackbarBottomPadding = 0;
+        lastPostCount = -1;
         noParty();
     }
 
@@ -716,40 +711,6 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         recyclerView.setVerticalScrollBarEnabled(!enabled);
     }
 
-    // Extra bottom padding reserved for the "N new posts" Snackbar, so it never
-    // overlaps thread content. Set/cleared by ThreadLayout via setSnackbarBottomPadding().
-    private int snackbarBottomPadding = 0;
-    private ValueAnimator snackbarPaddingAnimator;
-
-    public void setSnackbarBottomPadding(int pixels) {
-        if (snackbarPaddingAnimator != null) {
-            snackbarPaddingAnimator.cancel();
-            snackbarPaddingAnimator = null;
-        }
-        if (pixels == 0 && snackbarBottomPadding > 0) {
-            // Animate the removal to prevent an abrupt layout jump after the
-            // Snackbar finishes its own exit animation.
-            int from = snackbarBottomPadding;
-            snackbarPaddingAnimator = ValueAnimator.ofInt(from, 0);
-            snackbarPaddingAnimator.setDuration(200);
-            snackbarPaddingAnimator.addUpdateListener(a -> {
-                snackbarBottomPadding = (int) a.getAnimatedValue();
-                setRecyclerViewPadding();
-            });
-            snackbarPaddingAnimator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    snackbarBottomPadding = 0;
-                    snackbarPaddingAnimator = null;
-                }
-            });
-            snackbarPaddingAnimator.start();
-        } else if (snackbarBottomPadding != pixels) {
-            snackbarBottomPadding = pixels;
-            setRecyclerViewPadding();
-        }
-    }
-
     private void setRecyclerViewPadding() {
         int defaultPadding = 0;
         if (postViewMode == ChanSettings.PostViewMode.CARD) {
@@ -781,7 +742,6 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             }
         }
 
-        bottom += snackbarBottomPadding;
         recyclerView.setPadding(left, top, right, bottom);
     }
 
