@@ -207,7 +207,8 @@ public class FloatingMenu {
             @Override
             public void onGlobalLayout() {
                 if (popupWindow == null) {
-                    Logger.w("FloatingMenu", "popupWindow null in layout listener");
+                    anchor.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    globalLayoutListener = null;
                 } else {
                     if (popupWindow.isShowing()) {
                         // Recalculate anchor position
@@ -219,10 +220,10 @@ public class FloatingMenu {
         anchor.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
 
         popupWindow.setOnDismissListener(() -> {
-            if (anchor.getViewTreeObserver().isAlive()) {
+            if (globalLayoutListener != null) {
                 anchor.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+                globalLayoutListener = null;
             }
-            globalLayoutListener = null;
             popupWindow = null;
             callback.onFloatingMenuDismissed(FloatingMenu.this);
         });
@@ -241,8 +242,14 @@ public class FloatingMenu {
     }
 
     public void dismiss() {
-        if (popupWindow != null && popupWindow.isShowing()) {
-            popupWindow.dismiss();
+        if (globalLayoutListener != null) {
+            anchor.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+            globalLayoutListener = null;
+        }
+        if (popupWindow != null) {
+            if (popupWindow.isShowing()) {
+                popupWindow.dismiss();
+            }
             popupWindow = null;
         }
     }
