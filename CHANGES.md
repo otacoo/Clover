@@ -1,3 +1,12 @@
+## 2026-03-24 – v3.3.13
+
+- Use better detection for 4chan pass user's cookies
+- Threads opened by cross-links will now correctly get their titles in the toolbar
+- Remove the spring animation introduced last version when the new posts snackbar is removed from view
+- Fix an error on newer Android versions where floating menus weren't being correctly dismissed
+- Add fixes for edge-to-edge on newer Android versions preventing unread count from firing correctly
+- Fix a bug where threads with only one post (OP) weren't being properly reset to 0 in the watcher
+
 ## 2026-03-23 – v3.3.12
 
 - Clover will now try to load thumbnails and titles for bookmarks from the cache before trying to fetch them from the internet
