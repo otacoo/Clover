@@ -24,6 +24,10 @@ public class AppCookieJar implements CookieJar {
 
     @Override
     public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+        String host = url.host();
+        // 4chan.org cookies are owned entirely by Chan4CookieStore; never sync them here.
+        if (host.endsWith("4chan.org") || host.endsWith("4channel.org")) return;
+
         try {
             java.net.URI uri = url.uri();
             for (Cookie cookie : cookies) {
