@@ -39,6 +39,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -67,6 +68,7 @@ import org.otacoo.chan.utils.AndroidUtils;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A layout that wraps around a {@link RecyclerView} and a {@link ReplyLayout} to manage showing and replying to posts.
@@ -92,7 +94,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     private int lastPostCount;
     private int threadLastViewed = -1;
 
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private final Runnable saveScrollPositionRunnable = new Runnable() {
         @Override
@@ -114,9 +116,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         }
     };
 
-    private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
+    private final RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
         @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             onRecyclerViewScrolled(dy);
         }
     };
@@ -172,8 +174,12 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
             // Android 10+/15+ edge-to-edge) so it doesn't prevent the bottom-reached callback from firing.
             int last = getBottomAdapterPosition();
-            if (last == postAdapter.getItemCount() - 1 && last > lastPostCount) {
-                lastPostCount = last;
+            int postPos = postAdapter.getPostPosition(last);
+            int lastPostIndex = postAdapter.getDisplayList().size() - 1;
+            
+            // Check if we hit the last post itself
+            if (postPos >= lastPostIndex && postPos > lastPostCount) {
+                lastPostCount = postPos;
 
                 // As requested by the RecyclerView, make sure that the adapter isn't changed
                 // while in a layout pass. Postpone to the next frame.
@@ -195,7 +201,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             spanCount = gridCountSetting;
             compactMode = (getMeasuredWidth() / spanCount) < dp(120);
         } else {
-            spanCount = Math.max(1, Math.round(getMeasuredWidth() / cardWidth));
+            spanCount = Math.max(1, Math.round((float) getMeasuredWidth() / cardWidth));
             compactMode = false;
         }
 
@@ -217,7 +223,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                     LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext()) {
                         @Override
                         public boolean requestChildRectangleOnScreen(
-                                RecyclerView parent, View child, Rect rect, boolean immediate,
+                                @NonNull RecyclerView parent, @NonNull View child, @NonNull Rect rect, boolean immediate,
                                 boolean focusedChildVisible) {
                             return false;
                         }
@@ -237,7 +243,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                             getContext(), spanCount, GridLayoutManager.VERTICAL, false) {
                         @Override
                         public boolean requestChildRectangleOnScreen(
-                                RecyclerView parent, View child, Rect rect, boolean immediate,
+                                @NonNull RecyclerView parent, @NonNull View child, @NonNull Rect rect, boolean immediate,
                                 boolean focusedChildVisible) {
                             return false;
                         }
@@ -306,13 +312,18 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
         postAdapter.setThread(thread, filter, threadLastViewed);
         
-        recyclerView.post(() -> {
-            if (wasAtBottom || scrolledToBottom()) {
-                int bottom = postAdapter.getItemCount() - 1;
-                if (bottom > lastPostCount) {
-                    lastPostCount = bottom;
-                    callback.onListScrolledToBottom();
+        recyclerView.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (wasAtBottom || scrolledToBottom()) {
+                    int bottom = postAdapter.getDisplayList().size() - 1;
+                    if (bottom > lastPostCount) {
+                        lastPostCount = bottom;
+                        callback.onListScrolledToBottom();
+                    }
                 }
+                return true;
             }
         });
     }
@@ -489,7 +500,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     public boolean scrolledToBottom() {
-        return getBottomAdapterPosition() == postAdapter.getItemCount() - 1;
+        if (postAdapter == null || postAdapter.getDisplayList().isEmpty()) return false;
+        int last = getBottomAdapterPosition();
+        int postPos = postAdapter.getPostPosition(last);
+        return postPos >= postAdapter.getDisplayList().size() - 1;
     }
 
     public void cleanup() {
@@ -509,10 +523,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     public ThumbnailView getThumbnail(PostImage postImage) {
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
 
-        for (int i = 0; i < layoutManager.getChildCount(); i++) {
+        for (int i = 0; i < Objects.requireNonNull(layoutManager).getChildCount(); i++) {
             View view = layoutManager.getChildAt(i);
-            if (view instanceof PostCellInterface) {
-                PostCellInterface postView = (PostCellInterface) view;
+            if (view instanceof PostCellInterface postView) {
                 Post post = postView.getPost();
 
                 if (!post.images.isEmpty()) {
@@ -531,10 +544,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         List<ThumbnailView> thumbnails = new ArrayList<>(7);
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
 
-        for (int i = 0; i < layoutManager.getChildCount(); i++) {
+        for (int i = 0; i < Objects.requireNonNull(layoutManager).getChildCount(); i++) {
             View view = layoutManager.getChildAt(i);
-            if (view instanceof PostCellInterface) {
-                PostCellInterface postView = (PostCellInterface) view;
+            if (view instanceof PostCellInterface postView) {
                 Post post = postView.getPost();
 
                 if (!post.images.isEmpty()) {
@@ -556,8 +568,6 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         int scrollPosition = postAdapter.getScrollPosition(displayPosition);
         if (layoutManager instanceof LinearLayoutManager) {
             ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(scrollPosition, 0);
-        } else if (layoutManager instanceof GridLayoutManager) {
-            ((GridLayoutManager) layoutManager).scrollToPositionWithOffset(scrollPosition, 0);
         } else {
             recyclerView.scrollToPosition(scrollPosition);
         }
@@ -577,12 +587,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 recyclerView.scrollToPosition(bottom);
                 // No animation means no animation, wait for the layout to finish and skip all animations
                 final RecyclerView.ItemAnimator itemAnimator = recyclerView.getItemAnimator();
-                AndroidUtils.waitForLayout(recyclerView, new AndroidUtils.OnMeasuredCallback() {
-                    @Override
-                    public boolean onMeasured(View view) {
-                        itemAnimator.endAnimations();
-                        return true;
-                    }
+                AndroidUtils.waitForLayout(recyclerView, view -> {
+                    assert itemAnimator != null;
+                    itemAnimator.endAnimations();
+                    return true;
                 });
             }
         } else {
@@ -599,12 +607,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 recyclerView.scrollToPosition(scrollPosition);
                 // No animation means no animation, wait for the layout to finish and skip all animations
                 final RecyclerView.ItemAnimator itemAnimator = recyclerView.getItemAnimator();
-                AndroidUtils.waitForLayout(recyclerView, new AndroidUtils.OnMeasuredCallback() {
-                    @Override
-                    public boolean onMeasured(View view) {
-                        itemAnimator.endAnimations();
-                        return true;
-                    }
+                AndroidUtils.waitForLayout(recyclerView, view -> {
+                    assert itemAnimator != null;
+                    itemAnimator.endAnimations();
+                    return true;
                 });
             }
         }
@@ -654,9 +660,11 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     public int[] getIndexAndTop() {
         int index = 0;
         int top = 0;
+        assert recyclerView.getLayoutManager() != null;
         if (recyclerView.getLayoutManager().getChildCount() > 0) {
             View topChild = recyclerView.getLayoutManager().getChildAt(0);
 
+            assert topChild != null;
             index = ((RecyclerView.LayoutParams) topChild.getLayoutParams()).getViewLayoutPosition();
 
             RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) topChild.getLayoutParams();
@@ -751,48 +759,40 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     public int getTopAdapterPosition() {
-        switch (postViewMode) {
-            case LIST:
-                return ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
-            case CARD:
-                return ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
-        }
-        return -1;
+        return switch (postViewMode) {
+            case LIST -> ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
+            case CARD -> ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
+        };
     }
 
     private int getBottomAdapterPosition() {
-        switch (postViewMode) {
-            case LIST:
-                return ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
-            case CARD:
-                return ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
-        }
-        return -1;
+        return switch (postViewMode) {
+            case LIST -> ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+            case CARD -> ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+        };
     }
 
     private int getCompleteBottomAdapterPosition() {
-        switch (postViewMode) {
-            case LIST:
-                return ((LinearLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
-            case CARD:
-                return ((GridLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
-        }
-        return -1;
+        return switch (postViewMode) {
+            case LIST ->
+                    ((LinearLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
+            case CARD ->
+                    ((GridLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
+        };
     }
 
     private Bitmap hat;
 
     private final RecyclerView.ItemDecoration party = new RecyclerView.ItemDecoration() {
         @Override
-        public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
+        public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
             if (hat == null) {
                 hat = BitmapFactory.decodeResource(getResources(), R.drawable.partyhat);
             }
 
             for (int i = 0, j = parent.getChildCount(); i < j; i++) {
                 View child = parent.getChildAt(i);
-                if (child instanceof PostCellInterface) {
-                    PostCellInterface postView = (PostCellInterface) child;
+                if (child instanceof PostCellInterface postView) {
                     Post post = postView.getPost();
                     if (post.isOP && !post.images.isEmpty()) {
                         RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
