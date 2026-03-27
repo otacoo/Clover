@@ -683,7 +683,9 @@ public class ThreadLayout extends CoordinatorLayout implements
                 newPostsNotification.addCallback(new Snackbar.Callback() {
                     @Override
                     public void onDismissed(Snackbar sb, int event) {
-                        newPostsNotification = null;
+                        if (newPostsNotification == sb) {
+                            newPostsNotification = null;
+                        }
                     }
                 });
                 newPostsNotification.show();
