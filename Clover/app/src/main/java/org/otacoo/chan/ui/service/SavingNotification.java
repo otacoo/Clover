@@ -39,9 +39,12 @@ import de.greenrobot.event.EventBus;
 
 public class SavingNotification extends Service {
     public static final String CHANNEL_ID_SAVING = "save:saving";
+    public static final String CHANNEL_ID_PROGRESS = "save:progress";
 
     public static final String DONE_TASKS_KEY = "done_tasks";
     public static final String TOTAL_TASKS_KEY = "total_tasks";
+    public static final String PROGRESS_KEY = "progress";
+    public static final String PROGRESS_MAX_KEY = "progress_max";
     private static final String CANCEL_KEY = "cancel";
 
     private static final int NOTIFICATION_ID = 2;
@@ -51,6 +54,8 @@ public class SavingNotification extends Service {
     private boolean inForeground = false;
     private int doneTasks;
     private int totalTasks;
+    private long progress;
+    private long progressMax;
 
     @Nullable
     @Override
@@ -67,6 +72,7 @@ public class SavingNotification extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopForeground(STOP_FOREGROUND_REMOVE);
         notificationManager.cancel(NOTIFICATION_ID);
     }
 
@@ -80,6 +86,8 @@ public class SavingNotification extends Service {
             } else {
                 doneTasks = extras.getInt(DONE_TASKS_KEY);
                 totalTasks = extras.getInt(TOTAL_TASKS_KEY);
+                progress = extras.getLong(PROGRESS_KEY, 0);
+                progressMax = extras.getLong(PROGRESS_MAX_KEY, 0);
 
                 if (isOreo()) {
                     ensureChannels();
@@ -100,19 +108,31 @@ public class SavingNotification extends Service {
     @TargetApi(Build.VERSION_CODES.O)
     public void ensureChannels() {
         NotificationChannel normalChannel = new NotificationChannel(
-                CHANNEL_ID_SAVING, "Save notificatons",
-                NotificationManager.IMPORTANCE_DEFAULT);
-        normalChannel.setDescription("Current save tasks");
+                CHANNEL_ID_SAVING, "Save notifications",
+                NotificationManager.IMPORTANCE_HIGH);
+        normalChannel.setDescription("Tasks complete");
         notificationManager.createNotificationChannel(normalChannel);
+        
+        NotificationChannel progressChannel = new NotificationChannel(
+                CHANNEL_ID_PROGRESS, "Save progress",
+                NotificationManager.IMPORTANCE_LOW);
+        progressChannel.setDescription("Current save tasks");
+        notificationManager.createNotificationChannel(progressChannel);
     }
 
     private Notification getNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(
-                getAppContext(), CHANNEL_ID_SAVING);
+                getAppContext(), CHANNEL_ID_PROGRESS);
         builder.setSmallIcon(R.drawable.ic_stat_notify);
         builder.setContentTitle(getString(R.string.image_save_notification_downloading));
         builder.setContentText(getString(R.string.image_save_notification_cancel));
-        builder.setProgress(totalTasks, doneTasks, false);
+        
+        if (progressMax > 0) {
+            builder.setProgress(1000, (int) ((progress * 1000) / progressMax), false);
+        } else {
+            builder.setProgress(totalTasks, doneTasks, totalTasks == 0);
+        }
+        
         builder.setContentInfo(doneTasks + "/" + totalTasks);
 
         Intent intent = new Intent(this, SavingNotification.class);

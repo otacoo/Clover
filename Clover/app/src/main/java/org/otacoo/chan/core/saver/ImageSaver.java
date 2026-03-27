@@ -64,14 +64,16 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     private static final String TAG = "ImageSaver";
     private static final int NOTIFICATION_ID = 3;
     private static final int MAX_NAME_LENGTH = 50;
-    private NotificationManager notificationManager;
+    private final NotificationManager notificationManager;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private int doneTasks = 0;
     private int totalTasks = 0;
+    private long currentProgress = 0;
+    private long currentProgressMax = 0;
     private Toast toast;
 
-    private Storage storage;
-    private FileCache fileCache;
+    private final Storage storage;
+    private final FileCache fileCache;
 
     @SuppressWarnings("this-escape")
     @Inject
@@ -175,15 +177,8 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
 
             StorageFile file;
             try {
-                if (storage.mode() == Storage.Mode.FILE) {
-                    file = storage.obtainLegacyStorageFileForName(folders, name + "." + postImage.extension);
-                } else {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        throw new IllegalStateException();
-                    }
-                    // This call can be slow because it involves SAF queries
-                    file = storage.obtainStorageFileForName(folders, name + "." + postImage.extension);
-                }
+                // This call can be slow because it involves SAF queries
+                file = storage.obtainStorageFileForName(folders, name + "." + postImage.extension);
             } catch (Exception e) {
                 Logger.e(TAG, "Error obtaining storage file", e);
                 file = null;
@@ -206,8 +201,17 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     }
 
     @Override
+    public void imageSaveTaskProgress(ImageSaveTask task, long downloaded, long total) {
+        currentProgress = downloaded;
+        currentProgressMax = total;
+        AndroidUtils.runOnUiThread(this::updateNotification);
+    }
+
+    @Override
     public void imageSaveTaskFinished(ImageSaveTask task, boolean success) {
         doneTasks++;
+        currentProgress = 0;
+        currentProgressMax = 0;
         if (doneTasks == totalTasks) {
             totalTasks = 0;
             doneTasks = 0;
@@ -241,7 +245,15 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
         } else {
             service.putExtra(SavingNotification.DONE_TASKS_KEY, doneTasks);
             service.putExtra(SavingNotification.TOTAL_TASKS_KEY, totalTasks);
-            getAppContext().startService(service);
+            service.putExtra(SavingNotification.PROGRESS_KEY, currentProgress);
+            service.putExtra(SavingNotification.PROGRESS_MAX_KEY, currentProgressMax);
+            
+            // Check for Android O+ to start foreground service legally in background
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                getAppContext().startForegroundService(service);
+            } else {
+                getAppContext().startService(service);
+            }
         }
     }
 

@@ -142,6 +142,13 @@ public class ImageSaveTask extends FileCacheListener implements Runnable {
     }
 
     @Override
+    public void onProgress(long downloaded, long total) {
+        if (callback != null) {
+            callback.imageSaveTaskProgress(this, downloaded, total);
+        }
+    }
+
+    @Override
     public void onSuccess(File file) {
         if (copyToDestination(file)) {
             onDestination();
@@ -196,6 +203,7 @@ public class ImageSaveTask extends FileCacheListener implements Runnable {
     }
 
     public interface ImageSaveTaskCallback {
+        void imageSaveTaskProgress(ImageSaveTask task, long downloaded, long total);
         void imageSaveTaskFinished(ImageSaveTask task, boolean success);
     }
 }
