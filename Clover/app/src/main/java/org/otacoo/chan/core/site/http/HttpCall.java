@@ -84,7 +84,7 @@ public abstract class HttpCall implements Callback {
         } catch (Exception e) {
             exception = new IOException("Error processing response", e);
         } finally {
-            IOUtils.closeQuietly(body);
+            IOUtils.closeQuietly(response);
         }
 
         if (exception != null) {

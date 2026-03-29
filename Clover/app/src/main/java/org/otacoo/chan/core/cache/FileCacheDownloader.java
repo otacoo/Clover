@@ -158,7 +158,7 @@ public class FileCacheDownloader implements Runnable {
             try {
                 checkCancel();
 
-                ResponseBody body = getBody();
+                getBody();
 
                 Source source = body.source();
                 sourceCloseable = source;
@@ -267,16 +267,21 @@ public class FileCacheDownloader implements Runnable {
             throw new HttpCodeIOException(code);
         }
 
-        checkCancel();
+        try {
+            checkCancel();
 
-        body = response.body();
-        if (body == null) {
-            throw new IOException("body == null");
+            body = response.body();
+            if (body == null) {
+                throw new IOException("body == null");
+            }
+
+            checkCancel();
+
+            return body;
+        } catch (IOException | RuntimeException e) {
+            response.close();
+            throw e;
         }
-
-        checkCancel();
-
-        return body;
     }
 
     @WorkerThread
