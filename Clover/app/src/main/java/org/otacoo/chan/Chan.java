@@ -74,6 +74,14 @@ public class Chan extends Application implements
         return cachedPackageName;
     }
 
+    @Override
+    public String getOpPackageName() {
+        if (cachedPackageName == null) {
+            cachedPackageName = super.getPackageName();
+        }
+        return cachedPackageName;
+    }
+
     private String userAgent;
     private int activityForegroundCounter = 0;
 

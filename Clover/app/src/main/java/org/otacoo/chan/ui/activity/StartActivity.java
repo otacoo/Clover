@@ -86,6 +86,14 @@ public class StartActivity extends AppCompatActivity implements
         }
         return cachedPackageName;
     }
+
+    @Override
+    public String getOpPackageName() {
+        if (cachedPackageName == null) {
+            cachedPackageName = super.getPackageName();
+        }
+        return cachedPackageName;
+    }
     private final List<Controller> stack = new ArrayList<>();
 
     private DrawerController drawerController;
