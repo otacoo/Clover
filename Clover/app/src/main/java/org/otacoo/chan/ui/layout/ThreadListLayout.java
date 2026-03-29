@@ -172,20 +172,24 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             mainHandler.removeCallbacks(saveScrollPositionRunnable);
             mainHandler.postDelayed(saveScrollPositionRunnable, SCROLL_SAVE_DELAY);
 
-            // Android 10+/15+ edge-to-edge) so it doesn't prevent the bottom-reached callback from firing.
-            int last = getBottomAdapterPosition();
-            int postPos = postAdapter.getPostPosition(last);
-            int lastPostIndex = postAdapter.getDisplayList().size() - 1;
-            
-            // Check if we hit the last post itself
-            if (postPos >= lastPostIndex && postPos > lastPostCount) {
-                lastPostCount = postPos;
+            // Android 10+/15+ edge-to-edge so it doesn't prevent the bottom-reached callback from firing.
+            if (scrolledToBottom()) {
+                int bottom = postAdapter.getItemCount() - 1;
+                if (bottom > lastPostCount) {
+                    lastPostCount = bottom;
 
-                // As requested by the RecyclerView, make sure that the adapter isn't changed
-                // while in a layout pass. Postpone to the next frame.
-                mainHandler.post(() -> ThreadListLayout.this.callback.onListScrolledToBottom());
+                    // As requested by the RecyclerView, make sure that the adapter isn't changed
+                    // while in a layout pass. Postpone to the next frame.
+                    mainHandler.post(() -> {
+                        ThreadListLayout.this.callback.onListScrolledToBottom();
+                        postAdapter.clearLastSeenIndicator();
+                        if (showingThread != null && !showingThread.posts.isEmpty()) {
+                            threadLastViewed = showingThread.posts.get(showingThread.posts.size() - 1).no;
+                        }
+                    });
+                }
             }
-            
+
             threadListLayoutCallback.onScrolling(dy);
         }
     }
@@ -320,7 +324,13 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                     int bottom = postAdapter.getDisplayList().size() - 1;
                     if (bottom > lastPostCount) {
                         lastPostCount = bottom;
-                        callback.onListScrolledToBottom();
+                        mainHandler.post(() -> {
+                            callback.onListScrolledToBottom();
+                            postAdapter.clearLastSeenIndicator();
+                            if (showingThread != null && !showingThread.posts.isEmpty()) {
+                                threadLastViewed = showingThread.posts.get(showingThread.posts.size() - 1).no;
+                            }
+                        });
                     }
                 }
                 return true;
