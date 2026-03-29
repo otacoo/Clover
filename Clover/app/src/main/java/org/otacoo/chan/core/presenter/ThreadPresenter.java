@@ -367,9 +367,6 @@ public class ThreadPresenter implements
         }
 
         threadPresenterCallback.showNewPostsNotification(false, -1);
-
-        // Update the last seen indicator
-        showPosts();
     }
 
     public void onPostSeen(int postNo) {
