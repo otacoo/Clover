@@ -9,6 +9,7 @@
   - Improve how the unread line reacts to changing threads and fetching new posts
 - **8chan:** Cookies will no longer be synced on startup if no boards for 8chan were added to the boardlist
 - **4chan:** Email verification cookie (4chan_pass) will no longer be backed up with the app's preferences; will still auto-sync if it exists in the cookie store/manager including from a cookie backup
+- Fix an HTTP connection leak where images could stop loading the more images were opened and the longer the app was used
 - Cache and quiet down some background logging
 
 ## 2026-03-27 – v3.3.14
