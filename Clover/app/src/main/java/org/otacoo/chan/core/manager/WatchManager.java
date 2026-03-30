@@ -251,6 +251,14 @@ public class WatchManager {
     }
 
     public void updatePin(Pin pin) {
+        // Clamp to prevent negative badge counts
+        if (pin.watchLastCount > pin.watchNewCount && pin.watchNewCount >= 0) {
+            pin.watchLastCount = pin.watchNewCount;
+        }
+        if (pin.quoteLastCount > pin.quoteNewCount && pin.quoteNewCount >= 0) {
+            pin.quoteLastCount = pin.quoteNewCount;
+        }
+
         databaseManager.runTaskAsync(databasePinManager.updatePin(pin));
 
         updateState();
@@ -671,7 +679,8 @@ public class WatchManager {
                 handler.postDelayed(() -> {
                     PinWatcher pinWatcher = getPinWatcher(pin);
                     if (pinWatcher != null && pinWatcher.update(false)) {
-                        EventBus.getDefault().post(new PinChangedMessage(pin));
+                        // Defer so ThreadPresenter's onChanLoaderData runs first
+                        handler.post(() -> EventBus.getDefault().post(new PinChangedMessage(pin)));
                     }
                 }, (long) i * WATCHER_STAGGER_MS);
             }
@@ -680,7 +689,8 @@ public class WatchManager {
 
     private void pinWatcherUpdated(PinWatcher pinWatcher) {
         updateState();
-        EventBus.getDefault().post(new PinChangedMessage(pinWatcher.pin));
+        // Defer
+        handler.post(() -> EventBus.getDefault().post(new PinChangedMessage(pinWatcher.pin)));
 
         if (waitingForPinWatchersForBackgroundUpdate != null) {
             waitingForPinWatchersForBackgroundUpdate.remove(pinWatcher);
@@ -967,6 +977,14 @@ public class WatchManager {
 
             pin.watchNewCount = posts.size();
             pin.quoteNewCount = quotes.size();
+
+            // watchLastCount must never exceed watchNewCount
+            if (pin.watchLastCount > pin.watchNewCount) {
+                pin.watchLastCount = pin.watchNewCount;
+            }
+            if (pin.quoteLastCount > pin.quoteNewCount) {
+                pin.quoteLastCount = pin.quoteNewCount;
+            }
 
             if (!isFirstLoad) {
                 // There were new posts after processing
