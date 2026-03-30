@@ -104,9 +104,15 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 showingThread.loadable.setListViewIndex(indexTop[0]);
                 showingThread.loadable.setListViewTop(indexTop[1]);
 
+                // If already at bottom, onListScrolledToBottom() already handled counts
+                if (scrolledToBottom()) return;
+
                 int lastVisible = getBottomAdapterPosition();
-                if (lastVisible >= 0) {
+                if (lastVisible >= 0 && postAdapter != null) {
                     int postPos = postAdapter.getPostPosition(lastVisible);
+                    if (postPos < 0) {
+                        postPos = postAdapter.getDisplayList().size() - 1;
+                    }
                     if (postPos >= 0 && postPos < postAdapter.getDisplayList().size()) {
                         Post post = postAdapter.getDisplayList().get(postPos);
                         callback.onPostSeen(post.no);
@@ -172,21 +178,14 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             mainHandler.removeCallbacks(saveScrollPositionRunnable);
             mainHandler.postDelayed(saveScrollPositionRunnable, SCROLL_SAVE_DELAY);
 
-            // Android 10+/15+ edge-to-edge so it doesn't prevent the bottom-reached callback from firing.
-            if (scrolledToBottom()) {
-                int bottom = postAdapter.getItemCount() - 1;
+            if (scrolledToBottom() && !postAdapter.getDisplayList().isEmpty()) {
+                int bottom = postAdapter.getDisplayList().size() - 1;
                 if (bottom > lastPostCount) {
                     lastPostCount = bottom;
-
-                    // As requested by the RecyclerView, make sure that the adapter isn't changed
-                    // while in a layout pass. Postpone to the next frame.
-                    mainHandler.post(() -> {
-                        ThreadListLayout.this.callback.onListScrolledToBottom();
-                        postAdapter.clearLastSeenIndicator();
-                        if (showingThread != null && !showingThread.posts.isEmpty()) {
-                            threadLastViewed = showingThread.posts.get(showingThread.posts.size() - 1).no;
-                        }
-                    });
+                    Post lastPost = postAdapter.getDisplayList().get(bottom);
+                    callback.onListScrolledToBottom();
+                    recyclerView.post(() -> postAdapter.clearLastSeenIndicator());
+                    threadLastViewed = lastPost.no;
                 }
             }
 
@@ -276,9 +275,14 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
     public void showPosts(ChanThread thread, PostsFilter filter, boolean initial) {
         boolean threadChanged = showingThread != null && showingThread != thread;
+        boolean loadableChanged = showingThread != null
+                && !showingThread.loadable.equals(thread.loadable);
         showingThread = thread;
-        if (initial || threadChanged) {
-            lastPostCount = -1;
+
+        // Always reset so bottom-reached can re-fire for fresh data
+        lastPostCount = -1;
+
+        if (initial || threadChanged || loadableChanged) {
             threadLastViewed = thread.loadable.lastViewed;
             reply.bindLoadable(showingThread.loadable);
 
@@ -299,38 +303,38 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             party();
         }
 
-        // If we reached the end of the thread, update threadLastViewed to clear the indicator
-        if (thread.loadable.isThreadMode() && !thread.posts.isEmpty()) {
-            int lastPostNo = thread.posts.get(thread.posts.size() - 1).no;
-            if (thread.loadable.lastViewed == lastPostNo) {
-                threadLastViewed = lastPostNo;
-            }
-        }
-
         setFastScroll(true);
 
-        // wasAtBottom here ensures we call onListScrolledToBottom() even in a transient state.
-        // Use scrolledToBottom() which now uses findLastVisibleItemPosition so gesture-nav
-        // overlay on Android 10+/15+ doesn't suppress the bottom-reached callback.
-        final boolean wasAtBottom = !initial && !threadChanged && scrolledToBottom();
+        final boolean wasAtBottom = !initial && !threadChanged && !loadableChanged && scrolledToBottom();
 
         postAdapter.setThread(thread, filter, threadLastViewed);
-        
+
         recyclerView.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
                 recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-                if (wasAtBottom || scrolledToBottom()) {
+                if (postAdapter.getDisplayList().isEmpty()) return true;
+
+                if (scrolledToBottom()) {
                     int bottom = postAdapter.getDisplayList().size() - 1;
                     if (bottom > lastPostCount) {
                         lastPostCount = bottom;
-                        mainHandler.post(() -> {
-                            callback.onListScrolledToBottom();
-                            postAdapter.clearLastSeenIndicator();
-                            if (showingThread != null && !showingThread.posts.isEmpty()) {
-                                threadLastViewed = showingThread.posts.get(showingThread.posts.size() - 1).no;
-                            }
-                        });
+                        callback.onListScrolledToBottom();
+                        recyclerView.post(() -> postAdapter.clearLastSeenIndicator());
+                        if (showingThread != null && !showingThread.posts.isEmpty()) {
+                            threadLastViewed = showingThread.posts.get(
+                                    showingThread.posts.size() - 1).no;
+                        }
+                    }
+                } else if (wasAtBottom) {
+                    // New posts pushed us above bottom so we only mark the currently visible posts as seen
+                    int lastVisible = getBottomAdapterPosition();
+                    if (lastVisible >= 0) {
+                        int postPos = postAdapter.getPostPosition(lastVisible);
+                        if (postPos < 0) postPos = postAdapter.getDisplayList().size() - 1;
+                        if (postPos >= 0 && postPos < postAdapter.getDisplayList().size()) {
+                            callback.onPostSeen(postAdapter.getDisplayList().get(postPos).no);
+                        }
                     }
                 }
                 return true;
@@ -511,9 +515,17 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
     public boolean scrolledToBottom() {
         if (postAdapter == null || postAdapter.getDisplayList().isEmpty()) return false;
-        int last = getBottomAdapterPosition();
-        int postPos = postAdapter.getPostPosition(last);
-        return postPos >= postAdapter.getDisplayList().size() - 1;
+
+        if (!recyclerView.canScrollVertically(1)) {
+            return true;
+        }
+
+        // Check if the last real post is at least partially visible
+        int lastPostAdapterPos = postAdapter.getScrollPosition(
+                postAdapter.getDisplayList().size() - 1);
+        View lastPostView = layoutManager.findViewByPosition(lastPostAdapterPos);
+        boolean result = lastPostView != null;
+        return result;
     }
 
     public void cleanup() {
@@ -523,6 +535,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         openSearch(false);
         showingThread = null;
         lastPostCount = -1;
+        threadLastViewed = -1;
         noParty();
     }
 

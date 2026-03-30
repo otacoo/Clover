@@ -300,6 +300,9 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     public int getPostPosition(int position) {
+        if (showStatusView() && position == getItemCount() - 1) {
+            return -1; // status cell has no post
+        }
         int postPosition = position;
         if (lastSeenIndicatorPosition >= 0 && position > lastSeenIndicatorPosition) {
             postPosition--;

@@ -97,6 +97,7 @@ public class ThreadPresenter implements
     private PostsFilter.Order order = PostsFilter.Order.BUMP;
     private boolean historyAdded;
     private boolean ignoreLastViewedUpdates = false;
+    private boolean inForeground = true;
 
     @Inject
     public ThreadPresenter(WatchManager watchManager,
@@ -145,8 +146,8 @@ public class ThreadPresenter implements
 
     public void unbindLoadable() {
         if (chanLoader != null) {
-            // Save scroll position before unbinding
-            databaseManager.runTaskAsync(databaseManager.getDatabaseLoadableManager().flush());
+            // Flush to guarantee persistence before loading a new thread
+            databaseManager.runTask(databaseManager.getDatabaseLoadableManager().flush());
 
             chanLoader.clearTimer();
             chanLoaderFactory.release(chanLoader, this);
@@ -177,6 +178,7 @@ public class ThreadPresenter implements
     }
 
     public void onForegroundChanged(boolean foreground) {
+        inForeground = foreground;
         if (chanLoader != null) {
             if (foreground && isWatching()) {
                 chanLoader.requestMoreDataAndResetTimer();
@@ -280,6 +282,11 @@ public class ThreadPresenter implements
      */
     @Override
     public void onChanLoaderData(ChanThread result) {
+        if (!inForeground) {
+            // Screen is off: PinWatcher (separate listener) still updates pin counts.
+            return;
+        }
+
         if (isWatching()) {
             chanLoader.setTimer();
         }

@@ -668,29 +668,27 @@ public class ThreadLayout extends CoordinatorLayout implements
             if (newPostsNotification != null) {
                 return;
             }
-            if (!threadListLayout.scrolledToBottom()) {
-                String text = getContext().getResources()
-                        .getQuantityString(R.plurals.thread_new_posts, more, more);
+            String text = getContext().getResources()
+                    .getQuantityString(R.plurals.thread_new_posts, more, more);
 
-                newPostsNotification = Snackbar.make(this, text, Snackbar.LENGTH_LONG);
-                newPostsNotification.setAction(R.string.thread_new_posts_goto, new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
+            newPostsNotification = Snackbar.make(this, text, Snackbar.LENGTH_LONG);
+            newPostsNotification.setAction(R.string.thread_new_posts_goto, new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    newPostsNotification = null;
+                    presenter.onNewPostsViewClicked();
+                }
+            });
+            newPostsNotification.addCallback(new Snackbar.Callback() {
+                @Override
+                public void onDismissed(Snackbar sb, int event) {
+                    if (newPostsNotification == sb) {
                         newPostsNotification = null;
-                        presenter.onNewPostsViewClicked();
                     }
-                });
-                newPostsNotification.addCallback(new Snackbar.Callback() {
-                    @Override
-                    public void onDismissed(Snackbar sb, int event) {
-                        if (newPostsNotification == sb) {
-                            newPostsNotification = null;
-                        }
-                    }
-                });
-                newPostsNotification.show();
-                fixSnackbarText(getContext(), newPostsNotification);
-            }
+                }
+            });
+            newPostsNotification.show();
+            fixSnackbarText(getContext(), newPostsNotification);
         } else {
             if (newPostsNotification != null) {
                 newPostsNotification.dismiss();
