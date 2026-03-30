@@ -87,6 +87,7 @@ public class StartActivity extends AppCompatActivity implements
         return cachedPackageName;
     }
 
+    @NonNull
     @Override
     public String getOpPackageName() {
         if (cachedPackageName == null) {
@@ -94,6 +95,7 @@ public class StartActivity extends AppCompatActivity implements
         }
         return cachedPackageName;
     }
+
     private final List<Controller> stack = new ArrayList<>();
 
     private DrawerController drawerController;
