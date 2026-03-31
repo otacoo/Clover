@@ -144,7 +144,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
 
         @Override
         public boolean isInternal(int postNo) {
-            return false;
+            return true;
         }
     };
 
@@ -737,19 +737,27 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                     .board(dummyBoard)
                     .id(123456789)
                     .opId(1)
+                    .name("Anonymous")
+                    .tripcode("!TrIpCoDe!!")
                     .setUnixTimestampSeconds((Time.get() - (30 * 60 * 1000)) / 1000)
                     .subject("Lorem ipsum")
-                    .comment("<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
-                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br>" +
+                    .comment("<a href=\"#p123456780\" class=\"quotelink\">&gt;&gt;123456780</a><br>" +
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+                            "<br><br>" +
+                            "<span class=\"quote\">&gt;implying this is a greentext</span><br>" +
                             "<br>" +
-                            "<a href=\"#p123456789\" class=\"quotelink\">&gt;&gt;123456789</a><br>" +
-                            "http://example.com/" +
+                            "Phasellus vitae <s>eros in mi consequat</s> semper sodales." +
+                            "<br><br>" +
+                            "<a href=\"https://example.com/\">https://example.com/</a><br>" +
                             "<br>" +
-                            "Phasellus consequat semper sodales. Donec dolor lectus, aliquet nec mollis vel, rutrum vel enim.");
+                            "<a href=\"#p123456781\" class=\"quotelink\">&gt;&gt;123456781</a><br>" +
+                            "This is a highlighted quotelink.");
         }
 
         private View createPreviewCell(Context themeContext, Theme theme) {
-            Post post = new DefaultPostParser(new CommentParser()).parse(theme, createDummyPostBuilder(), parserCallback);
+            CommentParser parser = new CommentParser();
+            parser.addDefaultRules();
+            Post post = new DefaultPostParser(parser).parse(theme, createDummyPostBuilder(), parserCallback);
             PostCell postCell = (PostCell) LayoutInflater.from(themeContext).inflate(R.layout.cell_post, null);
             postCell.setPost(theme,
                     post,
@@ -757,7 +765,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                     false,
                     false,
                     false,
-                    -1,
+                    123456781,
                     true,
                     ChanSettings.PostViewMode.LIST,
                     false);
