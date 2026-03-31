@@ -23,6 +23,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
@@ -41,6 +42,7 @@ import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.storage.Storage;
 import org.otacoo.chan.core.storage.StorageFile;
+import org.otacoo.chan.core.receiver.SaveCancelReceiver;
 import org.otacoo.chan.ui.activity.RuntimePermissionsHelper;
 import org.otacoo.chan.ui.service.SavingNotification;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -83,10 +85,17 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
 
         EventBus.getDefault().register(this);
         notificationManager = (NotificationManager) getAppContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        ensureChannels();
     }
 
     public void onEvent(SavingNotification.SavingCancelRequestMessage message) {
         cancelAll();
+    }
+
+    private void ensureChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            SavingNotification.ensureChannelsStatic(notificationManager);
+        }
     }
 
     public String getSafeNameForFolder(String name) {
@@ -238,22 +247,34 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
         updateNotification();
     }
 
+    private static final int PROGRESS_NOTIFICATION_ID = 2;
+
     private void updateNotification() {
-        Intent service = new Intent(getAppContext(), SavingNotification.class);
         if (totalTasks == 0) {
-            getAppContext().stopService(service);
+            notificationManager.cancel(PROGRESS_NOTIFICATION_ID);
         } else {
-            service.putExtra(SavingNotification.DONE_TASKS_KEY, doneTasks);
-            service.putExtra(SavingNotification.TOTAL_TASKS_KEY, totalTasks);
-            service.putExtra(SavingNotification.PROGRESS_KEY, currentProgress);
-            service.putExtra(SavingNotification.PROGRESS_MAX_KEY, currentProgressMax);
-            
-            // Check for Android O+ to start foreground service legally in background
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                getAppContext().startForegroundService(service);
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(
+                    getAppContext(), SavingNotification.CHANNEL_ID_PROGRESS);
+            builder.setSmallIcon(R.drawable.ic_stat_notify);
+            builder.setContentTitle(getString(R.string.image_save_notification_downloading));
+            builder.setContentText(getString(R.string.image_save_notification_cancel));
+            builder.setOngoing(true);
+
+            if (currentProgressMax > 0) {
+                builder.setProgress(1000, (int) ((currentProgress * 1000) / currentProgressMax), false);
             } else {
-                getAppContext().startService(service);
+                builder.setProgress(totalTasks, doneTasks, false);
             }
+
+            builder.setContentInfo(doneTasks + "/" + totalTasks);
+
+            Intent cancelIntent = new Intent(getAppContext(), SaveCancelReceiver.class);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    getAppContext(), 0, cancelIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.setContentIntent(pendingIntent);
+
+            notificationManager.notify(PROGRESS_NOTIFICATION_ID, builder.build());
         }
     }
 
