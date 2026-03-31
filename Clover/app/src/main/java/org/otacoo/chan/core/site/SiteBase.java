@@ -21,6 +21,7 @@ package org.otacoo.chan.core.site;
 import static org.otacoo.chan.Chan.injector;
 
 import org.codejargon.feather.Feather;
+import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.database.LoadableProvider;
 import org.otacoo.chan.core.manager.BoardManager;
 import org.otacoo.chan.core.model.json.site.SiteConfig;
@@ -76,8 +77,13 @@ public abstract class SiteBase implements Site {
 
         initializeSettings();
 
-        if (boardsType().canList && !boardManager.getSiteSavedBoards(this).isEmpty()) {
-            actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards));
+        if (boardsType().canList) {
+            DatabaseManager databaseManager = injector.instance(DatabaseManager.class);
+            databaseManager.runTaskAsync(databaseManager.getDatabaseBoardManager().getSiteSavedBoards(this), savedBoards -> {
+                if (savedBoards != null && !savedBoards.isEmpty()) {
+                    actions().boards(boards -> boardManager.updateAvailableBoardsForSite(this, boards.boards));
+                }
+            });
         }
 
         Time.endTiming("initialized " + name(), start);
