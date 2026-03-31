@@ -1,3 +1,9 @@
+## 2026-03-31 – v3.3.16
+
+- Fix an issue where notifications for saving media failing to fire could make the app crash occasionally
+- Improve the dummy post in the Themes section (issue #17)
+- Fix an issue where the boardlist wasn't fetched correctly on startup, preventing the boardlist drawer and formatting tags from working correctly (issue #16)
+
 ## 2026-03-30 – v3.3.15
 
 - Fixes for issue #13: [Thread watcher] Unread count doesn't decrease to 0 consistently
