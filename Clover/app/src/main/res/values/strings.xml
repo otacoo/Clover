@@ -671,7 +671,7 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_share_url">Share URL to image</string>
     <string name="setting_share_url_description">Share the URL to the image instead of the image itself</string>
     <string name="settings_reveal_image_spoilers">Reveal image spoilers</string>
-    <string name="settings_reveal_image_spoilers_description">Always reveal spoiler thumbnails and images</string>
+    <string name="settings_reveal_image_spoilers_description">Always reveal spoiler thumbnails</string>
 
     <!-- Media loading group -->
     <string name="settings_group_media_loading">Media loading</string>
@@ -727,6 +727,10 @@ Tap the toolbar menu to change its color."
     <string name="setting_theme_item_post_link_color">Link color</string>
     <string name="setting_theme_item_post_subject_color">Subject color</string>
     <string name="setting_theme_item_post_name_color">Name color</string>
+    <string name="setting_theme_item_post_inline_quote_color">Greentext color</string>
+    <string name="setting_theme_item_post_highlight_quote_color">Highlighted quotelink color</string>
+    <string name="setting_theme_item_post_capcode_color">Capcode color</string>
+    <string name="setting_theme_item_post_spoiler_color">Spoiler color</string>
 
     <!-- Developer settings -->
     <string name="settings_open_logs">View logs</string>
