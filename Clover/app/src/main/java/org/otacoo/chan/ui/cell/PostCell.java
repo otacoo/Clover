@@ -400,7 +400,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         // Align the replies row with the text column.
         // layout_toRightOf the thumbnail; replicate that indent via leftMargin instead.
         RelativeLayout.LayoutParams repliesLp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
-        if (!thumbnailViews.isEmpty()) {
+        if (ChanSettings.layoutTextBelowThumbnails.get()) {
+            repliesLp.leftMargin = 0;
+        } else if (!thumbnailViews.isEmpty()) {
             int thumbSize = ChanSettings.thumbnailScale.get() * getResources()
                     .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
             repliesLp.leftMargin = paddingPx + thumbSize;
@@ -500,27 +502,66 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 comment.setPadding(paddingPx, paddingPx, paddingPx, 0);
                 rules[RelativeLayout.RIGHT_OF] = R.id.thumbnail_view;
                 rules[RelativeLayout.BELOW] = R.id.icons;
-                if (comment.getParent() == relativeLayoutContainer) {
-                    relativeLayoutContainer.removeView(comment);
-                    relativeLayoutContainer.removeView(replies);
-                    relativeLayoutContainer.removeView(repliesAdditionalArea);
+                if (comment.getParent() != relativeLayoutHelper) {
+                    if (comment.getParent() != null) ((ViewGroup) comment.getParent()).removeView(comment);
                     relativeLayoutHelper.addView(comment);
-                    relativeLayoutHelper.addView(replies);
-                    relativeLayoutHelper.addView(repliesAdditionalArea);
                 }
+                // replies stays in relativeLayoutContainer, anchored below the helper
+                if (replies.getParent() != relativeLayoutContainer) {
+                    if (replies.getParent() != null) ((ViewGroup) replies.getParent()).removeView(replies);
+                    relativeLayoutContainer.addView(replies);
+                }
+                if (repliesAdditionalArea.getParent() != relativeLayoutContainer) {
+                    if (repliesAdditionalArea.getParent() != null) ((ViewGroup) repliesAdditionalArea.getParent()).removeView(repliesAdditionalArea);
+                    relativeLayoutContainer.addView(repliesAdditionalArea);
+                }
+                RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
+                repliesRp.getRules()[RelativeLayout.BELOW] = R.id.relative_layout_helper;
+                replies.setLayoutParams(repliesRp);
             } else {
                 comment.setPadding(paddingPx, 0, paddingPx, 0);
                 rules[RelativeLayout.RIGHT_OF] = 0;
                 rules[RelativeLayout.BELOW] = R.id.relative_layout_helper;
-                if (comment.getParent() == relativeLayoutHelper) {
-                    relativeLayoutHelper.removeView(comment);
-                    relativeLayoutHelper.removeView(replies);
-                    relativeLayoutHelper.removeView(repliesAdditionalArea);
+                if (comment.getParent() != relativeLayoutContainer) {
+                    if (comment.getParent() != null) ((ViewGroup) comment.getParent()).removeView(comment);
                     relativeLayoutContainer.addView(comment);
+                }
+                if (replies.getParent() != relativeLayoutContainer) {
+                    if (replies.getParent() != null) ((ViewGroup) replies.getParent()).removeView(replies);
                     relativeLayoutContainer.addView(replies);
+                }
+                if (repliesAdditionalArea.getParent() != relativeLayoutContainer) {
+                    if (repliesAdditionalArea.getParent() != null) ((ViewGroup) repliesAdditionalArea.getParent()).removeView(repliesAdditionalArea);
                     relativeLayoutContainer.addView(repliesAdditionalArea);
                 }
+                // replies must anchor below comment when comment is in the container
+                RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
+                repliesRp.getRules()[RelativeLayout.BELOW] = R.id.comment;
+                replies.setLayoutParams(repliesRp);
             }
+        } else {
+            // Alternate layout is OFF
+            if (comment.getParent() != relativeLayoutHelper) {
+                RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) comment.getLayoutParams();
+                int[] rules = layoutParams.getRules();
+                rules[RelativeLayout.RIGHT_OF] = R.id.thumbnail_view;
+                rules[RelativeLayout.BELOW] = R.id.icons;
+                comment.setPadding(paddingPx, paddingPx, paddingPx, 0);
+                if (comment.getParent() != null) ((ViewGroup) comment.getParent()).removeView(comment);
+                relativeLayoutHelper.addView(comment);
+            }
+            if (replies.getParent() != relativeLayoutContainer) {
+                if (replies.getParent() != null) ((ViewGroup) replies.getParent()).removeView(replies);
+                relativeLayoutContainer.addView(replies);
+            }
+            if (repliesAdditionalArea.getParent() != relativeLayoutContainer) {
+                if (repliesAdditionalArea.getParent() != null) ((ViewGroup) repliesAdditionalArea.getParent()).removeView(repliesAdditionalArea);
+                relativeLayoutContainer.addView(repliesAdditionalArea);
+            }
+            // Restore replies to anchor below the helper (default XML rule)
+            RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
+            repliesRp.getRules()[RelativeLayout.BELOW] = R.id.relative_layout_helper;
+            replies.setLayoutParams(repliesRp);
         }
 
         if (threadMode) {
