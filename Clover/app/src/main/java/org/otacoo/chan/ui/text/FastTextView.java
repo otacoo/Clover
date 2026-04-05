@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Layout;
 import android.text.Spanned;
@@ -98,6 +99,14 @@ public class FastTextView extends View {
     public void setTextColor(int color) {
         if (paint.getColor() != color) {
             paint.setColor(color);
+            update = true;
+            invalidate();
+        }
+    }
+
+    public void setTypeface(Typeface typeface) {
+        if (paint.getTypeface() != typeface) {
+            paint.setTypeface(typeface);
             update = true;
             invalidate();
         }
@@ -257,12 +266,14 @@ public class FastTextView extends View {
         private int color;
         private float textSize;
         private int layoutWidth;
+        private Typeface typeface;
 
         public FastTextViewItem(CharSequence text, TextPaint textPaint, int layoutWidth) {
             this.text = text;
             color = textPaint.getColor();
             textSize = textPaint.getTextSize();
             this.layoutWidth = layoutWidth;
+            typeface = textPaint.getTypeface();
         }
 
         @Override
@@ -275,6 +286,7 @@ public class FastTextView extends View {
             if (color != that.color) return false;
             if (Float.compare(that.textSize, textSize) != 0) return false;
             if (layoutWidth != that.layoutWidth) return false;
+            if (typeface != null ? !typeface.equals(that.typeface) : that.typeface != null) return false;
             return text.equals(that.text);
         }
 
@@ -284,6 +296,7 @@ public class FastTextView extends View {
             result = 31 * result + color;
             result = 31 * result + (textSize != +0.0f ? Float.floatToIntBits(textSize) : 0);
             result = 31 * result + layoutWidth;
+            result = 31 * result + (typeface != null ? typeface.hashCode() : 0);
             return result;
         }
     }

@@ -218,7 +218,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         comment.setPadding(paddingPx, paddingPx, paddingPx, 0);
 
         if (ChanSettings.fontCondensed.get()) {
+            title.setTypeface(ROBOTO_CONDENSED_REGULAR);
             comment.setTypeface(ROBOTO_CONDENSED_REGULAR);
+            replies.setTypeface(ROBOTO_CONDENSED_REGULAR);
         }
 
         replies.setTextSize(textSizeSp);

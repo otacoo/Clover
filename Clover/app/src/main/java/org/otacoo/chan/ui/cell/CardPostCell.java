@@ -17,6 +17,7 @@
  */
 package org.otacoo.chan.ui.cell;
 
+import static org.otacoo.chan.utils.AndroidUtils.ROBOTO_CONDENSED_REGULAR;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
@@ -272,6 +273,11 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         int textReduction = compact ? -2 : 0;
         int textSizeSp = Integer.parseInt(ChanSettings.fontSize.get()) + textReduction;
         title.setTextSize(textSizeSp);
+        if (ChanSettings.fontCondensed.get()) {
+            title.setTypeface(ROBOTO_CONDENSED_REGULAR);
+            comment.setTypeface(ROBOTO_CONDENSED_REGULAR);
+            replies.setTypeface(ROBOTO_CONDENSED_REGULAR);
+        }
         comment.setTextSize(textSizeSp);
         replies.setTextSize(textSizeSp);
         icons.setHeight(sp(textSizeSp));
