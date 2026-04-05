@@ -171,7 +171,7 @@ public class FastTextView extends View {
         if (widthMode == MeasureSpec.EXACTLY) {
             width = widthSize;
         } else if ((widthMode == MeasureSpec.AT_MOST || widthMode == MeasureSpec.UNSPECIFIED) && !TextUtils.isEmpty(text)) {
-            width = Math.round(Layout.getDesiredWidth(text, paint) + getPaddingLeft() + getPaddingRight());
+            width = (int) Math.ceil(Layout.getDesiredWidth(text, paint)) + 1 + getPaddingLeft() + getPaddingRight();
             if (widthMode == MeasureSpec.AT_MOST) {
                 width = Math.min(width, widthSize);
             }
