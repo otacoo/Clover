@@ -666,7 +666,8 @@ public class ThreadLayout extends CoordinatorLayout implements
     public void showNewPostsNotification(boolean show, int more) {
         if (show) {
             if (newPostsNotification != null) {
-                return;
+                newPostsNotification.dismiss();
+                newPostsNotification = null;
             }
             String text = getContext().getResources()
                     .getQuantityString(R.plurals.thread_new_posts, more, more);
