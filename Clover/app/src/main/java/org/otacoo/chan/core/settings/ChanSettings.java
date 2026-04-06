@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
 import org.otacoo.chan.R;
@@ -453,7 +454,10 @@ public class ChanSettings {
         Type type = new TypeToken<List<CustomTheme>>() {}.getType();
         try {
             List<CustomTheme> parsed = new Gson().fromJson(raw, type);
-            return parsed != null ? parsed : new ArrayList<>();
+            if (parsed == null) return new ArrayList<>();
+            // Filter out broken themes (e.g. from old obfuscated formats that couldn't be migrated)
+            parsed.removeIf(t -> t.name == null || t.displayName == null);
+            return parsed;
         } catch (Exception e) {
             Logger.e("ChanSettings", "Invalid custom theme data, resetting to defaults", e);
             customThemes.set("[]");
@@ -524,10 +528,15 @@ public class ChanSettings {
     }
 
     public static class CustomTheme {
+        @SerializedName(value = "displayName", alternate = {"a"})
         public String displayName;
+        @SerializedName(value = "name", alternate = {"b"})
         public String name;
+        @SerializedName(value = "baseTheme", alternate = {"c"})
         public String baseTheme;
+        @SerializedName(value = "isLightTheme", alternate = {"d"})
         public boolean isLightTheme;
+        @SerializedName(value = "colorOverrides", alternate = {"e"})
         public Map<String, Integer> colorOverrides;
         
         public CustomTheme(String displayName, String name, String baseTheme, boolean isLightTheme, Map<String, Integer> colorOverrides) {
