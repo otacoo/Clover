@@ -39,6 +39,7 @@ import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteActions;
 import org.otacoo.chan.core.site.SiteAuthentication;
+import org.otacoo.chan.core.site.common.lynxchan.LynxchanActions;
 import org.otacoo.chan.core.site.http.HttpCall;
 import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.core.site.http.ReplyResponse;
@@ -47,6 +48,7 @@ import org.otacoo.chan.ui.captcha.AuthenticationLayoutCallback;
 import org.otacoo.chan.ui.captcha.AuthenticationLayoutInterface;
 import org.otacoo.chan.ui.captcha.CaptchaLayout;
 import org.otacoo.chan.ui.captcha.GenericWebViewAuthenticationLayout;
+import org.otacoo.chan.ui.captcha.LynxchanBypassLayout;
 import org.otacoo.chan.ui.captcha.LynxchanCaptchaLayout;
 import org.otacoo.chan.ui.captcha.NewCaptchaLayout;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -528,8 +530,19 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         draft.captchaResponse = response;
 
         if (authenticationLayout.requireResetAfterComplete()) {
-            Logger.i(TAG, "onAuthenticationComplete: Reset requested by auth layout");
+            // Logger.i(TAG, "onAuthenticationComplete: Reset requested by auth layout");
             authenticationLayout.reset();
+        }
+
+        // After bypass is obtained, reset the flag and attempt to post directly.
+        if (authenticationLayout instanceof LynxchanBypassLayout) {
+            Logger.i(TAG, "onAuthenticationComplete: Bypass obtained, attempting post");
+            SiteActions actions = loadable.getSite().actions();
+            if (actions instanceof LynxchanActions) {
+                ((LynxchanActions) actions).resetBypassableFlag();
+            }
+            makeSubmitCall();
+            return;
         }
 
         Logger.i(TAG, "onAuthenticationComplete: Triggering makeSubmitCall()");

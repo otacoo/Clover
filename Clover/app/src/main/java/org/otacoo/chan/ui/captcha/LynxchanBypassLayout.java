@@ -84,7 +84,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
         submitButton  = findViewById(R.id.lynxchan_captcha_submit);
         statusText    = findViewById(R.id.lynxchan_captcha_status);
 
-        refreshButton.setOnClickListener(v -> hardReset());
+        refreshButton.setVisibility(GONE);
         submitButton.setOnClickListener(v -> submit());
         captchaImage.setOnClickListener(v -> hardReset());
 
@@ -444,6 +444,9 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
     }
 
     private void startRefreshSpin() {
+        // Swap: hide submit, show spinning refresh button
+        submitButton.setVisibility(GONE);
+        refreshButton.setVisibility(VISIBLE);
         if (refreshSpinner == null) {
             refreshSpinner = ObjectAnimator.ofFloat(refreshButton, "rotation", 0f, -360f);
             refreshSpinner.setDuration(800);
@@ -458,6 +461,9 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
             refreshSpinner.cancel();
             refreshButton.setRotation(0f);
         }
+        // Swap back: hide refresh, show submit
+        refreshButton.setVisibility(GONE);
+        submitButton.setVisibility(VISIBLE);
     }
 
     private void storeCookiesFromResponse(Response resp) {

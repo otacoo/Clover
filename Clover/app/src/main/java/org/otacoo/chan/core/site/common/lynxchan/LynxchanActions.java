@@ -319,19 +319,21 @@ public class LynxchanActions extends CommonSite.CommonActions {
     @Override
     public SiteAuthentication postAuthenticate() {
         String root = ((LynxchanEndpoints) site.endpoints()).root().toString();
-        // "bypassable" from the server means the block bypass is missing or has expired 
-        // We need to show the bypass captcha to obtain a fresh bypass cookie.
-        // NOTE: Do NOT reset lastPostWasBypassable here.
-        // The flag is reset only on successful post ("ok") or when the bypass layout completes and calls 
-        // onAuthenticationComplete.
+        // If we get "bypassable", the bypass cookie is missing or has expired and we must obtain a new one first
         if (lastPostWasBypassable) {
             return SiteAuthentication.fromLynxchanBypass(root);
         }
-        // No bypass cookie exists -> need one before we can post.
-        if (!hasBypassCookie()) {
-            return SiteAuthentication.fromLynxchanBypass(root);
+        // Bypass cookie present and not flagged as stale -> per-post captcha
+        if (hasBypassCookie()) {
+            return SiteAuthentication.fromLynxchanCaptcha(root);
         }
-        return SiteAuthentication.fromLynxchanCaptcha(root);
+        // No bypass cookie -> need to obtain one
+        return SiteAuthentication.fromLynxchanBypass(root);
+    }
+
+    // Call after bypass successful to redirect
+    public void resetBypassableFlag() {
+        lastPostWasBypassable = false;
     }
 
     private boolean hasBypassCookie() {
