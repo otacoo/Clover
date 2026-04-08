@@ -39,6 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.viewpager.widget.ViewPager;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
@@ -93,6 +94,78 @@ public class CookieManagerController extends StyledToolbarNavigationController i
 
         setupTabs();
         updateTabs(0);
+    }
+
+    private boolean isChan4(Site site) {
+        return site instanceof Chan4;
+    }
+
+    // Merge cookies from AppCookieJar's java.net.CookieManager for non-4chan sites.
+    private void mergeCookiesFromJar(Site site, List<String> domains, Map<String, String> cookies) {
+        if (isChan4(site)) return;
+        java.net.CookieManager cm = NetModule.getSharedCookieManager();
+        if (cm == null) return;
+        for (String domain : domains) {
+            try {
+                java.net.URI uri = new java.net.URI(domain);
+                List<java.net.HttpCookie> stored = cm.getCookieStore().get(uri);
+                for (java.net.HttpCookie hc : stored) {
+                    if ("inbound".equals(hc.getName())) continue;
+                    if (!cookies.containsKey(hc.getName())) {
+                        cookies.put(hc.getName(), hc.getValue());
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    // Remove a cookie from AppCookieJar's java.net.CookieManager for non-4chan sites.
+    private void removeCookieFromJar(Site site, List<String> domains, String cookieName) {
+        if (isChan4(site)) return;
+        java.net.CookieManager cm = NetModule.getSharedCookieManager();
+        if (cm == null) return;
+        for (String domain : domains) {
+            try {
+                java.net.URI uri = new java.net.URI(domain);
+                List<java.net.HttpCookie> stored = cm.getCookieStore().get(uri);
+                for (java.net.HttpCookie hc : stored) {
+                    if (cookieName.equals(hc.getName())) {
+                        cm.getCookieStore().remove(uri, hc);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    // Add or update a cookie in AppCookieJar's java.net.CookieManager for non-4chan sites.
+    private void setCookieInJar(Site site, List<String> domains, String cookieName, String cookieValue) {
+        if (isChan4(site)) return;
+        java.net.CookieManager cm = NetModule.getSharedCookieManager();
+        if (cm == null) return;
+        for (String domain : domains) {
+            try {
+                java.net.URI uri = new java.net.URI(domain);
+                // Remove old entry first
+                List<java.net.HttpCookie> stored = cm.getCookieStore().get(uri);
+                for (java.net.HttpCookie hc : stored) {
+                    if (cookieName.equals(hc.getName())) {
+                        cm.getCookieStore().remove(uri, hc);
+                    }
+                }
+                // Add new entry
+                java.net.HttpCookie hc = new java.net.HttpCookie(cookieName, cookieValue);
+                hc.setDomain(uri.getHost());
+                hc.setPath("/");
+                cm.getCookieStore().add(uri, hc);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    // Clear all cookies from AppCookieJar's java.net.CookieManager.
+    private void clearAllCookiesFromJar() {
+        java.net.CookieManager cm = NetModule.getSharedCookieManager();
+        if (cm == null) return;
+        cm.getCookieStore().removeAll();
     }
 
     private List<String> getDomainsForUrl(String url) {
@@ -218,6 +291,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                         // so the list does not re-render before the deletion takes effect.
                         CookieManager.getInstance().removeAllCookies(success ->
                                 AndroidUtils.runOnUiThread(() -> {
+                                    clearAllCookiesFromJar();
                                     Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG).show();
                                     adapter.notifyDataSetChanged();
                                 }));
@@ -277,6 +351,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                         }
                         cm.flush();
                         syncChan4CookieToSetting(site, name, val);
+                        setCookieInJar(site, domains, name, val);
                         adapter.notifyDataSetChanged();
                     }
                 })
@@ -311,6 +386,8 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                     }
                 }
             }
+            // For non-4chan sites, also merge cookies from AppCookieJar's store
+            mergeCookiesFromJar(site, domains, cookies);
 
             if (cookies.isEmpty()) {
                 TextView empty = new TextView(context);
@@ -361,6 +438,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                                 }
                                 cookieManager.flush();
                                 syncChan4CookieToSetting(site, nameStr, "");
+                                removeCookieFromJar(site, domains, nameStr);
                                 notifyDataSetChanged();
                             })
                             .setNegativeButton(R.string.cancel, null)
@@ -387,6 +465,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                         }
                         cm.flush();
                         syncChan4CookieToSetting(site, name, newVal);
+                        setCookieInJar(site, domains, name, newVal);
                         notifyDataSetChanged();
                     })
                     .setNegativeButton(R.string.cancel, null)

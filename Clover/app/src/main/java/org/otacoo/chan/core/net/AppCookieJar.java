@@ -42,9 +42,36 @@ public class AppCookieJar implements CookieJar {
                 }
                 cookieManager.getCookieStore().add(uri, httpCookie);
             }
+            // Mirror to WebView's CookieManager so the Cookie Manager UI stays in sync.
+            syncToWebView(url, cookies);
         } catch (Exception e) {
             org.otacoo.chan.utils.Logger.e("AppCookieJar", "saveFromResponse failed", e);
         }
+    }
+
+    private void syncToWebView(HttpUrl url, List<Cookie> cookies) {
+        org.otacoo.chan.utils.AndroidUtils.runOnUiThread(() -> {
+            try {
+                android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
+                String baseUrl = url.scheme() + "://" + url.host();
+                for (Cookie cookie : cookies) {
+                    if ("inbound".equals(cookie.name())) continue;
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(cookie.name()).append("=").append(cookie.value());
+                    sb.append("; Domain=").append(cookie.domain());
+                    sb.append("; Path=").append(cookie.path());
+                    if (cookie.secure()) sb.append("; Secure");
+                    if (cookie.httpOnly()) sb.append("; HttpOnly");
+                    if (cookie.expiresAt() > System.currentTimeMillis()) {
+                        sb.append("; Max-Age=").append((cookie.expiresAt() - System.currentTimeMillis()) / 1000);
+                    }
+                    cm.setCookie(baseUrl, sb.toString());
+                }
+                cm.flush();
+            } catch (Exception e) {
+                org.otacoo.chan.utils.Logger.e("AppCookieJar", "syncToWebView failed", e);
+            }
+        });
     }
 
     @Override
