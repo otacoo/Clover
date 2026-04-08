@@ -245,6 +245,9 @@ public class LynxchanActions extends CommonSite.CommonActions {
                     replyResponse.requireAuthentication = true;
                     replyResponse.isBypass = true;
                     lastPostWasBypassable = true;
+                    // Remove the stale bypass cookie so the bypass captcha
+                    // and subsequent POST start with a clean slate.
+                    clearBypassCookie();
                     break;
                 case "hashban":
                     replyResponse.probablyBanned = true;
@@ -316,10 +319,16 @@ public class LynxchanActions extends CommonSite.CommonActions {
     @Override
     public SiteAuthentication postAuthenticate() {
         String root = ((LynxchanEndpoints) site.endpoints()).root().toString();
+        // "bypassable" from the server means the block bypass is missing or has expired 
+        // We need to show the bypass captcha to obtain a fresh bypass cookie.
+        // NOTE: Do NOT reset lastPostWasBypassable here.
+        // The flag is reset only on successful post ("ok") or when the bypass layout completes and calls 
+        // onAuthenticationComplete.
         if (lastPostWasBypassable) {
             return SiteAuthentication.fromLynxchanBypass(root);
         }
-        if (isLoggedIn() && !hasBypassCookie()) {
+        // No bypass cookie exists -> need one before we can post.
+        if (!hasBypassCookie()) {
             return SiteAuthentication.fromLynxchanBypass(root);
         }
         return SiteAuthentication.fromLynxchanCaptcha(root);
@@ -345,6 +354,33 @@ public class LynxchanActions extends CommonSite.CommonActions {
             if (raw != null && raw.contains("bypass=")) return true;
         }
         return false;
+    }
+
+    // Remove stale bypass cookies from java.net and WebView cookie stores
+    private void clearBypassCookie() {
+        String[] urls = {"https://8chan.moe/", "https://8chan.st/"};
+        java.net.CookieManager cm = org.otacoo.chan.core.di.NetModule.getSharedCookieManager();
+        if (cm != null) {
+            for (String url : urls) {
+                try {
+                    java.net.URI uri = new java.net.URI(url);
+                    for (java.net.HttpCookie c : new java.util.ArrayList<>(cm.getCookieStore().get(uri))) {
+                        if ("bypass".equals(c.getName())) {
+                            cm.getCookieStore().remove(uri, c);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        org.otacoo.chan.utils.AndroidUtils.runOnUiThread(() -> {
+            try {
+                CookieManager wvcm = CookieManager.getInstance();
+                for (String url : urls) {
+                    wvcm.setCookie(url, "bypass=; Max-Age=0; Path=/");
+                }
+                wvcm.flush();
+            } catch (Exception ignored) {}
+        });
     }
 
     @Override

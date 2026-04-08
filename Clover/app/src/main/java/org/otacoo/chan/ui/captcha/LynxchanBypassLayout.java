@@ -325,8 +325,10 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
                 }
 
                 if ("ok".equals(status)) {
-                    // 8chan returns {"status":"ok","data":null} and sets a long bypass cookie
-                    // (>=712 chars) that requires PBKDF2-SHA512 proof-of-work to activate.
+                    // 8chan returns {"status":"ok","data":null} and sets a bypass cookie
+                    // that embeds a PBKDF2-SHA512 proof-of-work challenge.
+                    // Cookie structure: 24-char hex ID + 344-char base64 session + base64 hash target.
+                    // If hasHashPart (length > 368), POW is required to activate the bypass.
                     String bypassCookieValue = null;
                     for (String sc : resp.headers("Set-Cookie")) {
                         if (sc.startsWith("bypass=")) {
@@ -337,13 +339,14 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
                     Logger.i(TAG, "renewBypass ok, bypassCookieLen="
                             + (bypassCookieValue != null ? bypassCookieValue.length() : "null"));
 
-                    if (bypassCookieValue != null && bypassCookieValue.length() >= 712) {
+                    // Cookie > 368 chars means it has a hash target → needs POW.
+                    if (bypassCookieValue != null && bypassCookieValue.length() > 368) {
                         setStatus("Please wait, solving proof of work... This can take a few minutes.");
                         runPowAndValidate(captchaId, bypassCookieValue);
                         return;
                     }
 
-                    // Short bypass cookie or non-8chan -- treat as direct success.
+                    // Short bypass cookie or non-hashcash site -> treat as direct success.
                     storeCookiesFromResponse(resp);
                     org.otacoo.chan.core.site.sites.chan8.Chan8PowNotifier.onPowSolved();
                     Logger.i(TAG, "Bypass set directly (no POW required)");

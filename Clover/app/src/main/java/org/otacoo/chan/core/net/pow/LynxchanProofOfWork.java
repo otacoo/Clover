@@ -9,9 +9,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /**
- * PBKDF2-SHA512 proof-of-work used by Lynxchan sites that have the hashcash addon enabled.
- * NOT used for 8chan — 8chan's block bypass uses an image captcha submitted to /blockBypass.js.
- * Kept for potential future support of other Lynxchan sites.
+ * PBKDF2-SHA512 proof-of-work used by Lynxchan sites (including 8chan) that have
+ * the hashcash addon enabled. After solving the captcha via renewBypass.js, the
+ * server issues a bypass cookie embedding a PBKDF2-SHA512 challenge. This solver
+ * finds the iteration that reproduces the target hash, which is then submitted
+ * to validateBypass.js to activate the bypass.
  */
 public class LynxchanProofOfWork {
     private final String bypass;
@@ -43,7 +45,7 @@ public class LynxchanProofOfWork {
                 exec.submit(() -> {
                     try {
                         SecretKeyFactory secretFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-                        final int length = 256 * 8;
+                        final int length = targetHash.length * 8;
                         final int iter = 16384;
                         char[] sessionArray = session.toCharArray();
                         long iteration = index;
