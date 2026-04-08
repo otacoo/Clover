@@ -263,7 +263,7 @@ public class WatchManager {
 
         updateState();
 
-        EventBus.getDefault().post(new PinChangedMessage(pin));
+        postPinChanged(pin);
     }
 
     public Pin findPinByLoadable(Loadable other) {
@@ -320,7 +320,7 @@ public class WatchManager {
         pin.watching = !pin.watching;
 
         updateState();
-        EventBus.getDefault().post(new PinChangedMessage(pin));
+        postPinChanged(pin);
     }
 
     public void onPostSeen(Pin pin, int postNo) {
@@ -332,7 +332,7 @@ public class WatchManager {
 
         updatePin(pin);
         // Immediately notify of the change
-        EventBus.getDefault().post(new PinChangedMessage(pin));
+        postPinChanged(pin);
     }
 
     public void onBottomPostViewed(Pin pin) {
@@ -352,7 +352,7 @@ public class WatchManager {
 
         updatePin(pin);
         // Immediately notify of the change
-        EventBus.getDefault().post(new PinChangedMessage(pin));
+        postPinChanged(pin);
     }
 
     // Called when the app changes foreground state
@@ -397,7 +397,7 @@ public class WatchManager {
         List<Pin> allPins = getAllPins();
         for (int i = 0; i < allPins.size(); i++) {
             Pin pin = allPins.get(i);
-            EventBus.getDefault().post(new PinChangedMessage(pin));
+            postPinChanged(pin);
         }
     }
 
@@ -456,7 +456,7 @@ public class WatchManager {
         List<Pin> pins = getAllPins();
         for (int i = 0; i < pins.size(); i++) {
             Pin pin = pins.get(i);
-            EventBus.getDefault().post(new PinChangedMessage(pin));
+            postPinChanged(pin);
         }
     }
 
@@ -466,7 +466,7 @@ public class WatchManager {
         List<Pin> pins = getAllPins();
         for (int i = 0; i < pins.size(); i++) {
             Pin pin = pins.get(i);
-            EventBus.getDefault().post(new PinChangedMessage(pin));
+            postPinChanged(pin);
         }
     }
 
@@ -632,7 +632,7 @@ public class WatchManager {
         for (Pin pin: getWatchingPins()) {
             PinWatcher pinWatcher = getPinWatcher(pin);
             if (pinWatcher != null && pinWatcher.update(true)) {
-                EventBus.getDefault().post(new PinChangedMessage(pin));
+                postPinChanged(pin);
             }
         }
     }
@@ -661,7 +661,7 @@ public class WatchManager {
                 Pin pin = watchingPins.get(i);
                 PinWatcher pinWatcher = getPinWatcher(pin);
                 if (pinWatcher != null && pinWatcher.update(true)) {
-                    EventBus.getDefault().post(new PinChangedMessage(pin));
+                    postPinChanged(pin);
                     waitingForPinWatchersForBackgroundUpdate.add(pinWatcher);
                 }
             }
@@ -680,7 +680,7 @@ public class WatchManager {
                     PinWatcher pinWatcher = getPinWatcher(pin);
                     if (pinWatcher != null && pinWatcher.update(false)) {
                         // Defer so ThreadPresenter's onChanLoaderData runs first
-                        handler.post(() -> EventBus.getDefault().post(new PinChangedMessage(pin)));
+                        handler.post(() -> postPinChanged(pin));
                     }
                 }, (long) i * WATCHER_STAGGER_MS);
             }
@@ -690,7 +690,7 @@ public class WatchManager {
     private void pinWatcherUpdated(PinWatcher pinWatcher) {
         updateState();
         // Defer
-        handler.post(() -> EventBus.getDefault().post(new PinChangedMessage(pinWatcher.pin)));
+        handler.post(() -> postPinChanged(pinWatcher.pin));
 
         if (waitingForPinWatchersForBackgroundUpdate != null) {
             waitingForPinWatchersForBackgroundUpdate.remove(pinWatcher);
@@ -724,6 +724,13 @@ public class WatchManager {
                 }
                 wakeLock = null;
             }
+        }
+    }
+
+    // Post a PinChangedMessage only when there are active subscribers
+    private void postPinChanged(Pin pin) {
+        if (EventBus.getDefault().hasSubscriberForEvent(PinChangedMessage.class)) {
+            EventBus.getDefault().post(new PinChangedMessage(pin));
         }
     }
 
@@ -855,6 +862,9 @@ public class WatchManager {
         }
 
         private void onPostSeen(int postNo) {
+            int prevWatchLast = pin.watchLastCount;
+            int prevQuoteLast = pin.quoteLastCount;
+
             // Find post in posts list
             for (int i = 0; i < posts.size(); i++) {
                 if (posts.get(i).no == postNo) {
@@ -871,7 +881,10 @@ public class WatchManager {
                 }
             }
 
-            requireNotificationUpdate = true;
+            // This should prevent scrolling up/down from re-firing, only notify if the read cursor advanced.
+            if (pin.watchLastCount != prevWatchLast || pin.quoteLastCount != prevQuoteLast) {
+                requireNotificationUpdate = true;
+            }
         }
 
         private void updateData() {

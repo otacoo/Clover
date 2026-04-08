@@ -102,6 +102,8 @@ public class ThreadWatchNotifications extends NotificationHelper {
 
         builder.setSmallIcon(!mentions ?
                 R.drawable.ic_stat_notify : R.drawable.ic_stat_notify_alert);
+        // Prevent sound/vibrate when the notification is merely updated. Only the first firing alerts.
+        builder.setOnlyAlertOnce(true);
         if (mentions) {
             builder.setSubText("Mentions");
         }
