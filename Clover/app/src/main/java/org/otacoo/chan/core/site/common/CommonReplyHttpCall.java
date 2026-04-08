@@ -73,7 +73,7 @@ public abstract class CommonReplyHttpCall extends HttpCall {
 
     @Override
     public void process(Response response, String result) throws IOException {
-        Logger.i(TAG, "process: HTTP " + response.code() + " body(500)=" + (result != null ? result.substring(0, Math.min(result.length(), 500)).replace("\n", " ") : "null"));
+        // Logger.i(TAG, "process: HTTP " + response.code() + " body(500)=" + (result != null ? result.substring(0, Math.min(result.length(), 500)).replace("\n", " ") : "null"));
 
         // Check for captcha errors first — these require re-authentication, not a generic error
         String resultLower = result.toLowerCase(Locale.ENGLISH);
