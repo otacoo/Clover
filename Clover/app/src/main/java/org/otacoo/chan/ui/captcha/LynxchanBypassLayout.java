@@ -83,7 +83,18 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
         submitButton  = findViewById(R.id.lynxchan_captcha_submit);
         statusText    = findViewById(R.id.lynxchan_captcha_status);
 
+        // Create the spinning ↺ indicator used during POW (not in XML).
+        refreshButton = new Button(context, null, androidx.appcompat.R.attr.buttonBarButtonStyle);
+        refreshButton.setText("\u21BA");
+        refreshButton.setTextSize(18);
+        refreshButton.setMinWidth(0);
+        refreshButton.setMinimumWidth(0);
+        refreshButton.setPadding(AndroidUtils.dp(8), 0, AndroidUtils.dp(8), 0);
         refreshButton.setVisibility(GONE);
+        ((android.view.ViewGroup) submitButton.getParent())
+                .addView(refreshButton, ((android.view.ViewGroup) submitButton.getParent())
+                        .indexOfChild(submitButton));
+
         submitButton.setOnClickListener(v -> submit());
         captchaImage.setOnClickListener(v -> hardReset());
 
