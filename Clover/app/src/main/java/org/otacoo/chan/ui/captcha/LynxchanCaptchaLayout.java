@@ -51,6 +51,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
 
     private ImageView captchaImage;
     private EditText captchaInput;
+    private Button refreshButton;
     private Button submitButton;
     private TextView statusText;
 
@@ -76,6 +77,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
 
         captchaImage   = findViewById(R.id.lynxchan_captcha_image);
         captchaInput   = findViewById(R.id.lynxchan_captcha_input);
+        refreshButton  = findViewById(R.id.lynxchan_captcha_refresh);
         submitButton   = findViewById(R.id.lynxchan_captcha_submit);
         statusText     = findViewById(R.id.lynxchan_captcha_status);
 
