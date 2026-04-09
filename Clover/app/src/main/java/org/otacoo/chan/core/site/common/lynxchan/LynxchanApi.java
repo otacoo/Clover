@@ -229,7 +229,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
             // For catalog items, the image path is derived from the thumbnail by stripping
             // the "t_" prefix.  Thumbnails have no extension, so the derived path also lacks
             // one.  Append the known extension so the full-image URL resolves correctly.
-            if (imagePath != null && !ext.isEmpty()) {
+            // APNG images are currently served without extension on 8chan
+            boolean isApng = "image/apng".equals(standaloneMime);
+            if (imagePath != null && !ext.isEmpty() && !isApng) {
                 int dot   = imagePath.lastIndexOf('.');
                 int sl    = imagePath.lastIndexOf('/');
                 if (dot <= sl) imagePath = imagePath + "." + ext; // no extension yet
