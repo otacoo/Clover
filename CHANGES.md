@@ -1,3 +1,15 @@
+## 2026-04-08 – v3.3.19
+
+- Improve Clover's cache handling
+- Fix an issue where the Thread Watcher notifications were firing every time the user scrolled through a thread (issue #19)
+#### **8chan:**
+- Improve the layout and descriptions for the 8chan captchas so it better differentiates proof-of-work from per-post captcha layout
+- Improve the feedback when the captcha fails as well as layout descriptions
+- Tapping the captcha image or reloading the layout will now correctly fetch a new captcha image
+- Fix a bypass cookie issue introduced last version that prevented posting on 8chan (issue #18)
+
+Thank you @T-W-A-I-N
+
 ## 2026-04-08 – v3.3.18
 
 - Update proof-of-work captcha after 8chan changes
