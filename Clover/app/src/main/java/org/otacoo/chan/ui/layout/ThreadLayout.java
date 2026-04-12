@@ -658,7 +658,14 @@ public class ThreadLayout extends CoordinatorLayout implements
                         databaseManager.getDatabaseHideManager().removeThreadHide(threadHide));
                 presenter.refreshUI();
             }
-        }).show();
+        });
+        if (ChanSettings.toolbarBottom.get()) {
+            View snackbarView = snackbar.getView();
+            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) snackbarView.getLayoutParams();
+            params.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
+            snackbarView.setLayoutParams(params);
+        }
+        snackbar.show();
         fixSnackbarText(getContext(), snackbar);
     }
 
@@ -688,6 +695,13 @@ public class ThreadLayout extends CoordinatorLayout implements
                     }
                 }
             });
+            if (ChanSettings.toolbarBottom.get()) {
+                View snackbarView = newPostsNotification.getView();
+                CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) snackbarView.getLayoutParams();
+                params.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
+                snackbarView.setLayoutParams(params);
+                newPostsNotification.setAnimationMode(Snackbar.ANIMATION_MODE_FADE);
+            }
             newPostsNotification.show();
             fixSnackbarText(getContext(), newPostsNotification);
         } else {
