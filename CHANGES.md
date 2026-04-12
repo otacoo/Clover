@@ -1,3 +1,17 @@
+## 2026-04-12 – v3.3.20
+
+- Slighty adjusted the values of the top/bottom buttons to more rapidly respond to direction changes
+- Fix an issue where the keyboard wasn't being shown automatically in thread views when doing a search (issue #20)
+- New post snackbars will now show at the top of the thread when using the bottom toolbar option instead of being hidden behind the toolbar (issue #20)
+- Remove the overboard /kaitensushi/ for Sushichan
+#### 8chan:
+- The captcha layouts will now allow browsing while doing the captcha instead of taking up the whole screen
+- Adjust the captcha layouts when using the bottom toolbar
+- Fix certain APNG images not loading in catalog/thread view due to being served as "image/png" MIME type
+- Fix text spoilers revealing their contents when used within a greentext
+
+Thank you @tetra65
+
 ## 2026-04-08 – v3.3.19
 
 - Improve Clover's cache handling
