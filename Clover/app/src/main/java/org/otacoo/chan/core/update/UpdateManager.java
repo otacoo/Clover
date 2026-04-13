@@ -237,10 +237,7 @@ public class UpdateManager {
         installApk(new Install(installFile));
     }
 
-    private void installApk(Install install) {
-        // First open the dialog that asks to retry and calls this method again.
-        callback.openUpdateRetryDialog(install);
-
+    private void installApk(final Install install) {
         Context context = AndroidUtils.getAppContext();
         if (install.installFile == null || !install.installFile.exists()) {
             Logger.e(TAG, "installApk: file does not exist");
@@ -251,13 +248,21 @@ public class UpdateManager {
                 BuildConfig.APPLICATION_ID + ".fileprovider",
                 install.installFile);
 
-        // Then launch the APK install intent.
+        // First launch the APK install intent.
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
 
         callback.onUpdateOpenInstallScreen(intent);
+
+        // Then open the dialog that asks to retry and calls this method again.
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                callback.openUpdateRetryDialog(install);
+            }
+        }, 500);
     }
 
     public static class Update {
