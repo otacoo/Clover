@@ -126,7 +126,10 @@ public class ThreadLayout extends CoordinatorLayout implements
     private boolean showingReplyButton = false;
     private boolean showingTopBottomButtons = false;
     private int accumulatedScroll = 0;
-    private Snackbar newPostsNotification;
+    private View newPostsBar;
+    private TextView newPostsText;
+    private static final int NEW_POSTS_DISMISS_DELAY_MS = 3500;
+    private final Runnable dismissNewPostsRunnable = () -> showNewPostsNotification(false, -1);
 
     private final Runnable hideTopBottomRunnable = () -> showTopBottomButtons(false, false);
     private Runnable updateTopBottomDirectionRunnable = null;
@@ -202,11 +205,37 @@ public class ThreadLayout extends CoordinatorLayout implements
             updateTopBottomDrawables();
         }
 
+        // New posts notification bar
+        newPostsBar = findViewById(R.id.new_posts_notification);
+        newPostsText = newPostsBar.findViewById(R.id.new_posts_text);
+        newPostsBar.findViewById(R.id.new_posts_action).setOnClickListener(v -> {
+            showNewPostsNotification(false, -1);
+            presenter.onNewPostsViewClicked();
+        });
+
+        // On large screens constrain width + add margins + rounding to match native snackbar more closely
+        if (getResources().getConfiguration().smallestScreenWidthDp >= 600) {
+            CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
+            barLp.width = dp(480);
+            barLp.leftMargin = dp(12);
+            barLp.bottomMargin = dp(0);
+            newPostsBar.setLayoutParams(barLp);
+
+            android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+            bg.setColor(0xFF323232);
+            bg.setCornerRadius(dp(3));
+            newPostsBar.setBackground(bg);
+        }
+
         if (ChanSettings.toolbarBottom.get()) {
             int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
             CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
             containerLp.bottomMargin += toolbarH;
             fabContainer.setLayoutParams(containerLp);
+
+            CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
+            barLp.bottomMargin += toolbarH;
+            newPostsBar.setLayoutParams(barLp);
         }
 
         presenter.create(this);
@@ -222,6 +251,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     public void destroy() {
         presenter.unbindLoadable();
         removeCallbacks(hideTopBottomRunnable);
+        removeCallbacks(dismissNewPostsRunnable);
     }
 
     @Override
@@ -667,42 +697,22 @@ public class ThreadLayout extends CoordinatorLayout implements
     @Override
     public void showNewPostsNotification(boolean show, int more) {
         if (show) {
-            if (newPostsNotification != null) {
-                newPostsNotification.dismiss();
-                newPostsNotification = null;
-            }
             String text = getContext().getResources()
                     .getQuantityString(R.plurals.thread_new_posts, more, more);
-
-            newPostsNotification = Snackbar.make(this, text, Snackbar.LENGTH_LONG);
-            newPostsNotification.setAction(R.string.thread_new_posts_goto, new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    newPostsNotification = null;
-                    presenter.onNewPostsViewClicked();
-                }
-            });
-            newPostsNotification.addCallback(new Snackbar.Callback() {
-                @Override
-                public void onDismissed(Snackbar sb, int event) {
-                    if (newPostsNotification == sb) {
-                        newPostsNotification = null;
-                    }
-                }
-            });
-            if (ChanSettings.toolbarBottom.get()) {
-                View snackbarView = newPostsNotification.getView();
-                CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) snackbarView.getLayoutParams();
-                params.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
-                snackbarView.setLayoutParams(params);
-                newPostsNotification.setAnimationMode(Snackbar.ANIMATION_MODE_FADE);
-            }
-            newPostsNotification.show();
-            fixSnackbarText(getContext(), newPostsNotification);
+            newPostsText.setText(text);
+            newPostsBar.animate().cancel();
+            newPostsBar.setVisibility(View.VISIBLE);
+            newPostsBar.setAlpha(1f);
+            removeCallbacks(dismissNewPostsRunnable);
+            postDelayed(dismissNewPostsRunnable, NEW_POSTS_DISMISS_DELAY_MS);
         } else {
-            if (newPostsNotification != null) {
-                newPostsNotification.dismiss();
-                newPostsNotification = null;
+            removeCallbacks(dismissNewPostsRunnable);
+            if (newPostsBar.getVisibility() == View.VISIBLE) {
+                newPostsBar.animate()
+                        .alpha(0f)
+                        .setDuration(200)
+                        .withEndAction(() -> newPostsBar.setVisibility(View.GONE))
+                        .start();
             }
         }
     }
@@ -767,10 +777,25 @@ public class ThreadLayout extends CoordinatorLayout implements
                     .scaleY(show ? 1f : 0f)
                     .setListener(new AnimatorListenerAdapter() {
                         @Override
+                        public void onAnimationStart(Animator animation) {
+                            if (show) {
+                                replyButton.setVisibility(View.VISIBLE);
+                            }
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            if (!show) {
+                                replyButton.setVisibility(View.GONE);
+                            }
+                        }
+
+                        @Override
                         public void onAnimationCancel(Animator animation) {
                             replyButton.setAlpha(show ? 1f : 0f);
                             replyButton.setScaleX(show ? 1f : 0f);
                             replyButton.setScaleY(show ? 1f : 0f);
+                            replyButton.setVisibility(show ? View.VISIBLE : View.GONE);
                         }
                     })
                     .start();
@@ -847,10 +872,10 @@ public class ThreadLayout extends CoordinatorLayout implements
                         showSearch(false);
                         showReplyButton(false);
                         showTopBottomButtons(false, false);
-                        if (newPostsNotification != null) {
-                            newPostsNotification.dismiss();
-                            newPostsNotification = null;
-                        }
+                        removeCallbacks(dismissNewPostsRunnable);
+                        newPostsBar.animate().cancel();
+                        newPostsBar.setVisibility(View.GONE);
+                        newPostsBar.setAlpha(1f);
                         break;
                 }
             }
