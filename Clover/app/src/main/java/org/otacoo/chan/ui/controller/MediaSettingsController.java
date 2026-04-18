@@ -1,6 +1,6 @@
 /*
  * Clover - 4chan browser https://github.com/Floens/Clover/
- * Copyright (C) 2014  Floens 
+ * Copyright (C) 2014  Floens
  * Copyright (C) 2026  otacoo https://github.com/otacoo/Clover/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -130,7 +130,7 @@ public class MediaSettingsController extends SettingsController implements
             media.add(new ListSettingView<>(this,
                     ChanSettings.saveAlbumFolder,
                     R.string.setting_save_album_folder, createDestinationFolderList()));
-            
+
             attachmentPickerDefault = (LinkSettingView) media.add(new LinkSettingView(this,
                     getString(R.string.setting_attachment_picker_default),
                     getAttachmentPickerDescription(),
@@ -189,9 +189,15 @@ public class MediaSettingsController extends SettingsController implements
             for (ChanSettings.Vp9ExtensionMode mode : ChanSettings.Vp9ExtensionMode.values()) {
                 int name = 0;
                 switch (mode) {
-                    case DEFAULT: name = R.string.setting_vp9_extension_mode_default; break;
-                    case PREFER: name = R.string.setting_vp9_extension_mode_prefer; break;
-                    case OFF: name = R.string.setting_vp9_extension_mode_off; break;
+                    case DEFAULT:
+                        name = R.string.setting_vp9_extension_mode_default;
+                        break;
+                    case PREFER:
+                        name = R.string.setting_vp9_extension_mode_prefer;
+                        break;
+                    case OFF:
+                        name = R.string.setting_vp9_extension_mode_off;
+                        break;
                 }
                 vp9ExtModes.add(new ListSettingView.Item<>(getString(name), mode));
             }
@@ -248,13 +254,13 @@ public class MediaSettingsController extends SettingsController implements
                 videoAutoLoadTypes);
         loading.add(videoAutoLoadView);
 
-loadFullSizeThumbnailsView = new BooleanSettingView(this,
-                    ChanSettings.loadFullSizeThumbnails,
-                    R.string.setting_load_full_size_thumbnails,
-                    R.string.setting_load_full_size_thumbnails_description);
+        loadFullSizeThumbnailsView = new BooleanSettingView(this,
+                ChanSettings.loadFullSizeThumbnails,
+                R.string.setting_load_full_size_thumbnails,
+                R.string.setting_load_full_size_thumbnails_description);
         loading.add(loadFullSizeThumbnailsView);
 
-            updateVideoLoadModes();
+        updateVideoLoadModes();
     }
 
     private void updateVideoLoadModes() {
