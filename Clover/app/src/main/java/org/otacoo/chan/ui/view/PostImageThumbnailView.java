@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.PostImage;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
 
 public class PostImageThumbnailView extends ThumbnailView implements View.OnLongClickListener {
@@ -60,7 +61,14 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
             this.postImage = postImage;
 
             if (postImage != null) {
-                setUrl(postImage.getThumbnailUrl().toString(), width, height);
+                boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get()
+                        && postImage.imageUrl != null
+                        && postImage.type != PostImage.Type.MOVIE
+                        && postImage.type != PostImage.Type.SWF;
+                String url = useFullSize
+                        ? postImage.imageUrl.toString()
+                        : postImage.getThumbnailUrl().toString();
+                setUrl(url, width, height);
             } else {
                 setUrl(null, width, height);
             }

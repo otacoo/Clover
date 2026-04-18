@@ -685,6 +685,9 @@ If disabled, save the image with the filename the uploader assigned."
 
     <string name="setting_video_auto_load">Automatically load videos</string>
 
+    <string name="setting_load_full_size_thumbnails">Load full size thumbnails</string>
+    <string name="setting_load_full_size_thumbnails_description">Enabling will replace thumbnails with their full size versions. This option can slow down the app or trigger rate limits. It will override the option above.</string>
+
     <!-- Media Video section -->
     <string name="settings_group_media_video">Video Player</string>
     <string name="setting_video_timeout">Player controls timeout</string>

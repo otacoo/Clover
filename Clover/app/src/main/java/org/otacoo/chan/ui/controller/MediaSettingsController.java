@@ -19,16 +19,12 @@
 package org.otacoo.chan.ui.controller;
 
 import static org.otacoo.chan.Chan.inject;
-import static org.otacoo.chan.utils.AndroidUtils.dp;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import org.otacoo.chan.R;
@@ -60,6 +56,7 @@ public class MediaSettingsController extends SettingsController implements
     private LinkSettingView attachmentPickerDefault;
     private ListSettingView<ChanSettings.MediaAutoLoadMode> imageAutoLoadView;
     private ListSettingView<ChanSettings.MediaAutoLoadMode> videoAutoLoadView;
+    private BooleanSettingView loadFullSizeThumbnailsView;
 
     public MediaSettingsController(Context context) {
         super(context);
@@ -80,6 +77,7 @@ public class MediaSettingsController extends SettingsController implements
         buildPreferences();
 
         onPreferenceChange(imageAutoLoadView);
+        onPreferenceChange(loadFullSizeThumbnailsView);
 
         presenter.create(this);
     }
@@ -104,6 +102,11 @@ public class MediaSettingsController extends SettingsController implements
 
         if (item == imageAutoLoadView) {
             updateVideoLoadModes();
+        }
+
+        if (item == loadFullSizeThumbnailsView) {
+            boolean fullSize = ChanSettings.loadFullSizeThumbnails.get();
+            imageAutoLoadView.setEnabled(!fullSize);
         }
     }
 
@@ -245,7 +248,13 @@ public class MediaSettingsController extends SettingsController implements
                 videoAutoLoadTypes);
         loading.add(videoAutoLoadView);
 
-        updateVideoLoadModes();
+loadFullSizeThumbnailsView = new BooleanSettingView(this,
+                    ChanSettings.loadFullSizeThumbnails,
+                    R.string.setting_load_full_size_thumbnails,
+                    R.string.setting_load_full_size_thumbnails_description);
+        loading.add(loadFullSizeThumbnailsView);
+
+            updateVideoLoadModes();
     }
 
     private void updateVideoLoadModes() {

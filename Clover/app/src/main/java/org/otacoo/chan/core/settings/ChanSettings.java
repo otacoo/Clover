@@ -197,6 +197,7 @@ public class ChanSettings {
     public static final BooleanSetting videoOpenExternal;
     public static final BooleanSetting textOnly;
     public static final BooleanSetting videoErrorIgnore;
+    public static final BooleanSetting loadFullSizeThumbnails;
     public static final OptionsSetting<PostViewMode> boardViewMode;
     public static final IntegerSetting boardGridSpanCount;
     public static final StringSetting boardOrder;
@@ -307,6 +308,7 @@ public class ChanSettings {
         videoOpenExternal = new BooleanSetting(p, "preference_video_external", false);
         textOnly = new BooleanSetting(p, "preference_text_only", false);
         videoErrorIgnore = new BooleanSetting(p, "preference_video_error_ignore", false);
+        loadFullSizeThumbnails = new BooleanSetting(p, "preference_load_full_size_thumbnails", false);
         boardViewMode = new OptionsSetting<>(p, "preference_board_view_mode", PostViewMode.class, PostViewMode.CARD);
         boardGridSpanCount = new IntegerSetting(p, "preference_board_grid_span_count", 0);
         boardOrder = new StringSetting(p, "preference_board_order", PostsFilter.Order.BUMP.name);
