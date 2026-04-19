@@ -1,3 +1,10 @@
+## 2026-04-19 – v3.3.22
+
+- **New option:** Load full size thumbnails (Media > media loading)
+- **New option:** Show/hide image info (Gallery)
+- **New feature:** Skip 4chan pass. Holding the submit button for 2 seconds allows the user to bypass/pause their 4chan pass for that post.
+- Small code fixes
+
 ## 2026-04-13 – v3.3.21
 
 - **New option:** Tap the quotelink span to open
