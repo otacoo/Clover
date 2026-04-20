@@ -1,3 +1,13 @@
+## 2026-04-20 – v3.3.23
+
+- **New option:** Pick Auto (System) themes
+  - The burger menu for the Auto (System) theme will now allow the user to pick which theme they want to use for day/night time
+- The Black theme can now be picked as base when creating a new theme
+- Fix a bug with with the file picker only allowing to pick images instead of all media types
+- User posts will no longer count towards the unread count (issue #20)
+
+Thank you @tetra65
+
 ## 2026-04-19 – v3.3.22
 
 - **New option:** Load full size thumbnails (Media > media loading)
