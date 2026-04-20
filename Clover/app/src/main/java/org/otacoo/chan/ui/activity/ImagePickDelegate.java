@@ -167,8 +167,7 @@ public class ImagePickDelegate implements Runnable {
         Map<ComponentName, PickerTarget> seen = new LinkedHashMap<>();
 
         Intent galleryProbe = new Intent(Intent.ACTION_PICK,
-                MediaStore.Files.getContentUri("external"));
-        galleryProbe.setType("*/*");
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         for (ResolveInfo ri : pm.queryIntentActivities(galleryProbe, 0)) {
             ComponentName cn = new ComponentName(
                     ri.activityInfo.packageName, ri.activityInfo.name);
