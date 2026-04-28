@@ -183,10 +183,13 @@ public class AlbumViewController extends Controller implements
     }
 
     private void openImage(AlbumItemCellHolder albumItemCellHolder, PostImage postImage) {
-        final ImageViewerNavigationController imageViewerNavigationController = new ImageViewerNavigationController(context);
-        int index = postImages.indexOf(postImage);
-        presentController(imageViewerNavigationController, false);
-        imageViewerNavigationController.showImages(postImages, index, loadable, this, this);
+        // Ignore the showImages request when the image is not loaded
+        if (albumItemCellHolder.thumbnailView.getBitmap() != null) {
+            final ImageViewerNavigationController imageViewerNavigationController = new ImageViewerNavigationController(context);
+            int index = postImages.indexOf(postImage);
+            presentController(imageViewerNavigationController, false);
+            imageViewerNavigationController.showImages(postImages, index, loadable, this, this);
+        }
     }
 
     private class AlbumAdapter extends RecyclerView.Adapter<AlbumItemCellHolder> {

@@ -369,6 +369,13 @@ public class ThumbnailView extends View {
                 getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
 
         if (error) {
+            // Render a gray background if there was an error.
+            if (circular) {
+                canvas.drawRoundRect(outputRect, width / 2.0f, height / 2.0f, backgroundPaint);
+            } else {
+                canvas.drawRoundRect(outputRect, rounding, rounding, backgroundPaint);
+            }
+
             // Render a simple text if there was an error.
             canvas.save();
 

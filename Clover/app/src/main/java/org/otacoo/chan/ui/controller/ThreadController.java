@@ -171,7 +171,7 @@ public abstract class ThreadController extends Controller implements
 
     @Override
     public void showImages(List<PostImage> images, int index, Loadable loadable, final ThumbnailView thumbnail) {
-        if (!isAlreadyPresenting()) {
+        if (thumbnail.getBitmap() != null && !isAlreadyPresenting()) {
             final ImageViewerNavigationController imageViewerNavigationController = new ImageViewerNavigationController(context);
             presentController(imageViewerNavigationController, false);
             imageViewerNavigationController.showImages(images, index, loadable, this);
