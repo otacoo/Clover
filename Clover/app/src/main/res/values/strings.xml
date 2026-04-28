@@ -281,8 +281,8 @@ If the pattern matches then the post can be hidden, highlighted or watched.<br>
     3. Regular expressions. <tt>/^>implying/</tt> for example.
 </p>
 <h4>For Watch post action:</h4>
-<p>This option will watch (or pin) a thread if it matches the filter.
-Triggers when the catalog refreshes and *only* works for Comment types of filters.
+<p>This option will watch (pin) a thread if it matches the filter.
+Triggers when the catalog refreshes and *only* works for Comment and Subject types of filters.
 If any other filters are enabled for it, it will not work.
 </p>
 ]]>
