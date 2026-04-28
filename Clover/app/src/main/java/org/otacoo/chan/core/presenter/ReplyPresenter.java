@@ -390,6 +390,12 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             return;
         }
 
+        if (!(loadable.site instanceof org.otacoo.chan.core.site.sites.chan4.Chan4)) {
+            // Not 4chan, just do normal submit
+            onSubmitClicked();
+            return;
+        }
+
         if (!loadable.site.actions().isLoggedIn()) {
             // Not logged in, just do normal submit
             onSubmitClicked();
