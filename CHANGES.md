@@ -1,3 +1,15 @@
+## 2026-05-01 – v3.3.24
+
+- **Album view:**
+  - Added a download button to the toolbar
+  - Fix a crash that would happen when downloading images into subfolders
+  - Improve the process for multi-image downloading so it doesn't lock up the app on download start
+
+- Add guardrails for when a thread is deleted or has stale info in the catalog (issue #23)
+- Skipping 4chan pass will now only work when browsing a 4chan thread
+- Streamline image loading when browsing threads so images don't fill up the Java heap rapidly whcih could cause garbage collection to trigger constantly or make the app crash
+- Fix a bug on certain devices where saving images didn't work (issue #25)
+
 ## 2026-04-20 – v3.3.23
 
 - **New option:** Pick Auto (System) themes

@@ -3,12 +3,12 @@
     "messages": [
         {
             "type": "update",
-            "code": 30323,
-            "date": "2026-04-20T00:00:00",
-            "message_html": "<h2>Clover v3.3.23 is available</h2>A new version of Clover is available.<br><br>See the <a href=\"https://github.com/otacoo/Clover/releases/tag/v3.3.23\">release notes</a> for details.",
+            "code": 30324,
+            "date": "2026-05-01T00:00:00",
+            "message_html": "<h2>Clover v3.3.24 is available</h2>A new version of Clover is available.<br><br>See the <a href=\"https://github.com/otacoo/Clover/releases/tag/v3.3.24\">release notes</a> for details.",
             "apk": {
                 "stable": {
-                    "url": "https://github.com/otacoo/Clover/releases/download/v3.3.23/Clover-v3.3.23.apk"
+                    "url": "https://github.com/otacoo/Clover/releases/download/v3.3.24/Clover-v3.3.24.apk"
                 }
             }
         }
