@@ -8,10 +8,12 @@ import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.utils.Logger;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Chan8PowInterceptor implements Interceptor {
     private static final String TAG = "Chan8PowInterceptor";
     private static final String POW_BYPASS_HEADER = "X-Clover-8chan-Bypass";
+    private static final int TIMEOUT = 30000;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
     private static volatile okhttp3.OkHttpClient nonRedirectClient = null;
 
@@ -64,6 +66,9 @@ public class Chan8PowInterceptor implements Interceptor {
             };
 
             nonRedirectClient = new okhttp3.OkHttpClient.Builder()
+                    .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+                    .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+                    .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                     .followRedirects(false)
                     .followSslRedirects(false)
                     .cookieJar(jar)
