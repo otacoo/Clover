@@ -316,7 +316,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         scrollView.addView(root);
 
         TextView predefinedText = new TextView(context);
-        predefinedText.setText("Choose a preset color:");
+        predefinedText.setText("Choose a color preset:");
         predefinedText.setPadding(0, 0, 0, dp(8));
         root.addView(predefinedText);
 
