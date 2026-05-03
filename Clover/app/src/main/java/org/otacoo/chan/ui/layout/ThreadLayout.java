@@ -230,7 +230,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         if (ChanSettings.toolbarBottom.get()) {
             int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
             CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
-            containerLp.bottomMargin += toolbarH;
+            containerLp.bottomMargin += toolbarH + dp(48);
             fabContainer.setLayoutParams(containerLp);
 
             CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
