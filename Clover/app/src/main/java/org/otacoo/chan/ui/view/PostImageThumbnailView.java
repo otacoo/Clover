@@ -62,7 +62,7 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
             this.postImage = postImage;
 
             if (postImage != null) {
-                boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get()
+                boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
                         && postImage.imageUrl != null
                         && postImage.type != PostImage.Type.MOVIE
                         && postImage.type != PostImage.Type.SWF;

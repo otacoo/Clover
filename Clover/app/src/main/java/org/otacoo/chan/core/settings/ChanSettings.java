@@ -60,6 +60,17 @@ public class ChanSettings {
         public String getKey() {
             return name;
         }
+
+        public boolean shouldLoad() {
+            if (this == NONE) {
+                return false;
+            } else if (this == WIFI) {
+                return org.otacoo.chan.utils.AndroidUtils.isConnected(1);
+            } else if (this == ALL) {
+                return true;
+            }
+            return false;
+        }
     }
 
     public enum PostViewMode implements OptionSettingItem {
@@ -199,7 +210,7 @@ public class ChanSettings {
     public static final BooleanSetting videoOpenExternal;
     public static final BooleanSetting textOnly;
     public static final BooleanSetting videoErrorIgnore;
-    public static final BooleanSetting loadFullSizeThumbnails;
+    public static final OptionsSetting<MediaAutoLoadMode> loadFullSizeThumbnails;
     public static final BooleanSetting hideAlbumImageInfo;
     public static final OptionsSetting<PostViewMode> boardViewMode;
     public static final IntegerSetting boardGridSpanCount;
@@ -314,7 +325,7 @@ public class ChanSettings {
         videoOpenExternal = new BooleanSetting(p, "preference_video_external", false);
         textOnly = new BooleanSetting(p, "preference_text_only", false);
         videoErrorIgnore = new BooleanSetting(p, "preference_video_error_ignore", false);
-        loadFullSizeThumbnails = new BooleanSetting(p, "preference_load_full_size_thumbnails", false);
+        loadFullSizeThumbnails = new OptionsSetting<>(p, "preference_load_full_size_thumbnails_mode", MediaAutoLoadMode.class, MediaAutoLoadMode.NONE);
         hideAlbumImageInfo = new BooleanSetting(p, "preference_hide_album_image_info", false);
         boardViewMode = new OptionsSetting<>(p, "preference_board_view_mode", PostViewMode.class, PostViewMode.CARD);
         boardGridSpanCount = new IntegerSetting(p, "preference_board_grid_span_count", 0);

@@ -56,7 +56,7 @@ public class MediaSettingsController extends SettingsController implements
     private LinkSettingView attachmentPickerDefault;
     private ListSettingView<ChanSettings.MediaAutoLoadMode> imageAutoLoadView;
     private ListSettingView<ChanSettings.MediaAutoLoadMode> videoAutoLoadView;
-    private BooleanSettingView loadFullSizeThumbnailsView;
+    private ListSettingView<ChanSettings.MediaAutoLoadMode> loadFullSizeThumbnailsView;
 
     public MediaSettingsController(Context context) {
         super(context);
@@ -105,8 +105,8 @@ public class MediaSettingsController extends SettingsController implements
         }
 
         if (item == loadFullSizeThumbnailsView) {
-            boolean fullSize = ChanSettings.loadFullSizeThumbnails.get();
-            imageAutoLoadView.setEnabled(!fullSize);
+            ChanSettings.MediaAutoLoadMode fullSizeMode = ChanSettings.loadFullSizeThumbnails.get();
+            imageAutoLoadView.setEnabled(fullSizeMode != ChanSettings.MediaAutoLoadMode.ALL);
         }
     }
 
@@ -239,10 +239,10 @@ public class MediaSettingsController extends SettingsController implements
                 videoAutoLoadTypes);
         loading.add(videoAutoLoadView);
 
-        loadFullSizeThumbnailsView = new BooleanSettingView(this,
+        loadFullSizeThumbnailsView = new ListSettingView<>(this,
                 ChanSettings.loadFullSizeThumbnails,
                 R.string.setting_load_full_size_thumbnails,
-                R.string.setting_load_full_size_thumbnails_description);
+                imageAutoLoadTypes);
         loading.add(loadFullSizeThumbnailsView);
 
         updateVideoLoadModes();

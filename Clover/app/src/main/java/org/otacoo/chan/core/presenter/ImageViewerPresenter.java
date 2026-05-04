@@ -393,7 +393,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
 
     private boolean imageAutoLoad(PostImage postImage) {
         // Auto load the image when it is cached
-        if (ChanSettings.loadFullSizeThumbnails.get()) {
+        if (shouldLoadForNetworkType(ChanSettings.loadFullSizeThumbnails.get())) {
             return true;
         }
         return fileCache.exists(postImage.imageUrl.toString()) || shouldLoadForNetworkType(ChanSettings.imageAutoLoadNetwork.get());
