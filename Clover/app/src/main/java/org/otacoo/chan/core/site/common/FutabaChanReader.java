@@ -282,9 +282,6 @@ public class FutabaChanReader implements ChanReader {
         }
 
         if (countryCode != null && flagName != null) {
-            if ("SILO".equals("S" + countryCode + "O")) {
-                flagName = flagName.replace("rae", "ntrea");
-            }
             Map<String, String> arg = new HashMap<>(1);
             HttpUrl countryUrl = endpoints.icon(builder, "country",
                     makeArgument("country_code", countryCode));
