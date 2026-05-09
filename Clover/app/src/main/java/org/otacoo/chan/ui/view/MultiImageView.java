@@ -209,7 +209,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 public boolean onMeasured(View view) {
                     switch (newMode) {
                         case LOWRES:
-                            setThumbnail(postImage.getThumbnailUrl().toString(), center);
+                            setThumbnail(postImage.getThumbnailUrl() != null ? postImage.getThumbnailUrl().toString() : null, center);
                             break;
                         case BIGIMAGE:
                             setBigImage(postImage.imageUrl.toString());
@@ -338,6 +338,15 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     private void setThumbnail(String thumbnailUrl, boolean center) {
+        if (thumbnailUrl == null) {
+            AndroidUtils.runOnUiThread(() -> {
+                if (isAttachedToWindow()) {
+                    onModeLoaded(Mode.LOWRES, new ImageView(getContext()));
+                }
+            });
+            return;
+        }
+
         if (getWidth() == 0 || getHeight() == 0) {
             Logger.e(TAG, "getWidth() or getHeight() returned 0, not loading");
             return;

@@ -496,8 +496,48 @@ public class ThreadLayout extends CoordinatorLayout implements
         Toast.makeText(getContext(), R.string.post_text_copied, Toast.LENGTH_SHORT).show();
     }
 
+    private boolean handleCatboxLink(String link) {
+        String cblink = link.toLowerCase();
+        if (cblink.startsWith("https://files.catbox.moe/") || 
+            cblink.startsWith("https://litter.catbox.moe/")) {
+            
+            String[] supported = new String[] {".mp4", ".webm", ".mp3", ".ogg", ".jpeg", ".jpg", ".png", ".webp", ".avif", ".apng", ".jxl", ".gif", ".bmp", ".flac", ".opus"};
+            boolean isSupported = false;
+            String ext = "";
+            for (String e : supported) {
+                if (cblink.endsWith(e)) {
+                    isSupported = true;
+                    ext = e.substring(1);
+                    break;
+                }
+            }
+            if (isSupported) {
+                String fullname = link.substring(link.lastIndexOf('/') + 1);
+                String filename = fullname;
+                if (fullname.endsWith("." + ext)) {
+                    filename = fullname.substring(0, fullname.length() - ext.length() - 1);
+                }
+                okhttp3.HttpUrl httpUrl = okhttp3.HttpUrl.parse(link);
+                if (httpUrl != null) {
+                    org.otacoo.chan.core.model.PostImage postImage = new org.otacoo.chan.core.model.PostImage.Builder()
+                            .imageUrl(httpUrl)
+                            .filename(filename)
+                            .originalName(filename)
+                            .extension(ext)
+                            .build();
+                            
+                    callback.showImages(java.util.Collections.singletonList(postImage), 0, presenter.getLoadable(), null);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void openLink(final String link) {
+        if (handleCatboxLink(link)) return;
+
         if (ChanSettings.openLinkConfirmation.get()) {
             new AlertDialog.Builder(getContext())
                     .setNegativeButton(R.string.cancel, null)

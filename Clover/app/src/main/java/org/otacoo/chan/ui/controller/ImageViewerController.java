@@ -524,59 +524,63 @@ public class ImageViewerController extends Controller implements ImageViewerPres
                 }
             });
 
-            Bitmap cached = ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString());
+            Bitmap cached = postImage.getThumbnailUrl() != null ? ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString()) : null;
             if (cached != null) {
                 previewImage.setBitmap(cached);
                 startAnimation.start();
                 return;
             }
 
-            Request request = new Request.Builder().url(postImage.getThumbnailUrl().toString()).build();
-            inTransitionCall = okHttpClient.newCall(request);
-            inTransitionCall.enqueue(new Callback() {
-                @Override
-                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    inTransitionCall = null;
-                    Log.e(TAG, "onFailure for preview in transition", e);
-                    AndroidUtils.runOnUiThread(() -> {
-                        if (alive && startAnimation != null) {
-                            startAnimation.start();
-                        }
-                    });
-                }
-
-                @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    try (response) {
-                        if (response.isSuccessful()) {
-                            try (ResponseBody body = response.body()) {
-                                if (body != null) {
-                                    Bitmap bitmap;
-                                    try (java.io.InputStream stream = body.byteStream()) {
-                                        bitmap = BitmapFactory.decodeStream(stream);
-                                    }
-                                    if (bitmap != null) {
-                                        AndroidUtils.runOnUiThread(() -> {
-                                            if (alive && startAnimation != null) {
-                                                previewImage.setBitmap(bitmap);
-                                                startAnimation.start();
-                                            }
-                                        });
-                                        return;
-                                    }
-                                }
-                            }
-                        }
+            if (postImage.getThumbnailUrl() != null) {
+                Request request = new Request.Builder().url(postImage.getThumbnailUrl().toString()).build();
+                inTransitionCall = okHttpClient.newCall(request);
+                inTransitionCall.enqueue(new Callback() {
+                    @Override
+                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                        inTransitionCall = null;
+                        Log.e(TAG, "onFailure for preview in transition", e);
                         AndroidUtils.runOnUiThread(() -> {
                             if (alive && startAnimation != null) {
                                 startAnimation.start();
                             }
                         });
-                    } finally {
-                        inTransitionCall = null;
                     }
-                }
-            });
+
+                    @Override
+                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                        try (response) {
+                            if (response.isSuccessful()) {
+                                try (ResponseBody body = response.body()) {
+                                    if (body != null) {
+                                        Bitmap bitmap;
+                                        try (java.io.InputStream stream = body.byteStream()) {
+                                            bitmap = BitmapFactory.decodeStream(stream);
+                                        }
+                                        if (bitmap != null) {
+                                            AndroidUtils.runOnUiThread(() -> {
+                                                if (alive && startAnimation != null) {
+                                                    previewImage.setBitmap(bitmap);
+                                                    startAnimation.start();
+                                                }
+                                            });
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                            AndroidUtils.runOnUiThread(() -> {
+                                if (alive && startAnimation != null) {
+                                    startAnimation.start();
+                                }
+                            });
+                        } finally {
+                            inTransitionCall = null;
+                        }
+                    }
+                });
+            } else {
+                startAnimation.start();
+            }
         } else {
             Window window = getWindow();
             if (window != null) {
@@ -620,7 +624,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             adapter.pauseAll();
         }
 
-        Bitmap cached = ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString());
+        Bitmap cached = postImage.getThumbnailUrl() != null ? ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString()) : null;
         doPreviewOutAnimation(postImage, cached);
     }
 

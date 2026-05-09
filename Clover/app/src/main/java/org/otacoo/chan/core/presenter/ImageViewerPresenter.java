@@ -392,6 +392,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
     }
 
     private boolean imageAutoLoad(PostImage postImage) {
+        if (postImage.getThumbnailUrl() == null) return true;
         // Auto load the image when it is cached
         if (shouldLoadForNetworkType(ChanSettings.loadFullSizeThumbnails.get())) {
             return true;
@@ -400,6 +401,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
     }
 
     private boolean videoAutoLoad(PostImage postImage) {
+        if (postImage.getThumbnailUrl() == null) return true;
         return imageAutoLoad(postImage) && shouldLoadForNetworkType(ChanSettings.videoAutoLoadNetwork.get());
     }
 
