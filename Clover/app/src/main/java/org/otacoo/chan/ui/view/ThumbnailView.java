@@ -137,6 +137,16 @@ public class ThumbnailView extends View {
     private Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Rect tmpTextRect = new Rect();
 
+    public interface OnNetworkErrorListener {
+        void onNetworkError(int code);
+    }
+
+    private OnNetworkErrorListener onNetworkErrorListener;
+
+    public void setOnNetworkErrorListener(OnNetworkErrorListener onNetworkErrorListener) {
+        this.onNetworkErrorListener = onNetworkErrorListener;
+    }
+
     public ThumbnailView(Context context) {
         super(context);
         init();
@@ -228,10 +238,14 @@ public class ThumbnailView extends View {
                 }
 
                 if (!response.isSuccessful()) {
+                    final int code = response.code();
                     AndroidUtils.runOnUiThread(() -> {
                         error = true;
                         errorText = getString(R.string.thumbnail_load_failed_server);
                         onImageSet();
+                        if (onNetworkErrorListener != null) {
+                            onNetworkErrorListener.onNetworkError(code);
+                        }
                     });
                     response.close();
                     return;

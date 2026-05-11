@@ -251,9 +251,14 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
             newPosts.addAll(allPost);
         }
 
-        List<Post> allPosts = new ArrayList<>(cachedPosts.size() + newPosts.size());
-        allPosts.addAll(cachedPosts);
-        allPosts.addAll(newPosts);
+        List<Post> allPosts;
+        if (loadable.isThreadMode()) {
+            allPosts = new ArrayList<>(cachedPosts.size() + newPosts.size());
+            allPosts.addAll(cachedPosts);
+            allPosts.addAll(newPosts);
+        } else {
+            allPosts = new ArrayList<>(allPost);
+        }
 
         if (loadable.isThreadMode()) {
             Map<Integer, Post> postsByNo = new HashMap<>();

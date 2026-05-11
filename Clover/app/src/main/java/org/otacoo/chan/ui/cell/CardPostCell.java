@@ -153,6 +153,12 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         super.onAttachedToWindow();
 
         if (post != null && !bound) {
+            thumbnailView.setOnNetworkErrorListener(code -> {
+                if (code == 404 && post != null && !post.deleted.get()) {
+                    post.deleted.set(true);
+                    bindPost(theme, post);
+                }
+            });
             bindPost(theme, post);
         }
     }
@@ -177,6 +183,13 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         this.theme = theme;
         this.post = post;
         this.callback = callback;
+        
+        thumbnailView.setOnNetworkErrorListener(code -> {
+            if (code == 404 && this.post != null && !this.post.deleted.get()) {
+                this.post.deleted.set(true);
+                bindPost(this.theme, this.post);
+            }
+        });
 
         bindPost(theme, post);
 
@@ -200,6 +213,23 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
 
     private void bindPost(Theme theme, Post post) {
         bound = true;
+
+        if (post.deleted.get()) {
+            thumbnailView.setVisibility(View.GONE);
+            options.setVisibility(View.GONE);
+            filterMatchColor.setVisibility(View.GONE);
+            replies.setVisibility(View.GONE);
+            icons.setVisibility(View.GONE);
+            title.setVisibility(View.VISIBLE);
+            title.setText(R.string.post_deleted_title);
+            comment.setVisibility(View.VISIBLE);
+            comment.setText(getContext().getString(R.string.post_deleted_comment));
+            return;
+        }
+
+        options.setVisibility(View.VISIBLE);
+        replies.setVisibility(View.VISIBLE);
+        icons.setVisibility(View.VISIBLE);
 
         if (post.image() != null && !ChanSettings.textOnly.get()) {
             thumbnailView.setVisibility(View.VISIBLE);
