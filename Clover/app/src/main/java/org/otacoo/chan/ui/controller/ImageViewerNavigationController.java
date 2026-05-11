@@ -46,6 +46,15 @@ public class ImageViewerNavigationController extends ToolbarNavigationController
         nav.setSwipeEnabled(false);
         toolbar = view.findViewById(R.id.toolbar);
         toolbar.setCallback(this);
+
+        if (org.otacoo.chan.core.settings.ChanSettings.toolbarBottom.get()) {
+            android.widget.FrameLayout.LayoutParams lp =
+                    (android.widget.FrameLayout.LayoutParams) toolbar.getLayoutParams();
+            lp.gravity = android.view.Gravity.BOTTOM;
+            toolbar.setLayoutParams(lp);
+            toolbar.setElevation(0f);
+            toolbar.setAtBottom(true);
+        }
     }
 
     public void showImages(final List<PostImage> images, final int index, final Loadable loadable,

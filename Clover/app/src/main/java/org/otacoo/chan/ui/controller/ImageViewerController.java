@@ -201,19 +201,24 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
     private void updateViewMargins() {
         if (view == null) return;
-        boolean immersive = ChanSettings.useImmersiveModeForGallery.get();
-        int topMargin = immersive ? 0 : toolbar.getToolbarHeight();
+        boolean immersive = org.otacoo.chan.core.settings.ChanSettings.useImmersiveModeForGallery.get();
+        boolean bottom = org.otacoo.chan.core.settings.ChanSettings.toolbarBottom.get();
+        int margin = immersive ? 0 : toolbar.getToolbarHeight();
         
-        setTopMargin(previewImage, topMargin);
-        setTopMargin(pager, topMargin);
-        setTopMargin(loadingBar, topMargin);
+        int topMargin = bottom ? 0 : margin;
+        int bottomMargin = bottom ? margin : 0;
+
+        setMargins(previewImage, topMargin, bottomMargin);
+        setMargins(pager, topMargin, bottomMargin);
+        setMargins(loadingBar, topMargin, bottomMargin);
     }
 
-    private void setTopMargin(View v, int margin) {
+    private void setMargins(View v, int topMargin, int bottomMargin) {
         if (v == null) return;
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) v.getLayoutParams();
-        if (params.topMargin != margin) {
-            params.topMargin = margin;
+        if (params.topMargin != topMargin || params.bottomMargin != bottomMargin) {
+            params.topMargin = topMargin;
+            params.bottomMargin = bottomMargin;
             v.setLayoutParams(params);
         }
     }
