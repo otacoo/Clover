@@ -282,10 +282,12 @@ public class ThumbnailView extends View {
                             onImageSet();
                         });
                     }
-                } catch (IOException e) {
-                    if (!call.isCanceled()) {
-                        throw e;
-                    }
+                } catch (Exception e) {
+                    AndroidUtils.runOnUiThread(() -> {
+                        error = true;
+                        errorText = getString(R.string.thumbnail_load_failed_network);
+                        onImageSet();
+                    });
                 }
             }
         });
