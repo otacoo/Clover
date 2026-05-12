@@ -497,6 +497,10 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     private boolean handleCatboxLink(String link) {
+        if (!ChanSettings.loadExternalMediaLinks.get()) {
+            return false;
+        }
+
         String cblink = link.toLowerCase();
         if (cblink.startsWith("https://files.catbox.moe/") || 
             cblink.startsWith("https://litter.catbox.moe/")) {

@@ -245,6 +245,11 @@ public class MediaSettingsController extends SettingsController implements
                 imageAutoLoadTypes);
         loading.add(loadFullSizeThumbnailsView);
 
+        loading.add(new BooleanSettingView(this,
+            ChanSettings.loadExternalMediaLinks,
+            R.string.setting_load_external_media_links,
+            R.string.setting_load_external_media_links_description));
+
         updateVideoLoadModes();
     }
 

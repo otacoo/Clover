@@ -693,6 +693,8 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_video_auto_load">Automatically load videos</string>
 
     <string name="setting_load_full_size_thumbnails">Load full size thumbnails</string>
+    <string name="setting_load_external_media_links">Load external media links</string>
+    <string name="setting_load_external_media_links_description">Enabling will make external media files (images, video or audio) open within the app, e.g. Catbox</string>
 
     <!-- Media Video section -->
     <string name="settings_group_media_video">Video Player</string>
