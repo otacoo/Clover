@@ -201,8 +201,14 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         lastSeenIndicatorPosition = newLastSeen;
 
-        // Update all, recyclerview will figure out all the animations
-        notifyDataSetChanged();
+        RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+        if (animator != null) {
+            recyclerView.setItemAnimator(null);
+            notifyDataSetChanged();
+            recyclerView.post(() -> recyclerView.setItemAnimator(animator));
+        } else {
+            notifyDataSetChanged();
+        }
     }
 
     public List<Post> getDisplayList() {
