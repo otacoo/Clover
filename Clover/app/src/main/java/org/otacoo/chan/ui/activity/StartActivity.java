@@ -373,7 +373,8 @@ public class StartActivity extends AppCompatActivity implements
     }
 
     public void restart() {
-        Intent intent = getIntent();
+        Intent intent = new Intent(getIntent());
+        intent.setClass(this, StartActivity.class);
         finish();
         startActivity(intent);
     }
