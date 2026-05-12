@@ -296,11 +296,13 @@ public class ImageViewerController extends Controller implements ImageViewerPres
     }
 
     private void setOrientation(ToolbarMenuSubItem item) {
-        getOrientationMenu().show();
+        ToolbarMenuItem overflowMenuItem = navigation.findItem(ToolbarMenu.OVERFLOW_ID);
+        View anchor = overflowMenuItem != null ? overflowMenuItem.getView() : view;
+        getOrientationMenu(anchor).show();
     }
 
     @NonNull
-    private FloatingMenu getOrientationMenu() {
+    private FloatingMenu getOrientationMenu(View anchor) {
         List<FloatingMenuItem> orientations = Arrays.asList(
                 new FloatingMenuItem(0, "Reset view"),
                 new FloatingMenuItem(90, "Rotate 90 deg."),
@@ -309,7 +311,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
                 new FloatingMenuItem(-1, "Flip horizontally"),
                 new FloatingMenuItem(-2, "Flip vertically")
         );
-        FloatingMenu menu = new FloatingMenu(context, view, orientations);
+        FloatingMenu menu = new FloatingMenu(context, anchor, orientations);
         menu.setCallback(new FloatingMenu.FloatingMenuCallback() {
             @Override
             public void onFloatingMenuItemClicked(FloatingMenu menu, FloatingMenuItem item) {
