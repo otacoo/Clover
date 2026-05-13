@@ -73,6 +73,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import okhttp3.HttpUrl;
+
 /**
  * Wrapper around ThreadListLayout, so that it cleanly manages between a loading state
  * and the recycler view.
@@ -511,9 +513,10 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         String cblink = link.toLowerCase();
         if (cblink.startsWith("https://files.catbox.moe/") || 
-            cblink.startsWith("https://litter.catbox.moe/")) {
+            cblink.startsWith("https://litter.catbox.moe/") ||
+            cblink.startsWith("https://uguu.se/")) {
             
-            String[] supported = new String[] {".mp4", ".webm", ".mp3", ".ogg", ".jpeg", ".jpg", ".png", ".webp", ".avif", ".apng", ".jxl", ".gif", ".bmp", ".flac", ".opus"};
+            String[] supported = new String[] {".mp4", ".webm", ".mp3", ".ogg", ".jpeg", ".jpg", ".png", ".webp", ".avif", ".apng", ".jxl", ".gif", ".bmp", ".flac", ".opus", ".mkv"};
             boolean isSupported = false;
             String ext = "";
             for (String e : supported) {
@@ -550,6 +553,8 @@ public class ThreadLayout extends CoordinatorLayout implements
     public void openLink(final String link) {
         if (handleCatboxLink(link)) return;
 
+        if (handleInternalLink(link)) return;
+
         if (ChanSettings.openLinkConfirmation.get()) {
             new AlertDialog.Builder(getContext())
                     .setNegativeButton(R.string.cancel, null)
@@ -565,6 +570,30 @@ public class ThreadLayout extends CoordinatorLayout implements
         } else {
             openLinkConfirmed(link);
         }
+    }
+
+    private boolean handleInternalLink(String link) {
+        Loadable currentLoadable = presenter.getLoadable();
+        if (currentLoadable == null || currentLoadable.site == null) {
+            return false;
+        }
+
+        HttpUrl url = HttpUrl.parse(link);
+        if (url == null) {
+            return false;
+        }
+
+        if (!currentLoadable.site.resolvable().respondsTo(url)) {
+            return false;
+        }
+
+        Loadable resolvedLoadable = currentLoadable.site.resolvable().resolveLoadable(currentLoadable.site, url);
+        if (resolvedLoadable == null) {
+            return false;
+        }
+
+        callback.showThread(resolvedLoadable);
+        return true;
     }
 
     public void openLinkConfirmed(final String link) {
