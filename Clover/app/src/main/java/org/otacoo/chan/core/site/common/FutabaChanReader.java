@@ -104,6 +104,7 @@ public class FutabaChanReader implements ChanReader {
         boolean fileSpoiler = false;
         String fileName = null;
         String md5 = null;
+        boolean fileDeleted = false;
 
         List<PostImage> files = new ArrayList<>();
 
@@ -155,6 +156,9 @@ public class FutabaChanReader implements ChanReader {
                     break;
                 case "filename":
                     fileName = reader.nextString();
+                    break;
+                case "filedeleted":
+                    fileDeleted = reader.nextInt() == 1;
                     break;
                 case "trip":
                     builder.tripcode(reader.nextString());
@@ -260,6 +264,7 @@ public class FutabaChanReader implements ChanReader {
         }
 
         builder.images(files);
+    builder.fileDeleted(fileDeleted);
 
         if (builder.op) {
             // Update OP fields later on the main thread

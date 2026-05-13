@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout;
 import android.text.Spannable;
@@ -59,6 +60,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
@@ -599,10 +601,12 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 comment.setOnClickListener(selfClicked);
             }
 
-            if (selectable) {
-                comment.setText(commentText, TextView.BufferType.SPANNABLE);
-            } else {
-                comment.setText(commentText);
+            if (!TextUtils.equals(comment.getText(), commentText)) {
+                if (selectable) {
+                    comment.setText(commentText, TextView.BufferType.SPANNABLE);
+                } else {
+                    comment.setText(commentText);
+                }
             }
 
             if (noClickable) {
@@ -622,7 +626,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 title.setMovementMethod(null);
             }
 
-            comment.setText(commentText);
+            if (!TextUtils.equals(comment.getText(), commentText)) {
+                comment.setText(commentText);
+            }
         }
 
         int repliesFromSize;
@@ -653,16 +659,30 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     private void buildThumbnails() {
-        if (!post.images.isEmpty() && !ChanSettings.textOnly.get()
-                && post.images.size() == thumbnailViews.size()) {
+        final int size = ChanSettings.thumbnailScale.get() * getResources()
+                .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
+
+        int targetCount = (!post.images.isEmpty() || post.fileDeleted) && !ChanSettings.textOnly.get() ?
+                (post.images.isEmpty() ? 1 : post.images.size()) : 0;
+
+        if (targetCount > 0 && targetCount == thumbnailViews.size()) {
             // Reuse existing views: only update the image and click listener.
-            final int size = ChanSettings.thumbnailScale.get() * getResources()
-                    .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
             for (int i = 0; i < thumbnailViews.size(); i++) {
                 PostImageThumbnailView v = thumbnailViews.get(i);
-                PostImage image = post.images.get(i);
-                v.setPostImage(image, size, size);
-                v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
+                PostImage image = i < post.images.size() ? post.images.get(i) : null;
+                
+                if (image != null && !post.fileDeleted) {
+                    v.setPostImage(image, size, size);
+                    v.setLabelText(null);
+                    v.setClickable(true);
+                    v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
+                } else {
+                    v.setOnClickListener(null);
+                    v.setClickable(false);
+                    v.setPostImage(null, size, size);
+                    v.setImageDrawable(getDeletedFileDrawable());
+                    v.setLabelText(null);
+                }
             }
             return;
         }
@@ -674,19 +694,19 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         // Places the thumbnails below each other.
         // The placement is done using the RelativeLayout BELOW rule, with generated view ids.
-        if (!post.images.isEmpty() && !ChanSettings.textOnly.get()) {
+        if ((!post.images.isEmpty() || post.fileDeleted) && !ChanSettings.textOnly.get()) {
             int lastId = 0;
             int generatedId = 1;
             boolean first = true;
-            for (PostImage image : post.images) {
+            int count = post.images.isEmpty() ? 1 : post.images.size();
+            for (int index = 0; index < count; index++) {
+                PostImage image = index < post.images.size() ? post.images.get(index) : null;
                 PostImageThumbnailView v = new PostImageThumbnailView(getContext());
 
                 // Set the correct id.
                 // The first thumbnail uses thumbnail_view so that the layout can offset to that.
                 final int idToSet = first ? R.id.thumbnail_view : generatedId++;
                 v.setId(idToSet);
-                final int size = ChanSettings.thumbnailScale.get() * getResources()
-                        .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
 
                 RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(size, size);
                 p.alignWithParent = true;
@@ -699,9 +719,18 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 p.leftMargin = paddingPx;
                 p.bottomMargin = paddingPx;
 
-                v.setPostImage(image, size, size);
-                v.setClickable(true);
-                v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
+                if (image != null && !post.fileDeleted) {
+                    v.setPostImage(image, size, size);
+                    v.setLabelText(null);
+                    v.setClickable(true);
+                    v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
+                } else {
+                    v.setOnClickListener(null);
+                    v.setClickable(false);
+                    v.setPostImage(null, size, size);
+                    v.setImageDrawable(getDeletedFileDrawable());
+                    v.setLabelText(null);
+                }
                 //v.setRounding(dp(enableHighEndAnimations() ? 8 : 2));
 
                 relativeLayoutHelper.addView(v, p);
@@ -711,6 +740,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 first = false;
             }
         }
+    }
+
+    private Drawable getDeletedFileDrawable() {
+        int drawableRes = theme != null && theme.isLightTheme
+                ? R.drawable.ic_file_deleted_black
+                : R.drawable.ic_file_deleted_white;
+        Drawable drawable = ContextCompat.getDrawable(getContext(), drawableRes);
+        return drawable != null ? drawable.mutate() : null;
     }
 
     private void unbindPost(Post post) {

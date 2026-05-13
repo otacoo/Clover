@@ -56,6 +56,8 @@ public class Post {
 
     public final List<PostImage> images;
 
+    public final boolean fileDeleted;
+
     public final String tripcode;
 
     public final String id;
@@ -139,6 +141,7 @@ public class Post {
         } else {
             images = Collections.unmodifiableList(builder.images);
         }
+        fileDeleted = builder.fileDeleted;
 
         if (builder.httpIcons != null) {
             httpIcons = Collections.unmodifiableList(builder.httpIcons);
@@ -276,6 +279,7 @@ public class Post {
 
         public long unixTimestampSeconds = -1L;
         public List<PostImage> images;
+        public boolean fileDeleted;
 
         public List<PostHttpIcon> httpIcons;
 
@@ -387,6 +391,11 @@ public class Post {
 
             this.images.addAll(images);
 
+            return this;
+        }
+
+        public Builder fileDeleted(boolean fileDeleted) {
+            this.fileDeleted = fileDeleted;
             return this;
         }
 

@@ -24,6 +24,7 @@ import static org.otacoo.chan.utils.AndroidUtils.sp;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.TextUtils;
@@ -33,6 +34,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
@@ -133,7 +135,9 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
     @Override
     public void onClick(View v) {
         if (v == thumbnailView) {
-            callback.onThumbnailClicked(post, post.image(), thumbnailView);
+            if (post.image() != null && !post.fileDeleted) {
+                callback.onThumbnailClicked(post, post.image(), thumbnailView);
+            }
         } else if (v == this) {
             callback.onPostClicked(post);
         }
@@ -231,12 +235,23 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         replies.setVisibility(View.VISIBLE);
         icons.setVisibility(View.VISIBLE);
 
-        if (post.image() != null && !ChanSettings.textOnly.get()) {
+        if (post.image() != null && !post.fileDeleted && !ChanSettings.textOnly.get()) {
             thumbnailView.setVisibility(View.VISIBLE);
             thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight());
+            thumbnailView.setLabelText(null);
+            thumbnailView.setClickable(true);
         } else {
-            thumbnailView.setVisibility(View.GONE);
             thumbnailView.setPostImage(null, 0, 0);
+            if (post.fileDeleted && !ChanSettings.textOnly.get()) {
+                thumbnailView.setVisibility(View.VISIBLE);
+                thumbnailView.setClickable(false);
+                thumbnailView.setImageDrawable(getDeletedFileDrawable());
+                thumbnailView.setLabelText(null);
+            } else {
+                thumbnailView.setVisibility(View.GONE);
+                thumbnailView.setLabelText(null);
+                thumbnailView.setClickable(false);
+            }
         }
 
         if (post.filterHighlightedColor != 0) {
@@ -248,10 +263,14 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
 
         if (!TextUtils.isEmpty(post.subjectSpan)) {
             title.setVisibility(View.VISIBLE);
-            title.setText(post.subjectSpan);
+            if (!TextUtils.equals(title.getText(), post.subjectSpan)) {
+                title.setText(post.subjectSpan);
+            }
         } else {
             title.setVisibility(View.GONE);
-            title.setText(null);
+            if (!TextUtils.equals(title.getText(), "")) {
+                title.setText(null);
+            }
         }
 
         CharSequence commentText;
@@ -264,7 +283,10 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         comment.setText(commentText);
         comment.setTextColor(theme.textPrimary);
 
-        replies.setText(getResources().getString(R.string.card_stats, post.getReplies(), post.getImagesCount()));
+        String statsStr = getResources().getString(R.string.card_stats, post.getReplies(), post.getImagesCount());
+        if (!TextUtils.equals(replies.getText(), statsStr)) {
+            replies.setText(statsStr);
+        }
 
         icons.edit();
         icons.set(PostIcons.STICKY, post.isSticky());
@@ -290,6 +312,14 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         }
 
         icons.apply();
+    }
+
+    private Drawable getDeletedFileDrawable() {
+        int drawableRes = theme != null && theme.isLightTheme
+                ? R.drawable.ic_file_deleted_black
+                : R.drawable.ic_file_deleted_white;
+        Drawable drawable = ContextCompat.getDrawable(getContext(), drawableRes);
+        return drawable != null ? drawable.mutate() : null;
     }
 
     private void unbindPost(Post post) {

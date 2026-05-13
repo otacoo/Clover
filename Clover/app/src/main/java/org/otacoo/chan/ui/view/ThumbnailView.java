@@ -540,8 +540,10 @@ public class ThumbnailView extends View {
     }
 
     public void setImageDrawable(Drawable drawable) {
-        cancelRequest();
-        setImageBitmap(null);
+        if (drawable != null) {
+            cancelRequest();
+            setImageBitmap(null);
+        }
         this.foreground = drawable;
         if (drawable != null) {
             drawable.setCallback(this);
