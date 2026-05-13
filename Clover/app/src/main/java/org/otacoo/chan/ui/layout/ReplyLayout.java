@@ -43,6 +43,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.BaseAdapter;
@@ -121,12 +122,14 @@ public class ReplyLayout extends LoadView implements
 
     private ReplyLayoutCallback callback;
     private boolean newCaptcha;
+    private boolean authenticationPageVisible;
 
     private AuthenticationLayoutInterface authenticationLayout;
     private boolean openingName;
     private boolean expanded = false;
 
     private boolean blockSelectionChange = false;
+    private int authenticationBottomInset;
 
     // Progress view (when sending request to the server)
     private View progressLayout;
@@ -365,7 +368,7 @@ public class ReplyLayout extends LoadView implements
 
         previewHolder.setOnClickListener(this);
 
-        moreDropdown = new DropdownArrowDrawable(dp(16), dp(16), true,
+        moreDropdown = new DropdownArrowDrawable(dp(16), dp(16), !ChanSettings.bottomReply.get(),
                 getAttrColor(getContext(), R.attr.dropdown_dark_color),
                 getAttrColor(getContext(), R.attr.dropdown_dark_pressed_color));
         more.setImageDrawable(moreDropdown);
@@ -443,10 +446,23 @@ public class ReplyLayout extends LoadView implements
     }
 
     private void setWrap(boolean wrap) {
-        setLayoutParams(new LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                wrap ? LayoutParams.WRAP_CONTENT : LayoutParams.MATCH_PARENT
-        ));
+        int targetHeight = wrap ? LayoutParams.WRAP_CONTENT : LayoutParams.MATCH_PARENT;
+        ViewGroup.LayoutParams currentParams = getLayoutParams();
+        LayoutParams layoutParams;
+
+        if (currentParams instanceof LayoutParams) {
+            layoutParams = new LayoutParams((LayoutParams) currentParams);
+        } else if (currentParams instanceof MarginLayoutParams) {
+            layoutParams = new LayoutParams((MarginLayoutParams) currentParams);
+        } else if (currentParams != null) {
+            layoutParams = new LayoutParams(currentParams);
+        } else {
+            layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, targetHeight);
+        }
+
+        layoutParams.width = LayoutParams.MATCH_PARENT;
+        layoutParams.height = targetHeight;
+        setLayoutParams(layoutParams);
     }
 
     @Override
@@ -653,6 +669,8 @@ public class ReplyLayout extends LoadView implements
 
                 //reset progress to 0 upon uploading start
                 currentProgress.setVisibility(View.INVISIBLE);
+
+    callback.onReplyPageChanged();
                 break;
             case INPUT:
                 setView(replyInputLayout);
@@ -683,8 +701,7 @@ public class ReplyLayout extends LoadView implements
                 }
 
                 if (ChanSettings.toolbarBottom.get() && !lynxchan) {
-                    captchaContainer.setPadding(0, 0, 0,
-                            getResources().getDimensionPixelSize(R.dimen.toolbar_height));
+                    captchaContainer.setPadding(0, 0, 0, authenticationBottomInset);
                 } else {
                     captchaContainer.setPadding(0, 0, 0, 0);
                 }
@@ -834,6 +851,7 @@ public class ReplyLayout extends LoadView implements
 
     @Override
     public void setExpanded(boolean expanded) {
+        boolean wasExpanded = this.expanded;
         this.expanded = expanded;
         
         setWrap(!expanded);
@@ -845,12 +863,25 @@ public class ReplyLayout extends LoadView implements
             openFileAttachments(currentAttachments, currentAttachments.size(), currentAttachmentMaxCount);
         }
 
-        ValueAnimator animator = ValueAnimator.ofFloat(expanded ? 0f : 1f, expanded ? 1f : 0f);
+        ValueAnimator animator = ValueAnimator.ofFloat(
+                getExpandArrowRotation(wasExpanded),
+                getExpandArrowRotation(expanded));
         animator.setInterpolator(new DecelerateInterpolator(2f));
         animator.setDuration(400);
         animator.addUpdateListener(animation ->
                 moreDropdown.setRotation((float) animation.getAnimatedValue()));
         animator.start();
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    private float getExpandArrowRotation(boolean expanded) {
+        if (ChanSettings.bottomReply.get()) {
+            return expanded ? 0f : 1f;
+        }
+        return expanded ? 1f : 0f;
     }
 
     @Override
@@ -1351,6 +1382,8 @@ public class ReplyLayout extends LoadView implements
         void highlightPostNo(int no);
 
         void openReply(boolean open);
+
+        void onReplyPageChanged();
 
         void showThread(Loadable loadable);
 

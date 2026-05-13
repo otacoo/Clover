@@ -252,6 +252,7 @@ public class ChanSettings {
     public static final BooleanSetting postFilename;
     public static final BooleanSetting neverHideToolbar;
     public static final BooleanSetting toolbarBottom;
+    public static final BooleanSetting bottomReply;
     public static final BooleanSetting controllerSwipeable;
     public static final BooleanSetting pinnedSearchesEnabled;
 
@@ -368,6 +369,7 @@ public class ChanSettings {
         postFilename = new BooleanSetting(p, "preference_post_filename", true);
         neverHideToolbar = new BooleanSetting(p, "preference_never_hide_toolbar", false);
         toolbarBottom = new BooleanSetting(p, "preference_toolbar_bottom", false);
+        bottomReply = new BooleanSetting(p, "preference_bottom_reply", false);
         controllerSwipeable = new BooleanSetting(p, "preference_controller_swipeable", true);
         pinnedSearchesEnabled = new BooleanSetting(p, "preference_pinned_searches_enabled", true);
         pinnedSearchesEnabled.addCallback((setting, value) ->

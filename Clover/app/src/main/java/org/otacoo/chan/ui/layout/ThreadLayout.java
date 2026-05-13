@@ -123,6 +123,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private boolean refreshedFromSwipe;
     private boolean replyButtonEnabled;
     private boolean topBottomButtonEnabled;
+    private boolean replyLayoutOpen;
     private boolean showingReplyButton = false;
     private boolean showingTopBottomButtons = false;
     private int accumulatedScroll = 0;
@@ -401,10 +402,17 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void replyLayoutOpen(boolean open) {
+        replyLayoutOpen = open;
         showReplyButton(!open);
         if (open) {
             showTopBottomButtons(false, false);
         }
+        updateNewPostsBarPosition();
+    }
+
+    @Override
+    public void replyLayoutChanged() {
+        updateNewPostsBarPosition();
     }
 
     @Override
@@ -744,6 +752,7 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void showNewPostsNotification(boolean show, int more) {
+        updateNewPostsBarPosition();
         if (show) {
             String text = getContext().getResources()
                     .getQuantityString(R.plurals.thread_new_posts, more, more);
@@ -815,6 +824,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private void showReplyButton(final boolean show) {
         if (show != showingReplyButton && replyButtonEnabled) {
             showingReplyButton = show;
+            replyButton.setRotation(ChanSettings.bottomReply.get() ? 180f : 0f);
 
             replyButton.animate()
                     .setInterpolator(new DecelerateInterpolator(2f))
@@ -847,6 +857,30 @@ public class ThreadLayout extends CoordinatorLayout implements
                         }
                     })
                     .start();
+        }
+    }
+
+    private void updateFabContainerMargins() {
+        CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
+        int bottomMargin = dp(48);
+        if (ChanSettings.toolbarBottom.get()) {
+            bottomMargin += getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+        }
+        containerLp.bottomMargin = bottomMargin;
+        fabContainer.setLayoutParams(containerLp);
+    }
+
+    private void updateNewPostsBarPosition() {
+        CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
+        int bottomMargin = ChanSettings.toolbarBottom.get()
+                ? getResources().getDimensionPixelSize(R.dimen.toolbar_height)
+                : 0;
+        if (ChanSettings.bottomReply.get() && replyLayoutOpen) {
+            bottomMargin += threadListLayout.getReplyHeight();
+        }
+        if (barLp.bottomMargin != bottomMargin) {
+            barLp.bottomMargin = bottomMargin;
+            newPostsBar.setLayoutParams(barLp);
         }
     }
 

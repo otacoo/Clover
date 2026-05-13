@@ -158,15 +158,21 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         postAdapter = new PostAdapter(recyclerView, postAdapterCallback, postCellCallback, statusCellCallback);
         recyclerView.setAdapter(postAdapter);
         recyclerView.addOnScrollListener(scrollListener);
+        reply.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (replyOpen && bottom - top != oldBottom - oldTop) {
+                applyReplyLayoutMode();
+                setRecyclerViewPadding();
+                threadListLayoutCallback.replyLayoutChanged();
+            }
+        });
+
+        applyReplyLayoutMode();
 
         setFastScroll(false);
 
         attachToolbarScroll(true);
 
-        if (ChanSettings.toolbarBottom.get()) {
-            reply.setPadding(0, 0, 0, 0);
-        } else {
-            reply.setPadding(0, toolbarHeight(), 0, 0);
+        if (!ChanSettings.toolbarBottom.get()) {
             searchStatus.setPadding(searchStatus.getPaddingLeft(), searchStatus.getPaddingTop() + toolbarHeight(),
                     searchStatus.getPaddingRight(), searchStatus.getPaddingBottom());
         }
@@ -375,6 +381,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         if (showingThread != null && replyOpen != open) {
             this.replyOpen = open;
 
+            applyReplyLayoutMode();
+
+            reply.animate().cancel();
+
             reply.measure(
                     MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
@@ -384,15 +394,29 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             final ViewPropertyAnimator viewPropertyAnimator = reply.animate();
             viewPropertyAnimator.setListener(null);
             viewPropertyAnimator.setInterpolator(new DecelerateInterpolator(2f));
-            viewPropertyAnimator.setDuration(600);
+            viewPropertyAnimator.setDuration(280);
+            viewPropertyAnimator.withLayer();
+
+            boolean bottomReply = ChanSettings.bottomReply.get();
+            float hiddenTranslation = bottomReply ? height : -height;
 
             if (open) {
                 reply.setVisibility(View.VISIBLE);
-                reply.setTranslationY(-height);
+                reply.setTranslationY(hiddenTranslation);
                 viewPropertyAnimator.translationY(0f);
+                viewPropertyAnimator.setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        viewPropertyAnimator.setListener(null);
+                        if (replyOpen) {
+                            reply.onOpen(true);
+                        }
+                    }
+                });
             } else {
+                reply.onOpen(false);
                 reply.setTranslationY(0f);
-                viewPropertyAnimator.translationY(-height);
+                viewPropertyAnimator.translationY(hiddenTranslation);
                 viewPropertyAnimator.setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -402,7 +426,6 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 });
             }
 
-            reply.onOpen(open);
             setRecyclerViewPadding();
             if (!open) {
                 AndroidUtils.hideKeyboard(reply);
@@ -610,8 +633,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 // No animation means no animation, wait for the layout to finish and skip all animations
                 final RecyclerView.ItemAnimator itemAnimator = recyclerView.getItemAnimator();
                 AndroidUtils.waitForLayout(recyclerView, view -> {
-                    assert itemAnimator != null;
-                    itemAnimator.endAnimations();
+                    if (itemAnimator != null) {
+                        itemAnimator.endAnimations();
+                    }
                     return true;
                 });
             }
@@ -630,8 +654,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 // No animation means no animation, wait for the layout to finish and skip all animations
                 final RecyclerView.ItemAnimator itemAnimator = recyclerView.getItemAnimator();
                 AndroidUtils.waitForLayout(recyclerView, view -> {
-                    assert itemAnimator != null;
-                    itemAnimator.endAnimations();
+                    if (itemAnimator != null) {
+                        itemAnimator.endAnimations();
+                    }
                     return true;
                 });
             }
@@ -662,6 +687,11 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     @Override
     public void showThread(Loadable loadable) {
         callback.showThread(loadable);
+    }
+
+    @Override
+    public void onReplyPageChanged() {
+        threadListLayoutCallback.replyLayoutChanged();
     }
 
     @Override
@@ -753,24 +783,32 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         int right = defaultPadding;
         int bottom = defaultPadding;
 
+        boolean bottomReply = ChanSettings.bottomReply.get();
+        boolean topOverlayConsumesToolbar = !ChanSettings.toolbarBottom.get()
+                && ((replyOpen && !bottomReply) || searchOpen);
+
+        if (ChanSettings.toolbarBottom.get()) {
+            bottom += toolbarHeight();
+        } else if (!topOverlayConsumesToolbar) {
+            top += toolbarHeight();
+        }
+
         if (replyOpen) {
             reply.measure(
                     MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
             );
-            top += reply.getMeasuredHeight();
+            if (bottomReply) {
+                bottom += reply.getMeasuredHeight();
+            } else {
+                top += reply.getMeasuredHeight();
+            }
         } else if (searchOpen) {
             searchStatus.measure(
                     MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
             );
             top += searchStatus.getMeasuredHeight();
-        } else {
-            if (ChanSettings.toolbarBottom.get()) {
-                bottom += toolbarHeight();
-            } else {
-                top += toolbarHeight();
-            }
         }
 
         recyclerView.setPadding(left, top, right, bottom);
@@ -779,6 +817,44 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     private int toolbarHeight() {
         Toolbar toolbar = threadListLayoutCallback.getToolbar();
         return toolbar.getToolbarHeight();
+    }
+
+    private void applyReplyLayoutMode() {
+        FrameLayout.LayoutParams replyLayoutParams = (FrameLayout.LayoutParams) reply.getLayoutParams();
+        int targetGravity = ChanSettings.bottomReply.get() ? android.view.Gravity.BOTTOM : android.view.Gravity.TOP;
+        int targetTopMargin = ChanSettings.bottomReply.get() && !ChanSettings.toolbarBottom.get()
+            ? toolbarHeight()
+            : 0;
+        int targetBottomMargin = ChanSettings.bottomReply.get() && ChanSettings.toolbarBottom.get()
+            ? toolbarHeight()
+            : 0;
+
+        if (replyLayoutParams.gravity != targetGravity
+            || replyLayoutParams.topMargin != targetTopMargin
+            || replyLayoutParams.bottomMargin != targetBottomMargin) {
+            replyLayoutParams.gravity = targetGravity;
+            replyLayoutParams.topMargin = targetTopMargin;
+            replyLayoutParams.bottomMargin = targetBottomMargin;
+            reply.setLayoutParams(replyLayoutParams);
+        }
+
+        int targetTopPadding = ChanSettings.toolbarBottom.get() || ChanSettings.bottomReply.get()
+            ? 0
+            : toolbarHeight();
+        if (reply.getPaddingTop() != targetTopPadding
+            || reply.getPaddingLeft() != 0
+            || reply.getPaddingRight() != 0
+            || reply.getPaddingBottom() != 0) {
+            reply.setPadding(0, targetTopPadding, 0, 0);
+        }
+    }
+
+    public int getReplyHeight() {
+        reply.measure(
+                MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+        );
+        return reply.getMeasuredHeight();
     }
 
     public int getTopAdapterPosition() {
@@ -857,6 +933,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
     public interface ThreadListLayoutCallback {
         void replyLayoutOpen(boolean open);
+
+        void replyLayoutChanged();
 
         Toolbar getToolbar();
 

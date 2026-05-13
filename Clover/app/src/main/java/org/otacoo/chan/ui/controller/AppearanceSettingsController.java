@@ -89,6 +89,11 @@ public class AppearanceSettingsController extends SettingsController {
                     R.string.setting_toolbar_bottom_description)));
 
             requiresRestart.add(layout.add(new BooleanSettingView(this,
+                    ChanSettings.bottomReply,
+                    R.string.setting_bottom_reply,
+                    R.string.setting_bottom_reply_description)));
+
+            requiresRestart.add(layout.add(new BooleanSettingView(this,
                     ChanSettings.enableReplyFab,
                     R.string.setting_enable_reply_fab,
                     R.string.setting_enable_reply_fab_description)));
