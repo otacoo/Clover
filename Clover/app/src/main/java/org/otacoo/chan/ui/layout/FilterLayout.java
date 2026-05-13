@@ -40,6 +40,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -334,7 +335,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
                         updateFilterAction();
                     })
                     .show();
-            Objects.requireNonNull(dialog.getWindow()).setLayout(dp(300), dp(300));
+            Objects.requireNonNull(dialog.getWindow()).setLayout(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 
