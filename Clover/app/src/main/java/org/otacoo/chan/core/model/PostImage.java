@@ -60,6 +60,7 @@ public class PostImage {
                 break;
             case "webm":
             case "mp4":
+            case "mkv":
             case "mp3":
             case "m4a":
             case "ogg":
