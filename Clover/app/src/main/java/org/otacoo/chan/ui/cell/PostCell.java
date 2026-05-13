@@ -671,11 +671,17 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 PostImageThumbnailView v = thumbnailViews.get(i);
                 PostImage image = i < post.images.size() ? post.images.get(i) : null;
                 
-                if (image != null && !post.fileDeleted) {
-                    v.setPostImage(image, size, size);
+                if (image != null) {
+                    v.setClickable(!post.fileDeleted);
+                    v.setOnClickListener(!post.fileDeleted ? v2 -> callback.onThumbnailClicked(post, image, v) : null);
+                    if (post.fileDeleted) {
+                        v.setFallbackDrawable(getDeletedFileDrawable());
+                        v.setPostImage(image, size, size, true);
+                    } else {
+                        v.setFallbackDrawable(null);
+                        v.setPostImage(image, size, size);
+                    }
                     v.setLabelText(null);
-                    v.setClickable(true);
-                    v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
                 } else {
                     v.setOnClickListener(null);
                     v.setClickable(false);
@@ -719,11 +725,17 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 p.leftMargin = paddingPx;
                 p.bottomMargin = paddingPx;
 
-                if (image != null && !post.fileDeleted) {
-                    v.setPostImage(image, size, size);
+                if (image != null) {
+                    v.setClickable(!post.fileDeleted);
+                    v.setOnClickListener(!post.fileDeleted ? v2 -> callback.onThumbnailClicked(post, image, v) : null);
+                    if (post.fileDeleted) {
+                        v.setFallbackDrawable(getDeletedFileDrawable());
+                        v.setPostImage(image, size, size, true);
+                    } else {
+                        v.setFallbackDrawable(null);
+                        v.setPostImage(image, size, size);
+                    }
                     v.setLabelText(null);
-                    v.setClickable(true);
-                    v.setOnClickListener(v2 -> callback.onThumbnailClicked(post, image, v));
                 } else {
                     v.setOnClickListener(null);
                     v.setClickable(false);

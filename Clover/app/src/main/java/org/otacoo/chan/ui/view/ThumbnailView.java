@@ -21,7 +21,6 @@ import static org.otacoo.chan.Chan.injector;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -33,7 +32,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.LruCache;
@@ -90,7 +88,7 @@ public class ThumbnailView extends View {
     static {
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
         final int cacheSize = maxMemory / 8;
-        sMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+        sMemoryCache = new LruCache<>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap bitmap) {
                 return bitmap.getByteCount() / 1024;
@@ -119,14 +117,14 @@ public class ThumbnailView extends View {
 
     private boolean calculate;
     private Bitmap bitmap;
-    private RectF bitmapRect = new RectF();
-    private RectF drawRect = new RectF();
-    private RectF outputRect = new RectF();
+    private final RectF bitmapRect = new RectF();
+    private final RectF drawRect = new RectF();
+    private final RectF outputRect = new RectF();
 
-    private Matrix matrix = new Matrix();
+    private final Matrix matrix = new Matrix();
     BitmapShader bitmapShader;
-    private Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Paint bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+    private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
     private boolean foregroundCalculate = false;
     private Drawable foreground;
@@ -134,8 +132,8 @@ public class ThumbnailView extends View {
     protected boolean error = false;
     private String errorText;
     private String labelText;
-    private Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Rect tmpTextRect = new Rect();
+    private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Rect tmpTextRect = new Rect();
 
     public interface OnNetworkErrorListener {
         void onNetworkError(int code);
@@ -175,7 +173,19 @@ public class ThumbnailView extends View {
         cancelRequest();
     }
 
+    private Drawable fallbackDrawable;
+
+    public void setFallbackDrawable(Drawable drawable) {
+        this.fallbackDrawable = drawable;
+        if (drawable != null) drawable.setCallback(this);
+        invalidate();
+    }
+
     public void setUrl(String url, int width, int height) {
+        setUrl(url, width, height, false);
+    }
+
+    public void setUrl(String url, int width, int height, boolean cacheOnly) {
         if (TextUtils.equals(currentUrl, url)) {
             if (bitmap != null) {
                 return; // Already displaying the correct bitmap.
@@ -214,9 +224,11 @@ public class ThumbnailView extends View {
         OkHttpClient client = Chan8RateLimit.isMedia(url)
                 ? getChan8MediaClient()
                 : injector().instance(OkHttpClient.class);
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+        Request.Builder rb = new Request.Builder().url(url);
+        if (cacheOnly) {
+            rb.cacheControl(okhttp3.CacheControl.FORCE_CACHE);
+        }
+        Request request = rb.build();
 
         currentCall = client.newCall(request);
         currentCall.enqueue(new Callback() {
@@ -319,7 +331,7 @@ public class ThumbnailView extends View {
         return rounding;
     }
 
-    @SuppressWarnings({"deprecation", "ConstantConditions"})
+    @SuppressWarnings({"ConstantConditions"})
     @Override
     public void setClickable(boolean clickable) {
         super.setClickable(clickable);
@@ -377,7 +389,7 @@ public class ThumbnailView extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         int width = getWidth() - getPaddingLeft() - getPaddingRight();
         int height = getHeight() - getPaddingTop() - getPaddingBottom();
 
@@ -392,15 +404,23 @@ public class ThumbnailView extends View {
                 canvas.drawRoundRect(outputRect, rounding, rounding, backgroundPaint);
             }
 
-            // Render a simple text if there was an error.
-            canvas.save();
+            if (fallbackDrawable != null) {
+                canvas.save();
+                int p = AndroidUtils.dp(4);
+                fallbackDrawable.setBounds(p, p, getWidth() - p, getHeight() - p);
+                fallbackDrawable.draw(canvas);
+                canvas.restore();
+            } else {
+                // Render a simple text if there was an error.
+                canvas.save();
 
-            textPaint.getTextBounds(errorText, 0, errorText.length(), tmpTextRect);
-            float x = outputRect.centerX();
-            float y = outputRect.centerY() - tmpTextRect.exactCenterY();
-            canvas.drawText(errorText, x, y, textPaint);
+                textPaint.getTextBounds(errorText, 0, errorText.length(), tmpTextRect);
+                float x = outputRect.centerX();
+                float y = outputRect.centerY() - tmpTextRect.exactCenterY();
+                canvas.drawText(errorText, x, y, textPaint);
 
-            canvas.restore();
+                canvas.restore();
+            }
         } else {
             // Gray background if thumbnail is not yet loaded and no foreground icon is set.
             if (bitmap == null && foreground == null) {
@@ -486,7 +506,7 @@ public class ThumbnailView extends View {
     }
 
     @Override
-    protected boolean verifyDrawable(Drawable who) {
+    protected boolean verifyDrawable(@NonNull Drawable who) {
         return super.verifyDrawable(who) || (who == foreground);
     }
 
@@ -507,7 +527,6 @@ public class ThumbnailView extends View {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void drawableHotspotChanged(float x, float y) {
         super.drawableHotspotChanged(x, y);

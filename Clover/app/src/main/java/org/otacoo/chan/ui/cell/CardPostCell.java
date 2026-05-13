@@ -235,11 +235,17 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         replies.setVisibility(View.VISIBLE);
         icons.setVisibility(View.VISIBLE);
 
-        if (post.image() != null && !post.fileDeleted && !ChanSettings.textOnly.get()) {
+        if (post.image() != null && !ChanSettings.textOnly.get()) {
             thumbnailView.setVisibility(View.VISIBLE);
-            thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight());
+            thumbnailView.setClickable(!post.fileDeleted);
+            if (post.fileDeleted) {
+                thumbnailView.setFallbackDrawable(getDeletedFileDrawable());
+                thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight(), true);
+            } else {
+                thumbnailView.setFallbackDrawable(null);
+                thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight());
+            }
             thumbnailView.setLabelText(null);
-            thumbnailView.setClickable(true);
         } else {
             thumbnailView.setPostImage(null, 0, 0);
             if (post.fileDeleted && !ChanSettings.textOnly.get()) {

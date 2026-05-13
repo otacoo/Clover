@@ -58,6 +58,10 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
     }
 
     public void setPostImage(PostImage postImage, int width, int height) {
+        setPostImage(postImage, width, height, false);
+    }
+
+    public void setPostImage(PostImage postImage, int width, int height, boolean cacheOnly) {
         if (this.postImage != postImage) {
             this.postImage = postImage;
 
@@ -73,9 +77,9 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
                     okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
                     url = thumbUrl != null ? thumbUrl.toString() : null;
                 }
-                setUrl(url, width, height);
+                setUrl(url, width, height, cacheOnly);
             } else {
-                setUrl(null, width, height);
+                setUrl(null, width, height, cacheOnly);
             }
         }
     }
