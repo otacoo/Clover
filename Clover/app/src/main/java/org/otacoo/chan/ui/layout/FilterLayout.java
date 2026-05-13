@@ -335,7 +335,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
                         updateFilterAction();
                     })
                     .show();
-            Objects.requireNonNull(dialog.getWindow()).setLayout(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT);
+            Objects.requireNonNull(dialog.getWindow()).setLayout(dp(340), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 
