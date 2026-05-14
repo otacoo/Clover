@@ -306,7 +306,20 @@ public class FastTextView extends View {
             if (layoutWidth != that.layoutWidth) return false;
             if (singleLine != that.singleLine) return false;
             if (typeface != null ? !typeface.equals(that.typeface) : that.typeface != null) return false;
-            return TextUtils.equals(text, that.text);
+            if (!TextUtils.equals(text, that.text)) return false;
+            if (text instanceof Spanned && that.text instanceof Spanned) {
+                Spanned s1 = (Spanned) text;
+                Spanned s2 = (Spanned) that.text;
+                Object[] spans1 = s1.getSpans(0, text.length(), Object.class);
+                Object[] spans2 = s2.getSpans(0, that.text.length(), Object.class);
+                if (spans1.length != spans2.length) return false;
+                for (int i = 0; i < spans1.length; i++) {
+                    if (!spans1[i].equals(spans2[i])) return false;
+                }
+            } else if (text instanceof Spanned || that.text instanceof Spanned) {
+                return false;
+            }
+            return true;
         }
 
         @Override
@@ -315,6 +328,13 @@ public class FastTextView extends View {
             if (text != null) {
                 for (int i = 0, len = text.length(); i < len; i++) {
                     result = 31 * result + text.charAt(i);
+                }
+                if (text instanceof Spanned) {
+                    Spanned s = (Spanned) text;
+                    Object[] spans = s.getSpans(0, text.length(), Object.class);
+                    for (Object span : spans) {
+                        result = 31 * result + span.hashCode();
+                    }
                 }
             }
             result = 31 * result + color;
