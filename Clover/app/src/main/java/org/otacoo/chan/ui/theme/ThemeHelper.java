@@ -71,6 +71,7 @@ public class ThemeHelper {
         themes.add(new DarkTheme("Gruvbox Black", "gruvbox_black", R.style.Chan_Theme_GruvboxBlack, PrimaryColor.DARK));
         themes.add(new DarkTheme("Neon", "neon", R.style.Chan_Theme_Neon, PrimaryColor.DARK));
         themes.add(new DarkTheme("Solarized Dark", "solarized_dark", R.style.Chan_Theme_SolarizedDark, PrimaryColor.DARK));
+        themes.add(new DarkTheme("Tako", "tako", R.style.Chan_Theme_Tako, PrimaryColor.DARK));
 
         loadCustomThemes();
 
