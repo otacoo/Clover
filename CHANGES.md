@@ -1,3 +1,37 @@
+## 2026-05-14 – v3.4.0
+
+### Media
+- **New option:** Load external media links in-app
+  - This option will allow catbox.moe and uguu.se links to open within the app's media viewer
+  - Supported extensions: .mp4, .webm, .mp3, .ogg, .jpeg, .jpg, .png, .webp, .avif, .apng, .jxl, .gif, .bmp, .flac, .opus, .mkv
+
+- **New option:** Fetch Youtube titles
+  - Will replace the URLs with [Youtube] {Title}
+
+### Appearence
+- **New theme:** Tako
+- **New option:** Bottom reply
+- Added unread line to the colors that can be chosen when creating themes
+- Adjusted unread line colors for a few themes instead of all using the default red color
+- Fixed an issue where the Subject and Name in the dummy post weren't showing the theme's colors
+- The toolbar for the image viewer will now also show at the bottom when using bottom toolbar
+
+### Misc changes & fixes
+- Improved animations for opening the reply view
+- Improved app responsiveness and how the layouts are rendered, reducing background garbage collection
+- Caught an error when a thumbnail fails to load which could cause the app to crash (unconfirmed issue #24)
+- Fixed an issue where the Verification cookie option was showing a different domain cookie from the cookie manager, preventing the cookie from being cleared (issue #28)
+- Fixed the image rotate submenu not being correctly anchored
+- Fixed the color picker dialog for the filters being cut off
+- Added new image assets to show when a file is deleted and a thread is 404 instead of empty nothing
+- More tentative fixes for a red background square showing when a thread is deleted from the catalog (issue #23)
+
+## Other
+- Updated the translations
+- Updated a few libraries
+
+Thank you @tetra65 @T-W-A-I-N
+
 ## 2026-05-06 – v3.3.25
 
 - **Themes:** 
