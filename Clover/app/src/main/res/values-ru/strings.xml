@@ -27,16 +27,18 @@
     <string name="update_install">Установить</string>
     <string name="update_install_downloading">Загрузка обновления</string>
     <string name="update_install_download_failed">Загрузка не удалась</string>
-    <string name="update_install_download_move_failed">Не удалось переместить загруженный файл в папку «Загрузки».</string>
+    <string name="update_install_download_move_failed">Не удалось переместить загруженный файл в
+        папку «Загрузки».</string>
     <string name="update_retry_title">Повторить обновление</string>
-    <string name="update_retry">Clover ещё не обновлён. Нажмите «повторить», чтобы повторить установку.</string>
+    <string name="update_retry">Clover ещё не обновлён. Нажмите «повторить», чтобы повторить
+        установку.</string>
     <string name="update_retry_button">повторить</string>
 
     <string name="update_storage_permission_required_title">Требуется разрешение на хранилище</string>
     <string name="update_storage_permission_required">
-"Для установки обновления требуется доступ к хранилищу.
+        "Для установки обновления требуется доступ к хранилищу.
 
-Повторно включите это разрешение в настройках приложения, если вы его навсегда отключили."</string>
+        Повторно включите это разрешение в настройках приложения, если вы его навсегда отключили."</string>
 
     <plurals name="minutes">
         <item quantity="one">%d минута</item>
@@ -122,7 +124,8 @@
     <string name="action_rename">Переименовать</string>
     <string name="action_reply">Ответить</string>
 
-    <string name="open_link_not_matched">Clover не может открыть эту ссылку; она откроется в вашем браузере.</string>
+    <string name="open_link_not_matched">Clover не может открыть эту ссылку; она откроется в вашем
+        браузере.</string>
 
     <string name="order_bump">Порядок бампа</string>
     <string name="order_reply">Количество ответов</string>
@@ -151,7 +154,8 @@
     <string name="image_open_failed">Не удалось открыть изображение</string>
     <string name="image_spoiler_filename">Изображение-спойлер</string>
 
-    <string name="file_not_viewable">Файл не может быть просмотрен внутри приложения; вы можете его скачать или открыть в браузере.</string>
+    <string name="file_not_viewable">Файл не может быть просмотрен внутри приложения; вы можете его
+        скачать или открыть в браузере.</string>
 
     <string name="thread_boards_search_hint">Поиск</string>
     <string name="thread_load_failed_ssl">Ошибка HTTPS</string>
@@ -209,7 +213,11 @@
     <string name="setup_site_4chan_verify_email">Подтвердить email</string>
     <string name="setup_site_4chan_verify_email_description">Открыть страницу верификации email</string>
     <string name="setup_site_4chan_verify_email_warning_title">Верификация email</string>
-    <string name="setup_site_4chan_verify_email_warning_body">Открытие этой страницы удалит все cookies Cloudflare.\n\nЕсли страница 4chan показывает ошибку о \"скриптах и cookies\", попробуйте обновить страницу. \n\nПомните, верификация email должна быть открыта в Clover, а не в обычном браузере. Используйте опцию «Ввести токен верификации» ниже, когда получите письмо. \n\nПродолжить?</string>
+    <string name="setup_site_4chan_verify_email_warning_body">Открытие этой страницы удалит все
+        cookies Cloudflare.\n\nЕсли страница 4chan показывает ошибку о \"скриптах и cookies\",
+        попробуйте обновить страницу. \n\nПомните, верификация email должна быть открыта в Clover, а
+        не в обычном браузере. Используйте опцию «Ввести токен верификации» ниже, когда получите
+        письмо. \n\nПродолжить?</string>
     <string name="setup_site_4chan_verify_email_warning_open">Открыть</string>
     <string name="setup_site_4chan_enter_token">Ввести токен верификации</string>
     <string name="setup_site_4chan_enter_token_description">Вставить ссылку или токен верификации</string>
@@ -218,7 +226,8 @@
     <string name="setup_site_4chan_pass_cookie_set">Cookie установлен</string>
     <string name="setup_site_4chan_pass_cookie_not_set">Не установлен</string>
     <string name="setup_site_4chan_pass_cookie_dialog_title">Cookie верификации</string>
-    <string name="setup_site_4chan_pass_cookie_dialog_message">Значение cookie 4chan_pass для аутентификации. Изменения применяются к хранилищу cookies немедленно.</string>
+    <string name="setup_site_4chan_pass_cookie_dialog_message">Значение cookie 4chan_pass для
+        аутентификации. Изменения применяются к хранилищу cookies немедленно.</string>
     <string name="setup_site_4chan_pass_cookie_hint">Значение cookie…</string>
     <string name="setup_site_4chan_pass_cookie_saved">Cookie 4chan_pass сохранён</string>
     <string name="setup_site_4chan_pass_cookie_cleared">Cookie 4chan_pass очищен</string>
@@ -289,7 +298,8 @@
     <string name="filter_subject">Тема</string>
     <string name="filter_filename">Имя файла</string>
     <string name="filter_country">Название страны</string>
-    <string name="filter_precedence_hint">"Фильтры вверху имеют приоритет.\nПровести влево по фильтру для удаления."</string>
+    <string name="filter_precedence_hint">"Фильтры вверху имеют приоритет.\nПровести влево по
+        фильтру для удаления."</string>
     <string name="filter_add_button">Добавить фильтр</string>
     <string name="filter_enable_all">Включить все</string>
     <string name="filter_disable_all">Отключить все</string>
@@ -314,7 +324,8 @@
     <string name="drawer_pin_removed">\"%1$s\" удалён</string>
     <string name="drawer_pins_cleared">%1$s очищено</string>
     <string name="drawer_pins_non_cleared">Закладки не очищены.</string>
-    <string name="drawer_pins_non_cleared_try_all">Закладки не очищены. Удерживайте, чтобы удалить все.</string>
+    <string name="drawer_pins_non_cleared_try_all">Закладки не очищены. Удерживайте, чтобы удалить
+        все.</string>
 
     <string name="post_highlight_id">Выделить ID</string>
     <string name="post_highlight_tripcode">Выделить трипкод</string>
@@ -373,9 +384,11 @@
     <string name="video_playback_failed">Это видео не может быть воспроизведено.</string>
     <string name="video_playback_warning_title">Ошибка WebM-видео</string>
     <string name="video_playback_warning">
-"WebM-видео не удалось воспроизвести. Это может быть проблемой с аппаратным обеспечением вашего устройства.
+        "WebM-видео не удалось воспроизвести. Это может быть проблемой с аппаратным обеспечением
+        вашего устройства.
 
-В качестве обходного решения используйте внешний медиапроигрыватель или включите декодер libvpx от Clover в настройках."
+        В качестве обходного решения используйте внешний медиапроигрыватель или включите декодер
+        libvpx от Clover в настройках."
     </string>
     <string name="video_playback_ignore">Больше не показывать</string>
 
@@ -452,9 +465,11 @@
 
     <string name="settings_screen_watch">Настройки наблюдателя за тредами</string>
     <string name="settings_group_watch">Настройки</string>
-    <string name="setting_watch_info">Чтобы следить за закладками на новые посты, включите наблюдатель за тредами.</string>
+    <string name="setting_watch_info">Чтобы следить за закладками на новые посты, включите
+        наблюдатель за тредами.</string>
     <string name="setting_watch_enable_background">Включить в фоне</string>
-    <string name="setting_watch_enable_background_description">Следить за закладками, когда Clover находится в фоне</string>
+    <string name="setting_watch_enable_background_description">Следить за закладками, когда Clover
+        находится в фоне</string>
     <string name="setting_watch_background_timeout">Интервал обновления в фоне</string>
     <string name="setting_watch_background_timeout_description">Интервал между обновлениями в фоне</string>
     <string name="setting_watch_notify_mode">Уведомлять о</string>
@@ -489,23 +504,27 @@
     <string name="settings_restore">Восстановить настройки</string>
     <string name="settings_restore_description">Загрузить настройки из файла</string>
     <string name="settings_backup_success">Настройки успешно сохранены</string>
-    <string name="settings_restore_success">Настройки восстановлены. Перезапустите приложение, чтобы все изменения вступили в силу.</string>
+    <string name="settings_restore_success">Настройки восстановлены. Перезапустите приложение, чтобы
+        все изменения вступили в силу.</string>
     <string name="settings_backup_failed">Резервное копирование не удалось</string>
     <string name="settings_restore_failed">Восстановление не удалось</string>
-    <string name="settings_custom_theme_reset">Повреждённые данные пользовательской темы были сброшены до значений по умолчанию.</string>
+    <string name="settings_custom_theme_reset">Повреждённые данные пользовательской темы были
+        сброшены до значений по умолчанию.</string>
     <string name="settings_restore_select">Выберите, какие настройки восстановить</string>
     <string name="settings_restore_button">Восстановить</string>
     <string name="settings_restore_toggle_all">Переключить все</string>
 
     <string name="settings_group_about">О приложении</string>
     <string name="settings_update_check">Проверить обновления</string>
-    <string name="settings_update_check_description">Нажмите для проверки сейчас • Переключить для проверки при запуске</string>
+    <string name="settings_update_check_description">Нажмите для проверки сейчас • Переключить для
+        проверки при запуске</string>
     <string name="settings_crash_reporting">Отправлять отчёты об ошибках</string>
     <string name="settings_crash_reporting_description">
-"Отчёты об ошибках создают отчёты об ошибках в Clover.
-Отчёты об ошибках не собирают персональные данные."
+        "Отчёты об ошибках создают отчёты об ошибках в Clover.
+        Отчёты об ошибках не собирают персональные данные."
     </string>
-    <string name="settings_crash_reporting_toggle_notice">Настройка будет применена при следующем запуске приложения.</string>
+    <string name="settings_crash_reporting_toggle_notice">Настройка будет применена при следующем
+        запуске приложения.</string>
     <string name="settings_about_license">Распространяется под лицензией GNU GPLv3</string>
     <string name="settings_about_license_description">Нажмите для просмотра лицензии</string>
     <string name="settings_about_licenses">Лицензии открытого исходного кода</string>
@@ -540,15 +559,19 @@
     <string name="setting_toolbar_bottom">Переместить панель вниз</string>
     <string name="setting_toolbar_bottom_description">Показывать панель инструментов внизу экрана</string>
     <string name="setting_enable_reply_fab">Включить плавающую кнопку ответа</string>
-    <string name="setting_enable_reply_fab_description">Отключение заменяет круглую кнопку пунктом меню</string>
+    <string name="setting_enable_reply_fab_description">Отключение заменяет круглую кнопку пунктом
+        меню</string>
     <string name="setting_enable_top_bottom_fab">Включить кнопки «Вверх» и «Вниз»</string>
     <string name="setting_enable_top_bottom_fab_description">Удобная навигация вверх и вниз</string>
     <string name="setting_enable_accessible_post_info">Включить доступную информацию о посте</string>
-    <string name="setting_enable_accessible_post_info_description">Помещает информацию о посте в первое плавающее меню</string>
+    <string name="setting_enable_accessible_post_info_description">Помещает информацию о посте в
+        первое плавающее меню</string>
     <string name="setting_alternate_layout_mode_title">Альтернативный макет</string>
-    <string name="setting_alternate_layout_mode_description">Показывать текст под миниатюрой для постов с одним изображением</string>
+    <string name="setting_alternate_layout_mode_description">Показывать текст под миниатюрой для
+        постов с одним изображением</string>
     <string name="setting_images_immersive_mode_title">Использовать иммерсивный режим</string>
-    <string name="setting_images_immersive_mode_description">Скрывать панель навигации при просмотре изображений или видео</string>
+    <string name="setting_images_immersive_mode_description">Скрывать панель навигации при просмотре
+        изображений или видео</string>
 
     <string name="settings_group_post">Прочее</string>
     <string name="setting_font_size">Размер шрифта</string>
@@ -628,28 +651,34 @@
     <string name="setting_save_mode_boardthread">Базовая папка/борда/тред</string>
     <string name="setting_save_mode_legacy">Базовая папка/тред (устаревший альбом)</string>
     <string name="setting_randomize_filename">Случайное имя файла</string>
-    <string name="setting_randomize_filename_description">Заменять имя файла случайной временной меткой Unix за последний год</string>
+    <string name="setting_randomize_filename_description">Заменять имя файла случайной временной
+        меткой Unix за последний год</string>
     <string name="setting_attachment_picker_default">Менеджер файлов по умолчанию</string>
-    <string name="setting_attachment_picker_default_not_set">Всегда спрашивает, какое приложение использовать</string>
+    <string name="setting_attachment_picker_default_not_set">Всегда спрашивает, какое приложение
+        использовать</string>
     <string name="setting_attachment_picker_legacy_choice">Всегда использовать: %1$s</string>
     <string name="setting_attachment_picker_reset">Сбросить менеджер файлов по умолчанию</string>
-    <string name="setting_attachment_picker_reset_description">Очистить сохранённый выбор и показать диалог выбора?</string>
+    <string name="setting_attachment_picker_reset_description">Очистить сохранённый выбор и показать
+        диалог выбора?</string>
     <string name="setting_attachment_picker_reset_done">Выбор устаревшего менеджера очищен</string>
     <string name="setting_save_original_filename">Сохранять имя файла с сервера</string>
     <string name="setting_save_original_filename_description">
-"Сохранять изображение с именем файла, присвоенным сайтом.
-Если отключено, сохранять изображение с именем файла, присвоенным загрузчиком."
+        "Сохранять изображение с именем файла, присвоенным сайтом.
+        Если отключено, сохранять изображение с именем файла, присвоенным загрузчиком."
     </string>
     <string name="setting_video_default_muted">Запускать видео без звука</string>
-    <string name="setting_video_default_muted_description">Если видео имеет звук, отключать его по умолчанию</string>
+    <string name="setting_video_default_muted_description">Если видео имеет звук, отключать его по
+        умолчанию</string>
     <string name="setting_video_open_external">Воспроизводить видео во внешнем плеере</string>
-    <string name="setting_video_open_external_description">Воспроизводить видео во внешнем медиаплеере</string>
+    <string name="setting_video_open_external_description">Воспроизводить видео во внешнем
+        медиаплеере</string>
     <string name="setting_video_auto_loop">Включить автоповтор видео</string>
     <string name="setting_video_auto_loop_description">Автоматически повторять видеоконтент</string>
     <string name="setting_share_url">Поделиться URL изображения</string>
     <string name="setting_share_url_description">Делиться URL изображения вместо самого изображения</string>
     <string name="settings_reveal_image_spoilers">Показывать изображения-спойлеры</string>
-    <string name="settings_reveal_image_spoilers_description">Всегда показывать миниатюры и изображения-спойлеры</string>
+    <string name="settings_reveal_image_spoilers_description">Всегда показывать миниатюры и
+        изображения-спойлеры</string>
 
     <string name="settings_group_media_loading">Загрузка медиа</string>
     <string name="setting_image_auto_load">Автоматически загружать изображения</string>
@@ -662,28 +691,30 @@
 
     <string name="settings_group_media_video">Видеоплеер</string>
     <string name="setting_video_timeout">Таймаут элементов управления</string>
-    <string name="setting_video_timeout_description">Как долго элементы управления остаются видимыми (в секундах)</string>
+    <string name="setting_video_timeout_description">Как долго элементы управления остаются видимыми
+        (в секундах)</string>
     <string name="setting_vp9_extension_mode">Декодер VP9</string>
-    <string name="setting_vp9_extension_mode_description">Управляет использованием расширения программного декодера VP9</string>
-    <string name="setting_vp9_extension_mode_default">По умолчанию — сначала системный, при ошибке libvpx</string>
-    <string name="setting_vp9_extension_mode_prefer">Предпочитать — всегда использовать libvpx для VP9</string>
+    <string name="setting_vp9_extension_mode_description">Управляет использованием расширения
+        программного декодера VP9</string>
+    <string name="setting_vp9_extension_mode_default">По умолчанию — сначала системный, при ошибке
+        libvpx</string>
+    <string name="setting_vp9_extension_mode_prefer">Предпочитать — всегда использовать libvpx для
+        VP9</string>
     <string name="setting_vp9_extension_mode_off">Выкл. — только системные декодеры</string>
-    <string name="setting_video_buffer_for_playback">Буфер перед воспроизведением (мс)</string>
-    <string name="setting_video_buffer_for_playback_description">Миллисекунды буфера до начала воспроизведения (100–10000)</string>
 
     <string name="save_location_screen">Место сохранения</string>
     <string name="save_location_storage_permission_required_title">Требуется разрешение на хранилище</string>
     <string name="save_location_storage_permission_required">
-"Для просмотра файлов требуется доступ к хранилищу.
+        "Для просмотра файлов требуется доступ к хранилищу.
 
-Повторно включите это разрешение в настройках приложения, если вы его навсегда отключили."
+        Повторно включите это разрешение в настройках приложения, если вы его навсегда отключили."
     </string>
     <string name="setting_folder_pick_ok">Выбрать</string>
     <string name="setting_folder_navigate_up">Вверх</string>
 
     <string name="setting_theme_explanation">
-"Проведите пальцем, чтобы изменить тему.
-Нажмите меню панели инструментов, чтобы изменить цвет."
+        "Проведите пальцем, чтобы изменить тему.
+        Нажмите меню панели инструментов, чтобы изменить цвет."
     </string>
     <string name="setting_theme_accent">Нажмите здесь, чтобы изменить цвет FAB</string>
     <string name="setting_theme_reset_done">Выбор темы сброшен до значений по умолчанию.</string>
@@ -717,21 +748,22 @@
     <string name="setting_pass_logging_in">Загрузка&#8230;</string>
     <string name="setting_pass_error">Ошибка соединения</string>
     <string name="setting_pass_bottom_description">"
-<![CDATA[
+    <![CDATA[
 Забыли данные для входа в 4chan Pass?<br>
 <a href=\"https://www.4chan.org/pass?reset\">Перейдите сюда, чтобы сбросить PIN.</a><br>
 <br>
 Нет 4chan Pass?<br>
 <a href=\"https://www.4chan.org/pass\">Нажмите здесь, чтобы узнать больше.</a>
 ]]>
-    "</string>
+        "</string>
 
     <string name="settings_screen_theme">Темы</string>
 
     <string name="image_quality">Качество изображения: %1$d</string>
     <string name="scale_reduce">Уменьшить: 1/%1$d</string>
     <string name="could_not_decode_image_bitmap">Не удалось декодировать битмап изображения</string>
-    <string name="could_not_apply_image_options">Не удалось применить новые параметры изображения. Сообщение об ошибке: %1$s</string>
+    <string name="could_not_apply_image_options">Не удалось применить новые параметры изображения.
+        Сообщение об ошибке: %1$s</string>
     <string name="image_options_remove_filename">Удалить имя файла</string>
     <string name="image_options_change_image_checksum">Изменить контрольную сумму изображения</string>
     <string name="image_options_remove_metadata">Удалить метаданные</string>
@@ -742,15 +774,59 @@
     <string name="reencode_image_as_png">КАК PNG</string>
     <string name="reencode_image_image_quality_100_default_text">Качество изображения: 100</string>
     <string name="reencode_image_reduce_1x_default_text">Уменьшить: 1x</string>
-    <string name="click_image_for_extra_options">Нажмите на изображение для дополнительных параметров</string>
+    <string name="click_image_for_extra_options">Нажмите на изображение для дополнительных
+        параметров</string>
 
     <string name="forward_15_seconds">Перемотать вперёд на 15 секунд</string>
     <string name="rewind_5_seconds">Перемотать назад на 5 секунд</string>
     <string name="_play_pause">Воспроизвести или приостановить видео</string>
 
     <string name="setting_pinned_searches">Включить закреплённые поиски</string>
-    <string name="setting_pinned_searches_description">Добавляет кнопку в панель закладок для закрепления поисков по каталогу</string>
+    <string name="setting_pinned_searches_description">Добавляет кнопку в панель закладок для
+        закрепления поисков по каталогу</string>
 
     <string name="board_ban_status">Статус бана на 4chan</string>
     <string name="board_ban_status_description">Проверить статус вашего бана на 4chan</string>
+    <string name="action_hide_image_info">Скрыть информацию об изображении</string>
+    <string name="action_show_image_info">Показать информацию об изображении</string>
+    <string name="skip_pass_toast">Пропуск 4chan pass…</string>
+    <string name="image_save_preparing">Подготовка загрузки…</string>
+    <string name="setting_bottom_reply">Отвечать снизу</string>
+    <string name="setting_bottom_reply_description">Открывать диалог ответа снизу</string>
+    <string name="setting_disable_back_button">Отключить кнопку \'Назад\' в треде</string>
+    <string name="setting_tap_quotelink_span">Нажать на область ссылки-цитаты, чтобы открыть</string>
+    <string name="setting_tap_quotelink_span_desc">Если включено, нажатие в любом месте области
+        ссылки-цитаты откроет ее</string>
+    <string name="setting_load_full_size_thumbnails">Загружать миниатюры в полном размере</string>
+    <string name="setting_load_external_media_links">Загружать внешние медиа-ссылки</string>
+    <string name="setting_load_external_media_links_description">Если включено, внешние медиа файлы
+        будут открываться</string>
+    <string name="setting_video_webview_fallback">Использовать WebView как запасной плеер</string>
+    <string name="setting_video_webview_fallback_description">Попытается воспроизвести видео с
+        использованием внутреннего WebView</string>
+    <string name="setting_theme_auto_pick_title">Автоматические настройки темы</string>
+    <string name="setting_theme_auto_day">Дневная тема</string>
+    <string name="setting_theme_auto_night">Ночная тема</string>
+    <string name="setting_theme_item_post_inline_quote_color">Цвет greentext</string>
+    <string name="setting_theme_item_post_highlight_quote_color">Цвет выделенной ссылки-цитаты</string>
+    <string name="setting_theme_item_post_capcode_color">Цвет capcode</string>
+    <string name="setting_theme_item_post_spoiler_color">Цвет спойлера</string>
+    <string name="settings_captcha_group">Капча</string>
+    <string name="captcha_layout_v2_verify_button_text">Подтвердить</string>
+    <string name="captcha_layout_v2_reload">Перезагрузить</string>
+    <string name="captcha_layout_v2_use_old_captcha">Использовать старую капчу</string>
+    <string name="captcha_layout_v2_you_have_to_select_at_least_one_image">Вы должны выбрать хотя бы
+        одно изображение</string>
+    <string name="captcha_layout_v2_verification_already_in_progress">Проверка уже выполняется</string>
+    <string name="captcha_layout_v2_captcha_request_is_already_in_progress">Запрос капчи уже
+        выполняется</string>
+    <string name="captcha_layout_v2_you_are_requesting_captcha_too_fast">Вы запрашиваете капчи
+        слишком быстро</string>
+    <string name="captcha_layout_v2_refresh_cookies">Обновить куки</string>
+    <string name="image_options_fix_exif">Исправить ориентацию EXIF</string>
+    <string name="delete_site_dialog_title">Удалить сайт?</string>
+    <string name="delete_site_dialog_message">Вы уверены, что хотите удалить \\"%1$s\\"? Это
+        действие</string>
+    <string name="could_not_remove_site_error_message">Не удалось удалить сайт %1$s, сообщение об
+        ошибке: %2$s</string>
 </resources>

@@ -27,16 +27,19 @@
     <string name="update_install">Installieren</string>
     <string name="update_install_downloading">Update wird heruntergeladen</string>
     <string name="update_install_download_failed">Download fehlgeschlagen</string>
-    <string name="update_install_download_move_failed">Heruntergeladene Datei konnte nicht in das Download-Verzeichnis verschoben werden.</string>
+    <string name="update_install_download_move_failed">Heruntergeladene Datei konnte nicht in das
+        Download-Verzeichnis verschoben werden.</string>
     <string name="update_retry_title">Update wiederholen</string>
-    <string name="update_retry">Clover wurde noch nicht aktualisiert. Tippe auf \"Wiederholen\", um die Installation erneut zu versuchen.</string>
+    <string name="update_retry">Clover wurde noch nicht aktualisiert. Tippe auf \"Wiederholen\", um
+        die Installation erneut zu versuchen.</string>
     <string name="update_retry_button">Wiederholen</string>
 
     <string name="update_storage_permission_required_title">Speicherzugriff erforderlich</string>
     <string name="update_storage_permission_required">
-"Zugriff auf den Speicher ist erforderlich, um das Update zu installieren.
+        "Zugriff auf den Speicher ist erforderlich, um das Update zu installieren.
 
-Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauerhaft deaktiviert hast."</string>
+        Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauerhaft
+        deaktiviert hast."</string>
 
     <plurals name="minutes">
         <item quantity="one">%d Minute</item>
@@ -104,7 +107,8 @@ Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauer
     <string name="action_rename">Umbenennen</string>
     <string name="action_reply">Antworten</string>
 
-    <string name="open_link_not_matched">Clover kann diesen Link nicht öffnen; er wird stattdessen im Browser geöffnet.</string>
+    <string name="open_link_not_matched">Clover kann diesen Link nicht öffnen; er wird stattdessen
+        im Browser geöffnet.</string>
 
     <string name="order_bump">Bump-Reihenfolge</string>
     <string name="order_reply">Antwortanzahl</string>
@@ -128,12 +132,14 @@ Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauer
     <string name="thumbnail_load_failed_network">Fehler</string>
     <string name="image_preview_failed">Bild konnte nicht angezeigt werden</string>
     <string name="image_preview_failed_oom">Bild konnte nicht angezeigt werden, kein Speicher</string>
-    <string name="image_failed_big_image">Bild konnte nicht angezeigt werden, Deep-Zoom-Laden fehlgeschlagen</string>
+    <string name="image_failed_big_image">Bild konnte nicht angezeigt werden, Deep-Zoom-Laden
+        fehlgeschlagen</string>
     <string name="image_not_found">Bild nicht gefunden</string>
     <string name="image_open_failed">Bild konnte nicht geöffnet werden</string>
     <string name="image_spoiler_filename">Spoiler-Bild</string>
 
-    <string name="file_not_viewable">Datei kann intern nicht angezeigt werden; du kannst sie aber herunterladen oder im Browser öffnen.</string>
+    <string name="file_not_viewable">Datei kann intern nicht angezeigt werden; du kannst sie aber
+        herunterladen oder im Browser öffnen.</string>
 
     <string name="thread_boards_search_hint">Suchen</string>
     <string name="thread_load_failed_ssl">HTTPS-Fehler</string>
@@ -189,7 +195,12 @@ Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauer
     <string name="setup_site_4chan_verify_email">E-Mail bestätigen</string>
     <string name="setup_site_4chan_verify_email_description">E-Mail-Verifizierungsseite öffnen</string>
     <string name="setup_site_4chan_verify_email_warning_title">E-Mail-Verifizierung</string>
-    <string name="setup_site_4chan_verify_email_warning_body">Das Öffnen dieser Seite löscht alle Cloudflare-Cookies.\n\nWenn die 4chan-Seite einen Fehler über \"Skripte und Cookies\" anzeigt, versuche die Seite neu zu laden. \n\nDenke daran: Die E-Mail-Verifizierung muss innerhalb von Clover geöffnet werden, nicht in deinem normalen Browser. Bitte verwende die Option \"Verifizierungstoken eingeben\" unten, wenn du deine E-Mail erhältst. \n\nMöchtest du fortfahren?</string>
+    <string name="setup_site_4chan_verify_email_warning_body">Das Öffnen dieser Seite löscht alle
+        Cloudflare-Cookies.\n\nWenn die 4chan-Seite einen Fehler über \"Skripte und Cookies\"
+        anzeigt, versuche die Seite neu zu laden. \n\nDenke daran: Die E-Mail-Verifizierung muss
+        innerhalb von Clover geöffnet werden, nicht in deinem normalen Browser. Bitte verwende die
+        Option \"Verifizierungstoken eingeben\" unten, wenn du deine E-Mail erhältst. \n\nMöchtest
+        du fortfahren?</string>
     <string name="setup_site_4chan_verify_email_warning_open">Öffnen</string>
     <string name="setup_site_4chan_enter_token">Verifizierungstoken eingeben</string>
     <string name="setup_site_4chan_enter_token_description">Verifizierungslink oder Token einfügen</string>
@@ -198,7 +209,8 @@ Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauer
     <string name="setup_site_4chan_pass_cookie_set">Cookie ist gesetzt</string>
     <string name="setup_site_4chan_pass_cookie_not_set">Nicht gesetzt</string>
     <string name="setup_site_4chan_pass_cookie_dialog_title">Verifizierungs-Cookie</string>
-    <string name="setup_site_4chan_pass_cookie_dialog_message">Der Wert des 4chan_pass-Cookies zur Authentifizierung. Änderungen werden sofort im Cookie-Speicher übernommen.</string>
+    <string name="setup_site_4chan_pass_cookie_dialog_message">Der Wert des 4chan_pass-Cookies zur
+        Authentifizierung. Änderungen werden sofort im Cookie-Speicher übernommen.</string>
     <string name="setup_site_4chan_pass_cookie_hint">Cookie-Wert…</string>
     <string name="setup_site_4chan_pass_cookie_saved">4chan_pass-Cookie gespeichert</string>
     <string name="setup_site_4chan_pass_cookie_cleared">4chan_pass-Cookie geleert</string>
@@ -269,7 +281,8 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="filter_subject">Betreff</string>
     <string name="filter_filename">Dateiname</string>
     <string name="filter_country">Ländername</string>
-    <string name="filter_precedence_hint">"Filter oben haben Vorrang.\nNach links wischen, um einen Filter zu löschen."</string>
+    <string name="filter_precedence_hint">"Filter oben haben Vorrang.\nNach links wischen, um einen
+        Filter zu löschen."</string>
     <string name="filter_add_button">Filter hinzufügen</string>
     <string name="filter_enable_all">Alle aktivieren</string>
     <string name="filter_disable_all">Alle deaktivieren</string>
@@ -294,7 +307,8 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="drawer_pin_removed">\"%1$s\" entfernt</string>
     <string name="drawer_pins_cleared">%1$s geleert</string>
     <string name="drawer_pins_non_cleared">Keine Lesezeichen geleert.</string>
-    <string name="drawer_pins_non_cleared_try_all">Keine Lesezeichen geleert. Halten, um alle zu entfernen.</string>
+    <string name="drawer_pins_non_cleared_try_all">Keine Lesezeichen geleert. Halten, um alle zu
+        entfernen.</string>
 
     <string name="post_highlight_id">ID hervorheben</string>
     <string name="post_highlight_tripcode">Tripcode hervorheben</string>
@@ -353,9 +367,11 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="video_playback_failed">Dieses Video kann nicht abgespielt werden.</string>
     <string name="video_playback_warning_title">WebM-Video-Fehler</string>
     <string name="video_playback_warning">
-"Das WebM-Video konnte nicht abgespielt werden. Dies könnte ein Hardware-Problem deines Geräts sein.
+        "Das WebM-Video konnte nicht abgespielt werden. Dies könnte ein Hardware-Problem deines
+        Geräts sein.
 
-Als Lösung kannst du einen externen Medienplayer verwenden oder den libvpx-Decoder von Clover in den Optionen aktivieren."
+        Als Lösung kannst du einen externen Medienplayer verwenden oder den libvpx-Decoder von
+        Clover in den Optionen aktivieren."
     </string>
     <string name="video_playback_ignore">Nicht mehr anzeigen</string>
 
@@ -424,11 +440,14 @@ Als Lösung kannst du einen externen Medienplayer verwenden oder den libvpx-Deco
 
     <string name="settings_screen_watch">Thread-Beobachter-Einstellungen</string>
     <string name="settings_group_watch">Einstellungen</string>
-    <string name="setting_watch_info">Um Lesezeichen auf neue Posts zu überwachen, aktiviere den Thread-Beobachter.</string>
+    <string name="setting_watch_info">Um Lesezeichen auf neue Posts zu überwachen, aktiviere den
+        Thread-Beobachter.</string>
     <string name="setting_watch_enable_background">Im Hintergrund aktivieren</string>
-    <string name="setting_watch_enable_background_description">Lesezeichen beobachten, wenn Clover in den Hintergrund versetzt wird</string>
+    <string name="setting_watch_enable_background_description">Lesezeichen beobachten, wenn Clover
+        in den Hintergrund versetzt wird</string>
     <string name="setting_watch_background_timeout">Hintergrund-Aktualisierungsintervall</string>
-    <string name="setting_watch_background_timeout_description">Das Intervall zwischen Aktualisierungen im Hintergrund</string>
+    <string name="setting_watch_background_timeout_description">Das Intervall zwischen
+        Aktualisierungen im Hintergrund</string>
     <string name="setting_watch_notify_mode">Benachrichtigen über</string>
     <string-array name="setting_watch_notify_modes">
         <item>Alle Posts</item>
@@ -453,7 +472,8 @@ Als Lösung kannst du einen externen Medienplayer verwenden oder den libvpx-Deco
         <item>Lila</item>
     </string-array>
     <string name="setting_watch_channel_normal">Benachrichtigungseinstellungen für Thread-Updates</string>
-    <string name="setting_watch_channel_mention">Benachrichtigungseinstellungen für Thread-Erwähnungen</string>
+    <string name="setting_watch_channel_mention">Benachrichtigungseinstellungen für
+        Thread-Erwähnungen</string>
 
     <string name="settings_group_backup_restore">Sichern &amp; Wiederherstellen</string>
     <string name="settings_backup">Aktuelle Einstellungen sichern</string>
@@ -461,23 +481,28 @@ Als Lösung kannst du einen externen Medienplayer verwenden oder den libvpx-Deco
     <string name="settings_restore">Einstellungen wiederherstellen</string>
     <string name="settings_restore_description">Einstellungen aus einer Datei laden</string>
     <string name="settings_backup_success">Einstellungen erfolgreich gesichert</string>
-    <string name="settings_restore_success">Einstellungen wiederhergestellt. Starte die App neu, damit alle Änderungen wirksam werden.</string>
+    <string name="settings_restore_success">Einstellungen wiederhergestellt. Starte die App neu,
+        damit alle Änderungen wirksam werden.</string>
     <string name="settings_backup_failed">Sicherung fehlgeschlagen</string>
     <string name="settings_restore_failed">Wiederherstellung fehlgeschlagen</string>
-    <string name="settings_custom_theme_reset">Beschädigte benutzerdefinierte Thema-Daten wurden auf Standardwerte zurückgesetzt.</string>
-    <string name="settings_restore_select">Wähle, welche Einstellungen wiederhergestellt werden sollen</string>
+    <string name="settings_custom_theme_reset">Beschädigte benutzerdefinierte Thema-Daten wurden auf
+        Standardwerte zurückgesetzt.</string>
+    <string name="settings_restore_select">Wähle, welche Einstellungen wiederhergestellt werden
+        sollen</string>
     <string name="settings_restore_button">Wiederherstellen</string>
     <string name="settings_restore_toggle_all">Alle umschalten</string>
 
     <string name="settings_group_about">Über</string>
     <string name="settings_update_check">Nach Updates suchen</string>
-    <string name="settings_update_check_description">Tippen, um jetzt zu suchen • Umschalten für Start-Check</string>
+    <string name="settings_update_check_description">Tippen, um jetzt zu suchen • Umschalten für
+        Start-Check</string>
     <string name="settings_crash_reporting">Abstürze melden</string>
     <string name="settings_crash_reporting_description">
-"Absturzberichte erstellen Berichte über Fehler in Clover.
-Absturzberichte erfassen keine personenbezogenen Daten."
+        "Absturzberichte erstellen Berichte über Fehler in Clover.
+        Absturzberichte erfassen keine personenbezogenen Daten."
     </string>
-    <string name="settings_crash_reporting_toggle_notice">Die Einstellung wird beim nächsten App-Start angewendet.</string>
+    <string name="settings_crash_reporting_toggle_notice">Die Einstellung wird beim nächsten
+        App-Start angewendet.</string>
     <string name="settings_about_license">Veröffentlicht unter der GNU GPLv3-Lizenz</string>
     <string name="settings_about_license_description">Tippen, um die Lizenz anzuzeigen</string>
     <string name="settings_about_licenses">Open-Source-Lizenzen</string>
@@ -512,15 +537,19 @@ Absturzberichte erfassen keine personenbezogenen Daten."
     <string name="setting_toolbar_bottom">Toolbar nach unten verschieben</string>
     <string name="setting_toolbar_bottom_description">Zeigt die Toolbar am unteren Bildschirmrand</string>
     <string name="setting_enable_reply_fab">Schwebende Antwort-Schaltfläche aktivieren</string>
-    <string name="setting_enable_reply_fab_description">Deaktivieren ersetzt die runde Schaltfläche durch eine Menüoption</string>
+    <string name="setting_enable_reply_fab_description">Deaktivieren ersetzt die runde Schaltfläche
+        durch eine Menüoption</string>
     <string name="setting_enable_top_bottom_fab">Oben- und Unten-Schaltflächen aktivieren</string>
     <string name="setting_enable_top_bottom_fab_description">Einfache Navigation nach oben und unten</string>
     <string name="setting_enable_accessible_post_info">Barrierefreie Post-Info aktivieren</string>
-    <string name="setting_enable_accessible_post_info_description">Platziert Post-Info im ersten schwebenden Menü</string>
+    <string name="setting_enable_accessible_post_info_description">Platziert Post-Info im ersten
+        schwebenden Menü</string>
     <string name="setting_alternate_layout_mode_title">Alternatives Layout</string>
-    <string name="setting_alternate_layout_mode_description">Text unterhalb des Vorschaubilds für Posts mit einem Bild anzeigen</string>
+    <string name="setting_alternate_layout_mode_description">Text unterhalb des Vorschaubilds für
+        Posts mit einem Bild anzeigen</string>
     <string name="setting_images_immersive_mode_title">Immersiven Modus verwenden</string>
-    <string name="setting_images_immersive_mode_description">Navigationsleiste beim Anzeigen von Bildern oder Videos ausblenden</string>
+    <string name="setting_images_immersive_mode_description">Navigationsleiste beim Anzeigen von
+        Bildern oder Videos ausblenden</string>
 
     <string name="settings_group_post">Sonstiges</string>
     <string name="setting_font_size">Schriftgröße</string>
@@ -548,8 +577,10 @@ Absturzberichte erfassen keine personenbezogenen Daten."
     <string name="setting_group_reset">Datenschutz &amp; Daten</string>
     <string name="setting_enable_localization">Lokalisierung aktivieren</string>
     <string name="setting_enable_localization_description">Englisch</string>
-    <string name="setting_confirm_clear_hides">Möchtest du wirklich alle ausgeblendeten Threads löschen?</string>
-    <string name="setting_confirm_clear_cookies">Dadurch werden alle Cookies der Seiten gelöscht. Bist du sicher?</string>
+    <string name="setting_confirm_clear_hides">Möchtest du wirklich alle ausgeblendeten Threads
+        löschen?</string>
+    <string name="setting_confirm_clear_cookies">Dadurch werden alle Cookies der Seiten gelöscht.
+        Bist du sicher?</string>
 
     <string name="settings_group_reply">Antworten</string>
     <string name="setting_post_pin">Thread bei Post als Lesezeichen speichern</string>
@@ -559,7 +590,8 @@ Absturzberichte erfassen keine personenbezogenen Daten."
     <string name="setting_text_only">Nur-Text-Modus</string>
     <string name="setting_text_only_description">Bilder in Board- und Thread-Ansicht ausblenden</string>
     <string name="settings_reveal_text_spoilers">Text-Spoiler anzeigen</string>
-    <string name="settings_reveal_text_spoilers_description">Lässt den Spoiler-Text sichtbar erscheinen</string>
+    <string name="settings_reveal_text_spoilers_description">Lässt den Spoiler-Text sichtbar
+        erscheinen</string>
     <string name="setting_anonymize">Alle anonym machen</string>
     <string name="setting_anonymize_ids">IDs ausblenden</string>
     <string name="setting_hide_flags">Flaggen ausblenden</string>
@@ -600,28 +632,34 @@ Absturzberichte erfassen keine personenbezogenen Daten."
     <string name="setting_save_mode_boardthread">Basisordner/Board/Thread</string>
     <string name="setting_save_mode_legacy">Basisordner/Thread (Legacy-Album)</string>
     <string name="setting_randomize_filename">Dateinamen zufällig wählen</string>
-    <string name="setting_randomize_filename_description">Dateinamen durch einen zufälligen Unix-Zeitstempel aus dem letzten Jahr ersetzen</string>
+    <string name="setting_randomize_filename_description">Dateinamen durch einen zufälligen
+        Unix-Zeitstempel aus dem letzten Jahr ersetzen</string>
     <string name="setting_attachment_picker_default">Standard-Dateiauswahl</string>
-    <string name="setting_attachment_picker_default_not_set">Fragt immer, welche App verwendet werden soll</string>
+    <string name="setting_attachment_picker_default_not_set">Fragt immer, welche App verwendet
+        werden soll</string>
     <string name="setting_attachment_picker_legacy_choice">Immer verwenden: %1$s</string>
     <string name="setting_attachment_picker_reset">Standard-Dateiauswahl zurücksetzen</string>
-    <string name="setting_attachment_picker_reset_description">Gespeicherte Standardeinstellung löschen und Auswahldialog anzeigen?</string>
+    <string name="setting_attachment_picker_reset_description">Gespeicherte Standardeinstellung
+        löschen und Auswahldialog anzeigen?</string>
     <string name="setting_attachment_picker_reset_done">Legacy-Auswahl gelöscht</string>
     <string name="setting_save_original_filename">Server-Dateinamen speichern</string>
     <string name="setting_save_original_filename_description">
-"Bild mit dem Dateinamen speichern, den die Seite vergeben hat.
-Wenn deaktiviert, Bild mit dem vom Uploader vergebenen Dateinamen speichern."
+        "Bild mit dem Dateinamen speichern, den die Seite vergeben hat.
+        Wenn deaktiviert, Bild mit dem vom Uploader vergebenen Dateinamen speichern."
     </string>
     <string name="setting_video_default_muted">Videos stummgeschaltet starten</string>
-    <string name="setting_video_default_muted_description">Wenn ein Video Ton hat, standardmäßig stumm schalten</string>
+    <string name="setting_video_default_muted_description">Wenn ein Video Ton hat, standardmäßig
+        stumm schalten</string>
     <string name="setting_video_open_external">Videos mit externem Player abspielen</string>
-    <string name="setting_video_open_external_description">Videos in einer externen Medienplayer-App abspielen</string>
+    <string name="setting_video_open_external_description">Videos in einer externen Medienplayer-App
+        abspielen</string>
     <string name="setting_video_auto_loop">Automatische Videoschleife aktivieren</string>
     <string name="setting_video_auto_loop_description">Videoinhalte automatisch wiederholen</string>
     <string name="setting_share_url">URL zum Bild teilen</string>
     <string name="setting_share_url_description">Die URL zum Bild anstelle des Bildes selbst teilen</string>
     <string name="settings_reveal_image_spoilers">Bild-Spoiler anzeigen</string>
-    <string name="settings_reveal_image_spoilers_description">Spoiler-Vorschaubilder und -Bilder immer anzeigen</string>
+    <string name="settings_reveal_image_spoilers_description">Spoiler-Vorschaubilder und -Bilder
+        immer anzeigen</string>
 
     <string name="settings_group_media_loading">Medien laden</string>
     <string name="setting_image_auto_load">Bilder automatisch laden</string>
@@ -634,28 +672,31 @@ Wenn deaktiviert, Bild mit dem vom Uploader vergebenen Dateinamen speichern."
 
     <string name="settings_group_media_video">Videoplayer</string>
     <string name="setting_video_timeout">Player-Steuerungs-Timeout</string>
-    <string name="setting_video_timeout_description">Wie lange die Player-Steuerungen sichtbar bleiben (in Sekunden)</string>
+    <string name="setting_video_timeout_description">Wie lange die Player-Steuerungen sichtbar
+        bleiben (in Sekunden)</string>
     <string name="setting_vp9_extension_mode">VP9-Decoder</string>
-    <string name="setting_vp9_extension_mode_description">Steuert die Verwendung der VP9-Software-Decoder-Erweiterung</string>
-    <string name="setting_vp9_extension_mode_default">Standard – zuerst System versuchen, bei Fehler auf libvpx zurückfallen</string>
-    <string name="setting_vp9_extension_mode_prefer">Bevorzugen – libvpx für jedes VP9-Video verwenden</string>
+    <string name="setting_vp9_extension_mode_description">Steuert die Verwendung der
+        VP9-Software-Decoder-Erweiterung</string>
+    <string name="setting_vp9_extension_mode_default">Standard – zuerst System versuchen, bei Fehler
+        auf libvpx zurückfallen</string>
+    <string name="setting_vp9_extension_mode_prefer">Bevorzugen – libvpx für jedes VP9-Video
+        verwenden</string>
     <string name="setting_vp9_extension_mode_off">Aus – nur System-Decoder</string>
-    <string name="setting_video_buffer_for_playback">Puffer vor der Wiedergabe (ms)</string>
-    <string name="setting_video_buffer_for_playback_description">Millisekunden Puffer vor Wiedergabebeginn (100–10000)</string>
 
     <string name="save_location_screen">Speicherort</string>
     <string name="save_location_storage_permission_required_title">Speicherzugriff erforderlich</string>
     <string name="save_location_storage_permission_required">
-"Zugriff auf den Speicher ist erforderlich, um Dateien zu durchsuchen.
+        "Zugriff auf den Speicher ist erforderlich, um Dateien zu durchsuchen.
 
-Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauerhaft deaktiviert hast."
+        Aktiviere diese Berechtigung in den App-Einstellungen wieder, falls du sie dauerhaft
+        deaktiviert hast."
     </string>
     <string name="setting_folder_pick_ok">Auswählen</string>
     <string name="setting_folder_navigate_up">Nach oben</string>
 
     <string name="setting_theme_explanation">
-"Wischen, um das Thema zu ändern.
-Auf das Toolbar-Menü tippen, um die Farbe zu ändern."
+        "Wischen, um das Thema zu ändern.
+        Auf das Toolbar-Menü tippen, um die Farbe zu ändern."
     </string>
     <string name="setting_theme_accent">Hier tippen, um die FAB-Farbe zu ändern</string>
     <string name="setting_theme_reset_done">Themenauswahl auf Standardwerte zurückgesetzt.</string>
@@ -689,21 +730,22 @@ Auf das Toolbar-Menü tippen, um die Farbe zu ändern."
     <string name="setting_pass_logging_in">Lädt&#8230;</string>
     <string name="setting_pass_error">Verbindungsfehler</string>
     <string name="setting_pass_bottom_description">"
-<![CDATA[
+    <![CDATA[
 4chan-Pass-Zugangsdaten vergessen?<br>
 <a href=\"https://www.4chan.org/pass?reset\">Hier klicken, um die PIN zurückzusetzen.</a><br>
 <br>
 Noch keinen 4chan Pass?<br>
 <a href=\"https://www.4chan.org/pass\">Hier tippen, um mehr zu erfahren.</a>
 ]]>
-    "</string>
+        "</string>
 
     <string name="settings_screen_theme">Themen</string>
 
     <string name="image_quality">Bildqualität: %1$d</string>
     <string name="scale_reduce">Reduzieren: 1/%1$d</string>
     <string name="could_not_decode_image_bitmap">Bild-Bitmap konnte nicht dekodiert werden</string>
-    <string name="could_not_apply_image_options">Neue Bildoptionen konnten nicht angewendet werden. Fehlermeldung: %1$s</string>
+    <string name="could_not_apply_image_options">Neue Bildoptionen konnten nicht angewendet werden.
+        Fehlermeldung: %1$s</string>
     <string name="image_options_remove_filename">Dateiname entfernen</string>
     <string name="image_options_change_image_checksum">Bild-Prüfsumme ändern</string>
     <string name="image_options_remove_metadata">Metadaten entfernen</string>
@@ -721,8 +763,55 @@ Noch keinen 4chan Pass?<br>
     <string name="_play_pause">Video abspielen oder pausieren</string>
 
     <string name="setting_pinned_searches">Angeheftete Suchen aktivieren</string>
-    <string name="setting_pinned_searches_description">Fügt eine Schaltfläche zur Lesezeichen-Schublade hinzu, um Katalogsuchen anzuheften</string>
+    <string name="setting_pinned_searches_description">Fügt eine Schaltfläche zur
+        Lesezeichen-Schublade hinzu, um Katalogsuchen anzuheften</string>
 
     <string name="board_ban_status">4chan Sperrstatus</string>
     <string name="board_ban_status_description">4chan-Sperrstatus überprüfen</string>
+    <string name="action_hide_image_info">Bildinformationen ausblenden</string>
+    <string name="action_show_image_info">Bildinformationen anzeigen</string>
+    <string name="skip_pass_toast">4chan-Pass wird übersprungen…</string>
+    <string name="image_save_preparing">Download wird vorbereitet…</string>
+    <string name="setting_bottom_reply">Antworten unten</string>
+    <string name="setting_bottom_reply_description">Antwort-Dialog von unten öffnen</string>
+    <string name="setting_disable_back_button">Zurück-Taste in der Thread-Ansicht deaktivieren</string>
+    <string name="setting_tap_quotelink_span">Auf Quotelink-Bereich tippen zum Öffnen</string>
+    <string name="setting_tap_quotelink_span_desc">Wenn aktiviert, öffnet das Tippen irgendwo im
+        Quotelink-Bereich den Quotelink</string>
+    <string name="setting_load_full_size_thumbnails">Thumbnails in voller Größe laden</string>
+    <string name="setting_load_external_media_links">Externe Medienlinks laden</string>
+    <string name="setting_load_external_media_links_description">Wenn aktiviert, werden externe
+        Mediendateien (Bilder, Video oder Audio) in der App geöffnet. Unterstützte Hosts: Catbox,
+        Uguu.se</string>
+    <string name="setting_video_webview_fallback">WebView als Fallback-Player verwenden</string>
+    <string name="setting_video_webview_fallback_description">Versucht, das Video mit der internen
+        WebView abzuspielen, wenn das Videoformat nicht unterstützt wird</string>
+    <string name="setting_theme_auto_pick_title">Automatische Theme-Einstellungen</string>
+    <string name="setting_theme_auto_day">Tag-Theme</string>
+    <string name="setting_theme_auto_night">Nacht-Theme</string>
+    <string name="setting_theme_item_post_inline_quote_color">Greentext-Farbe</string>
+    <string name="setting_theme_item_post_highlight_quote_color">Farbe des hervorgehobenen
+        Quotelinks</string>
+    <string name="setting_theme_item_post_capcode_color">Capcode-Farbe</string>
+    <string name="setting_theme_item_post_spoiler_color">Spoiler-Farbe</string>
+    <string name="settings_captcha_group">Captcha</string>
+    <string name="captcha_layout_v2_verify_button_text">Verifizieren</string>
+    <string name="captcha_layout_v2_reload">Neu laden</string>
+    <string name="captcha_layout_v2_use_old_captcha">Altes Captcha verwenden</string>
+    <string name="captcha_layout_v2_you_have_to_select_at_least_one_image">Du musst mindestens ein
+        Bild auswählen (wenn du ein Captcha siehst, das keine passenden Bilder hat, ist es
+        wahrscheinlich ein Bug, fülle einen Issue aus und verwende für eine Weile das alte Captcha)</string>
+    <string name="captcha_layout_v2_verification_already_in_progress">Verifizierung läuft bereits</string>
+    <string name="captcha_layout_v2_captcha_request_is_already_in_progress">Captcha-Anfrage läuft
+        bereits</string>
+    <string name="captcha_layout_v2_you_are_requesting_captcha_too_fast">Du forderst Captchas zu
+        schnell an</string>
+    <string name="captcha_layout_v2_refresh_cookies">Cookies aktualisieren</string>
+    <string name="image_options_fix_exif">EXIF-Ausrichtung korrigieren</string>
+    <string name="delete_site_dialog_title">Seite löschen?</string>
+    <string name="delete_site_dialog_message">Bist du sicher, dass du \\"%1$s\\" löschen möchtest?
+        Diese Aktion wird die Seite und alles damit Verbundene löschen. Die App wird neu gestartet.
+        Möchtest du fortfahren?</string>
+    <string name="could_not_remove_site_error_message">Konnte Seite %1$s nicht entfernen,
+        Fehlermeldung: %2$s</string>
 </resources>

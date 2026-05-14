@@ -27,16 +27,19 @@
     <string name="update_install">Instalar</string>
     <string name="update_install_downloading">Descargando actualización</string>
     <string name="update_install_download_failed">Error en la descarga</string>
-    <string name="update_install_download_move_failed">No se pudo mover el archivo descargado al directorio de Descargas.</string>
+    <string name="update_install_download_move_failed">No se pudo mover el archivo descargado al
+        directorio de Descargas.</string>
     <string name="update_retry_title">Reintentar actualización</string>
-    <string name="update_retry">Clover aún no se ha actualizado. Pulsa \"reintentar\" para intentar la instalación de nuevo.</string>
+    <string name="update_retry">Clover aún no se ha actualizado. Pulsa \"reintentar\" para intentar
+        la instalación de nuevo.</string>
     <string name="update_retry_button">reintentar</string>
 
     <string name="update_storage_permission_required_title">Permiso de almacenamiento requerido</string>
     <string name="update_storage_permission_required">
-"Se requiere permiso de acceso al almacenamiento para instalar la actualización.
+        "Se requiere permiso de acceso al almacenamiento para instalar la actualización.
 
-Vuelve a activar este permiso en los ajustes de la aplicación si lo has desactivado permanentemente."</string>
+        Vuelve a activar este permiso en los ajustes de la aplicación si lo has desactivado
+        permanentemente."</string>
 
     <plurals name="minutes">
         <item quantity="one">%d minuto</item>
@@ -104,7 +107,8 @@ Vuelve a activar este permiso en los ajustes de la aplicación si lo has desacti
     <string name="action_rename">Renombrar</string>
     <string name="action_reply">Responder</string>
 
-    <string name="open_link_not_matched">Clover no puede abrir este enlace; se abrirá en tu navegador.</string>
+    <string name="open_link_not_matched">Clover no puede abrir este enlace; se abrirá en tu
+        navegador.</string>
 
     <string name="order_bump">Orden de bump</string>
     <string name="order_reply">Número de respuestas</string>
@@ -133,7 +137,8 @@ Vuelve a activar este permiso en los ajustes de la aplicación si lo has desacti
     <string name="image_open_failed">No se puede abrir la imagen</string>
     <string name="image_spoiler_filename">Imagen spoiler</string>
 
-    <string name="file_not_viewable">El archivo no puede verse internamente; puedes descargarlo o abrirlo en tu navegador.</string>
+    <string name="file_not_viewable">El archivo no puede verse internamente; puedes descargarlo o
+        abrirlo en tu navegador.</string>
 
     <string name="thread_boards_search_hint">Buscar</string>
     <string name="thread_load_failed_ssl">Error HTTPS</string>
@@ -187,9 +192,14 @@ Vuelve a activar este permiso en los ajustes de la aplicación si lo has desacti
 
     <string name="setup_site_4chan_verification_group">Verificación</string>
     <string name="setup_site_4chan_verify_email">Verificar correo</string>
-    <string name="setup_site_4chan_verify_email_description">Abrir la página de verificación por correo</string>
+    <string name="setup_site_4chan_verify_email_description">Abrir la página de verificación por
+        correo</string>
     <string name="setup_site_4chan_verify_email_warning_title">Verificación por correo</string>
-    <string name="setup_site_4chan_verify_email_warning_body">Abrir esta página borrará todas las cookies de Cloudflare.\n\nSi la página de 4chan muestra un error sobre \"scripts y cookies\", intenta recargar la página. \n\nRecuerda que la verificación por correo debe abrirse dentro de Clover, no en tu navegador habitual. Por favor usa la opción \"Introducir token de verificación\" más abajo cuando recibas tu correo. \n\n¿Deseas continuar?</string>
+    <string name="setup_site_4chan_verify_email_warning_body">Abrir esta página borrará todas las
+        cookies de Cloudflare.\n\nSi la página de 4chan muestra un error sobre \"scripts y
+        cookies\", intenta recargar la página. \n\nRecuerda que la verificación por correo debe
+        abrirse dentro de Clover, no en tu navegador habitual. Por favor usa la opción \"Introducir
+        token de verificación\" más abajo cuando recibas tu correo. \n\n¿Deseas continuar?</string>
     <string name="setup_site_4chan_verify_email_warning_open">Abrir</string>
     <string name="setup_site_4chan_enter_token">Introducir token de verificación</string>
     <string name="setup_site_4chan_enter_token_description">Pegar enlace o token de verificación</string>
@@ -198,7 +208,8 @@ Vuelve a activar este permiso en los ajustes de la aplicación si lo has desacti
     <string name="setup_site_4chan_pass_cookie_set">La cookie está establecida</string>
     <string name="setup_site_4chan_pass_cookie_not_set">No establecida</string>
     <string name="setup_site_4chan_pass_cookie_dialog_title">Cookie de verificación</string>
-    <string name="setup_site_4chan_pass_cookie_dialog_message">El valor de la cookie 4chan_pass usado para la autenticación. Los cambios se aplican inmediatamente al almacén de cookies.</string>
+    <string name="setup_site_4chan_pass_cookie_dialog_message">El valor de la cookie 4chan_pass
+        usado para la autenticación. Los cambios se aplican inmediatamente al almacén de cookies.</string>
     <string name="setup_site_4chan_pass_cookie_hint">Valor de la cookie…</string>
     <string name="setup_site_4chan_pass_cookie_saved">Cookie 4chan_pass guardada</string>
     <string name="setup_site_4chan_pass_cookie_cleared">Cookie 4chan_pass borrada</string>
@@ -269,7 +280,8 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="filter_subject">Asunto</string>
     <string name="filter_filename">Nombre de archivo</string>
     <string name="filter_country">Nombre de país</string>
-    <string name="filter_precedence_hint">"Los filtros de arriba tienen prioridad.\nDesliza a la izquierda para eliminar un filtro."</string>
+    <string name="filter_precedence_hint">"Los filtros de arriba tienen prioridad.\nDesliza a la
+        izquierda para eliminar un filtro."</string>
     <string name="filter_add_button">Añadir filtro</string>
     <string name="filter_enable_all">Activar todos</string>
     <string name="filter_disable_all">Desactivar todos</string>
@@ -294,7 +306,8 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="drawer_pin_removed">\"%1$s\" eliminado</string>
     <string name="drawer_pins_cleared">%1$s borrado</string>
     <string name="drawer_pins_non_cleared">No se borraron favoritos.</string>
-    <string name="drawer_pins_non_cleared_try_all">No se borraron favoritos. Mantén pulsado para eliminar todos.</string>
+    <string name="drawer_pins_non_cleared_try_all">No se borraron favoritos. Mantén pulsado para
+        eliminar todos.</string>
 
     <string name="post_highlight_id">Resaltar ID</string>
     <string name="post_highlight_tripcode">Resaltar tripcode</string>
@@ -353,9 +366,9 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="video_playback_failed">Este vídeo no se puede reproducir.</string>
     <string name="video_playback_warning_title">Error de vídeo WebM</string>
     <string name="video_playback_warning">
-"El vídeo WebM no pudo reproducirse. Podría ser un problema con el hardware de tu teléfono.
-
-Una solución es usar un reproductor multimedia externo o habilitar el decodificador libvpx de Clover en las opciones."
+        "El vídeo WebM no pudo reproducirse. Podría ser un problema con el hardware de tu teléfono.
+        Una solución es usar un reproductor multimedia externo o habilitar el decodificador libvpx
+        de Clover en las opciones."
     </string>
     <string name="video_playback_ignore">No volver a mostrar</string>
 
@@ -424,11 +437,14 @@ Una solución es usar un reproductor multimedia externo o habilitar el decodific
 
     <string name="settings_screen_watch">Ajustes de vigilancia de threads</string>
     <string name="settings_group_watch">Ajustes</string>
-    <string name="setting_watch_info">Para vigilar favoritos en busca de posts nuevos, activa el vigilador de threads.</string>
+    <string name="setting_watch_info">Para vigilar favoritos en busca de posts nuevos, activa el
+        vigilador de threads.</string>
     <string name="setting_watch_enable_background">Activar en segundo plano</string>
-    <string name="setting_watch_enable_background_description">Vigilar favoritos cuando Clover está en segundo plano</string>
+    <string name="setting_watch_enable_background_description">Vigilar favoritos cuando Clover está
+        en segundo plano</string>
     <string name="setting_watch_background_timeout">Intervalo de actualización en segundo plano</string>
-    <string name="setting_watch_background_timeout_description">El intervalo entre actualizaciones en segundo plano</string>
+    <string name="setting_watch_background_timeout_description">El intervalo entre actualizaciones
+        en segundo plano</string>
     <string name="setting_watch_notify_mode">Notificar de</string>
     <string-array name="setting_watch_notify_modes">
         <item>Todos los posts</item>
@@ -452,7 +468,8 @@ Una solución es usar un reproductor multimedia externo o habilitar el decodific
         <item>Azul</item>
         <item>Morado</item>
     </string-array>
-    <string name="setting_watch_channel_normal">Ajustes de notificación para actualizaciones de threads</string>
+    <string name="setting_watch_channel_normal">Ajustes de notificación para actualizaciones de
+        threads</string>
     <string name="setting_watch_channel_mention">Ajustes de notificación para menciones en threads</string>
 
     <string name="settings_group_backup_restore">Copia de seguridad &amp; restauración</string>
@@ -461,23 +478,27 @@ Una solución es usar un reproductor multimedia externo o habilitar el decodific
     <string name="settings_restore">Restaurar ajustes</string>
     <string name="settings_restore_description">Cargar ajustes desde un archivo</string>
     <string name="settings_backup_success">Ajustes guardados correctamente</string>
-    <string name="settings_restore_success">Ajustes restaurados. Reinicia la app para que todos los cambios surtan efecto.</string>
+    <string name="settings_restore_success">Ajustes restaurados. Reinicia la app para que todos los
+        cambios surtan efecto.</string>
     <string name="settings_backup_failed">Error en la copia de seguridad</string>
     <string name="settings_restore_failed">Error al restaurar</string>
-    <string name="settings_custom_theme_reset">Los datos de tema personalizado corruptos se han restablecido a los valores predeterminados.</string>
+    <string name="settings_custom_theme_reset">Los datos de tema personalizado corruptos se han
+        restablecido a los valores predeterminados.</string>
     <string name="settings_restore_select">Selecciona los ajustes a restaurar</string>
     <string name="settings_restore_button">Restaurar</string>
     <string name="settings_restore_toggle_all">Alternar todo</string>
 
     <string name="settings_group_about">Acerca de</string>
     <string name="settings_update_check">Buscar actualizaciones</string>
-    <string name="settings_update_check_description">Toca para buscar ahora • Activa/desactiva para comprobación al inicio</string>
+    <string name="settings_update_check_description">Toca para buscar ahora • Activa/desactiva para
+        comprobación al inicio</string>
     <string name="settings_crash_reporting">Reportar fallos</string>
     <string name="settings_crash_reporting_description">
-"El reporte de fallos crea informes de errores en Clover.
-Los reportes de fallos no recopilan ninguna información de identificación personal."
+        "El reporte de fallos crea informes de errores en Clover.
+        Los reportes de fallos no recopilan ninguna información de identificación personal."
     </string>
-    <string name="settings_crash_reporting_toggle_notice">El ajuste se aplicará en el próximo inicio de la app.</string>
+    <string name="settings_crash_reporting_toggle_notice">El ajuste se aplicará en el próximo inicio
+        de la app.</string>
     <string name="settings_about_license">Publicado bajo la licencia GNU GPLv3</string>
     <string name="settings_about_license_description">Toca para ver la licencia</string>
     <string name="settings_about_licenses">Licencias de código abierto</string>
@@ -510,17 +531,22 @@ Los reportes de fallos no recopilan ninguna información de identificación pers
     <string name="setting_board_grid_span_count_item">%1$d columnas</string>
     <string name="setting_never_hide_toolbar">No ocultar nunca la barra de herramientas</string>
     <string name="setting_toolbar_bottom">Mover barra de herramientas abajo</string>
-    <string name="setting_toolbar_bottom_description">Muestra la barra de herramientas en la parte inferior de la pantalla</string>
+    <string name="setting_toolbar_bottom_description">Muestra la barra de herramientas en la parte
+        inferior de la pantalla</string>
     <string name="setting_enable_reply_fab">Activar botón flotante de respuesta</string>
-    <string name="setting_enable_reply_fab_description">Desactivar reemplaza el botón circular por una opción de menú</string>
+    <string name="setting_enable_reply_fab_description">Desactivar reemplaza el botón circular por
+        una opción de menú</string>
     <string name="setting_enable_top_bottom_fab">Activar botones Arriba y Abajo</string>
     <string name="setting_enable_top_bottom_fab_description">Navegación fácil hacia arriba y abajo</string>
     <string name="setting_enable_accessible_post_info">Activar info de post accesible</string>
-    <string name="setting_enable_accessible_post_info_description">Coloca la info del post en el primer menú flotante</string>
+    <string name="setting_enable_accessible_post_info_description">Coloca la info del post en el
+        primer menú flotante</string>
     <string name="setting_alternate_layout_mode_title">Diseño alternativo</string>
-    <string name="setting_alternate_layout_mode_description">Mostrar el texto debajo de la miniatura para posts con una imagen</string>
+    <string name="setting_alternate_layout_mode_description">Mostrar el texto debajo de la miniatura
+        para posts con una imagen</string>
     <string name="setting_images_immersive_mode_title">Usar modo inmersivo</string>
-    <string name="setting_images_immersive_mode_description">Oculta la barra de navegación al ver imágenes o vídeos</string>
+    <string name="setting_images_immersive_mode_description">Oculta la barra de navegación al ver
+        imágenes o vídeos</string>
 
     <string name="settings_group_post">Otros</string>
     <string name="setting_font_size">Tamaño de fuente</string>
@@ -549,7 +575,8 @@ Los reportes de fallos no recopilan ninguna información de identificación pers
     <string name="setting_enable_localization">Activar localización</string>
     <string name="setting_enable_localization_description">Inglés</string>
     <string name="setting_confirm_clear_hides">¿Borrar realmente todos los threads ocultos?</string>
-    <string name="setting_confirm_clear_cookies">Esto borrará todas las cookies de los sitios. ¿Estás seguro?</string>
+    <string name="setting_confirm_clear_cookies">Esto borrará todas las cookies de los sitios.
+        ¿Estás seguro?</string>
 
     <string name="settings_group_reply">Respuesta</string>
     <string name="setting_post_pin">Añadir thread a favoritos al publicar</string>
@@ -559,7 +586,8 @@ Los reportes de fallos no recopilan ninguna información de identificación pers
     <string name="setting_text_only">Modo solo texto</string>
     <string name="setting_text_only_description">Ocultar imágenes en la vista de board y thread</string>
     <string name="settings_reveal_text_spoilers">Revelar spoilers de texto</string>
-    <string name="settings_reveal_text_spoilers_description">Hace el texto spoiler visible como si estuviera pulsado</string>
+    <string name="settings_reveal_text_spoilers_description">Hace el texto spoiler visible como si
+        estuviera pulsado</string>
     <string name="setting_anonymize">Hacer todos Anónimos</string>
     <string name="setting_anonymize_ids">Ocultar IDs</string>
     <string name="setting_hide_flags">Ocultar banderas</string>
@@ -600,28 +628,35 @@ Los reportes de fallos no recopilan ninguna información de identificación pers
     <string name="setting_save_mode_boardthread">Carpeta base/board/thread</string>
     <string name="setting_save_mode_legacy">Carpeta base/thread (álbum heredado)</string>
     <string name="setting_randomize_filename">Aleatorizar nombre de archivo</string>
-    <string name="setting_randomize_filename_description">Cambiar el nombre de archivo a una marca de tiempo Unix aleatoria del año pasado</string>
+    <string name="setting_randomize_filename_description">Cambiar el nombre de archivo a una marca
+        de tiempo Unix aleatoria del año pasado</string>
     <string name="setting_attachment_picker_default">Selector de archivos predeterminado</string>
     <string name="setting_attachment_picker_default_not_set">Siempre pregunta qué app usar</string>
     <string name="setting_attachment_picker_legacy_choice">Usar siempre: %1$s</string>
     <string name="setting_attachment_picker_reset">Restablecer selector de archivos predeterminado</string>
-    <string name="setting_attachment_picker_reset_description">¿Borrar la elección predeterminada guardada y mostrar el diálogo de selección?</string>
+    <string name="setting_attachment_picker_reset_description">¿Borrar la elección predeterminada
+        guardada y mostrar el diálogo de selección?</string>
     <string name="setting_attachment_picker_reset_done">Elección del selector heredado borrada</string>
     <string name="setting_save_original_filename">Guardar nombre de archivo del servidor</string>
     <string name="setting_save_original_filename_description">
-"Guardar la imagen con el nombre de archivo asignado por el sitio.
-Si está desactivado, guardar la imagen con el nombre de archivo asignado por quien subió el archivo."
+        "Guardar la imagen con el nombre de archivo asignado por el sitio.
+        Si está desactivado, guardar la imagen con el nombre de archivo asignado por quien subió el
+        archivo."
     </string>
     <string name="setting_video_default_muted">Iniciar vídeos en silencio</string>
-    <string name="setting_video_default_muted_description">Si un vídeo tiene sonido, silenciarlo de forma predeterminada</string>
+    <string name="setting_video_default_muted_description">Si un vídeo tiene sonido, silenciarlo de
+        forma predeterminada</string>
     <string name="setting_video_open_external">Reproducir vídeos con reproductor externo</string>
-    <string name="setting_video_open_external_description">Reproducir vídeos en una app de reproductor multimedia externo</string>
+    <string name="setting_video_open_external_description">Reproducir vídeos en una app de
+        reproductor multimedia externo</string>
     <string name="setting_video_auto_loop">Activar bucle automático de vídeo</string>
     <string name="setting_video_auto_loop_description">Repetir automáticamente el contenido de vídeo</string>
     <string name="setting_share_url">Compartir URL de imagen</string>
-    <string name="setting_share_url_description">Compartir la URL de la imagen en lugar de la imagen en sí</string>
+    <string name="setting_share_url_description">Compartir la URL de la imagen en lugar de la imagen
+        en sí</string>
     <string name="settings_reveal_image_spoilers">Revelar spoilers de imagen</string>
-    <string name="settings_reveal_image_spoilers_description">Mostrar siempre miniaturas e imágenes spoiler</string>
+    <string name="settings_reveal_image_spoilers_description">Mostrar siempre miniaturas e imágenes
+        spoiler</string>
 
     <string name="settings_group_media_loading">Carga de medios</string>
     <string name="setting_image_auto_load">Cargar imágenes automáticamente</string>
@@ -634,31 +669,36 @@ Si está desactivado, guardar la imagen con el nombre de archivo asignado por qu
 
     <string name="settings_group_media_video">Reproductor de vídeo</string>
     <string name="setting_video_timeout">Tiempo de espera de los controles del reproductor</string>
-    <string name="setting_video_timeout_description">Cuánto tiempo permanecen visibles los controles del reproductor (en segundos)</string>
+    <string name="setting_video_timeout_description">Cuánto tiempo permanecen visibles los controles
+        del reproductor (en segundos)</string>
     <string name="setting_vp9_extension_mode">Decodificador VP9</string>
-    <string name="setting_vp9_extension_mode_description">Controla el uso de la extensión del decodificador de software VP9</string>
-    <string name="setting_vp9_extension_mode_default">Predeterminado – intentar primero el sistema, usar libvpx si falla</string>
-    <string name="setting_vp9_extension_mode_prefer">Preferir – usar siempre libvpx para cada vídeo VP9</string>
+    <string name="setting_vp9_extension_mode_description">Controla el uso de la extensión del
+        decodificador de software VP9</string>
+    <string name="setting_vp9_extension_mode_default">Predeterminado – intentar primero el sistema,
+        usar libvpx si falla</string>
+    <string name="setting_vp9_extension_mode_prefer">Preferir – usar siempre libvpx para cada vídeo
+        VP9</string>
     <string name="setting_vp9_extension_mode_off">Desactivado – solo decodificadores del sistema</string>
-    <string name="setting_video_buffer_for_playback">Búfer antes de la reproducción (ms)</string>
-    <string name="setting_video_buffer_for_playback_description">Milisegundos de búfer antes de que comience la reproducción (100-10000)</string>
 
     <string name="save_location_screen">Ubicación de guardado</string>
-    <string name="save_location_storage_permission_required_title">Permiso de almacenamiento requerido</string>
+    <string name="save_location_storage_permission_required_title">Permiso de almacenamiento
+        requerido</string>
     <string name="save_location_storage_permission_required">
-"Se requiere permiso de acceso al almacenamiento para explorar archivos.
+        "Se requiere permiso de acceso al almacenamiento para explorar archivos.
 
-Vuelve a activar este permiso en los ajustes de la aplicación si lo has desactivado permanentemente."
+        Vuelve a activar este permiso en los ajustes de la aplicación si lo has desactivado
+        permanentemente."
     </string>
     <string name="setting_folder_pick_ok">Elegir</string>
     <string name="setting_folder_navigate_up">Subir</string>
 
     <string name="setting_theme_explanation">
-"Desliza para cambiar el tema.
-Toca el menú de la barra de herramientas para cambiar su color."
+        "Desliza para cambiar el tema.
+        Toca el menú de la barra de herramientas para cambiar su color."
     </string>
     <string name="setting_theme_accent">Toca aquí para cambiar el color del FAB</string>
-    <string name="setting_theme_reset_done">Selección de tema restablecida a los valores predeterminados.</string>
+    <string name="setting_theme_reset_done">Selección de tema restablecida a los valores
+        predeterminados.</string>
     <string name="setting_theme_add">Crear nuevo tema</string>
     <string name="setting_theme_create_name">Nombre del tema</string>
     <string name="setting_theme_create_base">Tema base</string>
@@ -689,21 +729,22 @@ Toca el menú de la barra de herramientas para cambiar su color."
     <string name="setting_pass_logging_in">Cargando&#8230;</string>
     <string name="setting_pass_error">Error de conexión</string>
     <string name="setting_pass_bottom_description">"
-<![CDATA[
+    <![CDATA[
 ¿Olvidaste tus credenciales de 4chan Pass?<br>
 <a href=\"https://www.4chan.org/pass?reset\">Haz clic aquí para restablecer tu PIN.</a><br>
 <br>
 ¿No tienes un 4chan Pass?<br>
 <a href=\"https://www.4chan.org/pass\">Toca aquí para saber más.</a>
 ]]>
-    "</string>
+        "</string>
 
     <string name="settings_screen_theme">Temas</string>
 
     <string name="image_quality">Calidad de imagen: %1$d</string>
     <string name="scale_reduce">Reducir: 1/%1$d</string>
     <string name="could_not_decode_image_bitmap">No se pudo decodificar el bitmap de la imagen</string>
-    <string name="could_not_apply_image_options">No se pudieron aplicar las nuevas opciones de imagen. Mensaje de error: %1$s</string>
+    <string name="could_not_apply_image_options">No se pudieron aplicar las nuevas opciones de
+        imagen. Mensaje de error: %1$s</string>
     <string name="image_options_remove_filename">Eliminar nombre de archivo</string>
     <string name="image_options_change_image_checksum">Cambiar suma de verificación de imagen</string>
     <string name="image_options_remove_metadata">Eliminar metadatos</string>
@@ -721,8 +762,56 @@ Toca el menú de la barra de herramientas para cambiar su color."
     <string name="_play_pause">Reproducir o pausar el vídeo</string>
 
     <string name="setting_pinned_searches">Activar búsquedas fijas</string>
-    <string name="setting_pinned_searches_description">Añade un botón en el cajón de favoritos para fijar búsquedas del catálogo</string>
+    <string name="setting_pinned_searches_description">Añade un botón en el cajón de favoritos para
+        fijar búsquedas del catálogo</string>
 
     <string name="board_ban_status">Estado de ban en 4chan</string>
     <string name="board_ban_status_description">Comprobar tu estado de ban en 4chan</string>
+    <string name="action_hide_image_info">Ocultar información de la imagen</string>
+    <string name="action_show_image_info">Mostrar información de la imagen</string>
+    <string name="skip_pass_toast">Omitiendo 4chan pass…</string>
+    <string name="image_save_preparing">Preparando descarga…</string>
+    <string name="setting_bottom_reply">Responder abajo</string>
+    <string name="setting_bottom_reply_description">Abrir el diálogo de respuesta desde la parte
+        inferior</string>
+    <string name="setting_disable_back_button">Deshabilitar botón Atrás en la vista del hilo</string>
+    <string name="setting_tap_quotelink_span">Tocar el enlace de cita para abrir</string>
+    <string name="setting_tap_quotelink_span_desc">Si está habilitado, tocar en cualquier lugar del
+        enlace de cita lo abrirá</string>
+    <string name="setting_load_full_size_thumbnails">Cargar miniaturas a tamaño completo</string>
+    <string name="setting_load_external_media_links">Cargar enlaces multimedia externos</string>
+    <string name="setting_load_external_media_links_description">Al activar, los archivos multimedia
+        externos (imágenes, video o audio) se abrirán en la aplicación. Hosts compatibles: Catbox,
+        Uguu.se</string>
+    <string name="setting_video_webview_fallback">Usar WebView como reproductor alternativo</string>
+    <string name="setting_video_webview_fallback_description">Intentará reproducir el video
+        utilizando el WebView interno si el formato del video no es compatible</string>
+    <string name="setting_theme_auto_pick_title">Configuraciones automáticas de tema</string>
+    <string name="setting_theme_auto_day">Tema diurno</string>
+    <string name="setting_theme_auto_night">Tema nocturno</string>
+    <string name="setting_theme_item_post_inline_quote_color">Color del greentext</string>
+    <string name="setting_theme_item_post_highlight_quote_color">Color del enlace de cita resaltado</string>
+    <string name="setting_theme_item_post_capcode_color">Color del capcode</string>
+    <string name="setting_theme_item_post_spoiler_color">Color del spoiler</string>
+    <string name="settings_captcha_group">Captcha</string>
+    <string name="captcha_layout_v2_verify_button_text">Verificar</string>
+    <string name="captcha_layout_v2_reload">Recargar</string>
+    <string name="captcha_layout_v2_use_old_captcha">Usar captcha antiguo</string>
+    <string name="captcha_layout_v2_you_have_to_select_at_least_one_image">Tienes que seleccionar al
+        menos una imagen (si ves un captcha sin imágenes coincidentes probablemente sea un error,
+        repórtalo y usa el captcha antiguo por un tiempo)</string>
+    <string name="captcha_layout_v2_verification_already_in_progress">La verificación ya está en
+        proceso</string>
+    <string name="captcha_layout_v2_captcha_request_is_already_in_progress">La solicitud de captcha
+        ya está en proceso</string>
+    <string name="captcha_layout_v2_you_are_requesting_captcha_too_fast">Estás solicitando captchas
+        demasiado rápido</string>
+    <string name="captcha_layout_v2_refresh_cookies">Actualizar cookies</string>
+    <string name="image_options_fix_exif">Corregir orientación EXIF</string>
+    <string name="delete_site_dialog_title">¿Eliminar sitio?</string>
+    <string name="delete_site_dialog_message">¿Estás seguro de que quieres eliminar \\"%1$s\\"? Esta
+        acción eliminará el sitio y todo lo asociado con él. La aplicación se reiniciará. ¿Deseas
+        continuar?</string>
+    <string name="could_not_remove_site_error_message">No se pudo eliminar el sitio %1$s, mensaje de
+        error: %2$s</string>
 </resources>

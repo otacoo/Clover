@@ -27,16 +27,19 @@
     <string name="update_install">Installer</string>
     <string name="update_install_downloading">Téléchargement de la mise à jour</string>
     <string name="update_install_download_failed">Échec du téléchargement</string>
-    <string name="update_install_download_move_failed">Impossible de déplacer le fichier téléchargé vers le répertoire Téléchargements.</string>
+    <string name="update_install_download_move_failed">Impossible de déplacer le fichier téléchargé
+        vers le répertoire Téléchargements.</string>
     <string name="update_retry_title">Réessayer la mise à jour</string>
-    <string name="update_retry">Clover n\'a pas encore été mis à jour. Appuyez sur « réessayer » pour relancer l\'installation.</string>
+    <string name="update_retry">Clover n\'a pas encore été mis à jour. Appuyez sur « réessayer »
+        pour relancer l\'installation.</string>
     <string name="update_retry_button">réessayer</string>
 
     <string name="update_storage_permission_required_title">Permission de stockage requise</string>
     <string name="update_storage_permission_required">
-"L\'autorisation d\'accès au stockage est requise pour installer la mise à jour.
+        "L\'autorisation d\'accès au stockage est requise pour installer la mise à jour.
 
-Réactivez cette autorisation dans les paramètres de l\'application si vous l\'avez définitivement désactivée."</string>
+        Réactivez cette autorisation dans les paramètres de l\'application si vous l\'avez
+        définitivement désactivée."</string>
 
     <plurals name="minutes">
         <item quantity="one">%d minute</item>
@@ -104,7 +107,8 @@ Réactivez cette autorisation dans les paramètres de l\'application si vous l\'
     <string name="action_rename">Renommer</string>
     <string name="action_reply">Répondre</string>
 
-    <string name="open_link_not_matched">Clover ne peut pas ouvrir ce lien ; il s\'ouvrira dans votre navigateur.</string>
+    <string name="open_link_not_matched">Clover ne peut pas ouvrir ce lien ; il s\'ouvrira dans
+        votre navigateur.</string>
 
     <string name="order_bump">Ordre de bump</string>
     <string name="order_reply">Nombre de réponses</string>
@@ -128,12 +132,14 @@ Réactivez cette autorisation dans les paramètres de l\'application si vous l\'
     <string name="thumbnail_load_failed_network">Erreur</string>
     <string name="image_preview_failed">Échec de l\'affichage de l\'image</string>
     <string name="image_preview_failed_oom">Échec de l\'affichage de l\'image, mémoire insuffisante</string>
-    <string name="image_failed_big_image">Échec de l\'affichage de l\'image, chargement deep-zoom échoué</string>
+    <string name="image_failed_big_image">Échec de l\'affichage de l\'image, chargement deep-zoom
+        échoué</string>
     <string name="image_not_found">Image introuvable</string>
     <string name="image_open_failed">Échec de l\'ouverture de l\'image</string>
     <string name="image_spoiler_filename">Image spoiler</string>
 
-    <string name="file_not_viewable">Le fichier ne peut pas être affiché en interne ; vous pouvez toujours le télécharger ou l\'ouvrir dans votre navigateur.</string>
+    <string name="file_not_viewable">Le fichier ne peut pas être affiché en interne ; vous pouvez
+        toujours le télécharger ou l\'ouvrir dans votre navigateur.</string>
 
     <string name="thread_boards_search_hint">Rechercher</string>
     <string name="thread_load_failed_ssl">Erreur HTTPS</string>
@@ -187,18 +193,27 @@ Réactivez cette autorisation dans les paramètres de l\'application si vous l\'
 
     <string name="setup_site_4chan_verification_group">Vérification</string>
     <string name="setup_site_4chan_verify_email">Vérifier votre e-mail</string>
-    <string name="setup_site_4chan_verify_email_description">Ouvrir la page de vérification par e-mail</string>
+    <string name="setup_site_4chan_verify_email_description">Ouvrir la page de vérification par
+        e-mail</string>
     <string name="setup_site_4chan_verify_email_warning_title">Vérification par e-mail</string>
-    <string name="setup_site_4chan_verify_email_warning_body">L\'ouverture de cette page effacera tous les cookies Cloudflare.\n\nSi la page 4chan affiche une erreur concernant les « scripts et cookies », essayez d\'actualiser la page. \n\nN\'oubliez pas que la vérification par e-mail doit être ouverte dans Clover, pas dans votre navigateur habituel. Veuillez utiliser l\'option « Saisir le token de vérification » ci-dessous lorsque vous recevrez votre e-mail. \n\nVoulez-vous continuer ?</string>
+    <string name="setup_site_4chan_verify_email_warning_body">L\'ouverture de cette page effacera
+        tous les cookies Cloudflare.\n\nSi la page 4chan affiche une erreur concernant les « scripts
+        et cookies », essayez d\'actualiser la page. \n\nN\'oubliez pas que la vérification par
+        e-mail doit être ouverte dans Clover, pas dans votre navigateur habituel. Veuillez utiliser
+        l\'option « Saisir le token de vérification » ci-dessous lorsque vous recevrez votre e-mail.
+        \n\nVoulez-vous continuer ?</string>
     <string name="setup_site_4chan_verify_email_warning_open">Ouvrir</string>
     <string name="setup_site_4chan_enter_token">Saisir le token de vérification</string>
-    <string name="setup_site_4chan_enter_token_description">Coller le lien ou le token de vérification</string>
+    <string name="setup_site_4chan_enter_token_description">Coller le lien ou le token de
+        vérification</string>
 
     <string name="setup_site_4chan_pass_cookie_name">Cookie de vérification</string>
     <string name="setup_site_4chan_pass_cookie_set">Le cookie est défini</string>
     <string name="setup_site_4chan_pass_cookie_not_set">Non défini</string>
     <string name="setup_site_4chan_pass_cookie_dialog_title">Cookie de vérification</string>
-    <string name="setup_site_4chan_pass_cookie_dialog_message">La valeur du cookie 4chan_pass utilisé pour l\'authentification. Les modifications sont appliquées immédiatement au stockage des cookies.</string>
+    <string name="setup_site_4chan_pass_cookie_dialog_message">La valeur du cookie 4chan_pass
+        utilisé pour l\'authentification. Les modifications sont appliquées immédiatement au
+        stockage des cookies.</string>
     <string name="setup_site_4chan_pass_cookie_hint">Valeur du cookie…</string>
     <string name="setup_site_4chan_pass_cookie_saved">Cookie 4chan_pass enregistré</string>
     <string name="setup_site_4chan_pass_cookie_cleared">Cookie 4chan_pass effacé</string>
@@ -269,7 +284,8 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="filter_subject">Sujet</string>
     <string name="filter_filename">Nom de fichier</string>
     <string name="filter_country">Nom du pays</string>
-    <string name="filter_precedence_hint">"Les filtres en haut ont la priorité.\nFaire glisser vers la gauche pour supprimer un filtre."</string>
+    <string name="filter_precedence_hint">"Les filtres en haut ont la priorité.\nFaire glisser vers
+        la gauche pour supprimer un filtre."</string>
     <string name="filter_add_button">Ajouter un filtre</string>
     <string name="filter_enable_all">Tout activer</string>
     <string name="filter_disable_all">Tout désactiver</string>
@@ -294,7 +310,8 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="drawer_pin_removed">\"%1$s\" supprimé</string>
     <string name="drawer_pins_cleared">%1$s effacé</string>
     <string name="drawer_pins_non_cleared">Aucun signet effacé.</string>
-    <string name="drawer_pins_non_cleared_try_all">Aucun signet effacé. Maintenir pour tout supprimer.</string>
+    <string name="drawer_pins_non_cleared_try_all">Aucun signet effacé. Maintenir pour tout
+        supprimer.</string>
 
     <string name="post_highlight_id">Surligner l\'ID</string>
     <string name="post_highlight_tripcode">Surligner le tripcode</string>
@@ -353,9 +370,11 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="video_playback_failed">Cette vidéo ne peut pas être lue.</string>
     <string name="video_playback_warning_title">Erreur de vidéo WebM</string>
     <string name="video_playback_warning">
-"La vidéo WebM n\'a pas pu être lue. Cela peut être un problème avec le matériel de votre appareil.
+        "La vidéo WebM n\'a pas pu être lue. Cela peut être un problème avec le matériel de votre
+        appareil.
 
-Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le décodeur libvpx de Clover dans les options."
+        Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le décodeur libvpx
+        de Clover dans les options."
     </string>
     <string name="video_playback_ignore">Ne plus afficher</string>
 
@@ -424,11 +443,14 @@ Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le dé
 
     <string name="settings_screen_watch">Paramètres du surveillant de threads</string>
     <string name="settings_group_watch">Paramètres</string>
-    <string name="setting_watch_info">Pour surveiller les signets pour les nouveaux posts, activez le surveillant de threads.</string>
+    <string name="setting_watch_info">Pour surveiller les signets pour les nouveaux posts, activez
+        le surveillant de threads.</string>
     <string name="setting_watch_enable_background">Activer en arrière-plan</string>
-    <string name="setting_watch_enable_background_description">Surveiller les signets quand Clover est en arrière-plan</string>
+    <string name="setting_watch_enable_background_description">Surveiller les signets quand Clover
+        est en arrière-plan</string>
     <string name="setting_watch_background_timeout">Intervalle de mise à jour en arrière-plan</string>
-    <string name="setting_watch_background_timeout_description">L\'intervalle entre les mises à jour en arrière-plan</string>
+    <string name="setting_watch_background_timeout_description">L\'intervalle entre les mises à jour
+        en arrière-plan</string>
     <string name="setting_watch_notify_mode">Notifier pour</string>
     <string-array name="setting_watch_notify_modes">
         <item>Tous les posts</item>
@@ -440,7 +462,8 @@ Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le dé
         <item>Uniquement les posts vous citant</item>
     </string-array>
     <string name="setting_watch_peek">Notification heads-up pour les citations</string>
-    <string name="setting_watch_peek_description">Afficher une notification heads-up lors d\'une citation</string>
+    <string name="setting_watch_peek_description">Afficher une notification heads-up lors d\'une
+        citation</string>
     <string name="setting_watch_led">Voyant de notification</string>
     <string-array name="setting_watch_leds">
         <item>Aucun</item>
@@ -452,8 +475,10 @@ Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le dé
         <item>Bleu</item>
         <item>Violet</item>
     </string-array>
-    <string name="setting_watch_channel_normal">Paramètres de notification pour les mises à jour de threads</string>
-    <string name="setting_watch_channel_mention">Paramètres de notification pour les mentions de threads</string>
+    <string name="setting_watch_channel_normal">Paramètres de notification pour les mises à jour de
+        threads</string>
+    <string name="setting_watch_channel_mention">Paramètres de notification pour les mentions de
+        threads</string>
 
     <string name="settings_group_backup_restore">Sauvegarde &amp; restauration</string>
     <string name="settings_backup">Sauvegarder les paramètres actuels</string>
@@ -461,23 +486,27 @@ Une solution est d\'utiliser un lecteur multimédia externe ou d\'activer le dé
     <string name="settings_restore">Restaurer les paramètres</string>
     <string name="settings_restore_description">Charger les paramètres depuis un fichier</string>
     <string name="settings_backup_success">Paramètres sauvegardés avec succès</string>
-    <string name="settings_restore_success">Paramètres restaurés. Redémarrez l\'application pour que toutes les modifications prennent effet.</string>
+    <string name="settings_restore_success">Paramètres restaurés. Redémarrez l\'application pour que
+        toutes les modifications prennent effet.</string>
     <string name="settings_backup_failed">Sauvegarde échouée</string>
     <string name="settings_restore_failed">Restauration échouée</string>
-    <string name="settings_custom_theme_reset">Les données de thème personnalisé corrompues ont été réinitialisées aux valeurs par défaut.</string>
+    <string name="settings_custom_theme_reset">Les données de thème personnalisé corrompues ont été
+        réinitialisées aux valeurs par défaut.</string>
     <string name="settings_restore_select">Sélectionnez les paramètres à restaurer</string>
     <string name="settings_restore_button">Restaurer</string>
     <string name="settings_restore_toggle_all">Tout basculer</string>
 
     <string name="settings_group_about">À propos</string>
     <string name="settings_update_check">Vérifier les mises à jour</string>
-    <string name="settings_update_check_description">Appuyer pour vérifier maintenant • Basculer pour la vérification au démarrage</string>
+    <string name="settings_update_check_description">Appuyer pour vérifier maintenant • Basculer
+        pour la vérification au démarrage</string>
     <string name="settings_crash_reporting">Signaler les plantages</string>
     <string name="settings_crash_reporting_description">
-"Le rapport de plantage crée des rapports d\'erreurs dans Clover.
-Les rapports de plantage ne collectent aucune information personnellement identifiable."
+        "Le rapport de plantage crée des rapports d\'erreurs dans Clover.
+        Les rapports de plantage ne collectent aucune information personnellement identifiable."
     </string>
-    <string name="settings_crash_reporting_toggle_notice">Le paramètre sera appliqué au prochain démarrage de l\'application.</string>
+    <string name="settings_crash_reporting_toggle_notice">Le paramètre sera appliqué au prochain
+        démarrage de l\'application.</string>
     <string name="settings_about_license">Publié sous la licence GNU GPLv3</string>
     <string name="settings_about_license_description">Appuyer pour voir la licence</string>
     <string name="settings_about_licenses">Licences open source</string>
@@ -512,15 +541,20 @@ Les rapports de plantage ne collectent aucune information personnellement identi
     <string name="setting_toolbar_bottom">Déplacer la barre d\'outils vers le bas</string>
     <string name="setting_toolbar_bottom_description">Affiche la barre d\'outils en bas de l\'écran</string>
     <string name="setting_enable_reply_fab">Activer le bouton de réponse flottant</string>
-    <string name="setting_enable_reply_fab_description">Désactiver remplace le bouton rond par une option de menu</string>
+    <string name="setting_enable_reply_fab_description">Désactiver remplace le bouton rond par une
+        option de menu</string>
     <string name="setting_enable_top_bottom_fab">Activer les boutons Haut et Bas</string>
-    <string name="setting_enable_top_bottom_fab_description">Navigation facile vers le haut et le bas</string>
+    <string name="setting_enable_top_bottom_fab_description">Navigation facile vers le haut et le
+        bas</string>
     <string name="setting_enable_accessible_post_info">Activer les infos de post accessibles</string>
-    <string name="setting_enable_accessible_post_info_description">Place les informations du post dans le premier menu flottant</string>
+    <string name="setting_enable_accessible_post_info_description">Place les informations du post
+        dans le premier menu flottant</string>
     <string name="setting_alternate_layout_mode_title">Mise en page alternative</string>
-    <string name="setting_alternate_layout_mode_description">Afficher le texte sous la miniature pour les posts avec une image</string>
+    <string name="setting_alternate_layout_mode_description">Afficher le texte sous la miniature
+        pour les posts avec une image</string>
     <string name="setting_images_immersive_mode_title">Utiliser le mode immersif</string>
-    <string name="setting_images_immersive_mode_description">Masque la barre de navigation lors de la visualisation d\'images ou de vidéos</string>
+    <string name="setting_images_immersive_mode_description">Masque la barre de navigation lors de
+        la visualisation d\'images ou de vidéos</string>
 
     <string name="settings_group_post">Autres</string>
     <string name="setting_font_size">Taille de police</string>
@@ -548,8 +582,10 @@ Les rapports de plantage ne collectent aucune information personnellement identi
     <string name="setting_group_reset">Confidentialité &amp; données</string>
     <string name="setting_enable_localization">Activer la localisation</string>
     <string name="setting_enable_localization_description">Anglais</string>
-    <string name="setting_confirm_clear_hides">Voulez-vous vraiment effacer tous les threads masqués ?</string>
-    <string name="setting_confirm_clear_cookies">Cela effacera tous les cookies des sites. Êtes-vous sûr ?</string>
+    <string name="setting_confirm_clear_hides">Voulez-vous vraiment effacer tous les threads masqués
+        ?</string>
+    <string name="setting_confirm_clear_cookies">Cela effacera tous les cookies des sites. Êtes-vous
+        sûr ?</string>
 
     <string name="settings_group_reply">Réponse</string>
     <string name="setting_post_pin">Mettre en signet le thread à la publication</string>
@@ -559,7 +595,8 @@ Les rapports de plantage ne collectent aucune information personnellement identi
     <string name="setting_text_only">Mode texte uniquement</string>
     <string name="setting_text_only_description">Masquer les images dans la vue board et thread</string>
     <string name="settings_reveal_text_spoilers">Révéler les spoilers de texte</string>
-    <string name="settings_reveal_text_spoilers_description">Rend le texte spoiler visible comme s\'il était appuyé</string>
+    <string name="settings_reveal_text_spoilers_description">Rend le texte spoiler visible comme
+        s\'il était appuyé</string>
     <string name="setting_anonymize">Rendre tout le monde Anonyme</string>
     <string name="setting_anonymize_ids">Masquer les ID</string>
     <string name="setting_hide_flags">Masquer les drapeaux</string>
@@ -600,28 +637,36 @@ Les rapports de plantage ne collectent aucune information personnellement identi
     <string name="setting_save_mode_boardthread">Dossier de base/board/thread</string>
     <string name="setting_save_mode_legacy">Dossier de base/thread (album hérité)</string>
     <string name="setting_randomize_filename">Randomiser le nom de fichier</string>
-    <string name="setting_randomize_filename_description">Changer le nom de fichier en un horodatage Unix aléatoire de l\'année passée</string>
+    <string name="setting_randomize_filename_description">Changer le nom de fichier en un horodatage
+        Unix aléatoire de l\'année passée</string>
     <string name="setting_attachment_picker_default">Sélecteur de fichiers par défaut</string>
-    <string name="setting_attachment_picker_default_not_set">Demande toujours quelle application utiliser</string>
+    <string name="setting_attachment_picker_default_not_set">Demande toujours quelle application
+        utiliser</string>
     <string name="setting_attachment_picker_legacy_choice">Toujours utiliser : %1$s</string>
     <string name="setting_attachment_picker_reset">Réinitialiser le sélecteur de fichiers par défaut</string>
-    <string name="setting_attachment_picker_reset_description">Effacer le choix par défaut enregistré et afficher la boîte de dialogue de sélection ?</string>
+    <string name="setting_attachment_picker_reset_description">Effacer le choix par défaut
+        enregistré et afficher la boîte de dialogue de sélection ?</string>
     <string name="setting_attachment_picker_reset_done">Choix du sélecteur hérité effacé</string>
     <string name="setting_save_original_filename">Enregistrer le nom de fichier du serveur</string>
     <string name="setting_save_original_filename_description">
-"Enregistrer l\'image avec le nom de fichier attribué par le site.
-Si désactivé, enregistrer l\'image avec le nom de fichier attribué par l\'envoyeur."
+        "Enregistrer l\'image avec le nom de fichier attribué par le site.
+        Si désactivé, enregistrer l\'image avec le nom de fichier attribué par l\'envoyeur."
     </string>
     <string name="setting_video_default_muted">Démarrer les vidéos en sourdine</string>
-    <string name="setting_video_default_muted_description">Si une vidéo a du son, la couper par défaut</string>
+    <string name="setting_video_default_muted_description">Si une vidéo a du son, la couper par
+        défaut</string>
     <string name="setting_video_open_external">Lire les vidéos avec un lecteur externe</string>
-    <string name="setting_video_open_external_description">Lire les vidéos dans une application de lecteur multimédia externe</string>
+    <string name="setting_video_open_external_description">Lire les vidéos dans une application de
+        lecteur multimédia externe</string>
     <string name="setting_video_auto_loop">Activer la boucle automatique de vidéo</string>
-    <string name="setting_video_auto_loop_description">Lire automatiquement le contenu vidéo en boucle</string>
+    <string name="setting_video_auto_loop_description">Lire automatiquement le contenu vidéo en
+        boucle</string>
     <string name="setting_share_url">Partager l\'URL de l\'image</string>
-    <string name="setting_share_url_description">Partager l\'URL de l\'image au lieu de l\'image elle-même</string>
+    <string name="setting_share_url_description">Partager l\'URL de l\'image au lieu de l\'image
+        elle-même</string>
     <string name="settings_reveal_image_spoilers">Révéler les spoilers d\'image</string>
-    <string name="settings_reveal_image_spoilers_description">Toujours révéler les miniatures et images spoiler</string>
+    <string name="settings_reveal_image_spoilers_description">Toujours révéler les miniatures et
+        images spoiler</string>
 
     <string name="settings_group_media_loading">Chargement des médias</string>
     <string name="setting_image_auto_load">Charger automatiquement les images</string>
@@ -634,28 +679,31 @@ Si désactivé, enregistrer l\'image avec le nom de fichier attribué par l\'env
 
     <string name="settings_group_media_video">Lecteur vidéo</string>
     <string name="setting_video_timeout">Délai d\'expiration des contrôles du lecteur</string>
-    <string name="setting_video_timeout_description">Durée de visibilité des contrôles du lecteur (en secondes)</string>
+    <string name="setting_video_timeout_description">Durée de visibilité des contrôles du lecteur
+        (en secondes)</string>
     <string name="setting_vp9_extension_mode">Décodeur VP9</string>
-    <string name="setting_vp9_extension_mode_description">Contrôle l\'utilisation de l\'extension du décodeur logiciel VP9</string>
-    <string name="setting_vp9_extension_mode_default">Par défaut – essayer d\'abord le système, utiliser libvpx en cas d\'erreur</string>
-    <string name="setting_vp9_extension_mode_prefer">Préférer – toujours utiliser libvpx pour chaque vidéo VP9</string>
+    <string name="setting_vp9_extension_mode_description">Contrôle l\'utilisation de l\'extension du
+        décodeur logiciel VP9</string>
+    <string name="setting_vp9_extension_mode_default">Par défaut – essayer d\'abord le système,
+        utiliser libvpx en cas d\'erreur</string>
+    <string name="setting_vp9_extension_mode_prefer">Préférer – toujours utiliser libvpx pour chaque
+        vidéo VP9</string>
     <string name="setting_vp9_extension_mode_off">Désactivé – décodeurs système uniquement</string>
-    <string name="setting_video_buffer_for_playback">Tampon avant la lecture (ms)</string>
-    <string name="setting_video_buffer_for_playback_description">Millisecondes en tampon avant le début de la lecture (100-10000)</string>
 
     <string name="save_location_screen">Emplacement de sauvegarde</string>
     <string name="save_location_storage_permission_required_title">Permission de stockage requise</string>
     <string name="save_location_storage_permission_required">
-"L\'autorisation d\'accès au stockage est requise pour parcourir les fichiers.
+        "L\'autorisation d\'accès au stockage est requise pour parcourir les fichiers.
 
-Réactivez cette autorisation dans les paramètres de l\'application si vous l\'avez définitivement désactivée."
+        Réactivez cette autorisation dans les paramètres de l\'application si vous l\'avez
+        définitivement désactivée."
     </string>
     <string name="setting_folder_pick_ok">Choisir</string>
     <string name="setting_folder_navigate_up">Remonter</string>
 
     <string name="setting_theme_explanation">
-"Faire glisser pour changer le thème.
-Appuyer sur le menu de la barre d\'outils pour changer sa couleur."
+        "Faire glisser pour changer le thème.
+        Appuyer sur le menu de la barre d\'outils pour changer sa couleur."
     </string>
     <string name="setting_theme_accent">Appuyer ici pour changer la couleur du FAB</string>
     <string name="setting_theme_reset_done">Sélection du thème réinitialisée aux valeurs par défaut.</string>
@@ -689,21 +737,22 @@ Appuyer sur le menu de la barre d\'outils pour changer sa couleur."
     <string name="setting_pass_logging_in">Chargement&#8230;</string>
     <string name="setting_pass_error">Erreur de connexion</string>
     <string name="setting_pass_bottom_description">"
-<![CDATA[
+    <![CDATA[
 Vous avez oublié vos identifiants 4chan Pass ?<br>
 <a href=\"https://www.4chan.org/pass?reset\">Cliquez ici pour réinitialiser votre PIN.</a><br>
 <br>
 Vous n\'avez pas de 4chan Pass ?<br>
 <a href=\"https://www.4chan.org/pass\">Appuyez ici pour en savoir plus.</a>
 ]]>
-    "</string>
+        "</string>
 
     <string name="settings_screen_theme">Thèmes</string>
 
     <string name="image_quality">Qualité d\'image : %1$d</string>
     <string name="scale_reduce">Réduire : 1/%1$d</string>
     <string name="could_not_decode_image_bitmap">Impossible de décoder le bitmap de l\'image</string>
-    <string name="could_not_apply_image_options">Impossible d\'appliquer les nouvelles options d\'image. Message d\'erreur : %1$s</string>
+    <string name="could_not_apply_image_options">Impossible d\'appliquer les nouvelles options
+        d\'image. Message d\'erreur : %1$s</string>
     <string name="image_options_remove_filename">Supprimer le nom de fichier</string>
     <string name="image_options_change_image_checksum">Modifier la somme de contrôle de l\'image</string>
     <string name="image_options_remove_metadata">Supprimer les métadonnées</string>
@@ -714,15 +763,62 @@ Vous n\'avez pas de 4chan Pass ?<br>
     <string name="reencode_image_as_png">EN PNG</string>
     <string name="reencode_image_image_quality_100_default_text">Qualité d\'image : 100</string>
     <string name="reencode_image_reduce_1x_default_text">Réduire : 1x</string>
-    <string name="click_image_for_extra_options">Cliquer sur l\'image pour les options supplémentaires</string>
+    <string name="click_image_for_extra_options">Cliquer sur l\'image pour les options
+        supplémentaires</string>
 
     <string name="forward_15_seconds">Avancer de 15 secondes</string>
     <string name="rewind_5_seconds">Reculer de 5 secondes</string>
     <string name="_play_pause">Lire ou mettre en pause la vidéo</string>
 
     <string name="setting_pinned_searches">Activer les recherches épinglées</string>
-    <string name="setting_pinned_searches_description">Ajoute un bouton dans le tiroir des signets pour épingler les recherches du catalogue</string>
+    <string name="setting_pinned_searches_description">Ajoute un bouton dans le tiroir des signets
+        pour épingler les recherches du catalogue</string>
 
     <string name="board_ban_status">Statut de bannissement 4chan</string>
     <string name="board_ban_status_description">Vérifier votre statut de bannissement 4chan</string>
+    <string name="action_hide_image_info">Masquer les informations de l\'image</string>
+    <string name="action_show_image_info">Afficher les informations de l\'image</string>
+    <string name="skip_pass_toast">Pass 4chan ignoré…</string>
+    <string name="image_save_preparing">Préparation du téléchargement…</string>
+    <string name="setting_bottom_reply">Répondre en bas</string>
+    <string name="setting_bottom_reply_description">Ouvrir la boîte de dialogue de réponse par le
+        bas</string>
+    <string name="setting_disable_back_button">Désactiver le bouton Retour dans la vue du thread</string>
+    <string name="setting_tap_quotelink_span">Appuyer sur la zone du lien de citation pour ouvrir</string>
+    <string name="setting_tap_quotelink_span_desc">Si activé, appuyer n\'importe où sur la zone du
+        lien de citation l\'ouvrira</string>
+    <string name="setting_load_full_size_thumbnails">Charger les miniatures en taille réelle</string>
+    <string name="setting_load_external_media_links">Charger les liens multimédias externes</string>
+    <string name="setting_load_external_media_links_description">Si activé, les fichiers multimédias
+        externes (images, vidéos ou audio) s\'ouvriront dans l\'application. Hébergeurs supportés:
+        Catbox, Uguu.se</string>
+    <string name="setting_video_webview_fallback">Utiliser WebView comme lecteur de secours</string>
+    <string name="setting_video_webview_fallback_description">Tentera de lire la vidéo en utilisant
+        le WebView interne si le format n\'est pris en charge</string>
+    <string name="setting_theme_auto_pick_title">Paramètres de thème automatique</string>
+    <string name="setting_theme_auto_day">Thème jour</string>
+    <string name="setting_theme_auto_night">Thème nuit</string>
+    <string name="setting_theme_item_post_inline_quote_color">Couleur du greentext</string>
+    <string name="setting_theme_item_post_highlight_quote_color">Couleur du lien de citation en
+        surbrillance</string>
+    <string name="setting_theme_item_post_capcode_color">Couleur du capcode</string>
+    <string name="setting_theme_item_post_spoiler_color">Couleur du spoiler</string>
+    <string name="settings_captcha_group">Captcha</string>
+    <string name="captcha_layout_v2_verify_button_text">Vérifier</string>
+    <string name="captcha_layout_v2_reload">Recharger</string>
+    <string name="captcha_layout_v2_use_old_captcha">Utiliser l\'ancien captcha</string>
+    <string name="captcha_layout_v2_you_have_to_select_at_least_one_image">Vous devez sélectionner
+        au moins une image</string>
+    <string name="captcha_layout_v2_verification_already_in_progress">Vérification déjà en cours</string>
+    <string name="captcha_layout_v2_captcha_request_is_already_in_progress">Demande de captcha déjà
+        en cours</string>
+    <string name="captcha_layout_v2_you_are_requesting_captcha_too_fast">Vous demandez des captchas
+        trop rapidement</string>
+    <string name="captcha_layout_v2_refresh_cookies">Actualiser les cookies</string>
+    <string name="image_options_fix_exif">Corriger l\'orientation EXIF</string>
+    <string name="delete_site_dialog_title">Supprimer le site ?</string>
+    <string name="delete_site_dialog_message">Voulez-vous vraiment supprimer \\"%1$s\\" ? Cette
+        action supprimera</string>
+    <string name="could_not_remove_site_error_message">Impossible de supprimer le site %1$s, message
+        d\'erreur : %2$s</string>
 </resources>
