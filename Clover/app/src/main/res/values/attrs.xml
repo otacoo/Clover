@@ -57,4 +57,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <attr name="setting_description_top" format="reference" />
     <attr name="setting_description_bottom" format="reference" />
+    <attr name="unread_line_color" format="color" />
 </resources>

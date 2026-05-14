@@ -475,7 +475,8 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                 "post_name_color",
                 "post_inline_quote_color",
                 "post_highlight_quote_color",
-                "post_spoiler_color"
+                "post_spoiler_color",
+                "unread_line_color"
         };
         int[] names = {
                 R.string.setting_theme_item_toolbar_color,
@@ -489,7 +490,8 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                 R.string.setting_theme_item_post_name_color,
                 R.string.setting_theme_item_post_inline_quote_color,
                 R.string.setting_theme_item_post_highlight_quote_color,
-                R.string.setting_theme_item_post_spoiler_color
+                R.string.setting_theme_item_post_spoiler_color,
+                R.string.setting_theme_item_unread_line_color
         };
 
         for (int i = 0; i < attrNames.length; i++) {
