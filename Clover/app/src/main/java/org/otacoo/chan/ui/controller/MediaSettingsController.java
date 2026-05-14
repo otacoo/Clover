@@ -246,9 +246,14 @@ public class MediaSettingsController extends SettingsController implements
         loading.add(loadFullSizeThumbnailsView);
 
         loading.add(new BooleanSettingView(this,
+                ChanSettings.fetchYoutubeTitles,
+                R.string.setting_fetch_youtube_titles, 0));
+
+        loading.add(new BooleanSettingView(this,
             ChanSettings.loadExternalMediaLinks,
             R.string.setting_load_external_media_links,
             R.string.setting_load_external_media_links_description));
+
 
         updateVideoLoadModes();
     }

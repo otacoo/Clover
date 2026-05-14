@@ -251,9 +251,7 @@ public class DefaultPostParser implements PostParser {
             String text = ((TextNode) node).text();
             SpannableString spannable = new SpannableString(text);
 
-            CommentParserHelper.detectLinks(theme, post, text, spannable);
-
-            return spannable;
+            return CommentParserHelper.detectLinks(theme, post, text, spannable);
         } else if (node instanceof Element) {
             String nodeName = node.nodeName();
 

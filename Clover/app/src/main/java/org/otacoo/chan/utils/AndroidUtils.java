@@ -139,6 +139,38 @@ public class AndroidUtils {
      *
      * @param link url to open
      */
+    public static String getYoutubeTitle(String videoUrl) {
+        if (videoUrl == null || (!videoUrl.contains("youtube.com") && !videoUrl.contains("youtu.be"))) {
+            return null;
+        }
+        try {
+            String encodedUrl = java.net.URLEncoder.encode(videoUrl, "UTF-8");
+            String oembedUrl = "https://www.youtube.com/oembed?url=" + encodedUrl + "&format=json";
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) new java.net.URL(oembedUrl).openConnection();
+            connection.setConnectTimeout(3000);
+            connection.setReadTimeout(3000);
+            connection.setRequestMethod("GET");
+            connection.connect();
+            
+            if (connection.getResponseCode() == 200) {
+                java.io.InputStream is = connection.getInputStream();
+                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[1024];
+                while ((nRead = is.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                buffer.flush();
+                String json = new String(buffer.toByteArray(), "UTF-8");
+                org.json.JSONObject obj = new org.json.JSONObject(json);
+                return obj.getString("title");
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return null;
+    }
+
     public static void openLink(String link) {
         PackageManager pm = getAppContext().getPackageManager();
 

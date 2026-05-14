@@ -293,6 +293,7 @@ public class ChanSettings {
     public static final BooleanSetting reencodeHintShown;
     public static final BooleanSetting setupSitesBoardsHintShown;
 
+    public static final BooleanSetting fetchYoutubeTitles;
     public static final BooleanSetting dnsOverHttps;
 
     public static final StringSetting customUserAgent;
@@ -422,6 +423,7 @@ public class ChanSettings {
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
 
+        fetchYoutubeTitles = new BooleanSetting(p, "preference_fetch_youtube_titles", false);
         dnsOverHttps = new BooleanSetting(p, "dns_over_https", false);
 
         customUserAgent = new StringSetting(p, "custom_user_agent", "");

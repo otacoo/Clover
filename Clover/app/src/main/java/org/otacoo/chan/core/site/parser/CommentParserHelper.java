@@ -47,16 +47,44 @@ public class CommentParserHelper {
      * @param text      Text to find links in
      * @param spannable Spannable to set the spans on.
      */
-    public static void detectLinks(Theme theme, Post.Builder post, String text, SpannableString spannable) {
+    public static CharSequence detectLinks(Theme theme, Post.Builder post, String text, SpannableString spannable) {
         if (text.length() < 8 || (!text.contains("http") && !text.contains("www."))) {
-            return;
+            return spannable;
         }
         final Iterable<LinkSpan> links = LINK_EXTRACTOR.extractLinks(text);
+        
+        android.text.SpannableStringBuilder ssb = null;
+        int offset = 0;
+
         for (final LinkSpan link : links) {
             final String linkText = text.substring(link.getBeginIndex(), link.getEndIndex());
-            final PostLinkable pl = new PostLinkable(theme, linkText, linkText, PostLinkable.Type.LINK);
-            spannable.setSpan(pl, link.getBeginIndex(), link.getEndIndex(), 0);
+            String displayKey = linkText;
+            
+            if (org.otacoo.chan.core.settings.ChanSettings.fetchYoutubeTitles.get()) {
+                String title = org.otacoo.chan.utils.AndroidUtils.getYoutubeTitle(linkText);
+                if (title != null) {
+                    displayKey = "[Youtube] " + title;
+                }
+            }
+
+            final PostLinkable pl = new PostLinkable(theme, displayKey, linkText, PostLinkable.Type.LINK);
+            
+            if (displayKey.equals(linkText)) {
+                if (ssb == null) {
+                    spannable.setSpan(pl, link.getBeginIndex(), link.getEndIndex(), 0);
+                } else {
+                    ssb.setSpan(pl, link.getBeginIndex() + offset, link.getEndIndex() + offset, 0);
+                }
+            } else {
+                if (ssb == null) {
+                    ssb = new android.text.SpannableStringBuilder(spannable);
+                }
+                ssb.replace(link.getBeginIndex() + offset, link.getEndIndex() + offset, displayKey);
+                ssb.setSpan(pl, link.getBeginIndex() + offset, link.getBeginIndex() + offset + displayKey.length(), 0);
+                offset += displayKey.length() - linkText.length();
+            }
             post.addLinkable(pl);
         }
+        return ssb != null ? ssb : spannable;
     }
 }

@@ -627,6 +627,7 @@ Crash reports do not collect any personally identifiable information."
     <string name="setting_tap_quotelink_span">Tap the quotelink span to open</string>
     <string name="setting_tap_quotelink_span_desc">If enabled, tapping anywhere on the quotelink span will open the quotelink</string>
     <string name="setting_open_link_confirmation">Ask before opening links</string>
+    <string name="setting_fetch_youtube_titles">Fetch Youtube titles</string>
     <string name="setting_open_link_browser">Always open links in external browser</string>
 
 

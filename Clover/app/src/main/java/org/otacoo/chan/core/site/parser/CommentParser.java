@@ -149,6 +149,14 @@ public class CommentParser {
         CommentParser.Link handlerLink = matchAnchor(post, text, anchor, callback);
 
         if (handlerLink != null) {
+            if (handlerLink.type == PostLinkable.Type.LINK && org.otacoo.chan.core.settings.ChanSettings.fetchYoutubeTitles.get()) {
+                String url = (String) handlerLink.value;
+                String title = org.otacoo.chan.utils.AndroidUtils.getYoutubeTitle(url);
+                if (title != null) {
+                    handlerLink.key = "[Youtube] " + title;
+                }
+            }
+
             if (handlerLink.type == PostLinkable.Type.THREAD) {
                 handlerLink.key = TextUtils.concat(handlerLink.key, EXTERN_THREAD_LINK_SUFFIX);
             }
