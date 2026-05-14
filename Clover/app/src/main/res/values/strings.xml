@@ -820,5 +820,5 @@ Don't have a 4chan Pass?<br>
 
     <string name="board_ban_status">4chan Ban Status</string>
     <string name="board_ban_status_description">Check your 4chan ban status</string>
-    <string name="setting_theme_item_unread_line_color">Unread line color</string>
+    <string name="setting_theme_item_post_last_seen_color">Unread line color</string>
 </resources>
