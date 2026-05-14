@@ -28,7 +28,6 @@ import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -167,9 +166,9 @@ public class AndroidUtils {
                 }
             }
 
-            if (filteredIntents.size() > 0) {
+            if (!filteredIntents.isEmpty()) {
                 Intent chooser = Intent.createChooser(filteredIntents.remove(filteredIntents.size() - 1), null);
-                chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, filteredIntents.toArray(new Intent[filteredIntents.size()]));
+                chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, filteredIntents.toArray(new Intent[0]));
                 openIntent(chooser);
             } else {
                 openIntentFailed();
@@ -294,12 +293,7 @@ public class AndroidUtils {
 
     public static void requestKeyboardFocus(Dialog dialog, final View view) {
         view.requestFocus();
-        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                requestKeyboardFocus(view);
-            }
-        });
+        dialog.setOnShowListener(dialog1 -> requestKeyboardFocus(view));
     }
 
     public static void requestKeyboardFocus(final View view) {
@@ -324,14 +318,11 @@ public class AndroidUtils {
         view.setFocusableInTouchMode(true);
         view.requestFocus();
 
-        Runnable showKeyboard = new Runnable() {
-            @Override
-            public void run() {
-                InputMethodManager inputManager =
-                        (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (inputManager != null) {
-                    inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-                }
+        Runnable showKeyboard = () -> {
+            InputMethodManager inputManager =
+                    (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (inputManager != null) {
+                inputManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
             }
         };
 
@@ -520,7 +511,6 @@ public class AndroidUtils {
         return !ActivityManagerCompat.isLowRamDevice(activityManager);
     }
 
-    @SuppressWarnings("deprecation")
     public static void animateStatusBar(Window window, boolean in, final int originalColor, int duration) {
         ValueAnimator statusBar = ValueAnimator.ofFloat(in ? 0f : 0.5f, in ? 0.5f : 0f);
         statusBar.addUpdateListener(animation -> {
