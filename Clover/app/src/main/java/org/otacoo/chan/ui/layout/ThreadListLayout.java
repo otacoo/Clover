@@ -217,7 +217,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         if (postViewMode == ChanSettings.PostViewMode.CARD) {
             postAdapter.setCompact(compactMode);
 
-            ((GridLayoutManager) layoutManager).setSpanCount(spanCount);
+            GridLayoutManager glm = (GridLayoutManager) layoutManager;
+            if (glm.getSpanCount() != spanCount) {
+                glm.setSpanCount(spanCount);
+            }
         }
     }
 
