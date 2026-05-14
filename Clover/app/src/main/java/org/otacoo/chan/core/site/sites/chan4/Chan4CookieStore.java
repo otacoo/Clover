@@ -47,8 +47,8 @@ import java.util.Set;
 public class Chan4CookieStore {
 
     private static final String[] PASS_DOMAINS = {
-            "https://sys.4chan.org/", "https://boards.4chan.org/",
-            "https://sys.4channel.org/", "https://boards.4channel.org/"
+            "https://4chan.org/", "https://www.4chan.org/", "https://boards.4chan.org/", "https://sys.4chan.org/",
+            "https://4channel.org/", "https://www.4channel.org/", "https://boards.4channel.org/", "https://sys.4channel.org/"
     };
 
     private static final String[] SESSION_DOMAINS = {
@@ -119,10 +119,10 @@ public class Chan4CookieStore {
         if (value.isEmpty()) {
             expirePassSessionCookies(cm);
         } else {
-            cm.setCookie("https://sys.4chan.org/", "pass_enabled=1;");
-            cm.setCookie("https://sys.4chan.org/", "pass_id=" + value + ";");
-            cm.setCookie("https://boards.4chan.org/", "pass_enabled=1;");
-            cm.setCookie("https://boards.4chan.org/", "pass_id=" + value + ";");
+            for (String domain : PASS_DOMAINS) {
+                cm.setCookie(domain, "pass_enabled=1;");
+                cm.setCookie(domain, "pass_id=" + value + ";");
+            }
         }
         cm.flush();
     }
@@ -151,10 +151,10 @@ public class Chan4CookieStore {
 
         String id = passId.get();
         if (!id.isEmpty()) {
-            cm.setCookie("https://sys.4chan.org/", "pass_enabled=1;");
-            cm.setCookie("https://sys.4chan.org/", "pass_id=" + id + ";");
-            cm.setCookie("https://boards.4chan.org/", "pass_enabled=1;");
-            cm.setCookie("https://boards.4chan.org/", "pass_id=" + id + ";");
+            for (String domain : PASS_DOMAINS) {
+                cm.setCookie(domain, "pass_enabled=1;");
+                cm.setCookie(domain, "pass_id=" + id + ";");
+            }
             flushed = true;
         }
 
@@ -254,8 +254,9 @@ public class Chan4CookieStore {
         CookieManager cm = CookieManager.getInstance();
         for (String header : setCookieHeaders) {
             String val = header.split(";")[0].trim();
-            cm.setCookie("https://sys.4chan.org", val);
-            cm.setCookie("https://boards.4chan.org", val);
+            for (String domain : PASS_DOMAINS) {
+                cm.setCookie(domain, val);
+            }
             if (val.startsWith("pass_id=")) {
                 String freshId = val.substring("pass_id=".length());
                 if (!freshId.isEmpty() && !freshId.equals("0")) {
@@ -269,9 +270,9 @@ public class Chan4CookieStore {
     private void expirePassSessionCookies(CookieManager cm) {
         String expiredId = "pass_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
         String expiredEnabled = "pass_enabled=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-        cm.setCookie("https://sys.4chan.org/", expiredId);
-        cm.setCookie("https://sys.4chan.org/", expiredEnabled);
-        cm.setCookie("https://boards.4chan.org/", expiredId);
-        cm.setCookie("https://boards.4chan.org/", expiredEnabled);
+        for (String domain : PASS_DOMAINS) {
+            cm.setCookie(domain, expiredId);
+            cm.setCookie(domain, expiredEnabled);
+        }
     }
 }
