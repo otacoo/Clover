@@ -70,7 +70,7 @@ public class ThreadSlidingPaneLayout extends SlidingPaneLayout {
             @Override
             public boolean onMeasured(View view) {
                 requestLayout();
-                return false;
+                return true;
             }
         });
     }

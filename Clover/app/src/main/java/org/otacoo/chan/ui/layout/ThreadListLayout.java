@@ -200,28 +200,39 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw) {
+            updateSpanCount(w);
+        }
+    }
 
+    private void updateSpanCount(int width) {
         int cardWidth = getResources().getDimensionPixelSize(R.dimen.grid_card_width);
         int gridCountSetting = ChanSettings.boardGridSpanCount.get();
         boolean compactMode;
         if (gridCountSetting > 0) {
             spanCount = gridCountSetting;
-            compactMode = (getMeasuredWidth() / spanCount) < dp(120);
+            compactMode = (width / spanCount) < dp(120);
         } else {
-            spanCount = Math.max(1, Math.round((float) getMeasuredWidth() / cardWidth));
+            spanCount = Math.max(1, Math.round((float) width / cardWidth));
             compactMode = false;
         }
 
         if (postViewMode == ChanSettings.PostViewMode.CARD) {
             postAdapter.setCompact(compactMode);
-
-            GridLayoutManager glm = (GridLayoutManager) layoutManager;
-            if (glm.getSpanCount() != spanCount) {
-                glm.setSpanCount(spanCount);
+            if (layoutManager instanceof GridLayoutManager glm) {
+                if (glm.getSpanCount() != spanCount) {
+                    glm.setSpanCount(spanCount);
+                }
             }
         }
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        // Calculation of span count moved to onSizeChanged to prevent re-layout loops during measurement
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     public void setPostViewMode(ChanSettings.PostViewMode postViewMode) {
@@ -298,13 +309,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             int index = thread.loadable.listViewIndex;
             int top = thread.loadable.listViewTop;
 
-            switch (postViewMode) {
-                case LIST:
-                    ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(index, top);
-                    break;
-                case CARD:
-                    ((GridLayoutManager) layoutManager).scrollToPositionWithOffset(index, top);
-                    break;
+            if (layoutManager instanceof LinearLayoutManager) {
+                ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(index, top);
             }
 
             party();
@@ -861,26 +867,24 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     public int getTopAdapterPosition() {
-        return switch (postViewMode) {
-            case LIST -> ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
-            case CARD -> ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
-        };
+        if (layoutManager instanceof LinearLayoutManager) {
+            return ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
+        }
+        return 0;
     }
 
     private int getBottomAdapterPosition() {
-        return switch (postViewMode) {
-            case LIST -> ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
-            case CARD -> ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
-        };
+        if (layoutManager instanceof LinearLayoutManager) {
+            return ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+        }
+        return 0;
     }
 
     private int getCompleteBottomAdapterPosition() {
-        return switch (postViewMode) {
-            case LIST ->
-                    ((LinearLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
-            case CARD ->
-                    ((GridLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
-        };
+        if (layoutManager instanceof LinearLayoutManager) {
+            return ((LinearLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();
+        }
+        return 0;
     }
 
     private Bitmap hat;

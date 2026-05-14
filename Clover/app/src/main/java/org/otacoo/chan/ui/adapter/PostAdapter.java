@@ -185,29 +185,93 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         sourceList.addAll(thread.posts);
 
         int newLastSeen = -1;
+        List<Post> newList;
         if (lastViewed >= 0) {
-            List<Post> filtered = filter.apply(sourceList);
-            displayList.clear();
-            displayList.addAll(filtered);
-            for (int i = 0, size = displayList.size() - 1; i < size; i++) {
-                if (displayList.get(i).no == lastViewed) {
+            newList = filter.apply(sourceList);
+            for (int i = 0, size = newList.size() - 1; i < size; i++) {
+                if (newList.get(i).no == lastViewed) {
                     newLastSeen = i + 1;
                     break;
                 }
             }
         } else {
-            displayList.clear();
-            displayList.addAll(filter.apply(sourceList));
+            newList = filter.apply(sourceList);
         }
+
+        final List<Post> finalNewList = newList;
+        final int finalNewLastSeen = newLastSeen;
+
+        final List<Post> oldList = new java.util.ArrayList<>(displayList);
+        final int oldLastSeen = lastSeenIndicatorPosition;
+        
+        displayList.clear();
+        displayList.addAll(newList);
         lastSeenIndicatorPosition = newLastSeen;
 
-        RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+        androidx.recyclerview.widget.DiffUtil.DiffResult diffResult = androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return oldList.size() + (oldLastSeen >= 0 ? 1 : 0) + (showStatusView() ? 1 : 0);
+            }
+
+            @Override
+            public int getNewListSize() {
+                return finalNewList.size() + (finalNewLastSeen >= 0 ? 1 : 0) + (showStatusView() ? 1 : 0);
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                boolean oldIsLastSeen = (oldLastSeen >= 0 && oldItemPosition == oldLastSeen);
+                boolean newIsLastSeen = (finalNewLastSeen >= 0 && newItemPosition == finalNewLastSeen);
+                
+                if (oldIsLastSeen && newIsLastSeen) return true;
+                if (oldIsLastSeen || newIsLastSeen) return false;
+                
+                boolean oldIsStatus = (showStatusView() && oldItemPosition == getOldListSize() - 1);
+                boolean newIsStatus = (showStatusView() && newItemPosition == getNewListSize() - 1);
+                
+                if (oldIsStatus && newIsStatus) return true;
+                if (oldIsStatus || newIsStatus) return false;
+                
+                int oldPostIndex = oldItemPosition > oldLastSeen && oldLastSeen >= 0 ? oldItemPosition - 1 : oldItemPosition;
+                int newPostIndex = newItemPosition > finalNewLastSeen && finalNewLastSeen >= 0 ? newItemPosition - 1 : newItemPosition;
+                
+                if (oldPostIndex >= oldList.size() || newPostIndex >= finalNewList.size()) return false;
+                return oldList.get(oldPostIndex).no == finalNewList.get(newPostIndex).no;
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                boolean oldIsLastSeen = (oldLastSeen >= 0 && oldItemPosition == oldLastSeen);
+                boolean newIsLastSeen = (finalNewLastSeen >= 0 && newItemPosition == finalNewLastSeen);
+                if (oldIsLastSeen || newIsLastSeen) return true;
+                
+                boolean oldIsStatus = (showStatusView() && oldItemPosition == getOldListSize() - 1);
+                boolean newIsStatus = (showStatusView() && newItemPosition == getNewListSize() - 1);
+                if (oldIsStatus || newIsStatus) return true;
+                
+                int oldPostIndex = oldItemPosition > oldLastSeen && oldLastSeen >= 0 ? oldItemPosition - 1 : oldItemPosition;
+                int newPostIndex = newItemPosition > finalNewLastSeen && finalNewLastSeen >= 0 ? newItemPosition - 1 : newItemPosition;
+                
+                Post oldPost = oldList.get(oldPostIndex);
+                Post newPost = finalNewList.get(newPostIndex);
+                
+                int oldReplies = 0;
+                synchronized(oldPost.repliesFrom) { oldReplies = oldPost.repliesFrom.size(); }
+                int newReplies = 0;
+                synchronized(newPost.repliesFrom) { newReplies = newPost.repliesFrom.size(); }
+                
+                return oldReplies == newReplies;
+            }
+        });
+
+        androidx.recyclerview.widget.RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
         if (animator != null) {
             recyclerView.setItemAnimator(null);
-            notifyDataSetChanged();
+            diffResult.dispatchUpdatesTo(this);
             recyclerView.post(() -> recyclerView.setItemAnimator(animator));
         } else {
-            notifyDataSetChanged();
+            diffResult.dispatchUpdatesTo(this);
         }
     }
 

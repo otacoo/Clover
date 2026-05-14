@@ -101,7 +101,7 @@ public class LoginController extends Controller implements View.OnClickListener,
                 crossfadeView.getLayoutParams().height = crossfadeView.getHeight();
                 crossfadeView.requestLayout();
                 crossfadeView.toggle(!loggedIn, false);
-                return false;
+                return true;
             }
         });
     }

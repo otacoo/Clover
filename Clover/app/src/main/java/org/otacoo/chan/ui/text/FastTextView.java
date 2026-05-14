@@ -93,7 +93,12 @@ public class FastTextView extends View {
             paint.setTextSize(sizeSp);
             update = true;
             invalidate();
+            requestLayout();
         }
+    }
+
+    public float getTextSize() {
+        return paint.getTextSize();
     }
 
     public void setTextColor(int color) {
@@ -109,6 +114,7 @@ public class FastTextView extends View {
             paint.setTypeface(typeface);
             update = true;
             invalidate();
+            requestLayout();
         }
     }
 
@@ -300,12 +306,17 @@ public class FastTextView extends View {
             if (layoutWidth != that.layoutWidth) return false;
             if (singleLine != that.singleLine) return false;
             if (typeface != null ? !typeface.equals(that.typeface) : that.typeface != null) return false;
-            return text.equals(that.text);
+            return TextUtils.equals(text, that.text);
         }
 
         @Override
         public int hashCode() {
-            int result = text.hashCode();
+            int result = 0;
+            if (text != null) {
+                for (int i = 0, len = text.length(); i < len; i++) {
+                    result = 31 * result + text.charAt(i);
+                }
+            }
             result = 31 * result + color;
             result = 31 * result + (textSize != +0.0f ? Float.floatToIntBits(textSize) : 0);
             result = 31 * result + layoutWidth;
