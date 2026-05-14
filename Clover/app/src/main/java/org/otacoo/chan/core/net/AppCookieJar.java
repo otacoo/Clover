@@ -54,8 +54,24 @@ public class AppCookieJar implements CookieJar {
             try {
                 android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
                 String baseUrl = url.scheme() + "://" + url.host();
+                String existing = cm.getCookie(baseUrl);
+                boolean changed = false;
+                
                 for (Cookie cookie : cookies) {
                     if ("inbound".equals(cookie.name())) continue;
+                    
+                    String nv = cookie.name() + "=" + cookie.value();
+                    if (existing != null) {
+                        boolean found = false;
+                        for (String part : existing.split(";")) {
+                            if (part.trim().equals(nv)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) continue;
+                    }
+
                     StringBuilder sb = new StringBuilder();
                     sb.append(cookie.name()).append("=").append(cookie.value());
                     sb.append("; Domain=").append(cookie.domain());
@@ -66,8 +82,11 @@ public class AppCookieJar implements CookieJar {
                         sb.append("; Max-Age=").append((cookie.expiresAt() - System.currentTimeMillis()) / 1000);
                     }
                     cm.setCookie(baseUrl, sb.toString());
+                    changed = true;
                 }
-                cm.flush();
+                if (changed) {
+                    cm.flush();
+                }
             } catch (Exception e) {
                 org.otacoo.chan.utils.Logger.e("AppCookieJar", "syncToWebView failed", e);
             }
