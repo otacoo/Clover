@@ -410,8 +410,10 @@ public class ThumbnailView extends View {
                 fallbackDrawable.setBounds(p, p, getWidth() - p, getHeight() - p);
                 fallbackDrawable.draw(canvas);
                 canvas.restore();
-            } else {
-                // Render a simple text if there was an error.
+            }
+            
+            // Render a simple text if there was an error.
+            if (errorText != null) {
                 canvas.save();
 
                 textPaint.getTextBounds(errorText, 0, errorText.length(), tmpTextRect);

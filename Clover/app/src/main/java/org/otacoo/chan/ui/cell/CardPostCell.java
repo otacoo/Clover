@@ -219,48 +219,53 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         bound = true;
 
         if (post.deleted.get()) {
-            thumbnailView.setVisibility(View.GONE);
             options.setVisibility(View.GONE);
             filterMatchColor.setVisibility(View.GONE);
             replies.setVisibility(View.GONE);
             icons.setVisibility(View.GONE);
-            title.setVisibility(View.VISIBLE);
-            title.setText(R.string.post_deleted_title);
-            comment.setVisibility(View.VISIBLE);
-            comment.setText(getContext().getString(R.string.post_deleted_comment));
-            return;
-        }
 
-        options.setVisibility(View.VISIBLE);
-        replies.setVisibility(View.VISIBLE);
-        icons.setVisibility(View.VISIBLE);
-
-        if (post.image() != null && !ChanSettings.textOnly.get()) {
-            thumbnailView.setVisibility(View.VISIBLE);
-            thumbnailView.setClickable(!post.fileDeleted);
-            if (post.fileDeleted) {
-                thumbnailView.setFallbackDrawable(getDeletedFileDrawable());
-                thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight(), true);
-            } else {
-                thumbnailView.setFallbackDrawable(null);
-                thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight());
-            }
-            thumbnailView.setLabelText(null);
-        } else {
-            thumbnailView.setPostImage(null, 0, 0);
-            if (post.fileDeleted && !ChanSettings.textOnly.get()) {
+            if (!ChanSettings.textOnly.get()) {
                 thumbnailView.setVisibility(View.VISIBLE);
                 thumbnailView.setClickable(false);
-                thumbnailView.setImageDrawable(getDeletedFileDrawable());
-                thumbnailView.setLabelText(null);
+                thumbnailView.setImageDrawable(get404FileDrawable());
+                thumbnailView.setPostImage(null, 0, 0);
+                thumbnailView.setLabelText("404");
+                thumbnailView.setFallbackDrawable(null);
             } else {
                 thumbnailView.setVisibility(View.GONE);
+            }
+        } else {
+            options.setVisibility(View.VISIBLE);
+            replies.setVisibility(View.VISIBLE);
+            icons.setVisibility(View.VISIBLE);
+
+            if (post.image() != null && !ChanSettings.textOnly.get()) {
+                thumbnailView.setVisibility(View.VISIBLE);
+                thumbnailView.setClickable(!post.fileDeleted);
+                if (post.fileDeleted) {
+                    thumbnailView.setFallbackDrawable(getDeletedFileDrawable());
+                    thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight(), true);
+                } else {
+                    thumbnailView.setFallbackDrawable(null);
+                    thumbnailView.setPostImage(post.image(), thumbnailView.getWidth(), thumbnailView.getHeight());
+                }
                 thumbnailView.setLabelText(null);
-                thumbnailView.setClickable(false);
+            } else {
+                thumbnailView.setPostImage(null, 0, 0);
+                if (post.fileDeleted && !ChanSettings.textOnly.get()) {
+                    thumbnailView.setVisibility(View.VISIBLE);
+                    thumbnailView.setClickable(false);
+                    thumbnailView.setImageDrawable(getDeletedFileDrawable());
+                    thumbnailView.setLabelText(null);
+                } else {
+                    thumbnailView.setVisibility(View.GONE);
+                    thumbnailView.setLabelText(null);
+                    thumbnailView.setClickable(false);
+                }
             }
         }
 
-        if (post.filterHighlightedColor != 0) {
+        if (post.filterHighlightedColor != 0 && !post.deleted.get()) {
             filterMatchColor.setVisibility(View.VISIBLE);
             filterMatchColor.setBackgroundColor(post.filterHighlightedColor);
         } else {
@@ -286,6 +291,7 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
             commentText = post.comment;
         }
 
+        comment.setVisibility(TextUtils.isEmpty(commentText) ? View.GONE : View.VISIBLE);
         comment.setText(commentText);
         comment.setTextColor(theme.textPrimary);
 
@@ -318,6 +324,14 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         }
 
         icons.apply();
+    }
+
+    private Drawable get404FileDrawable() {
+        int drawableRes = theme != null && theme.isLightTheme
+                ? R.drawable.ic_404_black
+                : R.drawable.ic_404_white;
+        Drawable drawable = ContextCompat.getDrawable(getContext(), drawableRes);
+        return drawable != null ? drawable.mutate() : null;
     }
 
     private Drawable getDeletedFileDrawable() {

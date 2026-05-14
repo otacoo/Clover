@@ -410,11 +410,13 @@ public class ThreadLayout extends CoordinatorLayout implements
             showTopBottomButtons(false, false);
         }
         updateNewPostsBarPosition();
+        updateFabContainerMargins();
     }
 
     @Override
     public void replyLayoutChanged() {
         updateNewPostsBarPosition();
+        updateFabContainerMargins();
     }
 
     @Override
@@ -895,8 +897,13 @@ public class ThreadLayout extends CoordinatorLayout implements
         if (ChanSettings.toolbarBottom.get()) {
             bottomMargin += getResources().getDimensionPixelSize(R.dimen.toolbar_height);
         }
-        containerLp.bottomMargin = bottomMargin;
-        fabContainer.setLayoutParams(containerLp);
+        if (ChanSettings.bottomReply.get() && replyLayoutOpen) {
+            bottomMargin += threadListLayout.getReplyHeight();
+        }
+        if (containerLp.bottomMargin != bottomMargin) {
+            containerLp.bottomMargin = bottomMargin;
+            fabContainer.setLayoutParams(containerLp);
+        }
     }
 
     private void updateNewPostsBarPosition() {
