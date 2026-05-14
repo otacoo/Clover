@@ -229,7 +229,7 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
                 thumbnailView.setClickable(false);
                 thumbnailView.setImageDrawable(get404FileDrawable());
                 thumbnailView.setPostImage(null, 0, 0);
-                thumbnailView.setLabelText("404");
+                thumbnailView.setLabelText(null);
                 thumbnailView.setFallbackDrawable(null);
             } else {
                 thumbnailView.setVisibility(View.GONE);
