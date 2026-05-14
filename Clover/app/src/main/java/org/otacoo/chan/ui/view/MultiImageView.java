@@ -791,6 +791,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         fallbackWebView.getSettings().setJavaScriptEnabled(false);
         fallbackWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         fallbackWebView.getSettings().setAllowFileAccess(true);
+        fallbackWebView.getSettings().setAllowFileAccessFromFileURLs(true);
+        fallbackWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);
         fallbackWebView.setWebChromeClient(new android.webkit.WebChromeClient());
 
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -803,7 +805,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 "</style></head><body>" +
                 "<video controls autoplay loop src=\"" + fileUri.toString() + "\"></video>" +
                 "</body></html>";
-        fallbackWebView.loadDataWithBaseURL("file://", html, "text/html", "UTF-8", null);
+        fallbackWebView.loadDataWithBaseURL("file:///", html, "text/html", "UTF-8", null);
 
         if (exoPlayerView != null) {
             removeView(exoPlayerView);
