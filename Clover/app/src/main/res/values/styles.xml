@@ -110,7 +110,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_spoiler_color">#ff000000</item>
         <item name="post_id_background_light">#00000000</item>
         <item name="post_id_background_dark">#ffC6C6C6</item>
-            <item name="post_last_seen_color">#ff282a2e</item>
+        <item name="post_last_seen_color">#ffff0000</item>
     </style>
 
     <style name="Chan.Theme.Black" parent="Chan.Theme.Dark">
@@ -122,7 +122,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="backcolor_secondary">#ff212121</item>
 
         <item name="post_spoiler_color">#ff2c2c2c</item>
-            <item name="post_last_seen_color">#ff000000</item>
+        <item name="post_last_seen_color">#ffff0000</item>
     </style>
 
     <style name="Chan.Theme.YotsubaB" parent="Chan.Theme">
@@ -141,7 +141,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_quote_color">#FEA90000</item>
         <item name="post_link_color">#ffdd0000</item>
         <item name="post_highlight_quote_color">#6d0000</item>
-            <item name="post_last_seen_color">#ff3F51B5</item>
+        <item name="post_last_seen_color">#ff3F51B5</item>
     </style>
 
     <style name="Chan.Theme.Yotsuba" parent="Chan.Theme">
@@ -162,7 +162,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_quote_color">#ff000080</item>
         <item name="post_link_color">#FF050CCC</item>
         <item name="post_highlight_quote_color">#000039</item>
-            <item name="post_last_seen_color">#F44336</item>
+        <item name="post_last_seen_color">#ff5d2e2e</item>
     </style>
 
     <style name="Chan.Theme.Photon" parent="Chan.Theme">
@@ -179,7 +179,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_subject_color">#ff111111</item>
         <item name="post_details_color">#ff333333</item>
         <item name="post_inline_quote_color">#ff789922</item>
-            <item name="post_last_seen_color">#ffFF9800</item>
+        <item name="post_last_seen_color">#ffFF9800</item>
     </style>
 
     <style name="Chan.Theme.Tomorrow" parent="Chan.Theme.Dark">
@@ -198,7 +198,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_highlight_quote_color">#2b435a</item>
         <item name="post_subject_color">#ffb294bb</item>
         <item name="post_inline_quote_color">#ffb5bd68</item>
-            <item name="post_last_seen_color">#ff282a2e</item>
+        <item name="post_last_seen_color">#89c5c8c6</item>
     </style>
     
     <style name="Chan.Theme.Insomnia" parent="Chan.Theme.Dark">
@@ -374,7 +374,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_link_color">#268bd2</item>
         <item name="post_spoiler_color">#cb4b16</item>
         <item name="post_capcode_color">#ff00ddff</item>
-        <item name="post_last_seen_color">#ff00ddff</item>
+        <item name="post_last_seen_color">#d30102</item>
 
         <item name="post_id_background_light">#6633b5e5</item>
         <item name="post_saved_reply_color">#073642</item>
