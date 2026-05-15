@@ -132,7 +132,18 @@ public class Chan4CookieStore {
         CookieManager cm = CookieManager.getInstance();
         if (value.isEmpty()) {
             String expired = "4chan_pass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-            for (String domain : PASS_DOMAINS) cm.setCookie(domain, expired);
+            for (String domain : PASS_DOMAINS) {
+                cm.setCookie(domain, expired);
+                android.net.Uri uri = android.net.Uri.parse(domain);
+                String host = uri.getHost();
+                if (host != null) {
+                    if (host.startsWith("www.")) {
+                        host = host.substring(4);
+                    }
+                    cm.setCookie(domain, expired + "; Domain=" + host);
+                    cm.setCookie(domain, expired + "; Domain=." + host);
+                }
+            }
         } else {
             String cookie = "4chan_pass=" + value + "; expires=Fri, 31 Dec 2038 23:59:59 GMT; path=/";
             for (String domain : PASS_DOMAINS) cm.setCookie(domain, cookie);
@@ -273,6 +284,18 @@ public class Chan4CookieStore {
         for (String domain : PASS_DOMAINS) {
             cm.setCookie(domain, expiredId);
             cm.setCookie(domain, expiredEnabled);
+            
+            android.net.Uri uri = android.net.Uri.parse(domain);
+            String host = uri.getHost();
+            if (host != null) {
+                if (host.startsWith("www.")) {
+                    host = host.substring(4);
+                }
+                cm.setCookie(domain, expiredId + "; Domain=" + host);
+                cm.setCookie(domain, expiredId + "; Domain=." + host);
+                cm.setCookie(domain, expiredEnabled + "; Domain=" + host);
+                cm.setCookie(domain, expiredEnabled + "; Domain=." + host);
+            }
         }
     }
 }
