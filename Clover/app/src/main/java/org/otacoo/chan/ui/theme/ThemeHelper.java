@@ -72,6 +72,8 @@ public class ThemeHelper {
         themes.add(new DarkTheme("Neon", "neon", R.style.Chan_Theme_Neon, PrimaryColor.DARK));
         themes.add(new DarkTheme("Solarized Dark", "solarized_dark", R.style.Chan_Theme_SolarizedDark, PrimaryColor.DARK));
         themes.add(new DarkTheme("Tako", "tako", R.style.Chan_Theme_Tako, PrimaryColor.DARK));
+        themes.add(new Theme("Creamy", "creamy", R.style.Chan_Theme_Creamy, PrimaryColor.RED));
+        themes.add(new Theme("Sapporo", "sapporo", R.style.Chan_Theme_Sapporo, PrimaryColor.GREY));
 
         loadCustomThemes();
 
@@ -286,8 +288,34 @@ public class ThemeHelper {
         context.setTheme(theme.resValue);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            context.getWindow().setStatusBarColor(theme.primaryColor.dark);
-            context.getWindow().setNavigationBarColor(0xff000000);
+            boolean toolbarBottom = org.otacoo.chan.core.settings.ChanSettings.toolbarBottom.get();
+            if (toolbarBottom) {
+                context.getWindow().setStatusBarColor(theme.backColor);
+                context.getWindow().setNavigationBarColor(theme.primaryColor.color);
+            } else {
+                context.getWindow().setStatusBarColor(theme.primaryColor.color);
+                context.getWindow().setNavigationBarColor(theme.backColor);
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                int flags = context.getWindow().getDecorView().getSystemUiVisibility();
+
+                if (toolbarBottom ? theme.isLightTheme : false) {
+                    flags |= android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                } else {
+                    flags &= ~android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (toolbarBottom ? false : theme.isLightTheme) {
+                        flags |= android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                    } else {
+                        flags &= ~android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                    }
+                }
+
+                context.getWindow().getDecorView().setSystemUiVisibility(flags);
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.setTaskDescription(new ActivityManager.TaskDescription.Builder()

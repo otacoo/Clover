@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <color name="primary">#ff9BDBF5</color>
     <color name="primary_dark">#ff8CC7E7</color>
     <color name="accent">#ff1B98D1</color>
@@ -33,6 +33,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="colorAccent">#FF03A9F4</item>
         <item name="loading_bar_color">#ff2196F3</item>
         <item name="ui_text_color">#ffffffff</item>
+
+        <item name="android:navigationBarColor">?attr/backcolor</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
 
         <item name="android:windowBackground">@android:color/white</item>
         <item name="windowActionModeOverlay">true</item>
@@ -84,6 +88,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="colorAccent">#ff00BCD4</item>
         <item name="loading_bar_color">#ff00BCD4</item>
         <item name="ui_text_color">#ffffffff</item>
+
+        <item name="android:navigationBarColor">?attr/backcolor</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
 
         <item name="dropdown_dark_color">#ffffffff</item>
         <item name="dropdown_dark_pressed_color">#88ffffff</item>
@@ -199,6 +207,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_subject_color">#ffb294bb</item>
         <item name="post_inline_quote_color">#ffb5bd68</item>
         <item name="post_last_seen_color">#89c5c8c6</item>
+    </style>
+
+    <style name="Chan.Theme.Tako" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#ff21212e</item>
+        <item name="colorAccent">#fff3b375</item>
+        <item name="loading_bar_color">#fff3b375</item>
+
+        <item name="backcolor">#ff21212e</item>
+        <item name="backcolor_secondary">#ff2a2a3c</item>
+
+        <item name="android:textColor">#ffe3e0f2</item>
+        <item name="text_color_primary">#ffe3e0f2</item>
+        <item name="text_color_secondary">#ffcbc4ce</item>
+        <item name="text_color_hint">#ff958f99</item>
+        <item name="text_color_reveal_spoiler">#ff21212e</item>
+
+        <item name="post_name_color">#fff3b375</item>
+        <item name="post_subject_color">#ff66577e</item>
+        <item name="post_details_color">#ff958f99</item>
+        <item name="post_quote_color">#ff84531e</item>
+        <item name="post_highlight_quote_color">#ff4e4065</item>
+        <item name="post_inline_quote_color">#ff66577e</item>
+        <item name="post_link_color">#fff3b375</item>
+        <item name="post_spoiler_color">#ffe3e0f2</item>
+        <item name="post_capcode_color">#ff84531e</item>
+        <item name="post_last_seen_color">#fff3b375</item>
+
+        <item name="post_id_background_light">#ff2a2a3c</item>
+        <item name="post_saved_reply_color">#ff303044</item>
+        <item name="post_highlighted_color">#ff36364d</item>
+        <item name="post_selected_color">#ff303044</item>
+
+        <item name="divider_color">#ff262636</item>
+        <item name="divider_split_color">#ff262636</item>
+
+        <item name="dropdown_dark_color">#ffe3e0f2</item>
+        <item name="dropdown_dark_pressed_color">#ffe3e0f2</item>
     </style>
     
     <style name="Chan.Theme.Insomnia" parent="Chan.Theme.Dark">
@@ -388,41 +433,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="dropdown_dark_pressed_color">#6633b5e5</item>
     </style>
 
-    <style name="Chan.Theme.Tako" parent="Chan.Theme.Dark">
-        <item name="colorPrimary">#ff21212e</item>
-        <item name="colorAccent">#fff3b375</item>
-        <item name="loading_bar_color">#fff3b375</item>
+    <style name="Chan.Theme.Creamy" parent="Chan.Theme">
+        <item name="colorPrimary">#ffEF233C</item>
+        <item name="colorAccent">#ffD90429</item>
+        <item name="loading_bar_color">#ffE41433</item>
 
-        <item name="backcolor">#ff21212e</item>
-        <item name="backcolor_secondary">#ff2a2a3c</item>
+        <item name="backcolor">#ffEDF2F4</item>
+        <item name="backcolor_secondary">#ffEEBFC6</item>
 
-        <item name="android:textColor">#ffe3e0f2</item>
-        <item name="text_color_primary">#ffe3e0f2</item>
-        <item name="text_color_secondary">#ffcbc4ce</item>
-        <item name="text_color_hint">#ff958f99</item>
-        <item name="text_color_reveal_spoiler">#ff21212e</item>
+        <item name="android:textColor">#ff2B2D42</item>
+        <item name="text_color_primary">#ff2B2D42</item>
+        <item name="text_color_secondary">#ff5C6378</item>
+        <item name="text_color_hint">#ff8D99AE</item>
 
-        <item name="post_name_color">#fff3b375</item>
-        <item name="post_subject_color">#ff66577e</item>
-        <item name="post_details_color">#ff958f99</item>
-        <item name="post_quote_color">#ff84531e</item>
-        <item name="post_highlight_quote_color">#ff4e4065</item>
-        <item name="post_inline_quote_color">#ff66577e</item>
-        <item name="post_link_color">#fff3b375</item>
-        <item name="post_spoiler_color">#ffe3e0f2</item>
-        <item name="post_capcode_color">#ff84531e</item>
-        <item name="post_last_seen_color">#fff3b375</item>
+        <item name="post_name_color">#ffEF233C</item>
+        <item name="post_subject_color">#ff2B2D42</item>
+        <item name="post_details_color">#ff5C6378</item>
+        <item name="post_quote_color">#ff8D99AE</item>
+        <item name="post_highlight_quote_color">#ffEE8B98</item>
+        <item name="post_inline_quote_color">#ff8D99AE</item>
+        <item name="post_link_color">#ffD90429</item>
+        <item name="post_last_seen_color">#ffE41433</item>
 
-        <item name="post_id_background_light">#ff2a2a3c</item>
-        <item name="post_saved_reply_color">#ff303044</item>
-        <item name="post_highlighted_color">#ff36364d</item>
-        <item name="post_selected_color">#ff303044</item>
+        <item name="divider_split_color">#ffBDC6D1</item>
+    </style>
 
-        <item name="divider_color">#ff262636</item>
-        <item name="divider_split_color">#ff262636</item>
+    <style name="Chan.Theme.Sapporo" parent="Chan.Theme">
+        <item name="colorPrimary">#ff000000</item>
+        <item name="colorAccent">#ff000000</item>
+        <item name="loading_bar_color">#ffFDFDFD</item>
 
-        <item name="dropdown_dark_color">#ffe3e0f2</item>
-        <item name="dropdown_dark_pressed_color">#ffe3e0f2</item>
+        <item name="backcolor">#ffFDFDFD</item>
+        <item name="backcolor_secondary">#ffE8E8E8</item>
+
+        <item name="android:textColor">#ff222222</item>
+        <item name="text_color_primary">#ff222222</item>
+        <item name="text_color_secondary">#ff515151</item>
+        <item name="text_color_hint">#ff838383</item>
+
+        <item name="post_name_color">#ff000000</item>
+        <item name="post_subject_color">#ff000000</item>
+        <item name="post_details_color">#ff515151</item>
+        <item name="post_quote_color">#ff515151</item>
+        <item name="post_highlight_quote_color">#ffDADADA</item>
+        <item name="post_inline_quote_color">#ff515151</item>
+        <item name="post_link_color">#ff000000</item>
+        <item name="post_last_seen_color">#ff000000</item>
+
+        <item name="divider_split_color">#ffCFCFCF</item>
     </style>
 
     <!-- For FloatingMenu -->

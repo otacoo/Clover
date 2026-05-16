@@ -147,7 +147,7 @@ public class ImageReencodeOptionsController extends Controller implements
 
         if (Build.VERSION.SDK_INT >= 21) {
             if (statusBarColorPrevious != 0) {
-                AndroidUtils.animateStatusBar(getWindow(), true, statusBarColorPrevious, TRANSITION_DURATION);
+                AndroidUtils.animateStatusBar(getWindow(), false, statusBarColorPrevious, TRANSITION_DURATION);
             }
         }
     }
