@@ -58,6 +58,9 @@ public class MediaSettingsController extends SettingsController implements
     private ListSettingView<ChanSettings.MediaAutoLoadMode> videoAutoLoadView;
     private ListSettingView<ChanSettings.MediaAutoLoadMode> loadFullSizeThumbnailsView;
 
+    private ListSettingView<ChanSettings.SwipeGesture> swipeToCloseView;
+    private ListSettingView<ChanSettings.SwipeGesture> swipeToSaveView;
+
     public MediaSettingsController(Context context) {
         super(context);
     }
@@ -78,6 +81,7 @@ public class MediaSettingsController extends SettingsController implements
 
         onPreferenceChange(imageAutoLoadView);
         onPreferenceChange(loadFullSizeThumbnailsView);
+        onPreferenceChange(swipeToCloseView);
 
         presenter.create(this);
     }
@@ -107,6 +111,10 @@ public class MediaSettingsController extends SettingsController implements
         if (item == loadFullSizeThumbnailsView) {
             ChanSettings.MediaAutoLoadMode fullSizeMode = ChanSettings.loadFullSizeThumbnails.get();
             imageAutoLoadView.setEnabled(fullSizeMode != ChanSettings.MediaAutoLoadMode.ALL);
+        }
+
+        if (item == swipeToCloseView || item == swipeToSaveView) {
+            updateGestures();
         }
     }
 
@@ -205,6 +213,30 @@ public class MediaSettingsController extends SettingsController implements
             groups.add(video);
         }
 
+        // Gestures group
+        {
+            SettingsGroup gestures = new SettingsGroup(R.string.settings_group_media_gestures);
+
+            List<ListSettingView.Item<?>> swipeGestureTypes = new ArrayList<>();
+            swipeGestureTypes.add(new ListSettingView.Item<>(getString(R.string.swipe_gesture_none), ChanSettings.SwipeGesture.NONE));
+            swipeGestureTypes.add(new ListSettingView.Item<>(getString(R.string.swipe_gesture_up), ChanSettings.SwipeGesture.UP));
+            swipeGestureTypes.add(new ListSettingView.Item<>(getString(R.string.swipe_gesture_down), ChanSettings.SwipeGesture.DOWN));
+
+            swipeToCloseView = new ListSettingView<>(this,
+                    ChanSettings.swipeToClose,
+                    R.string.setting_swipe_to_close,
+                    swipeGestureTypes);
+            gestures.add(swipeToCloseView);
+
+            swipeToSaveView = new ListSettingView<>(this,
+                    ChanSettings.swipeToSave,
+                    R.string.setting_swipe_to_save,
+                    swipeGestureTypes);
+            gestures.add(swipeToSaveView);
+
+            groups.add(gestures);
+        }
+
         // Loading group
         {
             SettingsGroup loading = new SettingsGroup(R.string.settings_group_media_loading);
@@ -256,6 +288,27 @@ public class MediaSettingsController extends SettingsController implements
 
 
         updateVideoLoadModes();
+        updateGestures();
+    }
+
+    private void updateGestures() {
+        if (swipeToCloseView == null || swipeToSaveView == null) return;
+        
+        ChanSettings.SwipeGesture closeGesture = ChanSettings.swipeToClose.get();
+        ChanSettings.SwipeGesture saveGesture = ChanSettings.swipeToSave.get();
+
+        for (int i = 0; i < swipeToCloseView.items.size(); i++) {
+            ListSettingView.Item<?> closeItem = swipeToCloseView.items.get(i);
+            ListSettingView.Item<?> saveItem = swipeToSaveView.items.get(i);
+            
+            if (closeItem.key == ChanSettings.SwipeGesture.UP) {
+                closeItem.enabled = saveGesture != ChanSettings.SwipeGesture.UP;
+                saveItem.enabled = closeGesture != ChanSettings.SwipeGesture.UP;
+            } else if (closeItem.key == ChanSettings.SwipeGesture.DOWN) {
+                closeItem.enabled = saveGesture != ChanSettings.SwipeGesture.DOWN;
+                saveItem.enabled = closeGesture != ChanSettings.SwipeGesture.DOWN;
+            }
+        }
     }
 
     private void updateVideoLoadModes() {

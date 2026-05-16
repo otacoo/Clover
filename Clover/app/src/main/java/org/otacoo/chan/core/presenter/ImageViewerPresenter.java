@@ -285,6 +285,16 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
     }
 
     @Override
+    public void onSwipeToClose(MultiImageView multiImageView) {
+        onExit();
+    }
+
+    @Override
+    public void onSwipeToSave(MultiImageView multiImageView) {
+        saveClicked(multiImageView.getPostImage());
+    }
+
+    @Override
     public void onTap(MultiImageView multiImageView) {
         // Don't mistake a swipe when the pager is disabled as a tap
         if (viewPagerVisible) {

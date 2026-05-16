@@ -39,6 +39,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -162,6 +164,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     };
 
     private boolean backgroundToggle;
+    private GestureDetector gestureDetector;
 
     public MultiImageView(Context context) {
         this(context, null);
@@ -176,6 +179,32 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         super(context, attrs, defStyle);
 
         inject(this);
+
+        gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null || e2 == null) return false;
+                if (Math.abs(velocityY) > Math.abs(velocityX) * 1.5f && Math.abs(velocityY) > 1000) {
+                    boolean isUp = velocityY < 0;
+                    org.otacoo.chan.core.settings.ChanSettings.SwipeGesture closeGesture = org.otacoo.chan.core.settings.ChanSettings.swipeToClose.get();
+                    org.otacoo.chan.core.settings.ChanSettings.SwipeGesture saveGesture = org.otacoo.chan.core.settings.ChanSettings.swipeToSave.get();
+                    if (isUp && closeGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.UP) {
+                        if (callback != null) callback.onSwipeToClose(MultiImageView.this);
+                        return true;
+                    } else if (!isUp && closeGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.DOWN) {
+                        if (callback != null) callback.onSwipeToClose(MultiImageView.this);
+                        return true;
+                    } else if (isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.UP) {
+                        if (callback != null) callback.onSwipeToSave(MultiImageView.this);
+                        return true;
+                    } else if (!isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.DOWN) {
+                        if (callback != null) callback.onSwipeToSave(MultiImageView.this);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
 
         setOnClickListener(this);
 
@@ -297,6 +326,18 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             exoPlayer.setVolume(muted ? 0f : 1f);
         }
         updateMuteButtonIcon();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (!isZoomed()) {
+            if (gestureDetector.onTouchEvent(ev)) {
+                ev.setAction(MotionEvent.ACTION_CANCEL);
+                super.dispatchTouchEvent(ev);
+                return true;
+            }
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -1288,6 +1329,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     public interface Callback {
+        void onSwipeToClose(MultiImageView multiImageView);
+
+        void onSwipeToSave(MultiImageView multiImageView);
+
         void onTap(MultiImageView multiImageView);
 
         void showProgress(MultiImageView multiImageView, boolean progress);

@@ -293,7 +293,26 @@ public class ChanSettings {
     public static final BooleanSetting reencodeHintShown;
     public static final BooleanSetting setupSitesBoardsHintShown;
 
+    public enum SwipeGesture implements OptionSettingItem {
+        NONE("none"),
+        UP("up"),
+        DOWN("down");
+
+        String name;
+
+        SwipeGesture(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getKey() {
+            return name;
+        }
+    }
+
     public static final BooleanSetting fetchYoutubeTitles;
+    public static final OptionsSetting<SwipeGesture> swipeToClose;
+    public static final OptionsSetting<SwipeGesture> swipeToSave;
     public static final BooleanSetting dnsOverHttps;
 
     public static final StringSetting customUserAgent;
@@ -424,6 +443,8 @@ public class ChanSettings {
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
 
         fetchYoutubeTitles = new BooleanSetting(p, "preference_fetch_youtube_titles", false);
+        swipeToClose = new OptionsSetting<>(p, "preference_swipe_to_close", SwipeGesture.class, SwipeGesture.NONE);
+        swipeToSave = new OptionsSetting<>(p, "preference_swipe_to_save", SwipeGesture.class, SwipeGesture.NONE);
         dnsOverHttps = new BooleanSetting(p, "dns_over_https", false);
 
         customUserAgent = new StringSetting(p, "custom_user_agent", "");
