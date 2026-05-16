@@ -132,6 +132,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private int accumulatedScroll = 0;
     private View newPostsBar;
     private TextView newPostsText;
+    private TextView newPostsAction;
     private static final int NEW_POSTS_DISMISS_DELAY_MS = 3500;
     private final Runnable dismissNewPostsRunnable = () -> showNewPostsNotification(false, -1);
 
@@ -410,6 +411,9 @@ public class ThreadLayout extends CoordinatorLayout implements
         showReplyButton(!open);
         if (open) {
             showTopBottomButtons(false, false);
+            if (threadListLayout != null && threadListLayout.isReplyExpanded()) {
+                showNewPostsNotification(false, -1);
+            }
         }
         updateNewPostsBarPosition();
         updateFabContainerMargins();
@@ -417,6 +421,9 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void replyLayoutChanged() {
+        if (threadListLayout != null && threadListLayout.isReplyExpanded()) {
+            showNewPostsNotification(false, -1);
+        }
         updateNewPostsBarPosition();
         updateFabContainerMargins();
     }
@@ -781,6 +788,8 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void showNewPostsNotification(boolean show, int more) {
+        if (show && replyLayoutOpen && threadListLayout != null && threadListLayout.isReplyExpanded()) return;
+        
         updateNewPostsBarPosition();
         if (show) {
             String text = getContext().getResources()
@@ -791,13 +800,18 @@ public class ThreadLayout extends CoordinatorLayout implements
             newPostsBar.setAlpha(1f);
             removeCallbacks(dismissNewPostsRunnable);
             postDelayed(dismissNewPostsRunnable, NEW_POSTS_DISMISS_DELAY_MS);
+            
+            AndroidUtils.notifySnackbarShowing(true);
         } else {
             removeCallbacks(dismissNewPostsRunnable);
             if (newPostsBar.getVisibility() == View.VISIBLE) {
                 newPostsBar.animate()
                         .alpha(0f)
                         .setDuration(200)
-                        .withEndAction(() -> newPostsBar.setVisibility(View.GONE))
+                        .withEndAction(() -> {
+                            newPostsBar.setVisibility(View.GONE);
+                            AndroidUtils.notifySnackbarShowing(false);
+                        })
                         .start();
             }
         }
@@ -891,7 +905,7 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     private void updateFabContainerMargins() {
         CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
-        int bottomMargin = dp(48);
+        int bottomMargin = 0;
         if (ChanSettings.toolbarBottom.get()) {
             bottomMargin += getResources().getDimensionPixelSize(R.dimen.toolbar_height);
         }
@@ -906,12 +920,16 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     private void updateNewPostsBarPosition() {
         CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
-        int bottomMargin = ChanSettings.toolbarBottom.get()
-                ? getResources().getDimensionPixelSize(R.dimen.toolbar_height)
-                : 0;
+        int bottomMargin = dp(12);
+        if (ChanSettings.toolbarBottom.get()) {
+            bottomMargin += getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+        }
         if (ChanSettings.bottomReply.get() && replyLayoutOpen) {
             bottomMargin += threadListLayout.getReplyHeight();
         }
+        
+        barLp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+        
         if (barLp.bottomMargin != bottomMargin) {
             barLp.bottomMargin = bottomMargin;
             newPostsBar.setLayoutParams(barLp);
@@ -992,6 +1010,7 @@ public class ThreadLayout extends CoordinatorLayout implements
                         newPostsBar.animate().cancel();
                         newPostsBar.setVisibility(View.GONE);
                         newPostsBar.setAlpha(1f);
+                        AndroidUtils.notifySnackbarShowing(false);
                         break;
                 }
             }

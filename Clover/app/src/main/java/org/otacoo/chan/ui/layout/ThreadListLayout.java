@@ -449,6 +449,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         return reply.getPresenter();
     }
 
+    public boolean isReplyExpanded() {
+        return reply != null && reply.isExpanded();
+    }
+
     public void showError(String error) {
         postAdapter.showError(error);
     }
