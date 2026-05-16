@@ -1,3 +1,26 @@
+## 2026-05-16 – v3.5.0
+
+### Snackbars
+- Refactored all the snackbars to use Material snackbars
+- Snackbars will now take on the primary color of the theme
+- Floating action buttons (FAB) will better interact and hide when a snackbar is being shown
+- Snackbars will no longer appear while the reply view is expanded
+
+### Media
+- **New option:** Gestures
+  - Pick an action for up and down swipe (save file or dismiss)
+  
+### Appearance
+- **New themes:** Creamy, Sapporo
+- The system navigation and status bar will now take on the colors of the theme, works with bottom toolbar as well
+
+### Misc changes & fixes
+- Catalog mode: Fix an issue where threads with no comment would have their replies/images anchor move up
+- Email verification: all 4chan cookies will now be cleared to correctly set the 4chan_pass cookie during the verification process (issue #28)
+- Top and bottom FAB: reduce the delays and doubled how much is required to scroll before they show up
+- Reply FAB: shifted it down again so it doesn't hide the last post (issue #26)
+- Fixed a long-standing issue where tapping to scroll through a thread would text highlight links like URLs or quotelinks too easily
+
 ## 2026-05-14 – v3.4.0
 
 ### Media
@@ -8,7 +31,7 @@
 - **New option:** Fetch Youtube titles
   - Will replace the URLs with [Youtube] {Title}
 
-### Appearence
+### Appearance
 - **New theme:** Tako
 - **New option:** Bottom reply
 - Added unread line to the colors that can be chosen when creating themes
