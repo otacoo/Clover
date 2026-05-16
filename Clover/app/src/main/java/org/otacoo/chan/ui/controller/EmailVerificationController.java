@@ -27,7 +27,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -38,6 +39,7 @@ import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.toolbar.ToolbarMenu;
 import org.otacoo.chan.ui.toolbar.ToolbarMenuItem;
 import org.otacoo.chan.ui.view.AuthWebView;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
 import de.greenrobot.event.EventBus;
@@ -135,15 +137,13 @@ public class EmailVerificationController extends Controller {
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         if (!alive) return;
-        clearCloudflareCookies();
+        clearSiteCookies();
         AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
     }
 
-    // Clear stale cookies before creating the WebView so the signin page gets a clean session.
-    private void clearCloudflareCookies() {
+    // Clear all 4chan cookies before creating the WebView so the signin page gets a clean session.
+    private void clearSiteCookies() {
         CookieManager cm = CookieManager.getInstance();
-        // Comprehensive list of Cloudflare and bot-protection cookie names.
-        String[] cfNames = {"cf_clearance", "__cf_bm", "__cfruid", "_cf_bm", "_tcm", "_cfuvid"};
         
         java.util.Set<String> apexes = new java.util.HashSet<>();
         apexes.add("4chan.org");
@@ -171,15 +171,35 @@ public class EmailVerificationController extends Controller {
             } catch (Exception ignored) {}
         }
 
+        java.util.Set<String> allCookieNames = new java.util.HashSet<>();
         for (String apex : apexes) {
             String url = "https://" + apex;
-            for (String name : cfNames) {
-                // Cloudflare usually uses the apex domain with a leading dot.
+            String cookies = cm.getCookie(url);
+            if (cookies != null) {
+                for (String cookiePair : cookies.split(";")) {
+                    String[] parts = cookiePair.split("=", 2);
+                    if (parts.length > 0) allCookieNames.add(parts[0].trim());
+                }
+            }
+            for (String sub : new String[]{"sys", "boards", "www"}) {
+                String subUrl = "https://" + sub + "." + apex;
+                String subCookies = cm.getCookie(subUrl);
+                if (subCookies != null) {
+                    for (String cookiePair : subCookies.split(";")) {
+                        String[] parts = cookiePair.split("=", 2);
+                        if (parts.length > 0) allCookieNames.add(parts[0].trim());
+                    }
+                }
+            }
+        }
+
+        for (String apex : apexes) {
+            String url = "https://" + apex;
+            for (String name : allCookieNames) {
                 cm.setCookie(url, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=." + apex);
                 cm.setCookie(url, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=" + apex);
                 cm.setCookie(url, name + "=; Max-Age=0; path=/");
                 
-                // Also attempt clearing for common subdomains explicitly.
                 for (String sub : new String[]{"sys", "boards", "www"}) {
                     String subUrl = "https://" + sub + "." + apex;
                     cm.setCookie(subUrl, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=." + sub + "." + apex);
@@ -230,21 +250,18 @@ public class EmailVerificationController extends Controller {
             }
         });
 
-        // Re-inject site cookies after clearing (e.g. pass cookies, Cloudflare cookies)
-        if (site != null) {
-            site.requestModifier().modifyWebView(webView);
-        }
+
 
         // Add WebView into the container that was set as view in onCreate
         if (view instanceof FrameLayout) {
-            view.addView(webView, new FrameLayout.LayoutParams(
+            ((FrameLayout) view).addView(webView, new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT));
         }
         webView.loadUrl(initialUrl);
 
         if (requiredCookies != null && requiredCookies.length > 0) {
-            Toast.makeText(context, "Please solve the verification challenge to continue.", Toast.LENGTH_LONG).show();
+            AndroidUtils.showThemedSnackbar(view, "Please solve the verification challenge to continue.", Snackbar.LENGTH_LONG);
         }
     }
 
@@ -290,22 +307,7 @@ public class EmailVerificationController extends Controller {
             NetModule.syncCookiesToJar(initialUrl);
         }
 
-        Toast.makeText(context, "Verification successful!", Toast.LENGTH_SHORT).show();
-        EventBus.getDefault().post(new RefreshUIMessage("Verification successful"));
-
-        if (navigationController != null) {
-            navigationController.popController();
-        } else if (presentedByController != null) {
-            stopPresenting();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        // If this was a 4chan verification session, persist any 4chan_pass cookie that was
-        // set by the site so it survives future CookieManager clears.
+        // Extract the newly acquired 4chan_pass cookie and save it to the 4chan cookie store.
         if (site instanceof Chan4 chan4) {
             String sysCookies = CookieManager.getInstance().getCookie("https://sys.4chan.org");
             if (sysCookies != null) {
@@ -321,6 +323,20 @@ public class EmailVerificationController extends Controller {
                 }
             }
         }
+
+        AndroidUtils.showThemedSnackbar(view, "Verification successful!", Snackbar.LENGTH_SHORT);
+        EventBus.getDefault().post(new RefreshUIMessage("Verification successful"));
+
+        if (navigationController != null) {
+            navigationController.popController();
+        } else if (presentedByController != null) {
+            stopPresenting();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
 
         CookieManager.getInstance().flush();
 
