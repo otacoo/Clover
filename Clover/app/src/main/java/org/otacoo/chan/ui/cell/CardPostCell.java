@@ -291,7 +291,7 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
             commentText = post.comment;
         }
 
-        comment.setVisibility(TextUtils.isEmpty(commentText) ? View.GONE : View.VISIBLE);
+        comment.setVisibility(TextUtils.isEmpty(commentText) ? View.INVISIBLE : View.VISIBLE);
         comment.setText(commentText);
         comment.setTextColor(theme.textPrimary);
 
