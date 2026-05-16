@@ -18,7 +18,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONObject;
 import org.otacoo.chan.R;
@@ -349,7 +350,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
                     // Short bypass cookie or non-hashcash site -> treat as direct success.
                     storeCookiesFromResponse(resp);
                     org.otacoo.chan.core.site.sites.chan8.Chan8PowNotifier.onPowSolved();
-                    Logger.i(TAG, "Bypass set directly (no POW required)");
+                    Logger.i(TAG, "Bypass established directly (no POW required)");
                     mainHandler.post(() -> callback.onAuthenticationComplete(this, "", ""));
                     return;
                 }
@@ -425,7 +426,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
                     org.otacoo.chan.core.site.sites.chan8.Chan8PowNotifier.onPowSolved();
                     Logger.i(TAG, "Bypass established after POW validation");
                     mainHandler.post(() -> {
-                        Toast.makeText(getContext(), "Bypass acquired successfully.", Toast.LENGTH_SHORT).show();
+                        AndroidUtils.showThemedSnackbar(this, "Bypass acquired successfully.", Snackbar.LENGTH_SHORT);
                         callback.onAuthenticationComplete(this, "", "");
                     });
                 } else {

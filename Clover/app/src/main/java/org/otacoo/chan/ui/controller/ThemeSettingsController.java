@@ -43,12 +43,12 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -300,7 +300,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
 
         adapter.notifyDataSetChanged();
 
-        Toast.makeText(context, R.string.setting_theme_reset_done, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(view, R.string.setting_theme_reset_done, Snackbar.LENGTH_SHORT);
     }
 
     private interface ColorCallback {
@@ -548,7 +548,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                 .setPositiveButton(existing != null ? R.string.save : R.string.add, (dlg, which) -> {
                     String name = nameEdit.getText().toString();
                     if (TextUtils.isEmpty(name)) {
-                        Toast.makeText(context, "Please enter a name", Toast.LENGTH_SHORT).show();
+                        AndroidUtils.showThemedSnackbar(view, "Please enter a name", Snackbar.LENGTH_SHORT);
                         return;
                     }
                     
@@ -594,7 +594,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                     }
                 }
 
-                Toast.makeText(context, "Theme removed", Toast.LENGTH_SHORT).show();
+                AndroidUtils.showThemedSnackbar(view, "Theme removed", Snackbar.LENGTH_SHORT);
             });
         }
 

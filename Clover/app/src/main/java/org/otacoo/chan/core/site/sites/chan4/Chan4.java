@@ -25,6 +25,8 @@ import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.core.model.Archive;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Board;
@@ -362,9 +364,9 @@ public class Chan4 extends SiteBase {
                 @Override
                 public void onError(String error) {
                     Logger.e(TAG, "Failed to get boards from server: " + error);
-                    android.widget.Toast.makeText(AndroidUtils.getAppContext(),
+                    AndroidUtils.showThemedSnackbar(
                             "Unable to load board list. No connection or 4chan server issue?",
-                            android.widget.Toast.LENGTH_LONG).show();
+                            Snackbar.LENGTH_LONG);
                     listener.onBoardsReceived(new Boards(new ArrayList<>()));
                 }
             });

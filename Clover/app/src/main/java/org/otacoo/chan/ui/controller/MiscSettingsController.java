@@ -21,39 +21,22 @@ import static org.otacoo.chan.Chan.injector;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.view.View;
-import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import org.otacoo.chan.BuildConfig;
-import org.otacoo.chan.Chan;
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
-import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.settings.ChanSettings;
-import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.settings.BooleanSettingView;
 import org.otacoo.chan.ui.settings.IntegerSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
-import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
 import org.otacoo.chan.ui.settings.StringSettingView;
+import org.otacoo.chan.utils.AndroidUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import de.greenrobot.event.EventBus;
 
@@ -151,8 +134,7 @@ public class MiscSettingsController extends SettingsController {
                         DatabaseManager databaseManager = injector().instance(DatabaseManager.class);
                         databaseManager.runTask(
                                 databaseManager.getDatabaseHideManager().clearAllThreadHides());
-                        Toast.makeText(context, R.string.setting_cleared_thread_hides, Toast.LENGTH_LONG)
-                                .show();
+                        AndroidUtils.showThemedSnackbar(view, R.string.setting_cleared_thread_hides, Snackbar.LENGTH_LONG);
                         EventBus.getDefault().post(new RefreshUIMessage("clearhides"));
                     })
                     .setNegativeButton(R.string.cancel, null)

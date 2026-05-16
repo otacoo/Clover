@@ -26,11 +26,12 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -143,7 +144,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
             dialogView.attachToDialog(dialog);
             dialog.show();
         } else {
-            Toast.makeText(context, R.string.thread_no_external_archives, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.thread_no_external_archives, Snackbar.LENGTH_SHORT);
         }
     }
 
@@ -155,7 +156,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
 
     private void showMyPosts(ToolbarMenuSubItem item) {
         if (!threadLayout.getPresenter().onShowMyPosts()) {
-            Toast.makeText(context, R.string.thread_no_posts_of_mine, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.thread_no_posts_of_mine, Snackbar.LENGTH_SHORT);
         }
     }
 

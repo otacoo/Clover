@@ -29,9 +29,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
@@ -72,7 +73,6 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     private int totalTasks = 0;
     private long currentProgress = 0;
     private long currentProgressMax = 0;
-    private Toast toast;
 
     private final Storage storage;
     private final FileCache fileCache;
@@ -157,7 +157,7 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
 
     public void addTasks(final List<ImageSaveTask> tasks, final String[] folders, Runnable success) {
         if (tasks.size() > 1) {
-            AndroidUtils.runOnUiThread(() -> Toast.makeText(getAppContext(), R.string.image_save_preparing, Toast.LENGTH_SHORT).show());
+            AndroidUtils.runOnUiThread(() -> AndroidUtils.showThemedSnackbar(R.string.image_save_preparing, Snackbar.LENGTH_SHORT));
         }
 
         storage.prepareForSave(folders, () -> {
@@ -302,15 +302,10 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     }
 
     private void showStatusToast(ImageSaveTask task, boolean success) {
-        if (toast != null) {
-            toast.cancel();
-        }
-
         String text = success ?
                 getAppContext().getString(R.string.image_save_as, task.getDestination().name()) :
                 getString(R.string.image_save_failed);
-        toast = Toast.makeText(getAppContext(), text, Toast.LENGTH_LONG);
-        toast.show();
+        AndroidUtils.showThemedSnackbar(text, Snackbar.LENGTH_LONG);
     }
 
     private boolean needsRequestExternalStoragePermission() {

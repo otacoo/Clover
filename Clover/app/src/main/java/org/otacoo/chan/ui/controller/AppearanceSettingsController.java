@@ -24,7 +24,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
@@ -34,6 +35,7 @@ import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -212,7 +214,7 @@ public class AppearanceSettingsController extends SettingsController {
             );
         }
         
-        Toast.makeText(context, "App icon updated. Change may take a few seconds.", Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(view, "App icon updated. Change may take a few seconds.", Snackbar.LENGTH_SHORT);
     }
 
     private void setupLayoutModeSetting(SettingsGroup layout) {

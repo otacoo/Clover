@@ -52,7 +52,6 @@ import android.view.WindowManager;
 import android.view.animation.PathInterpolator;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -60,6 +59,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.media3.common.util.UnstableApi;
 
 import com.davemorrissey.labs.subscaleview.ImageViewState;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -269,7 +269,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         if (clipboard != null) {
             ClipData clip = ClipData.newPlainText("File URL", postImage.imageUrl.toString());
             clipboard.setPrimaryClip(clip);
-            Toast.makeText(context, R.string.url_text_copied, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.url_text_copied, Snackbar.LENGTH_SHORT);
         }
     }
 
@@ -428,7 +428,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
     public void onVideoError(MultiImageView multiImageView) {
         if (ChanSettings.videoErrorIgnore.get()) {
-            Toast.makeText(context, R.string.video_playback_failed, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.video_playback_failed, Snackbar.LENGTH_SHORT);
         } else {
             @SuppressLint("InflateParams")
             View notice = LayoutInflater.from(context).inflate(R.layout.dialog_video_error, null);

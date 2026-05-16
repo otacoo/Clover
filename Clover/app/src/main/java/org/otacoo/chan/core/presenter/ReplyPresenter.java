@@ -24,7 +24,7 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.text.TextUtils;
 
-import android.widget.Toast;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -357,7 +357,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
     public void onSubmitClicked() {
         if (loadable == null) {
-            Toast.makeText(getAppContext(), "Error: No loadable", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar("Error: No loadable", Snackbar.LENGTH_SHORT);
             return;
         }
         
@@ -386,7 +386,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
     public void onSubmitLongClicked() {
         if (loadable == null) {
-            Toast.makeText(getAppContext(), "Error: No loadable", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar("Error: No loadable", Snackbar.LENGTH_SHORT);
             return;
         }
 
@@ -417,7 +417,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             draft.spoilerImage = first.spoiler;
         }
 
-        Toast.makeText(getAppContext(), getString(R.string.skip_pass_toast), Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(R.string.skip_pass_toast, Snackbar.LENGTH_LONG);
         switchPage(Page.AUTHENTICATION, true);
     }
 
@@ -484,7 +484,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                 String errorMessage = replyResponse.errorMessage != null
                         ? replyResponse.errorMessage : getString(R.string.reply_error);
                 switchPage(Page.INPUT, true);
-                Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
+                AndroidUtils.showThemedSnackbar(errorMessage, Snackbar.LENGTH_LONG);
                 callback.openMessage(true, false, errorMessage, true);
             } else {
                 // Store the error message to display in the authentication layout
@@ -528,7 +528,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                     + " probablyBanned=" + replyResponse.probablyBanned
                     + " displayMessage=" + errorMessage);
             switchPage(Page.INPUT, true);
-            Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
+            AndroidUtils.showThemedSnackbar(errorMessage, Snackbar.LENGTH_LONG);
             callback.openMessage(true, false, errorMessage, true);
         }
     }
@@ -554,7 +554,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             }
         }
 
-        Toast.makeText(getAppContext(), errorMessage, Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(errorMessage, Snackbar.LENGTH_LONG);
         callback.openMessage(true, false, errorMessage, true);
     }
 

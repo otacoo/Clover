@@ -31,11 +31,13 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.database.DatabaseManager;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -92,7 +94,7 @@ public class DeveloperSettingsController extends Controller {
             @Override
             public void onClick(View v) {
                 WebStorage.getInstance().deleteAllData();
-                Toast.makeText(context, "WebView localStorage and sessionStorage cleared", Toast.LENGTH_LONG).show();
+                AndroidUtils.showThemedSnackbar(view, "WebView localStorage and sessionStorage cleared", Snackbar.LENGTH_LONG);
             }
         });
         clearWebStorageButton.setText("Clear WebView localStorage");
@@ -102,7 +104,7 @@ public class DeveloperSettingsController extends Controller {
         clearCookiesButton.setOnClickListener(v -> {
             android.webkit.CookieManager.getInstance().removeAllCookies(null);
             android.webkit.CookieManager.getInstance().flush();
-            Toast.makeText(context, "WebView cookies cleared", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, "WebView cookies cleared", Snackbar.LENGTH_SHORT);
         });
         clearCookiesButton.setText("Clear WebView cookies");
         wrapper.addView(clearCookiesButton);
@@ -117,7 +119,7 @@ public class DeveloperSettingsController extends Controller {
         checkDbButton.setText("Check database integrity");
         checkDbButton.setOnClickListener(v -> {
             checkDbButton.setEnabled(false);
-            Toast.makeText(context, "Running integrity check…", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, "Running integrity check…", Snackbar.LENGTH_SHORT);
             databaseManager.runTaskAsync(databaseManager.checkIntegrity(), report -> {
                 checkDbButton.setEnabled(true);
                 TextView tv = new TextView(context);

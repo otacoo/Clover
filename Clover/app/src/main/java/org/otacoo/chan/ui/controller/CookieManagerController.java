@@ -33,22 +33,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.ViewPager;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
-import org.otacoo.chan.ui.controller.StyledToolbarNavigationController;
 import org.otacoo.chan.ui.view.ViewPagerAdapter;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,7 +291,7 @@ public class CookieManagerController extends StyledToolbarNavigationController i
                         CookieManager.getInstance().removeAllCookies(success ->
                                 AndroidUtils.runOnUiThread(() -> {
                                     clearAllCookiesFromJar();
-                                    Toast.makeText(context, R.string.setting_cleared_saved_cookies, Toast.LENGTH_LONG).show();
+                                    AndroidUtils.showThemedSnackbar(view, R.string.setting_cleared_saved_cookies, Snackbar.LENGTH_LONG);
                                     adapter.notifyDataSetChanged();
                                 }));
                     })

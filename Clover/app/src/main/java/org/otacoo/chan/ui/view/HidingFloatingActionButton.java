@@ -26,9 +26,11 @@ import android.view.animation.DecelerateInterpolator;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.ui.toolbar.Toolbar;
+import org.otacoo.chan.utils.AndroidUtils;
+
+import de.greenrobot.event.EventBus;
 
 public class HidingFloatingActionButton extends FloatingActionButton implements Toolbar.ToolbarCollapseCallback {
     private boolean attachedToWindow;
@@ -36,6 +38,8 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     private boolean attachedToToolbar;
     private CoordinatorLayout coordinatorLayout;
     private int currentCollapseTranslation;
+    private boolean snackbarShowing;
+    private int desiredVisibility = VISIBLE;
 
     public HidingFloatingActionButton(Context context) {
         super(context);
@@ -59,9 +63,19 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     }
 
     @Override
+    public void setVisibility(int visibility) {
+        desiredVisibility = visibility;
+        if (!snackbarShowing) {
+            super.setVisibility(visibility);
+        }
+    }
+
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         attachedToWindow = true;
+        
+        desiredVisibility = getVisibility();
 
         ViewParent parent = getParent();
         while (parent != null && !(parent instanceof CoordinatorLayout)) {
@@ -76,6 +90,12 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
             toolbar.addCollapseCallback(this);
             attachedToToolbar = true;
         }
+
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+        
+        updateSnackbarShowing(AndroidUtils.isAnySnackbarShowing());
     }
 
     @Override
@@ -87,16 +107,33 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
             attachedToToolbar = false;
         }
         coordinatorLayout = null;
+        
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this);
+        }
+    }
+
+    public void onEventMainThread(AndroidUtils.SnackbarEvent event) {
+        updateSnackbarShowing(event.showing);
+    }
+
+    private void updateSnackbarShowing(boolean showing) {
+        if (snackbarShowing != showing) {
+            snackbarShowing = showing;
+            if (showing) {
+                hide();
+            } else if (desiredVisibility == VISIBLE) {
+                show();
+            }
+        }
     }
 
     @Override
     public void onCollapseTranslation(float offset) {
-        if (isSnackbarShowing()) {
+        if (snackbarShowing) {
             currentCollapseTranslation = -1;
             return;
         }
-
-//        Logger.test("onCollapseTranslation " + offset);
 
         int translation = (int) (getTotalHeight() * offset);
         if (translation != currentCollapseTranslation) {
@@ -112,12 +149,10 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
 
     @Override
     public void onCollapseAnimation(boolean collapse) {
-        if (isSnackbarShowing()) {
+        if (snackbarShowing) {
             currentCollapseTranslation = -1;
             return;
         }
-
-//        Logger.test("onCollapseAnimation " + collapse);
 
         int translation = collapse ? getTotalHeight() : 0;
         if (translation != currentCollapseTranslation) {
@@ -132,16 +167,5 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
 
     private int dp(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
-    }
-
-    private boolean isSnackbarShowing() {
-        if (coordinatorLayout == null) return false;
-        for (int i = 0; i < coordinatorLayout.getChildCount(); i++) {
-            if (coordinatorLayout.getChildAt(i) instanceof Snackbar.SnackbarLayout) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

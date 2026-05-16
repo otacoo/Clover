@@ -25,7 +25,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.presenter.StorageSetupPresenter;
@@ -38,6 +39,7 @@ import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -367,7 +369,7 @@ public class MediaSettingsController extends SettingsController implements
     private void resetAttachmentPickerChoice() {
         String label = ImagePickDelegate.getPreferredPickerLabel();
         if (label.isEmpty()) {
-            Toast.makeText(context, R.string.setting_attachment_picker_default_not_set, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.setting_attachment_picker_default_not_set, Snackbar.LENGTH_SHORT);
             return;
         }
 
@@ -378,7 +380,7 @@ public class MediaSettingsController extends SettingsController implements
                 .setPositiveButton(R.string.ok, (dialog, which) -> {
                     ImagePickDelegate.clearPreferredPickerChoice();
                     attachmentPickerDefault.setDescription(getAttachmentPickerDescription());
-                    Toast.makeText(context, R.string.setting_attachment_picker_reset_done, Toast.LENGTH_SHORT).show();
+                    AndroidUtils.showThemedSnackbar(view, R.string.setting_attachment_picker_reset_done, Snackbar.LENGTH_SHORT);
                 })
                 .show();
     }

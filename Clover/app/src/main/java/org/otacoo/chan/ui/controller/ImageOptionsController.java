@@ -24,13 +24,14 @@ import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import android.widget.CompoundButton;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatCheckBox;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.constraintlayout.widget.ConstraintLayout;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -191,7 +192,7 @@ public class ImageOptionsController extends Controller implements
         //called on the background thread!
 
         AndroidUtils.runOnUiThread(() -> {
-            showToastMessage(context.getString(R.string.could_not_decode_image_bitmap));
+            showThemedSnackbar(context.getString(R.string.could_not_decode_image_bitmap));
         });
     }
 
@@ -211,7 +212,7 @@ public class ImageOptionsController extends Controller implements
 
         AndroidUtils.runOnUiThread(() -> {
             String text = String.format(context.getString(R.string.could_not_apply_image_options), error.getMessage());
-            Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, text, Snackbar.LENGTH_SHORT);
         });
     }
 
@@ -231,8 +232,8 @@ public class ImageOptionsController extends Controller implements
         });
     }
 
-    private void showToastMessage(String message) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    private void showThemedSnackbar(String message) {
+        AndroidUtils.showThemedSnackbar(view, message, Snackbar.LENGTH_SHORT);
     }
 
     private Window getWindow() {

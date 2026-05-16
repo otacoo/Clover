@@ -38,9 +38,10 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -222,9 +223,9 @@ public class MainSettingsController extends SettingsController implements Settin
                         os.write(json.getBytes(StandardCharsets.UTF_8));
                     }
                 }
-                Toast.makeText(context, R.string.settings_backup_success, Toast.LENGTH_SHORT).show();
+                AndroidUtils.showThemedSnackbar(view, R.string.settings_backup_success, Snackbar.LENGTH_SHORT);
             } catch (Exception e) {
-                Toast.makeText(context, R.string.settings_backup_failed, Toast.LENGTH_SHORT).show();
+                AndroidUtils.showThemedSnackbar(view, R.string.settings_backup_failed, Snackbar.LENGTH_SHORT);
             }
         });
     }
@@ -278,7 +279,7 @@ public class MainSettingsController extends SettingsController implements Settin
             } catch (Exception e) {
                 Logger.e("MainSettingsController", "Restore failed", e);
                 String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
-                Toast.makeText(context, context.getString(R.string.settings_restore_failed) + ": " + msg, Toast.LENGTH_LONG).show();
+                AndroidUtils.showThemedSnackbar(view, context.getString(R.string.settings_restore_failed) + ": " + msg, Snackbar.LENGTH_LONG);
             }
         });
     }
@@ -349,7 +350,7 @@ public class MainSettingsController extends SettingsController implements Settin
         try {
             SettingsBackupRestore.importFull(databaseManager, AndroidUtils.getPreferences(), backupJson, selectedKeys);
             ChanSettings.reloadProxy();
-            Toast.makeText(context, R.string.settings_restore_success, Toast.LENGTH_LONG).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.settings_restore_success, Snackbar.LENGTH_LONG);
             StartActivity startActivity = getStartActivity(context);
             if (startActivity != null) {
                 startActivity.restartApp();
@@ -357,7 +358,7 @@ public class MainSettingsController extends SettingsController implements Settin
         } catch (Exception e) {
             Logger.e("MainSettingsController", "Restore failed", e);
             String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
-            Toast.makeText(context, context.getString(R.string.settings_restore_failed) + ": " + msg, Toast.LENGTH_LONG).show();
+            AndroidUtils.showThemedSnackbar(view, context.getString(R.string.settings_restore_failed) + ": " + msg, Snackbar.LENGTH_LONG);
         }
     }
 
@@ -468,8 +469,8 @@ public class MainSettingsController extends SettingsController implements Settin
 
                         ChanSettings.developer.set(developer);
 
-                        Toast.makeText(context, (developer ? "Enabled" : "Disabled") +
-                                " developer options", Toast.LENGTH_LONG).show();
+                        AndroidUtils.showThemedSnackbar(view, (developer ? "Enabled" : "Disabled") +
+                                " developer options", Snackbar.LENGTH_LONG);
 
                         developerView.view.setVisibility(developer ? View.VISIBLE : View.GONE);
 

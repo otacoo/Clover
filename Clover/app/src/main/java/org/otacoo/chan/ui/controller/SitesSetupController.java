@@ -33,7 +33,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -44,6 +43,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.presenter.SitesSetupPresenter;
@@ -56,6 +56,7 @@ import org.otacoo.chan.ui.helper.HintPopup;
 import org.otacoo.chan.ui.layout.SiteAddLayout;
 import org.otacoo.chan.ui.view.CrossfadeView;
 import org.otacoo.chan.ui.view.DividerItemDecoration;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -210,7 +211,7 @@ public class SitesSetupController extends StyledToolbarNavigationController impl
                 site.name(),
                 error.getMessage());
 
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(view, message, Snackbar.LENGTH_LONG);
     }
 
     private void onSiteCellSettingsClicked(Site site) {

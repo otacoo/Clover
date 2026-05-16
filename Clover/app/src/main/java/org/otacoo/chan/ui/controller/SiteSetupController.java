@@ -25,9 +25,10 @@ import android.content.DialogInterface;
 import android.text.InputType;
 import android.view.Gravity;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.presenter.SiteSetupPresenter;
@@ -41,6 +42,7 @@ import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -324,11 +326,11 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                         ? R.string.setup_site_4chan_pass_cookie_not_set
                         : R.string.setup_site_4chan_pass_cookie_set));
             }
-            Toast.makeText(context,
+            AndroidUtils.showThemedSnackbar(view,
                     newValue.isEmpty()
                             ? R.string.setup_site_4chan_pass_cookie_cleared
                             : R.string.setup_site_4chan_pass_cookie_saved,
-                    Toast.LENGTH_SHORT).show();
+                    Snackbar.LENGTH_SHORT);
         });
 
         builder.setNeutralButton(R.string.clear, (dialog, which) -> {
@@ -336,7 +338,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
             if (passCookieLink != null) {
                 passCookieLink.setDescription(context.getString(R.string.setup_site_4chan_pass_cookie_not_set));
             }
-            Toast.makeText(context, R.string.setup_site_4chan_pass_cookie_cleared, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, R.string.setup_site_4chan_pass_cookie_cleared, Snackbar.LENGTH_SHORT);
         });
 
         builder.setNegativeButton(R.string.cancel, null);
@@ -368,7 +370,7 @@ public class SiteSetupController extends SettingsController implements SiteSetup
                     if (text.contains("sys.4chan.org/signin") && text.contains("action=verify") && text.contains("tkn=")) {
                         url = text;
                     } else {
-                        Toast.makeText(context, "Invalid verification link", Toast.LENGTH_SHORT).show();
+                        AndroidUtils.showThemedSnackbar(view, "Invalid verification link", Snackbar.LENGTH_SHORT);
                         return;
                     }
                 } else {

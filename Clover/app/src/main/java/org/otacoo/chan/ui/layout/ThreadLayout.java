@@ -19,7 +19,6 @@ package org.otacoo.chan.ui.layout;
 
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
-import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.animation.Animator;
@@ -30,7 +29,10 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,7 +41,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -211,41 +212,42 @@ public class ThreadLayout extends CoordinatorLayout implements
         // New posts notification bar
         newPostsBar = findViewById(R.id.new_posts_notification);
         newPostsText = newPostsBar.findViewById(R.id.new_posts_text);
-        newPostsBar.findViewById(R.id.new_posts_action).setOnClickListener(v -> {
+        newPostsAction = newPostsBar.findViewById(R.id.new_posts_action);
+        newPostsAction.setOnClickListener(v -> {
             showNewPostsNotification(false, -1);
             presenter.onNewPostsViewClicked();
         });
 
-        // On large screens constrain width + add margins + rounding to match native snackbar more closely
-        if (getResources().getConfiguration().smallestScreenWidthDp >= 600) {
-            CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
-            barLp.width = dp(480);
-            barLp.leftMargin = dp(12);
-            barLp.bottomMargin = dp(0);
-            newPostsBar.setLayoutParams(barLp);
-
-            android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-            bg.setColor(0xFF323232);
-            bg.setCornerRadius(dp(3));
-            newPostsBar.setBackground(bg);
-        }
-
-        if (ChanSettings.toolbarBottom.get()) {
-            int toolbarH = getResources().getDimensionPixelSize(R.dimen.toolbar_height);
-            CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
-            containerLp.bottomMargin += toolbarH + dp(48);
-            fabContainer.setLayoutParams(containerLp);
-
-            CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
-            barLp.bottomMargin += toolbarH;
-            newPostsBar.setLayoutParams(barLp);
-        } else {
-            CoordinatorLayout.LayoutParams containerLp = (CoordinatorLayout.LayoutParams) fabContainer.getLayoutParams();
-            containerLp.bottomMargin += dp(48);
-            fabContainer.setLayoutParams(containerLp);
-        }
+        setupFloatingNewPostsBar();
+        updateFabContainerMargins();
 
         presenter.create(this);
+    }
+
+    private void setupFloatingNewPostsBar() {
+        CoordinatorLayout.LayoutParams barLp = (CoordinatorLayout.LayoutParams) newPostsBar.getLayoutParams();
+        
+        // General floating appearance
+        barLp.width = getResources().getConfiguration().smallestScreenWidthDp >= 600 ? dp(480) : LayoutParams.MATCH_PARENT;
+        barLp.leftMargin = dp(12);
+        barLp.rightMargin = dp(12);
+        barLp.bottomMargin = dp(12);
+        newPostsBar.setLayoutParams(barLp);
+
+        // Apply theme colors
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(8));
+        
+        int bgColor = theme().isLightTheme ? theme().primaryColor.color : 0xFF323232;
+        bg.setColor(bgColor);
+        newPostsBar.setBackground(bg);
+
+        // Ensure text contrast
+        int textColor = Color.WHITE;
+        newPostsText.setTextColor(textColor);
+        newPostsAction.setTextColor(textColor);
+
+        updateNewPostsBarPosition();
     }
 
     private void updateTopBottomDrawables() {
@@ -505,7 +507,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("Post text", post.comment.toString());
         clipboard.setPrimaryClip(clip);
-        Toast.makeText(getContext(), R.string.post_text_copied, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.post_text_copied, Snackbar.LENGTH_SHORT);
     }
 
     private boolean handleCatboxLink(String link) {
@@ -762,7 +764,8 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         presenter.refreshUI();
 
-        Snackbar snackbar = Snackbar.make(this, post.isOP ? R.string.thread_hidden : R.string.post_hidden, Snackbar.LENGTH_LONG);
+        String message = getString(post.isOP ? R.string.thread_hidden : R.string.post_hidden);
+        Snackbar snackbar = Snackbar.make(this, message, Snackbar.LENGTH_LONG);
         snackbar.setAction(R.string.undo, new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -771,14 +774,9 @@ public class ThreadLayout extends CoordinatorLayout implements
                 presenter.refreshUI();
             }
         });
-        if (ChanSettings.toolbarBottom.get()) {
-            View snackbarView = snackbar.getView();
-            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) snackbarView.getLayoutParams();
-            params.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
-            snackbarView.setLayoutParams(params);
-        }
+        
+        AndroidUtils.applyThemedStyle(snackbar, this);
         snackbar.show();
-        fixSnackbarText(getContext(), snackbar);
     }
 
     @Override
@@ -824,7 +822,7 @@ public class ThreadLayout extends CoordinatorLayout implements
             dialogView.attachToDialog(dialog);
             dialog.show();
         } else {
-            Toast.makeText(getContext(), "No archives for this post.", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(this, "No archives for this post.", Snackbar.LENGTH_SHORT);
         }
     }
 

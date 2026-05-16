@@ -18,7 +18,7 @@
 package org.otacoo.chan.core.presenter;
 
 
-import android.widget.Toast;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.core.manager.BoardManager;
 import org.otacoo.chan.core.model.orm.Board;
@@ -32,13 +32,10 @@ import org.otacoo.chan.utils.BackgroundUtils;
 import org.otacoo.chan.utils.SimpleObservable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -46,7 +43,7 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void> {
-    private BoardManager boardManager;
+    private final BoardManager boardManager;
 
     private Callback callback;
     private AddCallback addCallback;
@@ -57,12 +54,12 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
 
     private BoardRepository.SitesBoards allBoardsObservable;
 
-    private Executor executor = Executors.newSingleThreadExecutor();
+    private final Executor executor = Executors.newSingleThreadExecutor();
     private BackgroundUtils.Cancelable suggestionCall;
 
     private List<BoardSuggestion> suggestions = new ArrayList<>();
-    private List<BoardSuggestion> customSuggestions = new ArrayList<>();
-    private List<String> selectedSuggestions = new LinkedList<>();
+    private final List<BoardSuggestion> customSuggestions = new ArrayList<>();
+    private final List<String> selectedSuggestions = new LinkedList<>();
 
     private String suggestionsQuery = null;
 
@@ -89,13 +86,13 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
                 public void onBoardsReceived(Boards boards) {
                     boardManager.updateAvailableBoardsForSite(site, boards.boards);
                     AndroidUtils.runOnUiThread(() ->
-                            Toast.makeText(AndroidUtils.getAppContext(), "Board list refreshed.", Toast.LENGTH_SHORT).show());
+                            AndroidUtils.showThemedSnackbar("Board list refreshed.", Snackbar.LENGTH_SHORT));
                 }
 
                 @Override
                 public void onBoardsFailed(String reason) {
                     AndroidUtils.runOnUiThread(() ->
-                            Toast.makeText(AndroidUtils.getAppContext(), reason, Toast.LENGTH_LONG).show());
+                            AndroidUtils.showThemedSnackbar(reason, Snackbar.LENGTH_LONG));
                 }
             });
         }
@@ -294,9 +291,9 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
                 }
 
                 List<Board> toSuggest;
-                if (query == null || query.equals("")) {
+                if (query == null || query.isEmpty()) {
                     toSuggest = new ArrayList<>(allUnsavedBoards);
-                    Collections.sort(toSuggest, (a, b) -> a.code.compareToIgnoreCase(b.code));
+                    toSuggest.sort((a, b) -> a.code.compareToIgnoreCase(b.code));
                 } else {
                     toSuggest = BoardHelper.search(allUnsavedBoards, query);
                 }
@@ -308,7 +305,7 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
 
                 if (site.getClass().getSimpleName().equals("Chan8")) {
                     // if user is on Chan8 and typed something, ensure a custom suggestion exists
-                    if (query != null && !query.equals("")) {
+                    if (query != null && !query.isEmpty()) {
                         boolean exists = false;
                         for (BoardSuggestion s : suggestions) {
                             if (s.getCode().equalsIgnoreCase(query)) {
@@ -349,14 +346,14 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
                     }
                 } else {
                     // non Chan8 behaviour: if nothing matched and query non-empty, allow manual entry
-                    if (query != null && !query.equals("") && toSuggest.isEmpty()) {
+                    if (query != null && !query.isEmpty() && toSuggest.isEmpty()) {
                         BoardSuggestion manual = new BoardSuggestion(query);
                         manual.checked = true;
                         suggestions.add(manual);
                     }
                 }
             } else {
-                if (query != null && !query.equals("")) {
+                if (query != null && !query.isEmpty()) {
                     suggestions.add(new BoardSuggestion(query));
                 }
             }

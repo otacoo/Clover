@@ -27,14 +27,16 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.presenter.BoardSetupPresenter;
+import org.otacoo.chan.utils.AndroidUtils;
 
 public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchLayoutCallback, BoardSetupPresenter.AddCallback, View.OnClickListener {
     private BoardSetupPresenter presenter;
@@ -116,7 +118,7 @@ public class BoardAddLayout extends LinearLayout implements SearchLayout.SearchL
             if (!code.isEmpty()) {
                 // validate alphanumeric only
                 if (!code.matches("[A-Za-z0-9]+")) {
-                    Toast.makeText(getContext(), "Board code may only contain letters and numbers", Toast.LENGTH_SHORT).show();
+                    AndroidUtils.showThemedSnackbar(this, "Board code may only contain letters and numbers", Snackbar.LENGTH_SHORT);
                     manualName.setText("");
                     manualDescription.setText("");
                 } else {

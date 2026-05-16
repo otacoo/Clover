@@ -16,7 +16,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.orm.Loadable;
@@ -114,7 +115,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
     public void hardReset() {
         // If we're resetting right after a submit, the server rejected the answer.
         if (wasSubmitted) {
-            Toast.makeText(getContext(), "Wrong answer or expired captcha.", Toast.LENGTH_LONG).show();
+            AndroidUtils.showThemedSnackbar(this, "Wrong answer or expired captcha.", Snackbar.LENGTH_LONG);
         }
         wasSubmitted = false;
 

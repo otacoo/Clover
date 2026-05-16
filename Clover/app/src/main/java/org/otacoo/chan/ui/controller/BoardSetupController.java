@@ -22,7 +22,6 @@ import static android.text.TextUtils.isEmpty;
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
-import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.annotation.SuppressLint;
@@ -59,6 +58,7 @@ import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.ui.layout.BoardAddLayout;
 import org.otacoo.chan.ui.view.CrossfadeView;
 import org.otacoo.chan.ui.view.DividerItemDecoration;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.List;
 
@@ -79,7 +79,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
 
     private Site site;
 
-    private ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
+    private final ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP | ItemTouchHelper.DOWN,
             ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT
     ) {
@@ -163,7 +163,6 @@ public class BoardSetupController extends Controller implements View.OnClickList
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void showAddDialog() {
         @SuppressLint("InflateParams") final BoardAddLayout boardAddLayout =
                 (BoardAddLayout) LayoutInflater.from(context)
@@ -183,10 +182,8 @@ public class BoardSetupController extends Controller implements View.OnClickList
         AlertDialog dialog = builder.create();
 
         if (presenter.allowCustomBoardCode()) {
-            dialog.setOnShowListener(d -> {
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-                        .setOnClickListener(v -> presenter.onSelectAllClicked());
-            });
+            dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                    .setOnClickListener(v -> presenter.onSelectAllClicked()));
         }
 
         boardAddLayout.setDialog(dialog);
@@ -195,7 +192,6 @@ public class BoardSetupController extends Controller implements View.OnClickList
         assert window != null;
         window.getDecorView().setBackgroundColor(getAttrColor(context, R.attr.backcolor));
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            //noinspection deprecation
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         dialog.show();
@@ -212,9 +208,8 @@ public class BoardSetupController extends Controller implements View.OnClickList
         Snackbar snackbar = Snackbar.make(view,
                 context.getString(R.string.setup_board_removed, BoardHelper.getName(board)),
                 Snackbar.LENGTH_LONG);
-        fixSnackbarText(context, snackbar);
-
         snackbar.setAction(R.string.undo, v -> presenter.undoRemoveBoard(board));
+        AndroidUtils.applyThemedStyle(snackbar, view);
         snackbar.show();
     }
 
@@ -225,9 +220,7 @@ public class BoardSetupController extends Controller implements View.OnClickList
         String boardText = context.getResources().getQuantityString(R.plurals.board, count, count);
         String text = context.getString(R.string.setup_board_added, boardText);
 
-        Snackbar snackbar = Snackbar.make(view, text, Snackbar.LENGTH_LONG);
-        fixSnackbarText(context, snackbar);
-        snackbar.show();
+        AndroidUtils.showThemedSnackbar(view, text, Snackbar.LENGTH_SHORT);
     }
 
     private class SavedBoardsAdapter extends RecyclerView.Adapter<SavedBoardCell> {
@@ -286,16 +279,16 @@ public class BoardSetupController extends Controller implements View.OnClickList
     }
 
     private class SavedBoardCell extends RecyclerView.ViewHolder {
-        private TextView text;
-        private TextView description;
-        private ImageView reorder;
+        private final TextView text;
+        private final TextView description;
 
+        @SuppressLint("ClickableViewAccessibility")
         public SavedBoardCell(View itemView) {
             super(itemView);
 
             text = itemView.findViewById(R.id.text);
             description = itemView.findViewById(R.id.description);
-            reorder = itemView.findViewById(R.id.reorder);
+            ImageView reorder = itemView.findViewById(R.id.reorder);
 
             Drawable drawable = DrawableCompat.wrap(ContextCompat.getDrawable(context, R.drawable.ic_reorder_black_24dp)).mutate();
             DrawableCompat.setTint(drawable, getAttrColor(context, R.attr.text_color_hint));

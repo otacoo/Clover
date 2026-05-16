@@ -25,10 +25,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.PostImage;
@@ -127,7 +128,7 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("File URL", postImage.imageUrl.toString());
         clipboard.setPrimaryClip(clip);
-        Toast.makeText(getContext(), R.string.url_text_copied, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.url_text_copied, Snackbar.LENGTH_SHORT);
 
         return true;
     }

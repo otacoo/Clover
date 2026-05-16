@@ -37,6 +37,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -45,23 +46,28 @@ import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityManagerCompat;
+import androidx.core.view.ViewCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.theme.ThemeHelper;
 
 import java.text.CharacterIterator;
@@ -71,6 +77,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import de.greenrobot.event.EventBus;
 
 public class AndroidUtils {
     private static final String TAG = "AndroidUtils";
@@ -87,6 +95,8 @@ public class AndroidUtils {
     private static ActivityManager activityManager;
 
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private static int activeSnackbars = 0;
 
     public static void init(Application application) {
         if (AndroidUtils.application == null) {
@@ -259,7 +269,7 @@ public class AndroidUtils {
     }
 
     private static void openIntentFailed() {
-        Toast.makeText(getUIContext(), R.string.open_link_failed, Toast.LENGTH_LONG).show();
+        showThemedSnackbar(R.string.open_link_failed, Snackbar.LENGTH_LONG);
     }
 
     public static int getAttrColor(Context context, int attr) {
@@ -510,8 +520,188 @@ public class AndroidUtils {
     }
 
     public static void fixSnackbarText(Context context, Snackbar snackbar) {
-        ((TextView) snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text)).setTextColor(0xffffffff);
+        TextView textView = snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+        if (textView != null) {
+            textView.setTextColor(0xffffffff);
+        }
         snackbar.setActionTextColor(0xffffffff);
+    }
+
+    public static void showThemedSnackbar(int messageRes, int duration) {
+        showThemedSnackbar(getString(messageRes), duration);
+    }
+
+    public static void showThemedSnackbar(String message, int duration) {
+        showThemedSnackbar(null, message, duration, 0, null);
+    }
+
+    public static void showThemedSnackbar(View anchor, int messageRes, int duration) {
+        showThemedSnackbar(anchor, getString(messageRes), duration);
+    }
+
+    public static void showThemedSnackbar(View anchor, String message, int duration) {
+        showThemedSnackbar(anchor, message, duration, 0, null);
+    }
+
+    public static void showThemedSnackbar(View anchor, int messageRes, int duration, int actionRes, View.OnClickListener actionListener) {
+        showThemedSnackbar(anchor, getString(messageRes), duration, actionRes, actionListener);
+    }
+
+    public static void showThemedSnackbar(View anchor, String message, int duration, int actionRes, View.OnClickListener actionListener) {
+        View bestAnchor = anchor;
+        if (bestAnchor == null) {
+            Activity activity = Chan.getInstance().getTopActivity();
+            if (activity != null) {
+                ViewGroup content = activity.findViewById(android.R.id.content);
+                if (content != null && content.getChildCount() > 0) {
+                    bestAnchor = content.getChildAt(0);
+                } else {
+                    bestAnchor = content;
+                }
+            }
+        }
+        
+        if (bestAnchor == null) return;
+        
+        Snackbar snackbar = Snackbar.make(bestAnchor, message, duration);
+        if (actionRes != 0) {
+            snackbar.setAction(actionRes, actionListener);
+        }
+        applyThemedStyle(snackbar, bestAnchor);
+        snackbar.show();
+    }
+
+    public static void showThemedSnackbar(String message, int duration, int actionRes, View.OnClickListener actionListener) {
+        showThemedSnackbar(null, message, duration, actionRes, actionListener);
+    }
+
+    public static boolean isAnySnackbarShowing() {
+        return activeSnackbars > 0;
+    }
+
+    public static void notifySnackbarShowing(boolean showing) {
+        if (showing) {
+            activeSnackbars++;
+        } else {
+            activeSnackbars = Math.max(0, activeSnackbars - 1);
+        }
+        EventBus.getDefault().post(new SnackbarEvent(activeSnackbars > 0));
+    }
+
+    public static void applyThemedStyle(Snackbar snackbar, View anchor) {
+        View snackbarView = snackbar.getView();
+        Context context = snackbarView.getContext();
+
+        // Background and rounded corners
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(8));
+        int bgColor = ThemeHelper.theme().isLightTheme ? ThemeHelper.theme().primaryColor.color : 0xFF323232;
+        bg.setColor(bgColor);
+        
+        // Make the SnackbarLayout transparent and apply background to its inner content
+        snackbarView.setBackgroundColor(Color.TRANSPARENT);
+        androidx.core.view.ViewCompat.setElevation(snackbarView, 0);
+
+        if (snackbarView instanceof ViewGroup && ((ViewGroup) snackbarView).getChildCount() > 0) {
+            View contentView = ((ViewGroup) snackbarView).getChildAt(0);
+            contentView.setBackground(bg);
+            androidx.core.view.ViewCompat.setElevation(contentView, dp(6));
+        } else {
+            snackbarView.setBackground(bg);
+        }
+
+        snackbarView.setFitsSystemWindows(false);
+
+        // Make SnackbarLayout span the full screen width and sit flush to the edges
+        ViewGroup.LayoutParams params = snackbarView.getLayoutParams();
+        params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        snackbarView.setMinimumWidth(0);
+
+        int gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+        if (params instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) params).gravity = gravity;
+            ((FrameLayout.LayoutParams) params).setMargins(0, 0, 0, 0);
+        } else if (params instanceof CoordinatorLayout.LayoutParams) {
+            ((CoordinatorLayout.LayoutParams) params).gravity = gravity;
+            ((CoordinatorLayout.LayoutParams) params).setMargins(0, 0, 0, 0);
+        } else if (params instanceof LinearLayout.LayoutParams) {
+            ((LinearLayout.LayoutParams) params).gravity = gravity;
+            ((LinearLayout.LayoutParams) params).setMargins(0, 0, 0, 0);
+        }
+        snackbarView.setLayoutParams(params);
+
+        int navBarHeight = 0;
+        androidx.core.view.WindowInsetsCompat rootInsets = androidx.core.view.ViewCompat.getRootWindowInsets(anchor != null ? anchor : snackbarView);
+        if (rootInsets != null) {
+            navBarHeight = rootInsets.getSystemWindowInsetBottom();
+        } else {
+            int resourceId = context.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+            if (resourceId > 0) {
+                navBarHeight = context.getResources().getDimensionPixelSize(resourceId);
+            }
+        }
+
+        int newBottomMargin = dp(12);
+        if (ChanSettings.toolbarBottom.get()) {
+            newBottomMargin += context.getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+        }
+
+        if (anchor != null) {
+            int[] location = new int[2];
+            anchor.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchor.getHeight();
+
+            int screenHeight = anchor.getRootView().getHeight();
+            if (screenHeight == 0) {
+                android.view.WindowManager wm = (android.view.WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                if (wm != null) {
+                    android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                    wm.getDefaultDisplay().getRealMetrics(metrics);
+                    screenHeight = metrics.heightPixels;
+                }
+            }
+
+            int anchorDistanceFromBottom = screenHeight - anchorBottom;
+            int targetMargin = navBarHeight + dp(12);
+            if (ChanSettings.toolbarBottom.get()) {
+                targetMargin += context.getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+            }
+
+            int marginToApply = targetMargin - anchorDistanceFromBottom;
+            if (marginToApply > newBottomMargin) {
+                newBottomMargin = marginToApply;
+            }
+        }
+
+        // Apply visual margins using padding on the transparent SnackbarLayout
+        int sidePadding = dp(12);
+        if (context.getResources().getConfiguration().smallestScreenWidthDp >= 600) {
+            int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+            sidePadding = Math.max(dp(12), (screenWidth - dp(480)) / 2);
+        }
+        snackbarView.setPadding(sidePadding, dp(12), sidePadding, newBottomMargin);
+
+        // Block Snackbar from erasing our margins with its default listener by consuming the insets
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(snackbarView, (v, insets) -> insets.consumeSystemWindowInsets());
+
+        fixSnackbarText(context, snackbar);
+
+        snackbar.addCallback(new Snackbar.Callback() {
+            @Override
+            public void onShown(Snackbar sb) {
+                notifySnackbarShowing(true);
+            }
+
+            @Override
+            public void onDismissed(Snackbar sb, int event) {
+                notifySnackbarShowing(false);
+            }
+        });
+    }
+
+    public static class SnackbarEvent {
+        public final boolean showing;
+        public SnackbarEvent(boolean showing) { this.showing = showing; }
     }
 
     public static ConnectivityManager getConnectivityManager() {

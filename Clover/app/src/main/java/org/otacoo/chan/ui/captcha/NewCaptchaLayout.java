@@ -40,7 +40,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONObject;
 import org.otacoo.chan.R;
@@ -953,15 +954,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    // Convenience wrappers for showing a long toast on the UI thread
-    private void showLongToast(final String msg) {
-        AndroidUtils.runOnUiThread(() -> Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show());
-    }
-
     // Show a toast if user has enabled captcha toasts or when it is forced.
     private void maybeToast(final String msg, boolean force) {
         if (force || AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
-            showLongToast(msg);
+            AndroidUtils.runOnUiThread(() -> AndroidUtils.showThemedSnackbar(this, msg, Snackbar.LENGTH_LONG));
         }
     }
 

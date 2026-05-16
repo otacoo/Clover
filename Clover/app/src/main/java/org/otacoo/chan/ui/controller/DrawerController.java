@@ -21,7 +21,6 @@ import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.ROBOTO_MEDIUM;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
-import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 
 import android.content.Context;
@@ -39,7 +38,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -248,7 +246,7 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         if (board == null) board = site.board(search.boardCode);
 
         if (board == null) {
-            Toast.makeText(context, "Board /" + search.boardCode + "/ not found", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(view, "Board /" + search.boardCode + "/ not found", Snackbar.LENGTH_SHORT);
             return;
         }
 
@@ -300,20 +298,19 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
             final List<Pin> pins = watchManager.clearPins(all);
             if (!pins.isEmpty()) {
                 String text = context.getResources().getQuantityString(R.plurals.bookmark, pins.size(), pins.size());
-                //noinspection WrongConstant
                 Snackbar snackbar = Snackbar.make(drawerLayout, context.getString(R.string.drawer_pins_cleared, text), 4000);
-                fixSnackbarText(context, snackbar);
                 snackbar.setAction(R.string.undo, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         watchManager.addAll(pins);
                     }
                 });
+                AndroidUtils.applyThemedStyle(snackbar, drawerLayout);
                 snackbar.show();
             } else {
                 int text = watchManager.getAllPins().isEmpty() ? R.string.drawer_pins_non_cleared : R.string.drawer_pins_non_cleared_try_all;
                 Snackbar snackbar = Snackbar.make(drawerLayout, text, Snackbar.LENGTH_LONG);
-                fixSnackbarText(context, snackbar);
+                AndroidUtils.applyThemedStyle(snackbar, drawerLayout);
                 snackbar.show();
             }
         } else if (headerAction == DrawerAdapter.HeaderAction.ADD) {
@@ -422,13 +419,13 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         final Pin undoPin = pin.copy();
         watchManager.deletePin(pin);
         Snackbar snackbar = Snackbar.make(drawerLayout, context.getString(R.string.drawer_pin_removed, pin.loadable.title), Snackbar.LENGTH_LONG);
-        fixSnackbarText(context, snackbar);
         snackbar.setAction(R.string.undo, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 watchManager.createPin(undoPin);
             }
         });
+        AndroidUtils.applyThemedStyle(snackbar, drawerLayout);
         snackbar.show();
     }
 

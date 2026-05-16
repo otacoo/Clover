@@ -20,7 +20,6 @@ package org.otacoo.chan.ui.layout;
 import static org.otacoo.chan.Chan.inject;
 import static org.otacoo.chan.ui.theme.ThemeHelper.theme;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
-import static org.otacoo.chan.utils.AndroidUtils.fixSnackbarText;
 import static org.otacoo.chan.utils.AndroidUtils.getAttrColor;
 import static org.otacoo.chan.utils.AndroidUtils.getString;
 import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
@@ -43,7 +42,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.MarginLayoutParams;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.BaseAdapter;
@@ -56,12 +54,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
-import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.presenter.ReplyPresenter;
@@ -177,7 +173,7 @@ public class ReplyLayout extends LoadView implements
     private List<Reply.FileAttachment> currentAttachments = new ArrayList<>();
     private int currentAttachmentMaxCount = 1;
 
-    private Runnable closeMessageRunnable = new Runnable() {
+    private final Runnable closeMessageRunnable = new Runnable() {
         @Override
         public void run() {
             message.setVisibility(View.GONE);
@@ -188,19 +184,16 @@ public class ReplyLayout extends LoadView implements
     private final Runnable cooldownUpdateRunnable = new Runnable() {
         @Override
         public void run() {
-            if (authenticationLayout instanceof NewCaptchaLayout) {
-                NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
-                if (ncl != null) {
-                    int seconds = ncl.getCooldownRemainingSeconds();
-                    int requestSeconds = ncl.getRequestCooldownRemainingSeconds();
-                    int displaySeconds = Math.max(seconds, requestSeconds);
-                    
-                    if (displaySeconds > 0) {
-                        String label = seconds >= requestSeconds ? "Post cooldown: " : "Request limit: ";
-                        openMessage(true, true, label + displaySeconds + "s", false);
-                        cooldownUpdateHandler.postDelayed(this, 1000);
-                        return;
-                    }
+            if (authenticationLayout instanceof NewCaptchaLayout ncl) {
+                int seconds = ncl.getCooldownRemainingSeconds();
+                int requestSeconds = ncl.getRequestCooldownRemainingSeconds();
+                int displaySeconds = Math.max(seconds, requestSeconds);
+
+                if (displaySeconds > 0) {
+                    String label = seconds >= requestSeconds ? "Post cooldown: " : "Request limit: ";
+                    openMessage(true, true, label + displaySeconds + "s", false);
+                    cooldownUpdateHandler.postDelayed(this, 1000);
+                    return;
                 }
             }
             openMessage(false, true, "", false);
@@ -284,7 +277,7 @@ public class ReplyLayout extends LoadView implements
                 //}
                 sorted = new ArrayList<>(Arrays.asList(sortedMLP));
                 sorted.retainAll(boardFlags.keySet());
-                if (sorted.size() < boardFlags.keySet().size()) {
+                if (sorted.size() < boardFlags.size()) {
                     List<String> temp = new ArrayList<>(boardFlags.keySet());
                     temp.removeAll(sorted);
                     sorted.addAll(temp);
@@ -515,7 +508,7 @@ public class ReplyLayout extends LoadView implements
 
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    handler.post(() -> Toast.makeText(getContext(), "URL download failed", Toast.LENGTH_SHORT).show());
+                    handler.post(() -> AndroidUtils.showThemedSnackbar(ReplyLayout.this, "URL download failed", Snackbar.LENGTH_SHORT));
                 }
 
                 @Override
@@ -547,15 +540,14 @@ public class ReplyLayout extends LoadView implements
                                 filename = "file";
                             }
                             presenter.onFilePicked(filename, cacheFile);
-                            //Toast.makeText(getContext(), "URL download succeeded", Toast.LENGTH_SHORT).show();
                         });
                     } else {
-                        handler.post(() -> Toast.makeText(getContext(), "URL download failed", Toast.LENGTH_SHORT).show());
+                        handler.post(() -> AndroidUtils.showThemedSnackbar(ReplyLayout.this, "URL download failed", Snackbar.LENGTH_SHORT));
                     }
                 }
 
             });
-            Toast.makeText(getContext(), "Downloading URL...", Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(this, "Downloading URL...", Snackbar.LENGTH_SHORT);
             return true;
         } catch (Exception ignored) {
             return false;
@@ -575,25 +567,16 @@ public class ReplyLayout extends LoadView implements
         // If authentication type changed, destroy old layout first
         if (authenticationLayout != null) {
             // Check if the current layout matches the requested type
-            boolean typeMatches = false;
-            switch (authentication.type) {
-                case CAPTCHA2:
-                    typeMatches = authenticationLayout instanceof CaptchaLayout;
-                    break;
-                case GENERIC_WEBVIEW:
-                    typeMatches = authenticationLayout instanceof GenericWebViewAuthenticationLayout;
-                    break;
-                case NEW_CAPTCHA:
-                    typeMatches = authenticationLayout instanceof NewCaptchaLayout;
-                    break;
-                case LYNXCHAN_CAPTCHA:
-                    typeMatches = authenticationLayout instanceof LynxchanCaptchaLayout;
-                    break;
-                case LYNXCHAN_BYPASS:
-                    typeMatches = authenticationLayout instanceof LynxchanBypassLayout;
-                    break;
-            }
-            
+            boolean typeMatches = switch (authentication.type) {
+                case CAPTCHA2 -> authenticationLayout instanceof CaptchaLayout;
+                case GENERIC_WEBVIEW ->
+                        authenticationLayout instanceof GenericWebViewAuthenticationLayout;
+                case NEW_CAPTCHA -> authenticationLayout instanceof NewCaptchaLayout;
+                case LYNXCHAN_CAPTCHA -> authenticationLayout instanceof LynxchanCaptchaLayout;
+                case LYNXCHAN_BYPASS -> authenticationLayout instanceof LynxchanBypassLayout;
+                default -> false;
+            };
+
             if (!typeMatches) {
                 authenticationLayout.onDestroy();
                 captchaContainer.removeView((View) authenticationLayout);
@@ -614,7 +597,6 @@ public class ReplyLayout extends LoadView implements
                             LayoutParams.MATCH_PARENT,
                             LayoutParams.MATCH_PARENT
                     );
-                    // params.setMargins(dp(8), dp(8), dp(8), dp(200));
                     view.setLayoutParams(params);
 
                     authenticationLayout = view;
@@ -670,7 +652,7 @@ public class ReplyLayout extends LoadView implements
                 //reset progress to 0 upon uploading start
                 currentProgress.setVisibility(View.INVISIBLE);
 
-    callback.onReplyPageChanged();
+                callback.onReplyPageChanged();
                 break;
             case INPUT:
                 setView(replyInputLayout);
@@ -806,24 +788,7 @@ public class ReplyLayout extends LoadView implements
             authenticationLayout = null;
         }
 
-        // On newer Android versions Snackbar.make() throws IllegalArgumentException if the
-        // supplied view is not attached to a window, so we fall back to the
-        // activity's content root, and further fall back to a Toast if that is also unavailable.
-        View snackbarParent = isAttachedToWindow() ? this : null;
-        if (snackbarParent == null) {
-            Activity activity = Chan.getInstance().getTopActivity();
-            if (activity != null) {
-                snackbarParent = activity.findViewById(android.R.id.content);
-            }
-        }
-
-        if (snackbarParent != null && snackbarParent.getWindowToken() != null) {
-            Snackbar postSuccessfulNotification = Snackbar.make(snackbarParent, R.string.reply_success, 4500);
-            postSuccessfulNotification.show();
-            fixSnackbarText(getContext(), postSuccessfulNotification);
-        } else {
-            Toast.makeText(getContext().getApplicationContext(), R.string.reply_success, Toast.LENGTH_SHORT).show();
-        }
+        AndroidUtils.showThemedSnackbar(R.string.reply_success, Snackbar.LENGTH_LONG);
 
         callback.openReply(false);
         callback.requestNewPostLoad();
@@ -1306,7 +1271,7 @@ public class ReplyLayout extends LoadView implements
 
     @Override
     public void onFilePickError() {
-        Toast.makeText(getContext(), R.string.reply_file_open_failed, Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.reply_file_open_failed, Snackbar.LENGTH_LONG);
     }
 
     @Override

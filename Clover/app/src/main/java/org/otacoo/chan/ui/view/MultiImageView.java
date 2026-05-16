@@ -49,7 +49,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
@@ -72,6 +71,8 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.ui.PlayerView;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.cache.FileCache;
@@ -195,7 +196,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         if (callback != null) callback.onSwipeToClose(MultiImageView.this);
                         return true;
                     } else if (isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.UP) {
-                        if (callback != null) callback.onSwipeToSave(MultiImageView.this);
+                        if (callback != null) callback.onSwipeToClose(MultiImageView.this);
                         return true;
                     } else if (!isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.DOWN) {
                         if (callback != null) callback.onSwipeToSave(MultiImageView.this);
@@ -648,7 +649,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     private void setOther(String fileUrl) {
-        Toast.makeText(getContext(), R.string.file_not_viewable, Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.file_not_viewable, Snackbar.LENGTH_LONG);
     }
 
     private void setVideoFile(final File file) {
@@ -858,7 +859,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         addView(fallbackWebView, 0, lp);
         onModeLoaded(Mode.MOVIE, fallbackWebView);
 
-        Toast.makeText(getContext(), "Unsupported video format: using WebView to decode", Toast.LENGTH_LONG).show();
+        AndroidUtils.showThemedSnackbar(this, "Unsupported video format: using WebView to decode", Snackbar.LENGTH_LONG);
     }
 
     private void setupPlayerController() {
@@ -1202,26 +1203,26 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (!isAttachedToWindow()) return;
         String message = getContext().getString(R.string.image_preview_failed);
         String extra = e.getMessage() == null ? "" : ": " + e.getMessage();
-        Toast.makeText(getContext(), message + extra, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(this, message + extra, Snackbar.LENGTH_SHORT);
         callback.showProgress(this, false);
     }
 
     private void onNotFoundError() {
         if (!isAttachedToWindow()) return;
         callback.showProgress(this, false);
-        Toast.makeText(getContext(), R.string.image_not_found, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.image_not_found, Snackbar.LENGTH_SHORT);
     }
 
     private void onOutOfMemoryError() {
         if (!isAttachedToWindow()) return;
-        Toast.makeText(getContext(), R.string.image_preview_failed_oom, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(this, R.string.image_preview_failed_oom, Snackbar.LENGTH_SHORT);
         callback.showProgress(this, false);
     }
 
     private void onBigImageError(boolean wasInitial) {
         if (!isAttachedToWindow()) return;
         if (wasInitial) {
-            Toast.makeText(getContext(), R.string.image_failed_big_image, Toast.LENGTH_SHORT).show();
+            AndroidUtils.showThemedSnackbar(this, R.string.image_failed_big_image, Snackbar.LENGTH_SHORT);
             callback.showProgress(this, false);
         }
     }

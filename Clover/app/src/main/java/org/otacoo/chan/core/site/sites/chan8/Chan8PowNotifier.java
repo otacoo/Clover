@@ -55,7 +55,7 @@ public final class Chan8PowNotifier {
             Snackbar sb = Snackbar.make(root,
                     "Rate limiting: too many requests, slow down please.",
                     Snackbar.LENGTH_SHORT);
-            AndroidUtils.fixSnackbarText(root.getContext(), sb);
+            AndroidUtils.applyThemedStyle(sb, root);
             sb.show();
         });
     }
@@ -69,7 +69,7 @@ public final class Chan8PowNotifier {
             Snackbar sb = Snackbar.make(root,
                     "8chan: rate limited (429) \u2014 too many requests, please wait.",
                     Snackbar.LENGTH_LONG);
-            AndroidUtils.fixSnackbarText(root.getContext(), sb);
+            AndroidUtils.applyThemedStyle(sb, root);
             sb.show();
         });
     }
@@ -83,7 +83,7 @@ public final class Chan8PowNotifier {
             Snackbar sb = Snackbar.make(root,
                     "8chan POWBlock check failed \u2014 tap Login to verify manually.",
                     Snackbar.LENGTH_LONG);
-            AndroidUtils.fixSnackbarText(root.getContext(), sb);
+            AndroidUtils.applyThemedStyle(sb, root);
             sb.show();
         });
     }

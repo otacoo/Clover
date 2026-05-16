@@ -18,8 +18,8 @@
 package org.otacoo.chan.core.settings;
 
 import android.text.TextUtils;
-import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -512,7 +512,7 @@ public class ChanSettings {
             Logger.e("ChanSettings", "Invalid custom theme data, resetting to defaults", e);
             customThemes.set("[]");
             AndroidUtils.runOnUiThread(() ->
-                    Toast.makeText(AndroidUtils.getAppContext(), R.string.settings_custom_theme_reset, Toast.LENGTH_LONG).show());
+                    AndroidUtils.showThemedSnackbar(R.string.settings_custom_theme_reset, Snackbar.LENGTH_LONG));
             return new ArrayList<>();
         }
     }

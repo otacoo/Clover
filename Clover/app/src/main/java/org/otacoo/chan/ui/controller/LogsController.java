@@ -32,6 +32,7 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,7 +40,8 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
@@ -188,7 +190,7 @@ public class LogsController extends Controller {
     }
 
     private void exportLogsClicked(ToolbarMenuSubItem item) {
-        Toast.makeText(context, "Exporting filtered logs…", Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(view, "Exporting filtered logs…", Snackbar.LENGTH_SHORT);
         new Thread(() -> {
             try {
                 String logOutput = getFilteredAndAnonymizedLogs();
@@ -203,14 +205,14 @@ public class LogsController extends Controller {
 
                 final String savedPath = logFile.getAbsolutePath();
                 new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(context,
+                        AndroidUtils.showThemedSnackbar(view,
                                 "Log saved to " + savedPath,
-                                Toast.LENGTH_LONG).show());
+                                Snackbar.LENGTH_LONG));
             } catch (Exception e) {
                 Logger.e(TAG, "Export failed", e);
                 new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(context, R.string.settings_logs_export_failed,
-                                Toast.LENGTH_SHORT).show());
+                        AndroidUtils.showThemedSnackbar(view, R.string.settings_logs_export_failed,
+                                Snackbar.LENGTH_SHORT));
             }
         }, "log-export").start();
     }
@@ -278,7 +280,7 @@ public class LogsController extends Controller {
         ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext()
                 .getSystemService(Context.CLIPBOARD_SERVICE);
         clipboard.setPrimaryClip(ClipData.newPlainText("Logs", text));
-        Toast.makeText(context, R.string.settings_logs_copied_to_clipboard, Toast.LENGTH_SHORT).show();
+        AndroidUtils.showThemedSnackbar(view, R.string.settings_logs_copied_to_clipboard, Snackbar.LENGTH_SHORT);
     }
 
     private void loadLogs() {
