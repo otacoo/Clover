@@ -808,6 +808,11 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             int action = event.getActionMasked();
 
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_DOWN) {
+                if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_UP) {
+                    buffer.removeSpan(BACKGROUND_SPAN);
+                    android.text.Selection.removeSelection(buffer);
+                }
+
                 int x = (int) event.getX();
                 int y = (int) event.getY();
 
@@ -860,17 +865,13 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                                     item.onClick(widget);
                                 }
                             }
-
-                            buffer.removeSpan(BACKGROUND_SPAN);
                         } else if (action == MotionEvent.ACTION_DOWN && clickableSpan1 instanceof PostLinkable) {
                             buffer.setSpan(BACKGROUND_SPAN, buffer.getSpanStart(clickableSpan1), buffer.getSpanEnd(clickableSpan1), 0);
-                        } else if (action == MotionEvent.ACTION_CANCEL) {
-                            buffer.removeSpan(BACKGROUND_SPAN);
                         }
 
                         return true;
                     } else {
-                        buffer.removeSpan(BACKGROUND_SPAN);
+                        return super.onTouchEvent(widget, buffer, event);
                     }
                 }
             }
