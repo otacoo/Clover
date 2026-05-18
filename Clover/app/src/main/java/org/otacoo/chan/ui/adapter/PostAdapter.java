@@ -260,7 +260,10 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 synchronized(oldPost.repliesFrom) { oldReplies = oldPost.repliesFrom.size(); }
                 int newReplies = 0;
                 synchronized(newPost.repliesFrom) { newReplies = newPost.repliesFrom.size(); }
-                
+
+                if (oldPost.isSavedReply != newPost.isSavedReply) return false;
+                if (oldPost.deleted.get() != newPost.deleted.get()) return false;
+
                 return oldReplies == newReplies;
             }
         });

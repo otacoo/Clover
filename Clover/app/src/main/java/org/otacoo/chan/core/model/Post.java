@@ -66,7 +66,7 @@ public class Post {
 
     public final List<PostHttpIcon> httpIcons;
 
-    public final boolean isSavedReply;
+    public boolean isSavedReply;
 
     public final int filterHighlightedColor;
 
