@@ -186,7 +186,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         int newLastSeen = -1;
         List<Post> newList;
-        if (lastViewed >= 0) {
+        if (lastViewed >= 0 && thread.loadable.isThreadMode()) {
             newList = filter.apply(sourceList);
             for (int i = 0, size = newList.size() - 1; i < size; i++) {
                 if (newList.get(i).no == lastViewed) {
