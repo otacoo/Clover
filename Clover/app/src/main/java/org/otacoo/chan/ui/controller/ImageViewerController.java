@@ -637,6 +637,11 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             return;
         }
 
+        Activity activity = getActivity();
+        if (activity != null) {
+            activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+
         ImageViewerAdapter adapter = (ImageViewerAdapter) pager.getAdapter();
         if (adapter != null) {
             adapter.pauseAll();

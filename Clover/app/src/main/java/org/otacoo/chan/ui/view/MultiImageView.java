@@ -952,10 +952,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 }
                 if (context instanceof android.app.Activity activity) {
                     int currentOrientation = activity.getResources().getConfiguration().orientation;
-                    if (currentOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
-                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-                    } else {
+                    if (currentOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
                         activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    } else {
+                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                     }
                 }
             });
