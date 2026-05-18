@@ -1,4 +1,4 @@
-## 2026-05-18 – v3.5.1
+## 2026-05-18 – v3.5.2
 
 ### Media
 **New feature:** Added a rotate button to the video player controls
@@ -10,6 +10,7 @@
 - Fixed Auto domain (failover) not working properly and silently always switching to .st
 
 ### Misc changes & fixes
+- **New feature:** Long tap a thread in catalog or board mode to show the menu
 - Navigation: navigation history will now be kept and restored when navigating to and from catalog searches (pinned search or cross-board links) (issue #29)
 - Mark as my post: Fixed a bug where it wasn't marking the post visually without a restart
 - Catalog: Fix an issue where an unread line was being added to the catalog (issue #23)
