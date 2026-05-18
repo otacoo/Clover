@@ -45,18 +45,13 @@ public abstract class JsonReaderRequest<T> implements Callback {
     @Override
     public void onFailure(@NonNull Call call, @NonNull IOException e) {
         if (call.isCanceled()) return;
-        // Treat any 8chan network-level failure as a potential domain outage.
-        String host = call.request().url().host();
-        if (host.contains("8chan")) {
-            org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.notifyDomainUnreachable(host);
-        }
         AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
     }
 
     @Override
     public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
         if (call.isCanceled()) return;
-        
+
         if (!response.isSuccessful()) {
             // HTTP 5xx means the server is down — treat as unreachable for failover.
             // 4xx errors (including 403 from POWBlock redirects) are auth issues, not
@@ -65,15 +60,8 @@ public abstract class JsonReaderRequest<T> implements Callback {
             if (respCode == 429) {
                 response.close();
                 AndroidUtils.runOnUiThread(() -> listener.onError(
-                        "HTTP Error 429 Too Many Requests. You are being rate limited — please wait before retrying."));
+                        "HTTP Error 429 Too Many Requests. You are being rate limited - please wait before retrying."));
                 return;
-            }
-            if (respCode >= 500) {
-                String url = call.request().url().toString();
-                if (org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.is8chan(url)) {
-                    org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.notifyDomainUnreachable(
-                            call.request().url().host());
-                }
             }
             response.close();
             AndroidUtils.runOnUiThread(() -> listener.onError("HTTP " + respCode));

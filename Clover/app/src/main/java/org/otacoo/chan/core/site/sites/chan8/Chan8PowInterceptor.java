@@ -104,6 +104,22 @@ public class Chan8PowInterceptor implements Interceptor {
             throw ioEx;
         }
 
+        // Network-level failure (HTTP 5xx server errors).
+        // If this is an unforced 8chan request, switch to the fallback domain and retry once.
+        if (resp.code() >= 500 && req.url().host().contains("8chan") && req.header(POW_BYPASS_HEADER) == null
+                && org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.getForcedDomain() == null) {
+            String host = req.url().host();
+            org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.notifyDomainUnreachable(host);
+            String newDomain = org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.getActiveDomain();
+            if (!newDomain.equals(host)) {
+                resp.close();
+                String newUrl = req.url().toString().replace(host, newDomain);
+                Logger.w(TAG, "HTTP " + resp.code() + " on " + host + "; retrying on " + newDomain);
+                Request retryReq = req.newBuilder().url(newUrl).build();
+                resp = chain.proceed(retryReq);
+            }
+        }
+
         // Handle 429 rate-limit: back off and retry once.
         if (resp.code() == 429 && req.url().host().contains("8chan")) {
             String retryAfterHeader = resp.header("Retry-After");
@@ -235,10 +251,17 @@ public class Chan8PowInterceptor implements Interceptor {
             // – xBlockRequired or is200HtmlPow-with-body: same path as the original request
             // – is403Pow or is200HtmlPow-fallback-via-captcha.js: /captcha.js
             String submitPath = useCaptchaJsSubmit ? "/captcha.js" : req.url().encodedPath();
-            String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + "?pow=" + solution + "&t=" + token;
-            // Logger.w(TAG, "POW submit URL: " + (submitUrl.length() > 120 ? submitUrl.substring(0, 120) + "…" : submitUrl));
+              String queryParams;
+              if (html != null && html.contains("powblock=") && html.contains("pbchal=")) {
+                  queryParams = "?powblock=" + solution + "&pbchal=" + token;
+              } else {
+                  queryParams = "?pow=" + solution + "&t=" + token;
+              }
+              String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams; 
+              // Logger.w(TAG, "POW submit URL: " + (submitUrl.length() > 120 ? submitUrl.substring(0, 120) + "…" : submitUrl));
 
-            if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above
+              if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above         
+   
             // Clear stale POW cookies (e.g. from a restored backup) before submitting the
             // solution, so the server starts a clean session from the new tokens.
             clearPowCookieStore(req.url().host());
