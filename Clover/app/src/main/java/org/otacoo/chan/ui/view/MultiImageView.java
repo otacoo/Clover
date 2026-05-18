@@ -165,7 +165,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     };
 
     private boolean backgroundToggle;
-    private GestureDetector gestureDetector;
+    private final GestureDetector gestureDetector;
 
     public MultiImageView(Context context) {
         this(context, null);
@@ -183,8 +183,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                if (e1 == null || e2 == null) return false;
+            public boolean onFling(MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null) return false;
                 if (Math.abs(velocityY) > Math.abs(velocityX) * 1.5f && Math.abs(velocityY) > 1000) {
                     boolean isUp = velocityY < 0;
                     org.otacoo.chan.core.settings.ChanSettings.SwipeGesture closeGesture = org.otacoo.chan.core.settings.ChanSettings.swipeToClose.get();
@@ -234,39 +234,36 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             }
             this.mode = newMode;
 
-            AndroidUtils.waitForMeasure(this, new AndroidUtils.OnMeasuredCallback() {
-                @Override
-                public boolean onMeasured(View view) {
-                    switch (newMode) {
-                        case LOWRES:
-                            boolean useFullSize = org.otacoo.chan.core.settings.ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
-                                    && postImage.imageUrl != null
-                                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.MOVIE
-                                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.SWF;
-                            String url;
-                            if (useFullSize) {
-                                url = postImage.imageUrl.toString();
-                            } else {
-                                okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
-                                url = thumbUrl != null ? thumbUrl.toString() : null;
-                            }
-                            setThumbnail(url, center);
-                            break;
-                        case BIGIMAGE:
-                            setBigImage(postImage.imageUrl.toString());
-                            break;
-                        case GIF:
-                            setGif(postImage.imageUrl.toString());
-                            break;
-                        case MOVIE:
-                            setVideo(postImage.imageUrl.toString());
-                            break;
-                        case OTHER:
-                            setOther(postImage.imageUrl.toString());
-                            break;
-                    }
-                    return true;
+            AndroidUtils.waitForMeasure(this, view -> {
+                switch (newMode) {
+                    case LOWRES:
+                        boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                                && postImage.imageUrl != null
+                                && postImage.type != PostImage.Type.MOVIE
+                                && postImage.type != PostImage.Type.SWF;
+                        String url;
+                        if (useFullSize) {
+                            url = postImage.imageUrl.toString();
+                        } else {
+                            okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+                            url = thumbUrl != null ? thumbUrl.toString() : null;
+                        }
+                        setThumbnail(url, center);
+                        break;
+                    case BIGIMAGE:
+                        setBigImage(postImage.imageUrl.toString());
+                        break;
+                    case GIF:
+                        setGif(postImage.imageUrl.toString());
+                        break;
+                    case MOVIE:
+                        setVideo(postImage.imageUrl.toString());
+                        break;
+                    case OTHER:
+                        setOther(postImage.imageUrl.toString());
+                        break;
                 }
+                return true;
             });
         }
     }
@@ -310,8 +307,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     public ImageView findAnimatedImageView() {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-            if (child instanceof ImageView && !(child instanceof GifImageView)) {
-                ImageView iv = (ImageView) child;
+            if (child instanceof ImageView iv && !(child instanceof GifImageView)) {
                 if (iv != playView && iv.getDrawable() instanceof APNGDrawable) {
                     return iv;
                 }
@@ -442,20 +438,18 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 try (response) {
                     if (response.isSuccessful()) {
                         try (ResponseBody body = response.body()) {
-                            if (body != null) {
-                                Bitmap bitmap;
-                                try (java.io.InputStream stream = body.byteStream()) {
-                                    bitmap = BitmapFactory.decodeStream(stream);
-                                }
-                                if (bitmap != null && (!hasContent || mode == Mode.LOWRES)) {
-                                    AndroidUtils.runOnUiThread(() -> {
-                                        if (isAttachedToWindow()) {
-                                            ImageView thumbnail = new ImageView(getContext());
-                                            thumbnail.setImageBitmap(bitmap);
-                                            onModeLoaded(Mode.LOWRES, thumbnail);
-                                        }
-                                    });
-                                }
+                            Bitmap bitmap;
+                            try (java.io.InputStream stream = body.byteStream()) {
+                                bitmap = BitmapFactory.decodeStream(stream);
+                            }
+                            if (bitmap != null && (!hasContent || mode == Mode.LOWRES)) {
+                                AndroidUtils.runOnUiThread(() -> {
+                                    if (isAttachedToWindow()) {
+                                        ImageView thumbnail = new ImageView(getContext());
+                                        thumbnail.setImageBitmap(bitmap);
+                                        onModeLoaded(Mode.LOWRES, thumbnail);
+                                    }
+                                });
                             }
                         }
                     }
@@ -469,31 +463,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private void setBigImage(String imageUrl) {
         if (getWidth() == 0 || getHeight() == 0) {
             Logger.e(TAG, "getWidth() or getHeight() returned 0, not loading big image");
-            return;
-        }
-
-        android.graphics.Bitmap cached = ThumbnailView.getCachedBitmap(imageUrl);
-        if (cached != null) {
-            AndroidUtils.runOnUiThread(() -> {
-                if (!isAttachedToWindow()) return;
-                CustomScaleImageView existing = null;
-                for (int i = 0; i < getChildCount(); i++) {
-                    if (getChildAt(i) instanceof CustomScaleImageView) {
-                        existing = (CustomScaleImageView) getChildAt(i);
-                        break;
-                    }
-                }
-                if (existing != null) {
-                    callback.showProgress(MultiImageView.this, false);
-                    onModeLoaded(Mode.BIGIMAGE, existing);
-                } else {
-                    final CustomScaleImageView image = new CustomScaleImageView(getContext());
-                    image.setImage(com.davemorrissey.labs.subscaleview.ImageSource.bitmap(cached).tiling(false));
-                    image.setOnClickListener(MultiImageView.this);
-                    callback.showProgress(MultiImageView.this, false);
-                    onModeLoaded(Mode.BIGIMAGE, image);
-                }
-            });
             return;
         }
 
@@ -981,11 +950,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                     }
                     context = ((ContextWrapper) context).getBaseContext();
                 }
-                if (context instanceof android.app.Activity) {
-                    android.app.Activity activity = (android.app.Activity) context;
+                if (context instanceof android.app.Activity activity) {
                     int currentOrientation = activity.getResources().getConfiguration().orientation;
                     if (currentOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
-                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                     } else {
                         activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                     }
@@ -1147,7 +1115,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             imageView.setTileBackgroundColor(backgroundColor);
         } else {
             ImageView targetView = gifView != null ? gifView : animatedView;
-            if (targetView != null && targetView.getDrawable() != null) {
+            if (targetView.getDrawable() != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     targetView.getDrawable().setColorFilter(new BlendModeColorFilter(backgroundColor, BlendMode.DST_OVER));
                 } else {
@@ -1191,7 +1159,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                     imageView.setMaxScale(scale * 2f);
                 }
             }
-        } else if (targetAnimView != null) {
+        } else {
             if (orientation < 0) {
                 if (orientation == -1) {
                     targetAnimView.setScaleX(-1f);
@@ -1322,8 +1290,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             View child = getChildAt(i);
             if (child instanceof VideoView) {
                 cleanupVideo((VideoView) child);
-            } else if (child instanceof GifImageView) {
-                GifImageView gif = (GifImageView) child;
+            } else if (child instanceof GifImageView gif) {
                 if (gif.getDrawable() instanceof GifDrawable) {
                     ((GifDrawable) gif.getDrawable()).stop();
                 }
@@ -1340,8 +1307,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     private void onModeLoaded(Mode mode, View view) {
         if (!isAttachedToWindow()) {
-            if (view instanceof GifImageView) {
-                GifImageView gif = (GifImageView) view;
+            if (view instanceof GifImageView gif) {
                 if (gif.getDrawable() instanceof GifDrawable) {
                     ((GifDrawable) gif.getDrawable()).recycle();
                 }

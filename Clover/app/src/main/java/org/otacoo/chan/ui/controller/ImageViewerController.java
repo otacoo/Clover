@@ -531,7 +531,18 @@ public class ImageViewerController extends Controller implements ImageViewerPres
                 }
             });
 
-            Bitmap cached = postImage.getThumbnailUrl() != null ? ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString()) : null;
+            boolean useFullSize = org.otacoo.chan.core.settings.ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                    && postImage.imageUrl != null
+                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.MOVIE
+                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.SWF;
+            String cacheUrl;
+            if (useFullSize) {
+                cacheUrl = postImage.imageUrl.toString();
+            } else {
+                okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+                cacheUrl = thumbUrl != null ? thumbUrl.toString() : null;
+            }
+            Bitmap cached = cacheUrl != null ? ThumbnailView.getCachedBitmap(cacheUrl) : null;
             if (cached != null) {
                 previewImage.setBitmap(cached);
                 startAnimation.start();
@@ -631,7 +642,18 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             adapter.pauseAll();
         }
 
-        Bitmap cached = postImage.getThumbnailUrl() != null ? ThumbnailView.getCachedBitmap(postImage.getThumbnailUrl().toString()) : null;
+        boolean useFullSize = org.otacoo.chan.core.settings.ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                && postImage.imageUrl != null
+                && postImage.type != org.otacoo.chan.core.model.PostImage.Type.MOVIE
+                && postImage.type != org.otacoo.chan.core.model.PostImage.Type.SWF;
+        String cacheUrl;
+        if (useFullSize) {
+            cacheUrl = postImage.imageUrl.toString();
+        } else {
+            okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+            cacheUrl = thumbUrl != null ? thumbUrl.toString() : null;
+        }
+        Bitmap cached = cacheUrl != null ? ThumbnailView.getCachedBitmap(cacheUrl) : null;
         doPreviewOutAnimation(postImage, cached);
     }
 
