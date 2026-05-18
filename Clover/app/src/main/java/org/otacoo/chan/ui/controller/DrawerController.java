@@ -267,15 +267,10 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
                 dnc.switchToController(true);
             }
         } else if (top instanceof ToolbarNavigationController tnc) {
-            if (tnc.getTop() instanceof BrowseController bc) {
-                bc.setBoard(board);
-                bc.loadBoard(loadable);
-            } else {
-                BrowseController browseController = new BrowseController(context);
-                tnc.pushController(browseController);
-                browseController.setBoard(board);
-                browseController.loadBoard(loadable);
-            }
+            BrowseController browseController = new BrowseController(context);
+            tnc.pushController(browseController);
+            browseController.setBoard(board);
+            browseController.loadBoard(loadable);
         }
     }
 

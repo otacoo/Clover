@@ -221,20 +221,35 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
     @Override
     public void showThread(final Loadable threadLoadable) {
         if (threadLoadable.isCatalogMode()) {
-            if (doubleNavigationController != null && doubleNavigationController.getLeftController() instanceof BrowseController) {
+            Loadable current = getLoadable();
+            boolean isDifferentBoard = current == null || !threadLoadable.board.code.equals(current.board.code);
+            boolean isSearch = threadLoadable.searchQuery != null;
+
+            if (doubleNavigationController != null && doubleNavigationController.getLeftController() instanceof BrowseController && !(isDifferentBoard || isSearch)) {
                 doubleNavigationController.switchToController(true);
                 BrowseController bc = (BrowseController) doubleNavigationController.getLeftController();
                 bc.setBoard(threadLoadable.board);
                 bc.loadBoard(threadLoadable);
             } else if (navigationController != null) {
-                // If we're just in a stack, we might need to find the BrowseController
-                while (navigationController.childControllers.size() > 1) {
-                    navigationController.popController(false);
-                }
-                if (navigationController.getTop() instanceof BrowseController) {
-                    BrowseController bc = (BrowseController) navigationController.getTop();
-                    bc.setBoard(threadLoadable.board);
-                    bc.loadBoard(threadLoadable);
+                if (isDifferentBoard || isSearch) {
+                    BrowseController newBrowse = new BrowseController(context);
+                    if (navigationController instanceof ToolbarNavigationController) {
+                        ((ToolbarNavigationController) navigationController).pushController(newBrowse);
+                    } else {
+                        navigationController.pushController(newBrowse);
+                    }
+                    newBrowse.setBoard(threadLoadable.board);
+                    newBrowse.loadBoard(threadLoadable);
+                } else {
+                    // If we're just in a stack, we might need to find the BrowseController
+                    while (navigationController.childControllers.size() > 1) {
+                        navigationController.popController(false);
+                    }
+                    if (navigationController.getTop() instanceof BrowseController) {
+                        BrowseController bc = (BrowseController) navigationController.getTop();
+                        bc.setBoard(threadLoadable.board);
+                        bc.loadBoard(threadLoadable);
+                    }
                 }
             }
             return;

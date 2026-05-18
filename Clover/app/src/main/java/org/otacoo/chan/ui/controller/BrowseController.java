@@ -101,13 +101,15 @@ public class BrowseController extends ThreadController implements
     }
 
     private void initNavigation() {
+        boolean isPushed = navigationController != null && navigationController.childControllers.size() > 1;
+
         // Navigation item
-        navigation.hasDrawer = true;
+        navigation.hasDrawer = !isPushed;
 
         setupMiddleNavigation();
 
         // Toolbar menu
-        navigation.hasBack = false;
+        navigation.hasBack = isPushed;
 
         NavigationItem.MenuBuilder menuBuilder = navigation.buildMenu()
                 .withItem(R.drawable.ic_search_white_24dp, this::searchClicked)
@@ -264,30 +266,15 @@ public class BrowseController extends ThreadController implements
     private void handleSorting(final ThreadPresenter presenter) {
         List<FloatingMenuItem> items = new ArrayList<>();
         for (PostsFilter.Order order : PostsFilter.Order.values()) {
-            int nameId = 0;
-            switch (order) {
-                case BUMP:
-                    nameId = R.string.order_bump;
-                    break;
-                case REPLY:
-                    nameId = R.string.order_reply;
-                    break;
-                case IMAGE:
-                    nameId = R.string.order_image;
-                    break;
-                case NEWEST:
-                    nameId = R.string.order_newest;
-                    break;
-                case OLDEST:
-                    nameId = R.string.order_oldest;
-                    break;
-                case MODIFIED:
-                    nameId = R.string.order_modified;
-                    break;
-                case ACTIVITY:
-                    nameId = R.string.order_activity;
-                    break;
-            }
+            int nameId = switch (order) {
+                case BUMP -> R.string.order_bump;
+                case REPLY -> R.string.order_reply;
+                case IMAGE -> R.string.order_image;
+                case NEWEST -> R.string.order_newest;
+                case OLDEST -> R.string.order_oldest;
+                case MODIFIED -> R.string.order_modified;
+                case ACTIVITY -> R.string.order_activity;
+            };
 
             String name = getString(nameId);
             if (order == this.order) {
@@ -361,14 +348,28 @@ public class BrowseController extends ThreadController implements
 
     @Override
     public void openPin(Pin pin) {
-        showThread(pin.loadable);
+        if (pin.loadable.isCatalogMode()) {
+            setBoard(pin.loadable.board);
+            loadBoard(pin.loadable);
+        } else {
+            showThread(pin.loadable, true);
+        }
     }
 
     @Override
     public void showThread(Loadable threadLoadable) {
         if (threadLoadable.isCatalogMode()) {
-            setBoard(threadLoadable.board);
-            loadBoard(threadLoadable);
+            boolean isDifferentBoard = presenter.currentBoard() == null || !threadLoadable.board.code.equals(presenter.currentBoard().code);
+            boolean isSearch = threadLoadable.searchQuery != null;
+            if ((isDifferentBoard || isSearch) && navigationController instanceof ToolbarNavigationController) {
+                BrowseController browseController = new BrowseController(context);
+                navigationController.pushController(browseController);
+                browseController.setBoard(threadLoadable.board);
+                browseController.loadBoard(threadLoadable);
+            } else {
+                setBoard(threadLoadable.board);
+                loadBoard(threadLoadable);
+            }
         } else {
             showThread(threadLoadable, true);
         }
