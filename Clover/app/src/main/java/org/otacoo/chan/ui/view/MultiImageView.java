@@ -239,7 +239,18 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 public boolean onMeasured(View view) {
                     switch (newMode) {
                         case LOWRES:
-                            setThumbnail(postImage.getThumbnailUrl() != null ? postImage.getThumbnailUrl().toString() : null, center);
+                            boolean useFullSize = org.otacoo.chan.core.settings.ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                                    && postImage.imageUrl != null
+                                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.MOVIE
+                                    && postImage.type != org.otacoo.chan.core.model.PostImage.Type.SWF;
+                            String url;
+                            if (useFullSize) {
+                                url = postImage.imageUrl.toString();
+                            } else {
+                                okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+                                url = thumbUrl != null ? thumbUrl.toString() : null;
+                            }
+                            setThumbnail(url, center);
                             break;
                         case BIGIMAGE:
                             setBigImage(postImage.imageUrl.toString());
@@ -389,6 +400,18 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             return;
         }
 
+        android.graphics.Bitmap cached = ThumbnailView.getCachedBitmap(thumbnailUrl);
+        if (cached != null) {
+            AndroidUtils.runOnUiThread(() -> {
+                if (isAttachedToWindow()) {
+                    ImageView thumbnail = new ImageView(getContext());
+                    thumbnail.setImageBitmap(cached);
+                    onModeLoaded(Mode.LOWRES, thumbnail);
+                }
+            });
+            return;
+        }
+
         if (getWidth() == 0 || getHeight() == 0) {
             Logger.e(TAG, "getWidth() or getHeight() returned 0, not loading");
             return;
@@ -446,6 +469,31 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private void setBigImage(String imageUrl) {
         if (getWidth() == 0 || getHeight() == 0) {
             Logger.e(TAG, "getWidth() or getHeight() returned 0, not loading big image");
+            return;
+        }
+
+        android.graphics.Bitmap cached = ThumbnailView.getCachedBitmap(imageUrl);
+        if (cached != null) {
+            AndroidUtils.runOnUiThread(() -> {
+                if (!isAttachedToWindow()) return;
+                CustomScaleImageView existing = null;
+                for (int i = 0; i < getChildCount(); i++) {
+                    if (getChildAt(i) instanceof CustomScaleImageView) {
+                        existing = (CustomScaleImageView) getChildAt(i);
+                        break;
+                    }
+                }
+                if (existing != null) {
+                    callback.showProgress(MultiImageView.this, false);
+                    onModeLoaded(Mode.BIGIMAGE, existing);
+                } else {
+                    final CustomScaleImageView image = new CustomScaleImageView(getContext());
+                    image.setImage(com.davemorrissey.labs.subscaleview.ImageSource.bitmap(cached).tiling(false));
+                    image.setOnClickListener(MultiImageView.this);
+                    callback.showProgress(MultiImageView.this, false);
+                    onModeLoaded(Mode.BIGIMAGE, image);
+                }
+            });
             return;
         }
 
