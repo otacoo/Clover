@@ -100,6 +100,10 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         filterMatchColor = findViewById(R.id.filter_match_color);
 
         setOnClickListener(this);
+        setOnLongClickListener(v -> {
+            options.performClick();
+            return true;
+        });
 
         setCompact(compact);
 

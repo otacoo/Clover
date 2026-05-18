@@ -236,6 +236,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         });
 
         setOnClickListener(selfClicked);
+        setOnLongClickListener(v -> {
+            options.performClick();
+            return true;
+        });
     }
 
     private void showOptions(View anchor, List<FloatingMenuItem> items,
