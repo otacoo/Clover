@@ -923,6 +923,28 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             });
         }
 
+        View rotate = playerController.findViewById(R.id.player_rotate);
+        if (rotate != null) {
+            rotate.setOnClickListener(v -> {
+                Context context = getContext();
+                while (context instanceof ContextWrapper) {
+                    if (context instanceof android.app.Activity) {
+                        break;
+                    }
+                    context = ((ContextWrapper) context).getBaseContext();
+                }
+                if (context instanceof android.app.Activity) {
+                    android.app.Activity activity = (android.app.Activity) context;
+                    int currentOrientation = activity.getResources().getConfiguration().orientation;
+                    if (currentOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    } else {
+                        activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    }
+                }
+            });
+        }
+
         View rew = playerController.findViewById(R.id.player_rew);
         if (rew != null) {
             rew.setOnClickListener(v -> {
