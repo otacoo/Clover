@@ -79,7 +79,7 @@ public abstract class ImageSearch {
 
             @Override
             public boolean showFor(String boardCode) {
-                return BuildConfig.FLAVOR.equals("dev") || boardCode.equals("mlp") || boardCode.equals("trash");
+                return "mlp".equals(boardCode) || "trash".equals(boardCode);
             }
         });
 
@@ -98,7 +98,7 @@ public abstract class ImageSearch {
 
             @Override
             public boolean showFor(String boardCode) {
-                return boardCode.equals("trash");
+                return "trash".equals(boardCode);
             }
         });
 
