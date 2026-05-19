@@ -25,6 +25,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.Context;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
@@ -104,7 +105,7 @@ public class BrowseController extends ThreadController implements
         boolean isPushed = navigationController != null && navigationController.childControllers.size() > 1;
 
         // Navigation item
-        navigation.hasDrawer = !isPushed;
+        navigation.hasDrawer = true;
 
         setupMiddleNavigation();
 
@@ -362,10 +363,21 @@ public class BrowseController extends ThreadController implements
             boolean isDifferentBoard = presenter.currentBoard() == null || !threadLoadable.board.code.equals(presenter.currentBoard().code);
             boolean isSearch = threadLoadable.searchQuery != null;
             if ((isDifferentBoard || isSearch) && navigationController instanceof ToolbarNavigationController) {
-                BrowseController browseController = new BrowseController(context);
-                navigationController.pushController(browseController);
-                browseController.setBoard(threadLoadable.board);
-                browseController.loadBoard(threadLoadable);
+                if (ChanSettings.layoutMode.get() == ChanSettings.LayoutMode.SLIDE) {
+                    ThreadSlideController slideController = new ThreadSlideController(context);
+                    slideController.setEmptyView((ViewGroup) android.view.LayoutInflater.from(context).inflate(R.layout.layout_split_empty, null));
+                    navigationController.pushController(slideController);
+                    
+                    BrowseController browseController = new BrowseController(context);
+                    slideController.setLeftController(browseController);
+                    browseController.setBoard(threadLoadable.board);
+                    browseController.loadBoard(threadLoadable);
+                } else {
+                    BrowseController browseController = new BrowseController(context);
+                    navigationController.pushController(browseController);
+                    browseController.setBoard(threadLoadable.board);
+                    browseController.loadBoard(threadLoadable);
+                }
             } else {
                 setBoard(threadLoadable.board);
                 loadBoard(threadLoadable);
