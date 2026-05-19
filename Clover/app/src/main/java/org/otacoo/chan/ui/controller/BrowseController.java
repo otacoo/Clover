@@ -60,6 +60,7 @@ public class BrowseController extends ThreadController implements
         BrowseBoardsFloatingMenu.ClickCallback {
     private static final int VIEW_MODE_ID = 1;
     private static final int ARCHIVE_ID = 2;
+    private static final int SEARCH_ID = 3;
 
     @Inject
     BrowsePresenter presenter;
@@ -113,7 +114,7 @@ public class BrowseController extends ThreadController implements
         navigation.hasBack = isPushed;
 
         NavigationItem.MenuBuilder menuBuilder = navigation.buildMenu()
-                .withItem(R.drawable.ic_search_white_24dp, this::searchClicked)
+                .withItem(SEARCH_ID, R.drawable.ic_search_white_24dp, this::searchClicked)
                 .withItem(R.drawable.ic_refresh_white_24dp, this::reloadClicked);
 
         NavigationItem.MenuOverflowBuilder overflowBuilder = menuBuilder.withOverflow();
@@ -142,6 +143,15 @@ public class BrowseController extends ThreadController implements
     private void searchClicked(ToolbarMenuItem item) {
         ThreadPresenter presenter = threadLayout.getPresenter();
         if (presenter.isBound()) {
+            Loadable loadable = presenter.getLoadable();
+            boolean isPushed = navigationController != null && navigationController.childControllers.size() > 1;
+            if (isPushed && loadable != null && loadable.searchQuery != null) {
+                loadable.searchQuery = null;
+                item.setImage(R.drawable.ic_search_white_24dp);
+                loadBoard(loadable);
+                return;
+            }
+
             View refreshView = item.getView();
             refreshView.setScaleX(1f);
             refreshView.setScaleY(1f);
@@ -308,6 +318,16 @@ public class BrowseController extends ThreadController implements
         String name = BoardHelper.getName(loadable.board);
         loadable.title = name;
         navigation.title = name;
+
+        ToolbarMenuItem searchItem = navigation.findItem(SEARCH_ID);
+        if (searchItem != null) {
+            boolean isPushed = navigationController != null && navigationController.childControllers.size() > 1;
+            if (isPushed && loadable.searchQuery != null) {
+                searchItem.setImage(R.drawable.ic_clear_white_24dp);
+            } else {
+                searchItem.setImage(R.drawable.ic_search_white_24dp);
+            }
+        }
 
         ThreadPresenter presenter = threadLayout.getPresenter();
         presenter.unbindLoadable();
