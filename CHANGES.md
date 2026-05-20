@@ -10,6 +10,7 @@
 
 ### Misc changes & fixes
 - Reduced minSdk to 23 to allow installs on Android 6.0 Marshmallow
+- Removed some ridiculous width values on the add board dialog that could cause a crash
 - Set exclusions on system gestures for newer devices so the drawers can be used without triggering system navigation **(UNTESTED)**
 - Remove crash reporting dead code
 
