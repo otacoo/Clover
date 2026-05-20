@@ -100,6 +100,9 @@ public class ThreadPresenter implements
     private boolean inForeground = true;
     private boolean suppressNextNewPostsNotification = false;
 
+    private int preSearchIndex = -1;
+    private int preSearchTop = 0;
+
     @Inject
     public ThreadPresenter(WatchManager watchManager,
                            DatabaseManager databaseManager,
@@ -211,6 +214,12 @@ public class ThreadPresenter implements
     }
 
     public void onSearchVisibilityChanged(boolean visible) {
+        if (visible && !searchOpen) {
+            int[] pos = threadPresenterCallback.getCurrentPosition();
+            preSearchIndex = pos[0];
+            preSearchTop = pos[1];
+        }
+
         searchOpen = visible;
         threadPresenterCallback.showSearch(visible);
         if (!visible) {
@@ -219,6 +228,10 @@ public class ThreadPresenter implements
 
         if (chanLoader != null && chanLoader.getThread() != null) {
             showPosts();
+            if (!visible && preSearchIndex >= 0) {
+                threadPresenterCallback.restoreScrollPosition(preSearchIndex, preSearchTop);
+                preSearchIndex = -1;
+            }
         }
     }
 
@@ -228,6 +241,9 @@ public class ThreadPresenter implements
             showPosts();
             if (TextUtils.isEmpty(entered)) {
                 threadPresenterCallback.setSearchStatus(null, true, false);
+                if (preSearchIndex >= 0) {
+                    threadPresenterCallback.restoreScrollPosition(preSearchIndex, preSearchTop);
+                }
             } else {
                 threadPresenterCallback.setSearchStatus(entered, false, false);
             }
@@ -962,6 +978,8 @@ public class ThreadPresenter implements
         void scrollTo(int displayPosition, boolean smooth);
 
         void scrollToTopOf(int displayPosition);
+
+        void restoreScrollPosition(int index, int topOffset);
 
         void highlightPost(Post post);
 

@@ -621,6 +621,12 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         return thumbnails;
     }
 
+    public void restoreScrollPosition(int index, int topOffset) {
+        if (layoutManager instanceof LinearLayoutManager) {
+            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(index, topOffset);
+        }
+    }
+
     public void scrollToTopOf(int displayPosition) {
         if (replyOpen) {
             // Re-measure the reply layout so the padding reflects its current height

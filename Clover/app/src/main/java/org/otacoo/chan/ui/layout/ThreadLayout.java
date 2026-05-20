@@ -707,6 +707,11 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     @Override
+    public void restoreScrollPosition(int index, int topOffset) {
+        threadListLayout.restoreScrollPosition(index, topOffset);
+    }
+
+    @Override
     public void quote(Post post, boolean withText) {
         threadListLayout.openReply(true);
         threadListLayout.getReplyPresenter().quote(post, withText);
