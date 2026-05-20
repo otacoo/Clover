@@ -738,8 +738,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             // PREFER primary, or DEFAULT first retry: prefer libvpx extension over hardware.
             rendererMode = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
         } else {
-            // DEFAULT stage 0: hardware first, libvpx available as extension fallback.
-            rendererMode = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON;
+            // DEFAULT stage 0: hardware first, no libvpx extension yet, to avoid slow init.
+            rendererMode = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF;
         }
 
         DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(getContext())
@@ -808,7 +808,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             @Override
             public void onPlayerError(@NonNull PlaybackException error) {
                 if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED
-                        || error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED) {
+                        || error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED
+                        || error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES
+                        || error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED
+                        || error.errorCode == PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED) {
                     ChanSettings.Vp9ExtensionMode extMode = ChanSettings.vp9ExtensionMode.get();
                     int maxStage = extMode == ChanSettings.Vp9ExtensionMode.DEFAULT ? 2
                                  : extMode == ChanSettings.Vp9ExtensionMode.PREFER  ? 1
