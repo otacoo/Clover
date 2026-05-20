@@ -68,14 +68,7 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
 
-        boolean result = super.onTouchEvent(event);
-
-        // If we are zoomed in, don't let parent ViewPager intercept our swipes
-        if (getScale() > getMinScale()) {
-            getParent().requestDisallowInterceptTouchEvent(true);
-        }
-
-        return result;
+        return super.onTouchEvent(event);
     }
 
     @Override
