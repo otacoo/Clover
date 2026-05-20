@@ -710,6 +710,7 @@ If disabled, save the image with the filename the uploader assigned."
     <string name="setting_swipe_to_close_description">Swiping on a media file will close the media file</string>
     <string name="setting_swipe_to_save">Swipe to save</string>
     <string name="setting_swipe_to_save_description">Swiping on a media file will save the file to the save location</string>
+    <string name="setting_swipe_zoomed">Swipe while zoomed in</string>
 
     <string name="swipe_gesture_none">None</string>
     <string name="swipe_gesture_up">Up</string>

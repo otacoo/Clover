@@ -310,6 +310,7 @@ public class ChanSettings {
     }
 
     public static final BooleanSetting fetchYoutubeTitles;
+    public static final BooleanSetting swipeWhileZoomedIn;
     public static final OptionsSetting<SwipeGesture> swipeToClose;
     public static final OptionsSetting<SwipeGesture> swipeToSave;
     public static final BooleanSetting dnsOverHttps;
@@ -441,6 +442,7 @@ public class ChanSettings {
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
 
         fetchYoutubeTitles = new BooleanSetting(p, "preference_fetch_youtube_titles", false);
+        swipeWhileZoomedIn = new BooleanSetting(p, "preference_swipe_zoomed", false);
         swipeToClose = new OptionsSetting<>(p, "preference_swipe_to_close", SwipeGesture.class, SwipeGesture.NONE);
         swipeToSave = new OptionsSetting<>(p, "preference_swipe_to_save", SwipeGesture.class, SwipeGesture.NONE);
         dnsOverHttps = new BooleanSetting(p, "dns_over_https", false);

@@ -68,7 +68,14 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
 
-        return super.onTouchEvent(event);
+        boolean result = super.onTouchEvent(event);
+
+        // If we are zoomed in, don't let parent ViewPager intercept our swipes
+        if (getScale() > getMinScale() && !org.otacoo.chan.core.settings.ChanSettings.swipeWhileZoomedIn.get()) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+        }
+
+        return result;
     }
 
     @Override
