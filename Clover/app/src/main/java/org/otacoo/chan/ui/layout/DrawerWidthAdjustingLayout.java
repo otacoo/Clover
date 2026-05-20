@@ -41,6 +41,18 @@ public class DrawerWidthAdjustingLayout extends DrawerLayout {
     }
 
     @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            int edgeWidth = org.otacoo.chan.utils.AndroidUtils.dp(20);
+            java.util.List<android.graphics.Rect> rects = new java.util.ArrayList<>();
+            rects.add(new android.graphics.Rect(0, 0, edgeWidth, getHeight())); // Left edge
+            rects.add(new android.graphics.Rect(getWidth() - edgeWidth, 0, getWidth(), getHeight())); // Right edge
+            setSystemGestureExclusionRects(rects);
+        }
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 //        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
