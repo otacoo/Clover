@@ -166,23 +166,13 @@ public class ImagePickDelegate implements Runnable {
         PackageManager pm = activity.getPackageManager();
         Map<ComponentName, PickerTarget> seen = new LinkedHashMap<>();
 
-        Intent galleryProbe = new Intent(Intent.ACTION_PICK,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        for (ResolveInfo ri : pm.queryIntentActivities(galleryProbe, 0)) {
-            ComponentName cn = new ComponentName(
-                    ri.activityInfo.packageName, ri.activityInfo.name);
-            seen.put(cn, new PickerTarget(ri.loadLabel(pm).toString(), cn, true));
-        }
-
         Intent filesProbe = new Intent(Intent.ACTION_GET_CONTENT);
         filesProbe.addCategory(Intent.CATEGORY_OPENABLE);
         filesProbe.setType("*/*");
         for (ResolveInfo ri : pm.queryIntentActivities(filesProbe, 0)) {
             ComponentName cn = new ComponentName(
                     ri.activityInfo.packageName, ri.activityInfo.name);
-            if (!seen.containsKey(cn)) { // gallery already present → skip
-                seen.put(cn, new PickerTarget(ri.loadLabel(pm).toString(), cn, false));
-            }
+            seen.put(cn, new PickerTarget(ri.loadLabel(pm).toString(), cn, false));
         }
 
         return new ArrayList<>(seen.values());
@@ -193,24 +183,18 @@ public class ImagePickDelegate implements Runnable {
     }
 
     private void launchWithComponent(ComponentName component, boolean isGallery) {
-        Intent intent;
-        if (isGallery && !allowMultiple) {
-            intent = new Intent(Intent.ACTION_PICK,
-                    MediaStore.Files.getContentUri("external"));
-            intent.setType("*/*");
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        if (mimeTypes.length == 1) {
+            intent.setType(mimeTypes[0]);
         } else {
-            intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            if (mimeTypes.length == 1) {
-                intent.setType(mimeTypes[0]);
-            } else {
-                intent.setType("*/*");
-                intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
-            }
-            if (allowMultiple) {
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            }
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         }
+        if (allowMultiple) {
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+        
         intent.setComponent(component);
         try {
             activity.startActivityForResult(intent, IMAGE_PICK_RESULT);
