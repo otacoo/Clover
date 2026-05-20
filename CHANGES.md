@@ -1,3 +1,20 @@
+## 2026-05-20 – v3.5.3
+
+**New old option:** Swipe while zoomed in
+
+### Catalog search
+- Catalog scroll position will now be stored and restored after a search (issue #30)
+- Pinned search & cross-board links (issue #29)
+  - The bookmarks drawer can now be opened
+  - The search can now be cleared to browse the board
+
+### Misc changes & fixes
+- Reduced minSdk to 23 to allow installs on Android 6.0 Marshmallow
+- Set exclusions on system gestures for newer devices so the drawers can be used without triggering system navigation **(UNTESTED)**
+- Remove crash reporting dead code
+
+Thank you @T-W-A-I-N
+
 ## 2026-05-18 – v3.5.2
 
 ### Media
