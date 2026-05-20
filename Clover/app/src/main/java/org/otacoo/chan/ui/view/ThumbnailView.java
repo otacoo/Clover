@@ -109,6 +109,9 @@ public class ThumbnailView extends View {
 
     private Call currentCall;
     private String currentUrl;
+    private int currentWidth;
+    private int currentHeight;
+    private boolean currentCacheOnly;
     private boolean hidden = false;
 
     private boolean circular = false;
@@ -168,6 +171,14 @@ public class ThumbnailView extends View {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (currentUrl != null && currentCall == null && bitmap == null && !error) {
+            setUrl(currentUrl, currentWidth, currentHeight, currentCacheOnly);
+        }
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         cancelRequest();
@@ -186,6 +197,12 @@ public class ThumbnailView extends View {
     }
 
     public void setUrl(String url, int width, int height, boolean cacheOnly) {
+        hidden = false;
+        setAlpha(1f);
+        currentWidth = width;
+        currentHeight = height;
+        currentCacheOnly = cacheOnly;
+
         if (TextUtils.equals(currentUrl, url)) {
             if (bitmap != null) {
                 return; // Already displaying the correct bitmap.
@@ -540,7 +557,9 @@ public class ThumbnailView extends View {
 
     private void onImageSet() {
         clearAnimation();
-        setAlpha(1f);
+        if (!hidden) {
+            setAlpha(1f);
+        }
     }
 
     public void setLabelText(String text) {
