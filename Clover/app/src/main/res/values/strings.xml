@@ -107,6 +107,7 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="action_open_browser">Open in a browser</string>
     <string name="action_copy_url">Copy URL</string>
     <string name="action_share">Share</string>
+    <string name="action_album_columns">Column count</string>
     <string name="action_download_album">Download album</string>
     <string name="action_hide_image_info">Hide image info</string>
     <string name="action_show_image_info">Show image info</string>

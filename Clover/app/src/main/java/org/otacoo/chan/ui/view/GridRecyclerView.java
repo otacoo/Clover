@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 public class GridRecyclerView extends RecyclerView {
     private GridLayoutManager gridLayoutManager;
     private int spanWidth;
+    private int fixedSpanCount = 0;
     private int realSpanWidth;
 
     public GridRecyclerView(Context context) {
@@ -58,6 +59,11 @@ public class GridRecyclerView extends RecyclerView {
         this.spanWidth = spanWidth;
     }
 
+    public void setFixedSpanCount(int spanCount) {
+        this.fixedSpanCount = spanCount;
+        requestLayout();
+    }
+
     public int getRealSpanWidth() {
         return realSpanWidth;
     }
@@ -65,7 +71,7 @@ public class GridRecyclerView extends RecyclerView {
     @Override
     protected void onMeasure(int widthSpec, int heightSpec) {
         super.onMeasure(widthSpec, heightSpec);
-        int spanCount = Math.max(1, getMeasuredWidth() / spanWidth);
+        int spanCount = fixedSpanCount > 0 ? fixedSpanCount : Math.max(1, getMeasuredWidth() / spanWidth);
         gridLayoutManager.setSpanCount(spanCount);
         int oldRealSpanWidth = realSpanWidth;
         realSpanWidth = getMeasuredWidth() / spanCount;

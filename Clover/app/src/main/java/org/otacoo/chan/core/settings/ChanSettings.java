@@ -213,6 +213,7 @@ public class ChanSettings {
     public static final BooleanSetting videoErrorIgnore;
     public static final OptionsSetting<MediaAutoLoadMode> loadFullSizeThumbnails;
     public static final BooleanSetting hideAlbumImageInfo;
+    public static final IntegerSetting albumGridSpanCount;
     public static final OptionsSetting<PostViewMode> boardViewMode;
     public static final IntegerSetting boardGridSpanCount;
     public static final StringSetting boardOrder;
@@ -350,6 +351,7 @@ public class ChanSettings {
         videoErrorIgnore = new BooleanSetting(p, "preference_video_error_ignore", false);
         loadFullSizeThumbnails = new OptionsSetting<>(p, "preference_load_full_size_thumbnails_mode", MediaAutoLoadMode.class, MediaAutoLoadMode.NONE);
         hideAlbumImageInfo = new BooleanSetting(p, "preference_hide_album_image_info", false);
+        albumGridSpanCount = new IntegerSetting(p, "preference_album_grid_span_count", 0);
         boardViewMode = new OptionsSetting<>(p, "preference_board_view_mode", PostViewMode.class, PostViewMode.CARD);
         boardGridSpanCount = new IntegerSetting(p, "preference_board_grid_span_count", 0);
         boardOrder = new StringSetting(p, "preference_board_order", PostsFilter.Order.BUMP.name);

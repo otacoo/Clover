@@ -25,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -66,6 +67,7 @@ public class AlbumViewController extends Controller implements
                 .withItem(R.drawable.ic_file_download_white_24dp, item -> downloadAlbumClicked(null))
                 .withOverflow()
                 .withSubItem(R.string.action_download_album, this::downloadAlbumClicked)
+                .withSubItem(R.string.action_album_columns, this::selectColumnsClicked)
                 .withSubItem(ChanSettings.hideAlbumImageInfo.get()
                         ? getString(R.string.action_show_image_info)
                         : getString(R.string.action_hide_image_info), this::toggleImageInfoClicked)
@@ -79,6 +81,7 @@ public class AlbumViewController extends Controller implements
         recyclerView.setLayoutManager(gridLayoutManager);
         recyclerView.setHasFixedSize(true);
         recyclerView.setSpanWidth(dp(120));
+        recyclerView.setFixedSpanCount(ChanSettings.albumGridSpanCount.get());
         recyclerView.setItemAnimator(null);
         albumAdapter = new AlbumAdapter();
         recyclerView.setAdapter(albumAdapter);
@@ -98,6 +101,32 @@ public class AlbumViewController extends Controller implements
         ChanSettings.hideAlbumImageInfo.set(hide);
         item.text = getString(hide ? R.string.action_show_image_info : R.string.action_hide_image_info);
         albumAdapter.notifyDataSetChanged();
+    }
+
+    private void selectColumnsClicked(ToolbarMenuSubItem item) {
+        String[] options = new String[]{
+                getString(R.string.setting_board_grid_span_count_default),
+                context.getString(R.string.setting_board_grid_span_count_item, 2),
+                context.getString(R.string.setting_board_grid_span_count_item, 3),
+                context.getString(R.string.setting_board_grid_span_count_item, 4)
+        };
+        int[] values = new int[]{0, 2, 3, 4};
+        int current = ChanSettings.albumGridSpanCount.get();
+        int selected = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == current) {
+                selected = i;
+                break;
+            }
+        }
+        new AlertDialog.Builder(context)
+                .setTitle(R.string.action_album_columns)
+                .setSingleChoiceItems(options, selected, (dialog, which) -> {
+                    ChanSettings.albumGridSpanCount.set(values[which]);
+                    recyclerView.setFixedSpanCount(values[which]);
+                    dialog.dismiss();
+                })
+                .show();
     }
 
     private void downloadAlbumClicked(ToolbarMenuSubItem item) {
