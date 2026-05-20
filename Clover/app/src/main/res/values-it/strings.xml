@@ -496,13 +496,6 @@ Se altri filtri sono abilitati per esso, non funzionerà.
     <string name="settings_update_check">Controlla aggiornamenti</string>
     <string name="settings_update_check_description">Tocca per controllare ora • Attiva/disattiva
         per controllo all\'avvio</string>
-    <string name="settings_crash_reporting">Segnala crash</string>
-    <string name="settings_crash_reporting_description">
-        "Il report dei crash crea segnalazioni degli errori in Clover.
-        I report dei crash non raccolgono informazioni personali identificabili."
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">L\'impostazione verrà applicata al
-        prossimo avvio dell\'app.</string>
     <string name="settings_about_license">Pubblicato sotto licenza GNU GPLv3</string>
     <string name="settings_about_license_description">Tocca per vedere la licenza</string>
     <string name="settings_about_licenses">Licenze open source</string>

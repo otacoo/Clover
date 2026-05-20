@@ -518,13 +518,6 @@
     <string name="settings_update_check">Проверить обновления</string>
     <string name="settings_update_check_description">Нажмите для проверки сейчас • Переключить для
         проверки при запуске</string>
-    <string name="settings_crash_reporting">Отправлять отчёты об ошибках</string>
-    <string name="settings_crash_reporting_description">
-        "Отчёты об ошибках создают отчёты об ошибках в Clover.
-        Отчёты об ошибках не собирают персональные данные."
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">Настройка будет применена при следующем
-        запуске приложения.</string>
     <string name="settings_about_license">Распространяется под лицензией GNU GPLv3</string>
     <string name="settings_about_license_description">Нажмите для просмотра лицензии</string>
     <string name="settings_about_licenses">Лицензии открытого исходного кода</string>

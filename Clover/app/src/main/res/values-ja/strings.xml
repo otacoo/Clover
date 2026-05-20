@@ -459,12 +459,6 @@
     <string name="settings_group_about">アプリについて</string>
     <string name="settings_update_check">アップデートを確認</string>
     <string name="settings_update_check_description">今すぐ確認するにはタップ・起動時の確認は切り替え</string>
-    <string name="settings_crash_reporting">クラッシュを報告</string>
-    <string name="settings_crash_reporting_description">
-        "クラッシュレポートはCloverのエラーレポートを作成します。
-        クラッシュレポートには個人を特定できる情報は含まれません。"
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">設定は次回のアプリ起動時に適用されます。</string>
     <string name="settings_about_license">GNU GPLv3ライセンスの下でリリース</string>
     <string name="settings_about_license_description">ライセンスを表示するにはタップ</string>
     <string name="settings_about_licenses">オープンソースライセンス</string>

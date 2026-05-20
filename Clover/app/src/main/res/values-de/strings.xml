@@ -496,13 +496,6 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="settings_update_check">Nach Updates suchen</string>
     <string name="settings_update_check_description">Tippen, um jetzt zu suchen • Umschalten für
         Start-Check</string>
-    <string name="settings_crash_reporting">Abstürze melden</string>
-    <string name="settings_crash_reporting_description">
-        "Absturzberichte erstellen Berichte über Fehler in Clover.
-        Absturzberichte erfassen keine personenbezogenen Daten."
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">Die Einstellung wird beim nächsten
-        App-Start angewendet.</string>
     <string name="settings_about_license">Veröffentlicht unter der GNU GPLv3-Lizenz</string>
     <string name="settings_about_license_description">Tippen, um die Lizenz anzuzeigen</string>
     <string name="settings_about_licenses">Open-Source-Lizenzen</string>

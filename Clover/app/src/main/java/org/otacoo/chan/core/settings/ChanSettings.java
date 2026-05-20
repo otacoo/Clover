@@ -289,7 +289,6 @@ public class ChanSettings {
 
     public static final StringSetting pinnedSearches;
 
-    public static final BooleanSetting crashReporting;
     public static final BooleanSetting reencodeHintShown;
     public static final BooleanSetting setupSitesBoardsHintShown;
 
@@ -438,7 +437,6 @@ public class ChanSettings {
         autoCheckUpdates = new BooleanSetting(p, "preference_auto_check_updates", false);
 
         pinnedSearches = new StringSetting(p, "preference_pinned_searches", "[]");
-        crashReporting = new BooleanSetting(p, "preference_crash_reporting", true);
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
 
@@ -454,14 +452,6 @@ public class ChanSettings {
 
         enableLocalization = new BooleanSetting(p, "preference_enable_localization", false);
 
-    }
-
-    public static boolean isCrashReportingAvailable() {
-        return false;
-    }
-
-    public static boolean isCrashReportingEnabled() {
-        return isCrashReportingAvailable() && crashReporting.get();
     }
 
     public static ThemeColor getThemeAndColor() {

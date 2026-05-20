@@ -500,13 +500,6 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="settings_update_check">Vérifier les mises à jour</string>
     <string name="settings_update_check_description">Appuyer pour vérifier maintenant • Basculer
         pour la vérification au démarrage</string>
-    <string name="settings_crash_reporting">Signaler les plantages</string>
-    <string name="settings_crash_reporting_description">
-        "Le rapport de plantage crée des rapports d\'erreurs dans Clover.
-        Les rapports de plantage ne collectent aucune information personnellement identifiable."
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">Le paramètre sera appliqué au prochain
-        démarrage de l\'application.</string>
     <string name="settings_about_license">Publié sous la licence GNU GPLv3</string>
     <string name="settings_about_license_description">Appuyer pour voir la licence</string>
     <string name="settings_about_licenses">Licences open source</string>

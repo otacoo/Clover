@@ -493,13 +493,6 @@ Se outros filtros estiverem ativados para ele, não funcionará.
     <string name="settings_update_check">Verificar atualizações</string>
     <string name="settings_update_check_description">Toque para verificar agora • Alternar para
         verificação na inicialização</string>
-    <string name="settings_crash_reporting">Reportar falhas</string>
-    <string name="settings_crash_reporting_description">
-        "O relatório de falhas cria relatórios de erros no Clover.
-        Os relatórios de falhas não coletam nenhuma informação pessoal identificável."
-    </string>
-    <string name="settings_crash_reporting_toggle_notice">A configuração será aplicada na próxima
-        inicialização do app.</string>
     <string name="settings_about_license">Lançado sob a licença GNU GPLv3</string>
     <string name="settings_about_license_description">Toque para ver a licença</string>
     <string name="settings_about_licenses">Licenças de código aberto</string>
