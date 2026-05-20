@@ -19,6 +19,7 @@ package org.otacoo.chan.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -51,8 +52,25 @@ public class ImageDecoder {
         if (!file.exists())
             return null;
 
-        try {
-            InputStream fis = new FileInputStream(file);
+        try {            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource(file.getAbsolutePath());
+            Bitmap frame = retriever.getFrameAtTime();
+            retriever.release();
+            if (frame != null) {
+                int desiredWidth = getResizedDimension(maxWidth, maxHeight, frame.getWidth(), frame.getHeight());
+                int desiredHeight = getResizedDimension(maxHeight, maxWidth, frame.getHeight(), frame.getWidth());
+                if (frame.getWidth() > desiredWidth || frame.getHeight() > desiredHeight) {
+                    Bitmap scaled = Bitmap.createScaledBitmap(frame, desiredWidth, desiredHeight, true);
+                    frame.recycle();
+                    return scaled;
+                }
+                return frame;
+            }
+        } catch (Exception | OutOfMemoryError e) {
+            // Not a video or error decoding frame, fallback to regular image decoding
+        }
+
+        try {            InputStream fis = new FileInputStream(file);
             return decodeFile(fis, maxWidth, maxHeight);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
