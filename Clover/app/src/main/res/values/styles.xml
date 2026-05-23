@@ -69,7 +69,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_id_background_light">#ff636363</item>
         <item name="post_id_background_dark">#00000000</item>
         <item name="post_options_drawable">@drawable/ic_overflow</item>
-        <item name="post_saved_reply_color">#FFBCBCBC</item>
+        <item name="post_saved_reply_color">#A0A0A0</item>
         <item name="post_highlighted_color">#FFD6BAD0</item>
         <item name="post_selected_color">#20000000</item>
 
@@ -110,7 +110,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="divider_color">#1effffff</item>
         <item name="divider_split_color">#ff3d3d3d</item>
 
-        <item name="post_saved_reply_color">#ff5C5C5C</item>
+        <item name="post_saved_reply_color">#505050</item>
         <item name="post_highlighted_color">#ff444444</item>
         <item name="post_subject_color">#ff625cff</item>
         <item name="post_details_color">#ffc5c8c6</item>
