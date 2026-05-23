@@ -267,7 +267,7 @@ public class AppearanceSettingsController extends SettingsController {
             fontSizes.add(new ListSettingView.Item<>(name, String.valueOf(size)));
         }
 
-        requiresUiRefresh.add(post.add(new ListSettingView<>(this,
+        requiresRestart.add(post.add(new ListSettingView<>(this,
                 ChanSettings.fontSize,
                 R.string.setting_font_size,
                 fontSizes)));
@@ -283,7 +283,7 @@ public class AppearanceSettingsController extends SettingsController {
             imageSizes.add(new ListSettingView.Item<>(name, size));
         }
 
-        requiresUiRefresh.add(post.add(new ListSettingView<>(this,
+        requiresRestart.add(post.add(new ListSettingView<>(this,
                 ChanSettings.thumbnailScale,
                 R.string.setting_thumbnail_scale,
                 imageSizes)));
