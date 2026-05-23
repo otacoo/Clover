@@ -495,7 +495,6 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         return ChanSettings.useImmersiveModeForGallery.get() && isInImmersiveMode;
     }
 
-    @SuppressWarnings("deprecation")
     public void startPreviewInTransition(PostImage postImage) {
         ThumbnailView startImageView = getTransitionImageView(postImage);
 
@@ -569,20 +568,18 @@ public class ImageViewerController extends Controller implements ImageViewerPres
                         try (response) {
                             if (response.isSuccessful()) {
                                 try (ResponseBody body = response.body()) {
-                                    if (body != null) {
-                                        Bitmap bitmap;
-                                        try (java.io.InputStream stream = body.byteStream()) {
-                                            bitmap = BitmapFactory.decodeStream(stream);
-                                        }
-                                        if (bitmap != null) {
-                                            AndroidUtils.runOnUiThread(() -> {
-                                                if (alive && startAnimation != null) {
-                                                    previewImage.setBitmap(bitmap);
-                                                    startAnimation.start();
-                                                }
-                                            });
-                                            return;
-                                        }
+                                    Bitmap bitmap;
+                                    try (java.io.InputStream stream = body.byteStream()) {
+                                        bitmap = BitmapFactory.decodeStream(stream);
+                                    }
+                                    if (bitmap != null) {
+                                        AndroidUtils.runOnUiThread(() -> {
+                                            if (alive && startAnimation != null) {
+                                                previewImage.setBitmap(bitmap);
+                                                startAnimation.start();
+                                            }
+                                        });
+                                        return;
                                     }
                                 }
                             }
@@ -773,7 +770,6 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         setToolbarBackgroundAlpha(alpha);
     }
 
-    @SuppressWarnings("deprecation")
     private void setStatusBarColor(int color) {
         Window window = getWindow();
         if (window != null) {
@@ -790,7 +786,6 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         return imageViewerCallback.getPreviewImageTransitionView(this, postImage);
     }
 
-    @SuppressWarnings("deprecation")
     private void hideSystemUI() {
         if (!ChanSettings.useImmersiveModeForGallery.get() || isInImmersiveMode) {
             return;

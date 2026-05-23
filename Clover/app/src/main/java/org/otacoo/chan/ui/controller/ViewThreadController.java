@@ -27,7 +27,6 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
@@ -213,7 +212,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
     }
 
     public void onEvent(ChanSettings.SettingChanged<?> message) {
-        if (message.setting == ChanSettings.highlightOpenThread) {
+        if (message.setting() == ChanSettings.highlightOpenThread) {
             updateDrawerHighlighting(loadable);
         }
     }
@@ -225,19 +224,14 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
             boolean isDifferentBoard = current == null || !threadLoadable.board.code.equals(current.board.code);
             boolean isSearch = threadLoadable.searchQuery != null;
 
-            if (doubleNavigationController != null && doubleNavigationController.getLeftController() instanceof BrowseController && !(isDifferentBoard || isSearch)) {
+            if (doubleNavigationController != null && doubleNavigationController.getLeftController() instanceof BrowseController bc && !(isDifferentBoard || isSearch)) {
                 doubleNavigationController.switchToController(true);
-                BrowseController bc = (BrowseController) doubleNavigationController.getLeftController();
                 bc.setBoard(threadLoadable.board);
                 bc.loadBoard(threadLoadable);
             } else if (navigationController != null) {
                 if (isDifferentBoard || isSearch) {
                     BrowseController newBrowse = new BrowseController(context);
-                    if (navigationController instanceof ToolbarNavigationController) {
-                        ((ToolbarNavigationController) navigationController).pushController(newBrowse);
-                    } else {
-                        navigationController.pushController(newBrowse);
-                    }
+                    navigationController.pushController(newBrowse);
                     newBrowse.setBoard(threadLoadable.board);
                     newBrowse.loadBoard(threadLoadable);
                 } else {
@@ -245,8 +239,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
                     while (navigationController.childControllers.size() > 1) {
                         navigationController.popController(false);
                     }
-                    if (navigationController.getTop() instanceof BrowseController) {
-                        BrowseController bc = (BrowseController) navigationController.getTop();
+                    if (navigationController.getTop() instanceof BrowseController bc) {
                         bc.setBoard(threadLoadable.board);
                         bc.loadBoard(threadLoadable);
                     }

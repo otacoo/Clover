@@ -487,7 +487,7 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
     }
 
     public void onEvent(ChanSettings.SettingChanged<?> message) {
-        if (message.setting == ChanSettings.pinnedSearchesEnabled) {
+        if (message.setting() == ChanSettings.pinnedSearchesEnabled) {
             drawerAdapter.notifyDataSetChanged();
         }
     }

@@ -50,7 +50,7 @@ public class ChanSettings {
         // Never auto load
         NONE("none");
 
-        String name;
+        final String name;
 
         MediaAutoLoadMode(String name) {
             this.name = name;
@@ -66,10 +66,7 @@ public class ChanSettings {
                 return false;
             } else if (this == WIFI) {
                 return org.otacoo.chan.utils.AndroidUtils.isConnected(1);
-            } else if (this == ALL) {
-                return true;
-            }
-            return false;
+            } else return this == ALL;
         }
     }
 
@@ -77,7 +74,7 @@ public class ChanSettings {
         LIST("list"),
         CARD("grid");
 
-        String name;
+        final String name;
 
         PostViewMode(String name) {
             this.name = name;
@@ -95,7 +92,7 @@ public class ChanSettings {
         SLIDE("slide"),
         SPLIT("split");
 
-        String name;
+        final String name;
 
         LayoutMode(String name) {
             this.name = name;
@@ -120,8 +117,8 @@ public class ChanSettings {
         public static final int board = 0x02;
         public static final int thread = 0x04;
 
-        String name;
-        int bitmask;
+        final String name;
+        final int bitmask;
 
         DestinationFolderMode(String name, int bitmask) {
             this.name = name;
@@ -143,7 +140,7 @@ public class ChanSettings {
         GREEN("green"),
         GOLD("gold");
 
-        String name;
+        final String name;
 
         AppIconMode(String name) {
             this.name = name;
@@ -161,7 +158,7 @@ public class ChanSettings {
         CATALOG("catalog"),
         THREAD("thread");
 
-        String name;
+        final String name;
 
         HideFlagsMode(String name) {
             this.name = name;
@@ -178,7 +175,7 @@ public class ChanSettings {
         PREFER("prefer"),
         OFF("off");
 
-        String name;
+        final String name;
 
         Vp9ExtensionMode(String name) {
             this.name = name;
@@ -298,7 +295,7 @@ public class ChanSettings {
         UP("up"),
         DOWN("down");
 
-        String name;
+        final String name;
 
         SwipeGesture(String name) {
             this.name = name;
@@ -623,11 +620,6 @@ public class ChanSettings {
         }
     }
 
-    public static class SettingChanged<T> {
-        public final Setting<T> setting;
-
-        public SettingChanged(Setting<T> setting) {
-            this.setting = setting;
-        }
+    public record SettingChanged<T>(Setting<T> setting) {
     }
 }
