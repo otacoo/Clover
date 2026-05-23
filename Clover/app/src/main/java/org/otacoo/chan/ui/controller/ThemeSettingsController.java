@@ -22,7 +22,6 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ClipDrawable;
@@ -44,6 +43,7 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.viewpager.widget.ViewPager;
 
@@ -80,7 +80,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ThemeSettingsController extends Controller implements View.OnClickListener {
-    private Board dummyBoard;
+    private final Board dummyBoard;
 
     {
         dummyBoard = new Board();
@@ -88,14 +88,14 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         dummyBoard.code = "code";
     }
 
-    private Loadable dummyLoadable;
+    private final Loadable dummyLoadable;
 
     {
         dummyLoadable = Loadable.emptyLoadable();
         dummyLoadable.mode = Loadable.Mode.THREAD;
     }
 
-    private PostCell.PostCellCallback dummyPostCallback = new PostCell.PostCellCallback() {
+    private final PostCell.PostCellCallback dummyPostCallback = new PostCell.PostCellCallback() {
         @Override
         public Loadable getLoadable() {
             return dummyLoadable;
@@ -136,7 +136,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         }
     };
 
-    private PostParser.Callback parserCallback = new PostParser.Callback() {
+    private final PostParser.Callback parserCallback = new PostParser.Callback() {
         @Override
         public boolean isSaved(int postNo) {
             return false;
@@ -151,13 +151,12 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
     private ViewPager pager;
     private FloatingActionButton done;
     private FloatingActionButton reset;
-    private TextView textView;
 
     private Adapter adapter;
     private ThemeHelper themeHelper;
 
     private List<Theme> themes;
-    private List<ThemeHelper.PrimaryColor> selectedPrimaryColors = new ArrayList<>();
+    private final List<ThemeHelper.PrimaryColor> selectedPrimaryColors = new ArrayList<>();
     private ThemeHelper.PrimaryColor selectedAccentColor;
     private ThemeHelper.PrimaryColor selectedLoadingBarColor;
 
@@ -189,14 +188,14 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         reset = view.findViewById(R.id.reset);
         reset.setOnClickListener(this);
 
-        textView = view.findViewById(R.id.text);
+        TextView textView = view.findViewById(R.id.text);
 
         ChanSettings.ThemeColor currentSettingsTheme = ChanSettings.getThemeAndColor();
 
         SpannableString changeAccentColor = new SpannableString("\n" + getString(R.string.setting_theme_accent));
         changeAccentColor.setSpan(new ClickableSpan() {
             @Override
-            public void onClick(View widget) {
+            public void onClick(@NonNull View widget) {
                 showAccentColorPicker();
             }
         }, 1, changeAccentColor.length(), 0);
@@ -204,7 +203,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         SpannableString changeLoadingBarColor = new SpannableString("\nTap here to change the Loading bar color");
         changeLoadingBarColor.setSpan(new ClickableSpan() {
             @Override
-            public void onClick(View widget) {
+            public void onClick(@NonNull View widget) {
                 showLoadingBarColorPicker();
             }
         }, 1, changeLoadingBarColor.length(), 0);
@@ -351,7 +350,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
             shape.setColor(color.color500);
             shape.setCornerRadius(dp(4));
             
-            boolean isSelected = initialColor != null && color.name.equals(initialColor.name);
+            boolean isSelected = color.name.equals(initialColor.name);
             if (isSelected) {
                 shape.setStroke(dp(2), Color.BLACK);
             }
@@ -716,7 +715,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         }
 
         @Override
-        public int getItemPosition(Object object) {
+        public int getItemPosition(@NonNull Object object) {
             return POSITION_NONE;
         }
 
