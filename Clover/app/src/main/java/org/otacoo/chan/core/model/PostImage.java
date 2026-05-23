@@ -39,6 +39,8 @@ public class PostImage {
 
     public final Type type;
 
+    public int replyCount = 0;
+
     private PostImage(Builder builder) {
         this.originalName = builder.originalName;
         this.thumbnailUrl = builder.thumbnailUrl;

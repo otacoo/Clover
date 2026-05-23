@@ -52,6 +52,10 @@ import android.view.WindowManager;
 import android.view.animation.PathInterpolator;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -127,6 +131,8 @@ public class ImageViewerController extends Controller implements ImageViewerPres
     private static final int SUBITEM_TRANSPARENCY_TOGGLE_ID = 220;
     private static final int SUBITEM_ROTATE_IMAGE_ID = 221;
     private ToolbarMenu toolbarMenu;
+    private ToolbarMenuItem goPostMenuItem;
+    private View goPostBadge;
 
     private boolean isInImmersiveMode = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -153,7 +159,8 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
         NavigationItem.MenuBuilder menuBuilder = navigation.buildMenu();
         if (goPostCallback != null) {
-            menuBuilder.withItem(R.drawable.ic_subdirectory_arrow_left_white_24dp, this::goPostClicked);
+            goPostMenuItem = new ToolbarMenuItem(-1, R.drawable.ic_subdirectory_arrow_left_white_24dp, this::goPostClicked);
+            menuBuilder.withItem(goPostMenuItem);
         }
 
         menuBuilder.withItem(VOLUME_ID, R.drawable.ic_volume_off_white_24dp, this::volumeClicked);
@@ -192,7 +199,11 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         }
 
         AndroidUtils.waitForLayout(parentController.view.getViewTreeObserver(), view, view -> {
+            if (goPostMenuItem != null) {
+                setupGoPostBadge();
+            }
             presenter.onViewMeasured();
+            updateGoPostBadge();
             return true;
         });
 
@@ -407,6 +418,8 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         navigation.subtitle = (index + 1) + "/" + count;
         ((ToolbarNavigationController) navigationController).toolbar.updateTitle(navigation);
 
+        updateGoPostBadge();
+
         if (toolbarMenu == null) return;
         MultiImageView.Mode imageMode = getImageMode(postImage);
         boolean enabled = !spoiler && (imageMode == MultiImageView.Mode.BIGIMAGE || imageMode == MultiImageView.Mode.GIF);
@@ -416,6 +429,55 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
     public void scrollToImage(PostImage postImage) {
         imageViewerCallback.scrollToImage(postImage);
+    }
+
+    private void setupGoPostBadge() {
+        View imageView = goPostMenuItem.getView();
+        if (imageView == null) return;
+
+        ViewGroup parent = (ViewGroup) imageView.getParent();
+        int index = parent.indexOfChild(imageView);
+
+        parent.removeView(imageView);
+
+        FrameLayout wrapper = new FrameLayout(context);
+        ViewGroup.LayoutParams vglp = imageView.getLayoutParams();
+        LinearLayout.LayoutParams wrapperLp = new LinearLayout.LayoutParams(vglp.width, vglp.height);
+        parent.addView(wrapper, index, wrapperLp);
+
+        FrameLayout.LayoutParams imageLp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        wrapper.addView(imageView, imageLp);
+
+        int badgeSize = dp(22);
+        TextView badge = new TextView(context);
+        FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(badgeSize, badgeSize, Gravity.TOP | Gravity.END);
+        badge.setLayoutParams(badgeLp);
+        badge.setGravity(Gravity.CENTER);
+        badge.setTextSize(10);
+        badge.setTextColor(Color.WHITE);
+        badge.setVisibility(View.GONE);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setShape(GradientDrawable.OVAL);
+        bg.setColor(0x35FFFFFF);
+        badge.setBackground(bg);
+
+        wrapper.addView(badge);
+        goPostBadge = badge;
+    }
+
+    private void updateGoPostBadge() {
+        if (goPostBadge != null) {
+            int count = presenter.getCurrentPostImage().replyCount;
+            if (ChanSettings.showGalleryReplyBadge.get() && count >= 2) {
+                goPostBadge.setVisibility(View.VISIBLE);
+                ((TextView) goPostBadge).setText(String.valueOf(count));
+            } else {
+                goPostBadge.setVisibility(View.GONE);
+            }
+        }
     }
 
     public void showProgress(boolean show) {

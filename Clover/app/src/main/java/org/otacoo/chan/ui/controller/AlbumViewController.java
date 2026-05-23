@@ -70,6 +70,9 @@ public class AlbumViewController extends Controller implements
                 .withSubItem(ChanSettings.hideAlbumImageInfo.get()
                         ? getString(R.string.action_show_image_info)
                         : getString(R.string.action_hide_image_info), this::toggleImageInfoClicked)
+                .withSubItem(ChanSettings.showGalleryReplyBadge.get()
+                        ? getString(R.string.action_hide_reply_badge)
+                        : getString(R.string.action_show_reply_badge), this::toggleShowReplyBadge)
                 .build().build();
 
         // View setup
@@ -100,6 +103,12 @@ public class AlbumViewController extends Controller implements
         ChanSettings.hideAlbumImageInfo.set(hide);
         item.text = getString(hide ? R.string.action_show_image_info : R.string.action_hide_image_info);
         albumAdapter.notifyDataSetChanged();
+    }
+
+    private void toggleShowReplyBadge(ToolbarMenuSubItem item) {
+        boolean shown = !ChanSettings.showGalleryReplyBadge.get();
+        ChanSettings.showGalleryReplyBadge.set(shown);
+        item.text = getString(shown ? R.string.action_hide_reply_badge : R.string.action_show_reply_badge);
     }
 
     private void selectColumnsClicked(ToolbarMenuSubItem item) {

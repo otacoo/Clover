@@ -113,6 +113,8 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="action_show_image_info">Show image info</string>
     <string name="action_transparency_toggle">Toggle opacity</string>
     <string name="action_rotate_image">Rotate image</string>
+    <string name="action_show_reply_badge">Show reply badge</string>
+    <string name="action_hide_reply_badge">Hide reply badge</string>
     <string name="action_search">Search</string>
     <string name="action_search_image">Image search</string>
     <string name="action_switch_catalog">Catalog mode</string>

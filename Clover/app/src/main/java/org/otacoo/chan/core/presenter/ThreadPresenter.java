@@ -279,7 +279,14 @@ public class ThreadPresenter implements
         for (int i = 0; i < posts.size(); i++) {
             Post item = posts.get(i);
             if (!item.images.isEmpty()) {
-                images.addAll(item.images);
+                int replyCount;
+                synchronized (item.repliesFrom) {
+                    replyCount = item.repliesFrom.size();
+                }
+                for (PostImage image : item.images) {
+                    image.replyCount = replyCount;
+                    images.add(image);
+                }
             }
             if (i == displayPosition) {
                 index = images.size();
@@ -529,8 +536,13 @@ public class ThreadPresenter implements
             Post item = posts.get(i);
 
             if (!item.images.isEmpty()) {
+                int replyCount;
+                synchronized (item.repliesFrom) {
+                    replyCount = item.repliesFrom.size();
+                }
                 for (int j = 0; j < item.images.size(); j++) {
                     PostImage image = item.images.get(j);
+                    image.replyCount = replyCount;
                     images.add(image);
                     if (image.equalUrl(postImage)) {
                         index = images.size() - 1;

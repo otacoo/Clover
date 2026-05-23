@@ -239,6 +239,7 @@ public class ChanSettings {
     public static final BooleanSetting showAnonymousName;
     public static final BooleanSetting revealImageSpoilers;
     public static final BooleanSetting revealTextSpoilers;
+    public static final BooleanSetting showGalleryReplyBadge;
     public static final BooleanSetting repliesButtonsBottom;
     public static final BooleanSetting confirmExit;
     public static final BooleanSetting disableBackButton;
@@ -377,6 +378,7 @@ public class ChanSettings {
         showAnonymousName = new BooleanSetting(p, "preference_show_anonymous_name", true);
         revealImageSpoilers = new BooleanSetting(p, "preference_reveal_image_spoilers", false);
         revealTextSpoilers = new BooleanSetting(p, "preference_reveal_text_spoilers", false);
+        showGalleryReplyBadge = new BooleanSetting(p, "preference_show_gallery_reply_badge", false);
         repliesButtonsBottom = new BooleanSetting(p, "preference_buttons_bottom", false);
         confirmExit = new BooleanSetting(p, "preference_confirm_exit", true);
         disableBackButton = new BooleanSetting(p, "preference_disable_back_button", false);
