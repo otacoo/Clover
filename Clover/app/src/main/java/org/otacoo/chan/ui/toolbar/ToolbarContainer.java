@@ -47,6 +47,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.drawable.ArrowMenuDrawable;
 import org.otacoo.chan.ui.drawable.DropdownArrowDrawable;
 import org.otacoo.chan.ui.layout.SearchLayout;
@@ -460,7 +461,7 @@ public class ToolbarContainer extends FrameLayout {
                 int arrowPressedColor = getAttrColor(
                         getContext(), R.attr.dropdown_light_pressed_color);
                 final Drawable arrowDrawable = new DropdownArrowDrawable(
-                        dp(12), dp(12), true, arrowColor, arrowPressedColor);
+                        dp(12), dp(12), !ChanSettings.toolbarBottom.get(), arrowColor, arrowPressedColor);
                 titleView.setCompoundDrawablesWithIntrinsicBounds(
                         null, null, arrowDrawable, null);
                 titleView.setOnClickListener(v -> item.middleMenu.show(titleView));
