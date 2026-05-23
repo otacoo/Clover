@@ -275,8 +275,11 @@ public class AppearanceSettingsController extends SettingsController {
 
     private void setupThumbnailScaleSetting(SettingsGroup post) {
         List<ListSettingView.Item<?>> imageSizes = new ArrayList<>();
+        int defaultScale = ChanSettings.thumbnailScale.getDefault();
         for (int size = 25; size <= 250; size+=25) {
-            String name = size + "%";
+            String name = size + "%" + (size == defaultScale ?
+                    " " + getString(R.string.setting_font_size_default) :
+                    "");
             imageSizes.add(new ListSettingView.Item<>(name, size));
         }
 
