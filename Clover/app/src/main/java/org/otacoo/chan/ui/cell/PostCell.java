@@ -20,19 +20,16 @@ package org.otacoo.chan.ui.cell;
 import static android.text.TextUtils.isEmpty;
 import static org.otacoo.chan.utils.AndroidUtils.ROBOTO_CONDENSED_REGULAR;
 import static org.otacoo.chan.utils.AndroidUtils.dp;
-import static org.otacoo.chan.utils.AndroidUtils.getString;
 import static org.otacoo.chan.utils.AndroidUtils.openIntent;
 import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
-import android.annotation.TargetApi;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -46,7 +43,6 @@ import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
 import android.util.AttributeSet;
 import android.view.ActionMode;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -78,7 +74,6 @@ import org.otacoo.chan.ui.view.FloatingMenu;
 import org.otacoo.chan.ui.view.FloatingMenuItem;
 import org.otacoo.chan.ui.view.PostImageThumbnailView;
 import org.otacoo.chan.ui.view.ThumbnailView;
-import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Time;
 
 import java.text.BreakIterator;
@@ -89,7 +84,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private static final String TAG = "PostCell";
     private static final int COMMENT_MAX_LENGTH_BOARD = 350;
 
-    private List<PostImageThumbnailView> thumbnailViews = new ArrayList<>(1);
+    private final List<PostImageThumbnailView> thumbnailViews = new ArrayList<>(1);
 
     private RelativeLayout relativeLayoutContainer;
     private RelativeLayout relativeLayoutHelper;
@@ -118,7 +113,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private int markedNo;
     private boolean showDivider;
 
-    private OnClickListener selfClicked = new OnClickListener() {
+    private final OnClickListener selfClicked = new OnClickListener() {
         @Override
         public void onClick(View v) {
             if (ignoreNextOnClick) {
@@ -128,8 +123,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             }
         }
     };
-    private PostViewMovementMethod commentMovementMethod = new PostViewMovementMethod();
-    private PostViewFastMovementMethod titleMovementMethod = new PostViewFastMovementMethod();
+    private final PostViewMovementMethod commentMovementMethod = new PostViewMovementMethod();
+    private final PostViewFastMovementMethod titleMovementMethod = new PostViewFastMovementMethod();
 
     private boolean viewHolderSetupDone = false;
     private boolean setupThreadMode = false;
@@ -341,7 +336,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     @Override
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public boolean hasOverlappingRendering() {
         return false;
     }
@@ -582,12 +576,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         }
 
         if (threadMode) {
-            boolean needsSetup = !viewHolderSetupDone
-                    || threadMode != setupThreadMode
-                    || selectable != setupSelectable;
+            boolean needsSetup = !viewHolderSetupDone || !setupThreadMode || selectable != setupSelectable;
             if (needsSetup) {
                 viewHolderSetupDone = true;
-                setupThreadMode = threadMode;
+                setupThreadMode = true;
                 setupSelectable = selectable;
                 // Setting the text to selectable creates an editor, sets up a bunch of click
                 // handlers and sets a movementmethod.
@@ -617,11 +609,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 title.setMovementMethod(titleMovementMethod);
             }
         } else {
-            boolean needsSetup = !viewHolderSetupDone
-                    || threadMode != setupThreadMode;
+            boolean needsSetup = !viewHolderSetupDone || setupThreadMode;
             if (needsSetup) {
                 viewHolderSetupDone = true;
-                setupThreadMode = threadMode;
+                setupThreadMode = false;
                 setupSelectable = selectable;
                 comment.setOnClickListener(null);
                 comment.setClickable(false);
@@ -800,7 +791,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         return TextUtils.concat(commentText, "\u2026"); // append ellipsis
     }
 
-    private static BackgroundColorSpan BACKGROUND_SPAN = new BackgroundColorSpan(0x6633B5E5);
+    private static final BackgroundColorSpan BACKGROUND_SPAN = new BackgroundColorSpan(0x6633B5E5);
 
     /**
      * A MovementMethod that searches for PostLinkables.<br>
@@ -864,8 +855,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
                             //do onclick on all postlinkables afterwards, so that we don't update the spoiler state early
                             for (ClickableSpan s : link) {
-                                if (s instanceof PostLinkable) {
-                                    PostLinkable item = (PostLinkable) s;
+                                if (s instanceof PostLinkable item) {
                                     item.onClick(widget);
                                 }
                             }
@@ -971,7 +961,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
     private class NoClickableSpan extends ClickableSpan {
         @Override
-        public void onClick(View widget) {
+        public void onClick(@NonNull View widget) {
             callback.onPostNoClicked(post);
         }
 
