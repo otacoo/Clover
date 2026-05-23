@@ -66,7 +66,6 @@ public class AlbumViewController extends Controller implements
         navigation.buildMenu()
                 .withItem(R.drawable.ic_file_download_white_24dp, item -> downloadAlbumClicked(null))
                 .withOverflow()
-                .withSubItem(R.string.action_download_album, this::downloadAlbumClicked)
                 .withSubItem(R.string.action_album_columns, this::selectColumnsClicked)
                 .withSubItem(ChanSettings.hideAlbumImageInfo.get()
                         ? getString(R.string.action_show_image_info)

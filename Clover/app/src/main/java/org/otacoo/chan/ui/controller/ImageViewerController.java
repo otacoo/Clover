@@ -835,7 +835,6 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void showSystemUI() {
         if (!ChanSettings.useImmersiveModeForGallery.get() || !isInImmersiveMode) {
             return;
