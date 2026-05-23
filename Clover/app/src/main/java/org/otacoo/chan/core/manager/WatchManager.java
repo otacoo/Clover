@@ -1065,7 +1065,7 @@ public class WatchManager {
 
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    try (response) {
+                    try (response; response) {
                         if (response.isSuccessful()) {
                             byte[] data = response.body().bytes();
                             thumbnailBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
