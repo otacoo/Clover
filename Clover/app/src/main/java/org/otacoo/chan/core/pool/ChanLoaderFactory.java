@@ -75,13 +75,19 @@ public class ChanLoaderFactory {
         return chanLoader;
     }
 
+    public void clearAll() {
+        threadLoaders.clear();
+        threadLoadersCache.evictAll();
+    }
+
     public void release(ChanThreadLoader chanLoader, ChanThreadLoader.ChanLoaderCallback listener) {
         Loadable loadable = chanLoader.getLoadable();
         if (loadable.isThreadMode()) {
             ChanThreadLoader foundChanLoader = threadLoaders.get(loadable);
 
             if (foundChanLoader == null) {
-                throw new IllegalStateException("The released loader does not exist");
+                chanLoader.removeListener(listener);
+                return;
             }
 
             if (chanLoader.removeListener(listener)) {

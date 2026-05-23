@@ -43,6 +43,7 @@ import org.otacoo.chan.core.database.DatabaseLoadableManager;
 import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.manager.BoardManager;
 import org.otacoo.chan.core.manager.WatchManager;
+import org.otacoo.chan.core.pool.ChanLoaderFactory;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.model.orm.Pin;
@@ -123,6 +124,9 @@ public class StartActivity extends AppCompatActivity implements
 
     @Inject
     SiteService siteService;
+
+    @Inject
+    ChanLoaderFactory chanLoaderFactory;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -373,6 +377,7 @@ public class StartActivity extends AppCompatActivity implements
     }
 
     public void restart() {
+        chanLoaderFactory.clearAll();
         Intent intent = new Intent(getIntent());
         intent.setClass(this, StartActivity.class);
         finish();
