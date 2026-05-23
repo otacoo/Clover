@@ -62,7 +62,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -115,7 +114,7 @@ public class WatchManager {
     public static final int DEFAULT_BACKGROUND_INTERVAL = 15 * 60 * 1000;
 
     private static final long FOREGROUND_INTERVAL = 15 * 1000;
-    private static final long FOREGROUND_INITIAL_DELAY = 1 * 1000;
+    private static final long FOREGROUND_INITIAL_DELAY = 1000;
     // Milliseconds between successive pin polling in a foreground update cycle.
     // Spreads N pins evenly: pin-0 fires immediately, pin-1 fires 1.5s later, etc.
     // Keeps all requests within the 15s window for up to 10 pins.
@@ -147,13 +146,13 @@ public class WatchManager {
 
     private IntervalType currentInterval = IntervalType.NONE;
 
-    private Map<Pin, PinWatcher> pinWatchers = new HashMap<>();
+    private final Map<Pin, PinWatcher> pinWatchers = new HashMap<>();
 
     private Set<PinWatcher> waitingForPinWatchersForBackgroundUpdate;
     private PowerManager.WakeLock wakeLock;
     private long lastBackgroundUpdateTime;
 
-    private ThreadWatchNotifications threadWatchNotifications;
+    private final ThreadWatchNotifications threadWatchNotifications;
 
     @SuppressWarnings("this-escape")
     @Inject
@@ -173,7 +172,7 @@ public class WatchManager {
 
         handler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
             @Override
-            public boolean handleMessage(Message msg) {
+            public boolean handleMessage(@NonNull Message msg) {
                 if (msg.what == MESSAGE_UPDATE) {
                     update(false);
                     return true;
@@ -372,9 +371,9 @@ public class WatchManager {
     }
 
     public void onEvent(ChanSettings.SettingChanged<Boolean> settingChanged) {
-        if (settingChanged.setting == ChanSettings.watchBackground) {
+        if (settingChanged.setting() == ChanSettings.watchBackground) {
             onBackgroundWatchingChanged(ChanSettings.watchBackground.get());
-        } else if (settingChanged.setting == ChanSettings.watchEnabled) {
+        } else if (settingChanged.setting() == ChanSettings.watchEnabled) {
             onWatchEnabledChanged(ChanSettings.watchEnabled.get());
         }
     }
@@ -820,7 +819,7 @@ public class WatchManager {
         }
 
         public List<Post> getUnviewedPosts() {
-            if (posts.size() == 0) {
+            if (posts.isEmpty()) {
                 return posts;
             } else {
                 return posts.subList(Math.max(0, posts.size() - pin.getNewPostCount()), posts.size());
@@ -1066,8 +1065,8 @@ public class WatchManager {
 
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    try {
-                        if (response.isSuccessful() && response.body() != null) {
+                    try (response) {
+                        if (response.isSuccessful()) {
                             byte[] data = response.body().bytes();
                             thumbnailBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                             if (thumbnailBitmap != null) {
@@ -1077,7 +1076,6 @@ public class WatchManager {
                             }
                         }
                     } finally {
-                        response.close();
                         currentThumbnailCall = null;
                     }
                 }
