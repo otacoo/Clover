@@ -72,6 +72,7 @@ public class Theme {
     public int savedReplyColor;
     public int selectedColor;
     public int textColorRevealSpoiler;
+    public int lastSeenColor;
     
     public int backColor;
     public int backColorSecondary;
@@ -193,7 +194,8 @@ public class Theme {
                 R.attr.backcolor_secondary,
                 R.attr.divider_color,
                 R.attr.divider_split_color,
-                R.attr.ui_text_color
+                R.attr.ui_text_color,
+                R.attr.post_last_seen_color
         });
 
         quoteColor = ta.getColor(0, 0);
@@ -222,6 +224,7 @@ public class Theme {
         dividerColor = ta.getColor(23, 0);
         dividerSplitColor = ta.getColor(24, 0);
         uiTextColor = ta.getColor(25, 0);
+        lastSeenColor = ta.getColor(26, 0);
 
         ta.recycle();
 
@@ -259,6 +262,7 @@ public class Theme {
         if (attr == R.attr.loading_bar_color) return loadingBarColor.color;
         if (attr == R.attr.divider_color) return dividerColor;
         if (attr == R.attr.ui_text_color) return uiTextColor;
+        if (attr == R.attr.post_last_seen_color) return lastSeenColor;
         return 0;
     }
 
@@ -298,6 +302,7 @@ public class Theme {
         else if ("divider_color".equals(attrName)) dividerColor = color;
         else if ("divider_split_color".equals(attrName)) dividerSplitColor = color;
         else if ("ui_text_color".equals(attrName)) uiTextColor = color;
+        else if ("post_last_seen_color".equals(attrName)) lastSeenColor = color;
     }
 
     private ThemeHelper.PrimaryColor resolvePrimaryColor(int color, ThemeHelper.PrimaryColor defaultColor) {
