@@ -255,6 +255,8 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="filter_color">Highlight post</string>
     <string name="filter_remove">Remove post</string>
     <string name="filter_watch">Watch post</string>
+    <string name="filter_pin">Pin post</string>
+    <string name="filter_only_on_op">Apply to OP only</string>
     <string name="filter_invalid_pattern">Invalid pattern</string>
     <string name="filter_preview">Test your filter</string>
     <string name="filter_no_matches">Does not match</string>

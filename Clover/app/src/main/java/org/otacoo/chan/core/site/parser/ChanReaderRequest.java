@@ -182,7 +182,8 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
                     databaseSavedReplyManager,
                     post,
                     reader,
-                    internalIds));
+                    internalIds,
+                    loadable.isCatalogMode()));
         }
 
         if (!tasks.isEmpty()) {

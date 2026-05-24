@@ -76,6 +76,8 @@ public class Post {
 
     public final boolean filterWatch;
 
+    public final boolean filterPin;
+
     /**
      * This post replies to the these ids.
      */
@@ -156,6 +158,7 @@ public class Post {
         filterStub = builder.filterStub;
         filterRemove = builder.filterRemove;
         filterWatch = builder.filterWatch;
+        filterPin = builder.filterPin;
 
         isSavedReply = builder.isSavedReply;
 
@@ -290,6 +293,7 @@ public class Post {
         public boolean filterStub;
         public boolean filterRemove;
         public boolean filterWatch;
+        public boolean filterPin;
 
         public boolean isSavedReply;
 
@@ -427,6 +431,11 @@ public class Post {
 
         public Builder filterWatch(boolean watch) {
             filterWatch = watch;
+            return this;
+        }
+
+        public Builder filterPin(boolean pin) {
+            filterPin = pin;
             return this;
         }
 

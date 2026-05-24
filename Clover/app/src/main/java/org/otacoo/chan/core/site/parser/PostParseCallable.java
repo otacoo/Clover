@@ -37,18 +37,22 @@ class PostParseCallable implements Callable<Post> {
     private Post.Builder post;
     private ChanReader reader;
     private final Set<Integer> internalIds;
+    private final boolean isCatalogMode;
 
     public PostParseCallable(FilterEngine filterEngine,
                              List<Filter> filters,
                              DatabaseSavedReplyManager savedReplyManager,
                              Post.Builder post,
-                             ChanReader reader, Set<Integer> internalIds) {
+                             ChanReader reader,
+                             Set<Integer> internalIds,
+                             boolean isCatalogMode) {
         this.filterEngine = filterEngine;
         this.filters = filters;
         this.savedReplyManager = savedReplyManager;
         this.post = post;
         this.reader = reader;
         this.internalIds = internalIds;
+        this.isCatalogMode = isCatalogMode;
     }
 
     @Override
@@ -88,7 +92,15 @@ class PostParseCallable implements Callable<Post> {
                         post.filter(0, false, true);
                         break;
                     case WATCH:
-                        post.filterWatch(true);
+                        if (isCatalogMode && (!filter.onlyOnOP || post.op)) {
+                            post.filterWatch(true);
+                        }
+                        break;
+                    case PIN:
+                        if (isCatalogMode && (!filter.onlyOnOP || post.op)) {
+                            post.filter(filter.color, false, false);
+                            post.filterPin(true);
+                        }
                         break;
                 }
             }

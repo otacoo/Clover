@@ -52,6 +52,9 @@ public class Filter {
     @DatabaseField(canBeNull = false)
     public int order;
 
+    @DatabaseField(canBeNull = false)
+    public boolean onlyOnOP;
+
     public boolean hasFilter(FilterType filterType) {
         return (type & filterType.flag) != 0;
     }
@@ -69,6 +72,7 @@ public class Filter {
         action = filter.action;
         color = filter.color;
         order = filter.order;
+        onlyOnOP = filter.onlyOnOP;
     }
 
     public Filter copy() {
@@ -81,6 +85,7 @@ public class Filter {
         copy.action = action;
         copy.color = color;
         copy.order = order;
+        copy.onlyOnOP = onlyOnOP;
         return copy;
     }
 }

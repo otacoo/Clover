@@ -79,6 +79,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
     private TextView actionText;
     private LinearLayout colorContainer;
     private View colorPreview;
+    private CheckBox onlyOnOP;
 
     @Inject
     BoardManager boardManager;
@@ -148,6 +149,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
         colorContainer = findViewById(R.id.color_container);
         colorContainer.setOnClickListener(this);
         colorPreview = findViewById(R.id.color_preview);
+        onlyOnOP = findViewById(R.id.only_on_op);
 
         typeText.setOnClickListener(this);
         typeText.setCompoundDrawablesWithIntrinsicBounds(null, null, new DropdownArrowDrawable(dp(12), dp(12), true,
@@ -181,6 +183,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     public Filter getFilter() {
         filter.enabled = enabled.isChecked();
+        filter.onlyOnOP = onlyOnOP.isChecked();
 
         return filter;
     }
@@ -361,16 +364,26 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     private void updateCheckboxes() {
         enabled.setChecked(filter.enabled);
+        onlyOnOP.setChecked(filter.onlyOnOP);
     }
 
     private void updateFilterAction() {
         FilterEngine.FilterAction action = FilterEngine.FilterAction.forId(filter.action);
         actionText.setText(FiltersController.actionName(action));
-        colorContainer.setVisibility(action == FilterEngine.FilterAction.COLOR ? VISIBLE : GONE);
+        colorContainer.setVisibility(action == FilterEngine.FilterAction.COLOR
+                || action == FilterEngine.FilterAction.PIN ? VISIBLE : GONE);
         if (filter.color == 0) {
             filter.color = 0xffff0000;
         }
         colorPreview.setBackgroundColor(filter.color);
+
+        if (action == FilterEngine.FilterAction.PIN || action == FilterEngine.FilterAction.WATCH) {
+            onlyOnOP.setEnabled(false);
+            onlyOnOP.setChecked(true);
+            filter.onlyOnOP = true;
+        } else {
+            onlyOnOP.setEnabled(true);
+        }
     }
 
     private void updateFilterType() {

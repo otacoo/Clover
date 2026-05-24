@@ -146,6 +146,18 @@ public class PostsFilter {
             }
         }
 
+        // Move pinned threads to the top
+        List<Post> pinned = new ArrayList<>();
+        i = posts.iterator();
+        while (i.hasNext()) {
+            Post post = i.next();
+            if (post.filterPin) {
+                pinned.add(post);
+                i.remove();
+            }
+        }
+        posts.addAll(0, pinned);
+
         return posts;
     }
 
