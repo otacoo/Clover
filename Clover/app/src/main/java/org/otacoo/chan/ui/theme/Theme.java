@@ -263,6 +263,8 @@ public class Theme {
         if (attr == R.attr.divider_color) return dividerColor;
         if (attr == R.attr.ui_text_color) return uiTextColor;
         if (attr == R.attr.post_last_seen_color) return lastSeenColor;
+        if (attr == R.attr.post_inline_quote_color) return inlineQuoteColor;
+        if (attr == R.attr.post_spoiler_color) return spoilerColor;
         return 0;
     }
 

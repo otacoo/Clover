@@ -35,6 +35,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -445,27 +446,38 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         root.addView(baseLabel);
 
         Spinner baseSpinner = new Spinner(context);
-        String[] bases = {"Light", "Dark", "Black"};
-        ArrayAdapter<String> baseAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, bases);
+        final List<Theme> defaultThemes = themeHelper.getDefaultThemes();
+        String[] baseNames = new String[defaultThemes.size()];
+        for (int i = 0; i < defaultThemes.size(); i++) {
+            baseNames[i] = defaultThemes.get(i).displayName;
+        }
+        ArrayAdapter<String> baseAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, baseNames);
         baseAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         baseSpinner.setAdapter(baseAdapter);
+
+        // Determine initial base theme index
+        int initialBaseIndex = 0;
         if (existing != null) {
-            if ("black".equals(existing.baseTheme)) baseSpinner.setSelection(2);
-            else if ("dark".equals(existing.baseTheme)) baseSpinner.setSelection(1);
-            else baseSpinner.setSelection(0);
+            for (int i = 0; i < defaultThemes.size(); i++) {
+                if (defaultThemes.get(i).name.equals(existing.baseTheme)) {
+                    initialBaseIndex = i;
+                    break;
+                }
+            }
         }
-        root.addView(baseSpinner);
 
         Map<String, Integer> existingOverrides = sanitizeColorOverrides(existing != null ? existing.colorOverrides : null);
         if (existing != null) {
             existing.colorOverrides = existingOverrides;
         }
-        final Map<String, Integer> overrides = new HashMap<>(existingOverrides);
-        
+
+        // Pre-fill overrides with the base theme's default colors,
+        // then overlay any existing overrides from the saved theme
+        Theme initialBase = defaultThemes.get(initialBaseIndex);
+        final Map<String, Integer> overrides = new HashMap<>();
         String[] attrNames = {
                 "colorPrimary",
                 "colorAccent",
-                "backcolor",
                 "loading_bar_color",
                 "text_color_primary",
                 "post_quote_color",
@@ -480,7 +492,6 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         int[] names = {
                 R.string.setting_theme_item_toolbar_color,
                 R.string.setting_theme_item_fab_color,
-                R.string.setting_theme_item_backcolor,
                 R.string.setting_theme_item_loading_bar_color,
                 R.string.setting_theme_item_text_color_primary,
                 R.string.setting_theme_item_post_quote_color,
@@ -492,51 +503,86 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                 R.string.setting_theme_item_post_spoiler_color,
                 R.string.setting_theme_item_post_last_seen_color
         };
+        for (String attrName : attrNames) {
+            int defaultColor = getDefaultColorForAttr(initialBase, attrName);
+            if (existingOverrides.containsKey(attrName)) {
+                overrides.put(attrName, existingOverrides.get(attrName));
+            } else {
+                overrides.put(attrName, defaultColor);
+            }
+        }
+
+        // Track shapes so the spinner listener can update all previews
+        final List<GradientDrawable> colorShapes = new ArrayList<>();
+
+        baseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (colorShapes.isEmpty()) return;
+                Theme base = defaultThemes.get(position);
+                for (int i = 0; i < attrNames.length; i++) {
+                    int color = getDefaultColorForAttr(base, attrNames[i]);
+                    overrides.put(attrNames[i], color);
+                    colorShapes.get(i).setColor(color);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        // Set selection after listener (initial onItemSelected is a no-op since colorShapes is empty)
+        if (existing != null) {
+            baseSpinner.setSelection(initialBaseIndex);
+        }
+        root.addView(baseSpinner);
 
         for (int i = 0; i < attrNames.length; i++) {
             final String attrName = attrNames[i];
             final int nameRes = names[i];
-            
+
             LinearLayout row = new LinearLayout(context);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(0, dp(4), 0, dp(4));
-            
+
             TextView label = new TextView(context);
             label.setText(nameRes);
             row.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-            
+
             View colorPreview = new View(context);
             int size = dp(32);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
             colorPreview.setLayoutParams(lp);
-            
-            // Only use override if it exists; otherwise use a preview color (gray for new themes)
-            int colorVal;
-            if (existing != null) {
-                colorVal = getOverrideColor(overrides, attrName, Color.GRAY);
-            } else {
-                // For new themes, show gray as placeholder but don't add to overrides yet
-                // When user explicitly picks a color, it will be added to overrides
-                colorVal = Color.GRAY;
-            }
-            
+
+            int colorVal = overrides.get(attrName);
+
             GradientDrawable shape = new GradientDrawable();
             shape.setShape(GradientDrawable.RECTANGLE);
             shape.setColor(colorVal);
             shape.setStroke(dp(1), Color.DKGRAY);
             colorPreview.setBackground(shape);
-            
+            colorShapes.add(shape);
+
             colorPreview.setOnClickListener(v -> {
-                int currentColor = getOverrideColor(overrides, attrName, ThemeHelper.PrimaryColor.GREY.color);
-                showColorPickerDialog(getString(nameRes), 
-                    themeHelper.getColor(String.format("#%08X", currentColor), ThemeHelper.PrimaryColor.GREY), 
+                int currentColor = overrides.get(attrName);
+                showColorPickerDialog(getString(nameRes),
+                    themeHelper.getColor(String.format("#%08X", currentColor), ThemeHelper.PrimaryColor.GREY),
                     color -> {
                         overrides.put(attrName, color.color);
                         shape.setColor(color.color);
                     });
             });
-            
+
+            colorPreview.setOnLongClickListener(v -> {
+                int baseIndex = baseSpinner.getSelectedItemPosition();
+                Theme base = defaultThemes.get(baseIndex);
+                int defaultColor = getDefaultColorForAttr(base, attrName);
+                overrides.put(attrName, defaultColor);
+                shape.setColor(defaultColor);
+                return true;
+            });
+
             row.addView(colorPreview);
             root.addView(row);
         }
@@ -550,15 +596,13 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                         AndroidUtils.showThemedSnackbar(view, "Please enter a name", Snackbar.LENGTH_SHORT);
                         return;
                     }
-                    
-                    int baseIndex = baseSpinner.getSelectedItemPosition();
-                    boolean isLight = baseIndex == 0;
-                    String baseTheme = baseIndex == 2 ? "black" : (isLight ? "light" : "dark");
+
+                    Theme baseTheme = defaultThemes.get(baseSpinner.getSelectedItemPosition());
                     String themeId = existing != null ? existing.name : "custom_" + System.currentTimeMillis();
-                    
-                    ChanSettings.CustomTheme custom = new ChanSettings.CustomTheme(name, themeId, baseTheme, isLight, overrides);
+
+                    ChanSettings.CustomTheme custom = new ChanSettings.CustomTheme(name, themeId, baseTheme.name, baseTheme.isLightTheme, overrides);
                     themeHelper.addCustomTheme(custom);
-                    
+
                     themes = new ArrayList<>(themeHelper.getThemes());
                     if (existing == null) {
                         Theme newTheme = themes.get(themes.size() - 1);
@@ -575,16 +619,16 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
                     }
                 })
                 .setNegativeButton(R.string.cancel, null);
-        
+
         if (existing != null) {
             builder.setNeutralButton(R.string.remove, (dlg, which) -> {
                 themeHelper.removeCustomTheme(existing.name);
                 themes = new ArrayList<>(themeHelper.getThemes());
                 selectedPrimaryColors.clear();
                 for (Theme t : themes) selectedPrimaryColors.add(t.primaryColor);
-                
+
                 adapter.notifyDataSetChanged();
-                
+
                 ChanSettings.ThemeColor current = ChanSettings.getThemeAndColor();
                 for (int i = 0; i < themes.size(); i++) {
                     if (themes.get(i).name != null && themes.get(i).name.equals(current.theme)) {
@@ -631,6 +675,29 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
         }
         Integer color = overrides.get(attrName);
         return color != null ? color : fallback;
+    }
+
+    private int getDefaultColorForAttr(Theme theme, String attrName) {
+        int attrId = 0;
+        switch (attrName) {
+            case "colorPrimary": attrId = R.attr.colorPrimary; break;
+            case "colorAccent": attrId = R.attr.colorAccent; break;
+            case "loading_bar_color": attrId = R.attr.loading_bar_color; break;
+            case "text_color_primary": attrId = R.attr.text_color_primary; break;
+            case "post_quote_color": attrId = R.attr.post_quote_color; break;
+            case "post_link_color": attrId = R.attr.post_link_color; break;
+            case "post_subject_color": attrId = R.attr.post_subject_color; break;
+            case "post_name_color": attrId = R.attr.post_name_color; break;
+            case "post_inline_quote_color": attrId = R.attr.post_inline_quote_color; break;
+            case "post_highlight_quote_color": attrId = R.attr.post_highlight_quote_color; break;
+            case "post_spoiler_color": attrId = R.attr.post_spoiler_color; break;
+            case "post_last_seen_color": attrId = R.attr.post_last_seen_color; break;
+        }
+        if (attrId != 0) {
+            int color = theme.getColorForAttr(attrId);
+            if (color != 0) return color;
+        }
+        return Color.GRAY;
     }
 
     private void showAutoThemePickerDialog() {

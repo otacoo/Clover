@@ -88,30 +88,50 @@ public class ThemeHelper {
         }
     }
 
+    public List<Theme> getDefaultThemes() {
+        List<Theme> defaultThemes = new ArrayList<>();
+        for (Theme t : themes) {
+            if (!"auto".equals(t.name) && !t.name.startsWith("custom_")) {
+                defaultThemes.add(t);
+            }
+        }
+        return defaultThemes;
+    }
+
     private Theme createThemeFromCustom(ChanSettings.CustomTheme custom) {
+        // Look up the base theme by name to inherit its style resource and defaults
+        Theme baseTheme = null;
+        for (Theme t : themes) {
+            if (t.name.equals(custom.baseTheme)) {
+                baseTheme = t;
+                break;
+            }
+        }
+        if (baseTheme == null) {
+            baseTheme = themes.get(1); // Fallback to "Light"
+        }
+
         Theme theme;
-        int styleRes;
-        if ("black".equals(custom.baseTheme)) {
-            styleRes = R.style.Chan_Theme_Black;
-        } else if ("dark".equals(custom.baseTheme)) {
-            styleRes = R.style.Chan_Theme_Dark;
+        if (baseTheme.isLightTheme) {
+            theme = new Theme(custom.displayName, custom.name, baseTheme.resValue, PrimaryColor.BLUE);
         } else {
-            styleRes = R.style.Chan_Theme;
+            theme = new DarkTheme(custom.displayName, custom.name, baseTheme.resValue, PrimaryColor.DARK);
         }
-        if (custom.isLightTheme) {
-            theme = new Theme(custom.displayName, custom.name, styleRes, PrimaryColor.BLUE);
-        } else {
-            theme = new DarkTheme(custom.displayName, custom.name, styleRes, PrimaryColor.DARK);
-        }
+        theme.isLightTheme = baseTheme.isLightTheme;
+        custom.isLightTheme = baseTheme.isLightTheme;
         custom.colorOverrides = normalizeColorOverrides(custom.colorOverrides);
         theme.colorOverrides = custom.colorOverrides;
-        theme.resolveSpanColors();
-        
+
+        // Apply overrides so the Theme object has the correct colors immediately
+        for (Map.Entry<String, Integer> entry : theme.colorOverrides.entrySet()) {
+            theme.applyColorOverride(entry.getKey(), entry.getValue());
+        }
+
         // Update defaults for custom themes so reset works correctly
         theme.defaultPrimaryColor = theme.primaryColor;
         theme.defaultAccentColor = theme.accentColor;
         theme.defaultLoadingBarColor = theme.loadingBarColor;
-        
+
         return theme;
     }
 
