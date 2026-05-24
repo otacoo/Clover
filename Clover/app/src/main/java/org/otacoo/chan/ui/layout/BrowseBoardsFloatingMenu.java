@@ -152,7 +152,16 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
     @Override
     public void scrollToPosition(int position) {
-        recyclerView.scrollToPosition(position);
+        if (ChanSettings.toolbarBottom.get()) {
+            int dataPos = position;
+            recyclerView.post(() -> {
+                if (items != null) {
+                    recyclerView.scrollToPosition(items.getCount() - 1 - dataPos);
+                }
+            });
+        } else {
+            recyclerView.scrollToPosition(position);
+        }
     }
 
     private void itemClicked(Site site, Board board) {
@@ -309,15 +318,22 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
             return items.getCount();
         }
 
+        private int displayToData(int displayPos) {
+            if (ChanSettings.toolbarBottom.get()) {
+                return items.getCount() - 1 - displayPos;
+            }
+            return displayPos;
+        }
+
         @Override
         public long getItemId(int position) {
-            Item item = items.getAtPosition(position);
+            Item item = items.getAtPosition(displayToData(position));
             return item.id;
         }
 
         @Override
         public int getItemViewType(int position) {
-            Item item = items.getAtPosition(position);
+            Item item = items.getAtPosition(displayToData(position));
             return item.type.typeId;
         }
 
@@ -341,7 +357,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Item item = items.getAtPosition(position);
+            Item item = items.getAtPosition(displayToData(position));
             if (holder instanceof InputViewHolder) {
                 InputViewHolder inputViewHolder = ((InputViewHolder) holder);
             } else if (holder instanceof SiteViewHolder) {
@@ -392,8 +408,10 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
         @Override
         public void onClick(View v) {
+            int target = ChanSettings.toolbarBottom.get()
+                    ? items.getCount() - 1 : 0;
             ((LinearLayoutManager) recyclerView.getLayoutManager())
-                    .scrollToPositionWithOffset(0, 0);
+                    .scrollToPositionWithOffset(target, 0);
         }
 
         @Override
