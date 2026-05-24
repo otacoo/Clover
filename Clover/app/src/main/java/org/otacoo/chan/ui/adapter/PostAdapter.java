@@ -125,6 +125,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 ((StatusViewHolder) holder).threadStatusCell.update();
                 break;
             case TYPE_LAST_SEEN:
+                holder.itemView.setBackgroundColor(AndroidUtils.getAttrColor(holder.itemView.getContext(), R.attr.post_last_seen_color));
                 break;
         }
     }
