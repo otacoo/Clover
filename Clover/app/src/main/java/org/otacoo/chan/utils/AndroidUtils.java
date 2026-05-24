@@ -147,7 +147,6 @@ public class AndroidUtils {
      * If this app will open the link then show a chooser to the user without this app.<br>
      * Else allow the default logic to run with startActivity.
      *
-     * @param link url to open
      */
     public static String getYoutubeTitle(String videoUrl) {
         if (videoUrl == null || (!videoUrl.contains("youtube.com") && !videoUrl.contains("youtu.be"))) {
@@ -163,7 +162,7 @@ public class AndroidUtils {
                     .build();
 
             try (okhttp3.Response response = client.newCall(request).execute()) {
-                if (response.isSuccessful() && response.body() != null) {
+                if (response.isSuccessful()) {
                     String json = response.body().string();
                     org.json.JSONObject obj = new org.json.JSONObject(json);
                     return obj.getString("title");
@@ -588,9 +587,9 @@ public class AndroidUtils {
         EventBus.getDefault().post(new SnackbarEvent(activeSnackbars > 0));
     }
 
-    public static void applyThemedStyle(Snackbar snackbar, View anchor) {
-        View snackbarView = snackbar.getView();
-        Context context = snackbarView.getContext();
+    public static void applyThemedStyle(Snackbar snackbar, final View anchor) {
+        final View snackbarView = snackbar.getView();
+        final Context context = snackbarView.getContext();
 
         // Background and rounded corners
         GradientDrawable bg = new GradientDrawable();
