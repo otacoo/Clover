@@ -1,3 +1,65 @@
+## 2026-05-24 – v3.6.0
+
+>[!NOTE]
+>This version has changed the database to add a new filter option.\
+>I suggest doing a backup of your settings *before* updating, then doing a backup again with the new version if everything works correctly.
+>
+>I now consider Clover **"feature complete"** and will likely not be adding new features or options, only bug fixes.\
+>Thank you for your support and understanding.
+
+### Thread Watcher
+- Refactored the TW menu
+- Moved *Highlight currently open thread* option here
+
+### Appearance
+**New themes:** Zenburned, Tranquil
+- Refactored custom themes
+  - Themes are now based off the default themes
+  - Allows to pick any theme as base theme
+  - Tapping and holding a color will reset the color back to theme default
+- Tone down the "own reply" highlight for the three main themes (light, dark, black)
+- Fixed an issue where switching between themes didn't correctly refresh certain layout elements
+- Fixed an issue where the unread line color for custom themes wasn't applying (issue #31)
+
+### Gallery
+**New option:** Show/hide reply badge
+ - The reply badge will appear in the image viewer for posts that have >= 2 replies
+  
+**New option:** Column count
+- Pick between 2 and 4 columns
+
+- Fixed a bug where thumbnails weren't loading in the background when swiping through images in the image viewer (issue #31)
+- Removed the duplicate *Download album* entry from the menu (issue #31)
+
+### Bottom toolbar & reply
+- Fix issues with the layout not responding to the bottom toolbar, especially during the 4chan captcha or reply view (issue #31)
+- The board list will now be inverted when using bottom toolbar (issue #31)
+- The board list spinner's arrow will now point in the correct direction (issue #31)
+- The search input will now correctly show up in the board list spinner
+- The reply FAB button pencil will point down again when using bottom reply (issue #31)
+
+### Filters
+- Added an *Apply to OP* modifier checkbox
+  - Will be greyed out automatically when not applying
+- Added a new action: **Pin post**
+  - This option will pin and highlight threads at the top of the catalog / board mode and only applies to OP
+- Watch post action will only apply to OP
+
+### Misc changes
+- Video thumbnails will now be decoded and appear in the reply view
+- Improved video initiation a bit when using VP9 decoder (note: if videos take a few seconds to start, try setting the decoder to *System only* and use the WebView fallbacl)
+- Appended (default) to 100% Thumbnail Scale (issue #31)
+- The UI will now refresh after changing thumb scale or font sizes
+- Increased number of items in history by 20 (cleanup happens at 120, which trims them to 70 items)
+
+### Other Fixes
+- Fixed an issue where certain file pickers (e.g. Fossify) weren't being given the correct intent
+- Fixed an issue where taps where going *through* the left and right drawers when opened (issue #31)
+- Fixed an issue where Swipe gestures weren't being correctly greyed out after selecting up or down for one option (issue #31)
+
+Thank you @tetra65 for giving me so much work
+
+
 ## 2026-05-20 – v3.5.3
 
 **New old option:** Swipe while zoomed in
