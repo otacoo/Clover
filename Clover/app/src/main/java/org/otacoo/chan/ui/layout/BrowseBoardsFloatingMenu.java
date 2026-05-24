@@ -148,17 +148,20 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
     public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == presenter.items()) {
             adapter.notifyDataSetChanged();
-            recyclerView.post(() -> {
-                if (ChanSettings.toolbarBottom.get()) {
-                    ((LinearLayoutManager) recyclerView.getLayoutManager())
-                            .scrollToPositionWithOffset(adapter.getItemCount() - 1, 0);
-                }
-                recyclerView.post(() -> {
+            if (ChanSettings.toolbarBottom.get()) {
+                ((LinearLayoutManager) recyclerView.getLayoutManager())
+                        .scrollToPositionWithOffset(adapter.getItemCount() - 1, 0);
+            }
+            recyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    recyclerView.removeOnLayoutChangeListener(this);
                     EditText input = recyclerView.findViewById(R.id.input);
                     if (input != null) {
                         AndroidUtils.requestViewAndKeyboardFocus(input);
                     }
-                });
+                }
             });
         }
     }

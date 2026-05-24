@@ -31,7 +31,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
@@ -125,7 +124,6 @@ public class ReplyLayout extends LoadView implements
     private boolean expanded = false;
 
     private boolean blockSelectionChange = false;
-    private int authenticationBottomInset;
 
     // Progress view (when sending request to the server)
     private View progressLayout;
@@ -637,11 +635,8 @@ public class ReplyLayout extends LoadView implements
     @SuppressWarnings("deprecation")
     public void setPage(ReplyPresenter.Page page, boolean animate) {
         if (page != ReplyPresenter.Page.AUTHENTICATION && getContext() instanceof Activity) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                //noinspection deprecation
-                ((Activity) getContext()).getWindow().setSoftInputMode(
-                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-            }
+            ((Activity) getContext()).getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         switch (page) {
             case LOADING:
@@ -683,7 +678,7 @@ public class ReplyLayout extends LoadView implements
                 }
 
                 if (ChanSettings.toolbarBottom.get() && !lynxchan) {
-                    captchaContainer.setPadding(0, 0, 0, authenticationBottomInset);
+                    captchaContainer.setPadding(0, 0, 0, dp(56));
                 } else {
                     captchaContainer.setPadding(0, 0, 0, 0);
                 }
@@ -905,6 +900,15 @@ public class ReplyLayout extends LoadView implements
     @Override
     public void openFileName(boolean open) {
         fileName.setVisibility(open ? View.VISIBLE : View.GONE);
+        if (open) {
+            setWrap(false);
+            fileName.post(() -> {
+                fileName.requestFocus();
+                AndroidUtils.requestViewAndKeyboardFocus(fileName);
+            });
+        } else {
+            setWrap(!presenter.isExpanded());
+        }
     }
 
     @Override
