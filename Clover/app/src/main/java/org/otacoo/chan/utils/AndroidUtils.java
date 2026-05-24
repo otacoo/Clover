@@ -61,7 +61,6 @@ import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityManagerCompat;
-import androidx.core.view.ViewCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
