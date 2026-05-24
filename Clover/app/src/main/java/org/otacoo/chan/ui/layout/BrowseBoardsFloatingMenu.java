@@ -26,6 +26,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Build;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -147,6 +148,18 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
     public void onUpdate(SimpleObservable<Void> o, Void arg) {
         if (o == presenter.items()) {
             adapter.notifyDataSetChanged();
+            recyclerView.post(() -> {
+                if (ChanSettings.toolbarBottom.get()) {
+                    ((LinearLayoutManager) recyclerView.getLayoutManager())
+                            .scrollToPositionWithOffset(adapter.getItemCount() - 1, 0);
+                }
+                recyclerView.post(() -> {
+                    EditText input = recyclerView.findViewById(R.id.input);
+                    if (input != null) {
+                        AndroidUtils.requestViewAndKeyboardFocus(input);
+                    }
+                });
+            });
         }
     }
 
@@ -243,6 +256,14 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
         int x = anchorPos[0] - recyclerViewPos[0];
         int y = anchorPos[1] - recyclerViewPos[1];
+
+        // Keep RecyclerView within the visible area (above keyboard)
+        Rect visibleFrame = new Rect();
+        getWindowVisibleDisplayFrame(visibleFrame);
+        int recyclerBottom = anchorPos[1] + recyclerView.getHeight();
+        if (recyclerBottom > visibleFrame.bottom) {
+            y -= (recyclerBottom - visibleFrame.bottom);
+        }
 
         if (!position.equals(x, y)) {
             position.set(x, y);
