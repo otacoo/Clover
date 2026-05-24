@@ -74,6 +74,8 @@ public class ThemeHelper {
         themes.add(new DarkTheme("Tako", "tako", R.style.Chan_Theme_Tako, PrimaryColor.DARK));
         themes.add(new Theme("Creamy", "creamy", R.style.Chan_Theme_Creamy, PrimaryColor.RED));
         themes.add(new Theme("Sapporo", "sapporo", R.style.Chan_Theme_Sapporo, PrimaryColor.GREY));
+        themes.add(new DarkTheme("Zenburned", "zenburned", R.style.Chan_Theme_Zenburned, PrimaryColor.GREY));
+        themes.add(new Theme("Tranquil", "tranquil", R.style.Chan_Theme_Tranquil, PrimaryColor.BLUE_GREY));
 
         loadCustomThemes();
 

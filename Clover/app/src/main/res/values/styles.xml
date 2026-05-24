@@ -484,6 +484,66 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="divider_split_color">#ffCFCFCF</item>
     </style>
 
+    <style name="Chan.Theme.Zenburned" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#ff575757</item>
+        <item name="colorAccent">#ffdca3a3</item>
+        <item name="loading_bar_color">#ff8cd0d3</item>
+        <item name="ui_text_color">#ffdcdccc</item>
+
+        <item name="backcolor">#ff3f3f3f</item>
+        <item name="backcolor_secondary">#ff454545</item>
+
+        <item name="android:textColor">#ffdcdccc</item>
+        <item name="text_color_primary">#ffdcdccc</item>
+        <item name="text_color_secondary">#ffaaaaaa</item>
+        <item name="text_color_hint">#ff888888</item>
+
+        <item name="post_name_color">#ffc0bed1</item>
+        <item name="post_subject_color">#ffaaaaaa</item>
+        <item name="post_details_color">#ff888888</item>
+        <item name="post_quote_color">#ff7f9f7f</item>
+        <item name="post_highlight_quote_color">#fff8f893</item>
+        <item name="post_inline_quote_color">#ff8cd0d3</item>
+        <item name="post_link_color">#ffefdcbc</item>
+        <item name="post_spoiler_color">#ff454545</item>
+        <item name="post_last_seen_color">#ff93b3a3</item>
+        <item name="post_highlighted_color">#ff8cd0d3</item>
+        <item name="post_selected_color">#ff494949</item>
+        <item name="post_saved_reply_color">#ff494949</item>
+
+        <item name="divider_color">#ff5e5e5e</item>
+        <item name="divider_split_color">#ff5e5e5e</item>
+    </style>
+
+    <style name="Chan.Theme.Tranquil" parent="Chan.Theme">
+        <item name="colorPrimary">#ff525e75</item>
+        <item name="colorAccent">#ff78938a</item>
+        <item name="loading_bar_color">#ff85a78e</item>
+
+        <item name="backcolor">#fff1ddbf</item>
+        <item name="backcolor_secondary">#ffcabead</item>
+
+        <item name="android:textColor">#ff525e75</item>
+        <item name="text_color_primary">#ff525e75</item>
+        <item name="text_color_secondary">#ff657980</item>
+        <item name="text_color_hint">#ffa29e9a</item>
+
+        <item name="post_name_color">#ff78938a</item>
+        <item name="post_subject_color">#ff525e75</item>
+        <item name="post_details_color">#ff657980</item>
+        <item name="post_quote_color">#ff78938a</item>
+        <item name="post_highlight_quote_color">#ff92ba92</item>
+        <item name="post_inline_quote_color">#ff85a78e</item>
+        <item name="post_link_color">#ff525e75</item>
+        <item name="post_last_seen_color">#ff78938a</item>
+        <item name="post_highlighted_color">#ffaeccae</item>
+        <item name="post_selected_color">#20a29e9a</item>
+        <item name="post_saved_reply_color">#ffc9ddc9</item>
+
+        <item name="divider_color">#ffa29e9a</item>
+        <item name="divider_split_color">#ffa29e9a</item>
+    </style>
+
     <!-- For FloatingMenu -->
     <style name="ToolbarDropDownListViewStyle" parent="Widget.AppCompat.ListView.DropDown">
         <item name="android:background">#ffffffff</item>
