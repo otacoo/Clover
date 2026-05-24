@@ -28,7 +28,6 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
@@ -376,13 +375,10 @@ public class ThreadLayout extends CoordinatorLayout implements
         }
 
         scheduledScrollingUp = scrollingUp;
-        updateTopBottomDirectionRunnable = new Runnable() {
-            @Override
-            public void run() {
-                setTopBottomDirection(scheduledScrollingUp);
-                updateTopBottomDirectionRunnable = null;
-                scheduledScrollingUp = null;
-            }
+        updateTopBottomDirectionRunnable = () -> {
+            setTopBottomDirection(scheduledScrollingUp);
+            updateTopBottomDirectionRunnable = null;
+            scheduledScrollingUp = null;
         };
         postDelayed(updateTopBottomDirectionRunnable, TOP_BOTTOM_DIRECTION_DELAY_MS);
     }
@@ -501,12 +497,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         }
 
         new AlertDialog.Builder(getContext())
-                .setItems(keys, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        presenter.onPostLinkableClicked(post, linkables.get(which));
-                    }
-                })
+                .setItems(keys, (dialog, which) -> presenter.onPostLinkableClicked(post, linkables.get(which)))
                 .show();
     }
 
@@ -569,12 +560,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         if (ChanSettings.openLinkConfirmation.get()) {
             new AlertDialog.Builder(getContext())
                     .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            openLinkConfirmed(link);
-                        }
-                    })
+                    .setPositiveButton(R.string.ok, (dialog, which) -> openLinkConfirmed(link))
                     .setTitle(R.string.open_link_confirmation)
                     .setMessage(link)
                     .show();
@@ -731,12 +717,9 @@ public class ThreadLayout extends CoordinatorLayout implements
                 .setTitle(R.string.delete_confirm)
                 .setView(view)
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        CheckBox checkBox = view.findViewById(R.id.image_only);
-                        presenter.deletePostConfirmed(post, checkBox.isChecked());
-                    }
+                .setPositiveButton(R.string.delete, (dialog, which) -> {
+                    CheckBox checkBox = view.findViewById(R.id.image_only);
+                    presenter.deletePostConfirmed(post, checkBox.isChecked());
                 })
                 .show();
     }
@@ -778,13 +761,10 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         String message = getString(post.isOP ? R.string.thread_hidden : R.string.post_hidden);
         Snackbar snackbar = Snackbar.make(this, message, Snackbar.LENGTH_LONG);
-        snackbar.setAction(R.string.undo, new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                databaseManager.runTaskAsync(
-                        databaseManager.getDatabaseHideManager().removeThreadHide(threadHide));
-                presenter.refreshUI();
-            }
+        snackbar.setAction(R.string.undo, v -> {
+            databaseManager.runTaskAsync(
+                    databaseManager.getDatabaseHideManager().removeThreadHide(threadHide));
+            presenter.refreshUI();
         });
         
         AndroidUtils.applyThemedStyle(snackbar, this);
@@ -1003,19 +983,17 @@ public class ThreadLayout extends CoordinatorLayout implements
     private void switchVisible(Visible visible) {
         if (this.visible != visible) {
             if (this.visible != null) {
-                switch (this.visible) {
-                    case THREAD:
-                        threadListLayout.cleanup();
-                        postPopupHelper.popAll();
-                        showSearch(false);
-                        showReplyButton(false);
-                        showTopBottomButtons(false, false);
-                        removeCallbacks(dismissNewPostsRunnable);
-                        newPostsBar.animate().cancel();
-                        newPostsBar.setVisibility(View.GONE);
-                        newPostsBar.setAlpha(1f);
-                        AndroidUtils.notifySnackbarShowing(false);
-                        break;
+                if (this.visible == Visible.THREAD) {
+                    threadListLayout.cleanup();
+                    postPopupHelper.popAll();
+                    showSearch(false);
+                    showReplyButton(false);
+                    showTopBottomButtons(false, false);
+                    removeCallbacks(dismissNewPostsRunnable);
+                    newPostsBar.animate().cancel();
+                    newPostsBar.setVisibility(View.GONE);
+                    newPostsBar.setAlpha(1f);
+                    AndroidUtils.notifySnackbarShowing(false);
                 }
             }
 
