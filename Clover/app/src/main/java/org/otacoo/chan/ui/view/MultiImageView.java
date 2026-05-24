@@ -196,7 +196,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         if (callback != null) callback.onSwipeToClose(MultiImageView.this);
                         return true;
                     } else if (isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.UP) {
-                        if (callback != null) callback.onSwipeToClose(MultiImageView.this);
+                        if (callback != null) callback.onSwipeToSave(MultiImageView.this);
                         return true;
                     } else if (!isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.DOWN) {
                         if (callback != null) callback.onSwipeToSave(MultiImageView.this);
