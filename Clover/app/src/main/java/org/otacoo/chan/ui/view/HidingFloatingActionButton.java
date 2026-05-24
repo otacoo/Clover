@@ -19,7 +19,6 @@ package org.otacoo.chan.ui.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
 import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 
@@ -82,7 +81,7 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
             parent = parent.getParent();
         }
 
-        if (parent instanceof CoordinatorLayout) {
+        if (parent != null) {
             coordinatorLayout = (CoordinatorLayout) parent;
         }
 
