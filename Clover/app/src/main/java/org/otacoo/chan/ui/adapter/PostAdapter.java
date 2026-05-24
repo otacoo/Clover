@@ -32,6 +32,7 @@ import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.cell.PostCellInterface;
 import org.otacoo.chan.ui.cell.ThreadStatusCell;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.List;
