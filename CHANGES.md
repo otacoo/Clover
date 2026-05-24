@@ -1,3 +1,13 @@
+## 2026-05-24 – v3.6.1
+
+- The reply badge can now be enabled for the regular image viewer, not just the album.
+  - The toggle is shared and will also appear in the image menu options
+
+#### Gestures:
+- Fixed a typo that caused the Swipe gestures to not work
+- New option: Double-tap to play/pause
+
+
 ## 2026-05-24 – v3.6.0
 
 >[!NOTE]
