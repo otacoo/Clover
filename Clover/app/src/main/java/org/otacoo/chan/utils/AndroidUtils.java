@@ -62,7 +62,6 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityManagerCompat;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -71,7 +70,6 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.theme.ThemeHelper;
 
-import java.nio.charset.StandardCharsets;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
@@ -123,6 +121,14 @@ public class AndroidUtils {
         return application;
     }
 
+    public static Context getUIContext() {
+        Activity activity = Chan.getInstance().getTopActivity();
+        if (activity != null) {
+            return activity;
+        }
+        return getAppContext();
+    }
+
     public static String getString(int res) {
         return getRes().getString(res);
     }
@@ -130,6 +136,10 @@ public class AndroidUtils {
     @SuppressWarnings("deprecation")
     public static SharedPreferences getPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(application);
+    }
+
+    public static SharedPreferences getPreferences(String name) {
+        return application.getSharedPreferences(name, Context.MODE_PRIVATE);
     }
 
     /**
@@ -143,7 +153,7 @@ public class AndroidUtils {
             return null;
         }
         try {
-            String encodedUrl = java.net.URLEncoder.encode(videoUrl, StandardCharsets.UTF_8.name());
+            String encodedUrl = java.net.URLEncoder.encode(videoUrl, "UTF-8");
             String oembedUrl = "https://www.youtube.com/oembed?url=" + encodedUrl + "&format=json";
             
             okhttp3.OkHttpClient client = org.otacoo.chan.Chan.injector().instance(okhttp3.OkHttpClient.class);
@@ -385,7 +395,7 @@ public class AndroidUtils {
         if (text.length() <= max) {
             return text;
         } else {
-            return text.subSequence(0, max) + "…";
+            return text.subSequence(0, max) + "\u2026";
         }
     }
 
@@ -504,7 +514,11 @@ public class AndroidUtils {
         }
     }
 
-    public static void fixSnackbarText(Snackbar snackbar) {
+    public static void setElevation(View view, float elevation) {
+        view.setElevation(elevation);
+    }
+
+    public static void fixSnackbarText(Context context, Snackbar snackbar) {
         TextView textView = snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView != null) {
             textView.setTextColor(0xffffffff);
@@ -585,12 +599,12 @@ public class AndroidUtils {
         
         // Make the SnackbarLayout transparent and apply background to its inner content
         snackbarView.setBackgroundColor(Color.TRANSPARENT);
-        ViewCompat.setElevation(snackbarView, 0);
+        androidx.core.view.ViewCompat.setElevation(snackbarView, 0);
 
         if (snackbarView instanceof ViewGroup && ((ViewGroup) snackbarView).getChildCount() > 0) {
             View contentView = ((ViewGroup) snackbarView).getChildAt(0);
             contentView.setBackground(bg);
-            ViewCompat.setElevation(contentView, dp(6));
+            androidx.core.view.ViewCompat.setElevation(contentView, dp(6));
         } else {
             snackbarView.setBackground(bg);
         }
@@ -615,53 +629,61 @@ public class AndroidUtils {
         }
         snackbarView.setLayoutParams(params);
 
-        ViewCompat.setOnApplyWindowInsetsListener(snackbarView, (v, insets) -> {
-            int navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+        int navBarHeight = 0;
+        androidx.core.view.WindowInsetsCompat rootInsets = androidx.core.view.ViewCompat.getRootWindowInsets(anchor != null ? anchor : snackbarView);
+        if (rootInsets != null) {
+            navBarHeight = rootInsets.getSystemWindowInsetBottom();
+        } else {
+            int resourceId = context.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+            if (resourceId > 0) {
+                navBarHeight = context.getResources().getDimensionPixelSize(resourceId);
+            }
+        }
 
-            int newBottomMargin = dp(12);
+        int newBottomMargin = dp(12);
+        if (ChanSettings.toolbarBottom.get()) {
+            newBottomMargin += context.getResources().getDimensionPixelSize(R.dimen.toolbar_height);
+        }
+
+        if (anchor != null) {
+            int[] location = new int[2];
+            anchor.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchor.getHeight();
+
+            int screenHeight = anchor.getRootView().getHeight();
+            if (screenHeight == 0) {
+                android.view.WindowManager wm = (android.view.WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                if (wm != null) {
+                    android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                    wm.getDefaultDisplay().getRealMetrics(metrics);
+                    screenHeight = metrics.heightPixels;
+                }
+            }
+
+            int anchorDistanceFromBottom = screenHeight - anchorBottom;
+            int targetMargin = navBarHeight + dp(12);
             if (ChanSettings.toolbarBottom.get()) {
-                newBottomMargin += context.getResources().getDimensionPixelSize(org.otacoo.chan.R.dimen.toolbar_height);
+                targetMargin += context.getResources().getDimensionPixelSize(R.dimen.toolbar_height);
             }
 
-            if (anchor != null) {
-                int[] location = new int[2];
-                anchor.getLocationOnScreen(location);
-                int anchorBottom = location[1] + anchor.getHeight();
-
-                int screenHeight = v.getRootView().getHeight();
-                if (screenHeight == 0) {
-                    android.view.WindowManager wm = (android.view.WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                    if (wm != null) {
-                        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
-                        wm.getDefaultDisplay().getRealMetrics(metrics);
-                        screenHeight = metrics.heightPixels;
-                    }
-                }
-
-                int anchorDistanceFromBottom = screenHeight - anchorBottom;
-                int targetMargin = navBarHeight + dp(12);
-                if (ChanSettings.toolbarBottom.get()) {
-                    targetMargin += context.getResources().getDimensionPixelSize(org.otacoo.chan.R.dimen.toolbar_height);
-                }
-
-                int marginToApply = targetMargin - anchorDistanceFromBottom;
-                if (marginToApply > newBottomMargin) {
-                    newBottomMargin = marginToApply;
-                }
+            int marginToApply = targetMargin - anchorDistanceFromBottom;
+            if (marginToApply > newBottomMargin) {
+                newBottomMargin = marginToApply;
             }
+        }
 
-            // Apply visual margins using padding on the transparent SnackbarLayout
-            int sidePadding = dp(12);
-            if (context.getResources().getConfiguration().smallestScreenWidthDp >= 600) {
-                int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
-                sidePadding = Math.max(dp(12), (screenWidth - dp(480)) / 2);
-            }
-            v.setPadding(sidePadding, dp(12), sidePadding, newBottomMargin);
+        // Apply visual margins using padding on the transparent SnackbarLayout
+        int sidePadding = dp(12);
+        if (context.getResources().getConfiguration().smallestScreenWidthDp >= 600) {
+            int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+            sidePadding = Math.max(dp(12), (screenWidth - dp(480)) / 2);
+        }
+        snackbarView.setPadding(sidePadding, dp(12), sidePadding, newBottomMargin);
 
-            return WindowInsetsCompat.CONSUMED;
-        });
+        // Block Snackbar from erasing our margins with its default listener by consuming the insets
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(snackbarView, (v, insets) -> insets.consumeSystemWindowInsets());
 
-        fixSnackbarText(snackbar);
+        fixSnackbarText(context, snackbar);
 
         snackbar.addCallback(new Snackbar.Callback() {
             @Override
@@ -676,7 +698,13 @@ public class AndroidUtils {
         });
     }
 
-    public record SnackbarEvent(boolean showing) {
+    public static class SnackbarEvent {
+        public final boolean showing;
+        public SnackbarEvent(boolean showing) { this.showing = showing; }
+    }
+
+    public static ConnectivityManager getConnectivityManager() {
+        return connectivityManager;
     }
 
     public static boolean isConnected(int type) {
@@ -697,6 +725,7 @@ public class AndroidUtils {
         return !ActivityManagerCompat.isLowRamDevice(activityManager);
     }
 
+    @SuppressWarnings("deprecation")
     public static void animateStatusBar(Window window, boolean in, final int originalColor, int duration) {
         ValueAnimator statusBar = ValueAnimator.ofFloat(in ? 0f : 0.5f, in ? 0.5f : 0f);
         statusBar.addUpdateListener(animation -> {
