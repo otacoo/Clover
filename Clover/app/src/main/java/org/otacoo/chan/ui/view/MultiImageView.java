@@ -205,6 +205,29 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 }
                 return false;
             }
+
+            @Override
+            public boolean onDoubleTap(@NonNull MotionEvent e) {
+                if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
+                        && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
+                    if (exoPlayer.isPlaying()) {
+                        exoPlayer.pause();
+                    } else {
+                        if (exoPlayer.getPlaybackState() == Player.STATE_ENDED) {
+                            exoPlayer.seekTo(0);
+                        }
+                        exoPlayer.play();
+                    }
+                    checkAudioTracks();
+                    if (playerControllerContainer != null) {
+                        playerControllerContainer.setVisibility(View.VISIBLE);
+                        handler.removeCallbacks(hideControllerTask);
+                        handler.postDelayed(hideControllerTask, ChanSettings.videoPlayerTimeout.get() * 1000L);
+                    }
+                    return true;
+                }
+                return false;
+            }
         });
 
         setOnClickListener(this);

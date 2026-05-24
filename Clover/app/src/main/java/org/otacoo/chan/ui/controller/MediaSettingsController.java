@@ -245,6 +245,7 @@ public class MediaSettingsController extends SettingsController implements
             gestures.add(swipeToSaveView);
             
             gestures.add(new BooleanSettingView(this, ChanSettings.swipeWhileZoomedIn, R.string.setting_swipe_zoomed, 0));
+            gestures.add(new BooleanSettingView(this, ChanSettings.doubleTapPlayPause, R.string.setting_double_tap_play_pause, 0));
 
             groups.add(gestures);
         }
