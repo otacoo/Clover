@@ -172,6 +172,9 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         overflowBuilder.withSubItem(R.string.action_share, this::shareClicked);
         overflowBuilder.withSubItem(R.string.action_search_image, this::searchClicked);
         overflowBuilder.withSubItem(R.string.action_download_album, this::downloadAlbumClicked);
+        overflowBuilder.withSubItem(ChanSettings.showGalleryReplyBadge.get()
+                ? R.string.action_hide_reply_badge
+                : R.string.action_show_reply_badge, this::toggleShowReplyBadge);
         overflowBuilder.withSubItem(SUBITEM_TRANSPARENCY_TOGGLE_ID, R.string.action_transparency_toggle, this::toggleTransparency);
         overflowBuilder.withSubItem(SUBITEM_ROTATE_IMAGE_ID, R.string.action_rotate_image, this::setOrientation);
 
@@ -199,9 +202,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         }
 
         AndroidUtils.waitForLayout(parentController.view.getViewTreeObserver(), view, view -> {
-            if (goPostMenuItem != null) {
-                setupGoPostBadge();
-            }
+            setupGoPostBadge();
             presenter.onViewMeasured();
             updateGoPostBadge();
             return true;
@@ -432,23 +433,34 @@ public class ImageViewerController extends Controller implements ImageViewerPres
     }
 
     private void setupGoPostBadge() {
-        View imageView = goPostMenuItem.getView();
-        if (imageView == null) return;
+        FrameLayout targetParent;
 
-        ViewGroup parent = (ViewGroup) imageView.getParent();
-        int index = parent.indexOfChild(imageView);
+        if (goPostMenuItem != null) {
+            View imageView = goPostMenuItem.getView();
+            if (imageView == null) return;
 
-        parent.removeView(imageView);
+            ViewGroup parent = (ViewGroup) imageView.getParent();
+            int index = parent.indexOfChild(imageView);
 
-        FrameLayout wrapper = new FrameLayout(context);
-        ViewGroup.LayoutParams vglp = imageView.getLayoutParams();
-        LinearLayout.LayoutParams wrapperLp = new LinearLayout.LayoutParams(vglp.width, vglp.height);
-        parent.addView(wrapper, index, wrapperLp);
+            parent.removeView(imageView);
 
-        FrameLayout.LayoutParams imageLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT);
-        wrapper.addView(imageView, imageLp);
+            FrameLayout wrapper = new FrameLayout(context);
+            ViewGroup.LayoutParams vglp = imageView.getLayoutParams();
+            LinearLayout.LayoutParams wrapperLp = new LinearLayout.LayoutParams(vglp.width, vglp.height);
+            parent.addView(wrapper, index, wrapperLp);
+
+            FrameLayout.LayoutParams imageLp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            wrapper.addView(imageView, imageLp);
+
+            targetParent = wrapper;
+        } else {
+            if (toolbar.getChildCount() == 0) return;
+            View child = toolbar.getChildAt(0);
+            if (!(child instanceof FrameLayout)) return;
+            targetParent = (FrameLayout) child;
+        }
 
         int badgeSize = dp(22);
         TextView badge = new TextView(context);
@@ -464,7 +476,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         bg.setColor(0x35FFFFFF);
         badge.setBackground(bg);
 
-        wrapper.addView(badge);
+        targetParent.addView(badge);
         goPostBadge = badge;
     }
 
@@ -550,6 +562,13 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             }
         });
         return menu;
+    }
+
+    private void toggleShowReplyBadge(ToolbarMenuSubItem item) {
+        boolean shown = !ChanSettings.showGalleryReplyBadge.get();
+        ChanSettings.showGalleryReplyBadge.set(shown);
+        item.text = getString(shown ? R.string.action_hide_reply_badge : R.string.action_show_reply_badge);
+        updateGoPostBadge();
     }
 
     @Override
