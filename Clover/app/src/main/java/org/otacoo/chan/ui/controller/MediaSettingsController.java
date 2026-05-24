@@ -224,16 +224,24 @@ public class MediaSettingsController extends SettingsController implements
             swipeGestureTypes.add(new ListSettingView.Item<>(getString(R.string.swipe_gesture_up), ChanSettings.SwipeGesture.UP));
             swipeGestureTypes.add(new ListSettingView.Item<>(getString(R.string.swipe_gesture_down), ChanSettings.SwipeGesture.DOWN));
 
+            ArrayList<ListSettingView.Item<?>> closeItems = new ArrayList<>();
+            for (ListSettingView.Item<?> item : swipeGestureTypes) {
+                closeItems.add(new ListSettingView.Item<>(item.name, item.key, item.enabled));
+            }
             swipeToCloseView = new ListSettingView<>(this,
                     ChanSettings.swipeToClose,
                     R.string.setting_swipe_to_close,
-                    swipeGestureTypes);
+                    closeItems);
             gestures.add(swipeToCloseView);
 
+            ArrayList<ListSettingView.Item<?>> saveItems = new ArrayList<>();
+            for (ListSettingView.Item<?> item : swipeGestureTypes) {
+                saveItems.add(new ListSettingView.Item<>(item.name, item.key, item.enabled));
+            }
             swipeToSaveView = new ListSettingView<>(this,
                     ChanSettings.swipeToSave,
                     R.string.setting_swipe_to_save,
-                    swipeGestureTypes);
+                    saveItems);
             gestures.add(swipeToSaveView);
             
             gestures.add(new BooleanSettingView(this, ChanSettings.swipeWhileZoomedIn, R.string.setting_swipe_zoomed, 0));
