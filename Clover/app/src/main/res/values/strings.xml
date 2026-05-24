@@ -466,8 +466,9 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_watch_summary_disabled">Off</string>
 
     <string name="settings_screen_watch">Thread watcher settings</string>
-    <string name="settings_group_watch">Settings</string>
+    <string name="settings_group_watch">Thread watcher</string>
     <string name="setting_watch_info">To watch bookmarks for new posts, turn the thread watcher on.</string>
+    <string name="setting_watch_enable">Enabled</string>
     <string name="setting_watch_enable_background">Enable in the background</string>
     <string name="setting_watch_enable_background_description">Watch bookmarks when Clover is placed in the background</string>
     <string name="setting_watch_background_timeout">Background update interval</string>

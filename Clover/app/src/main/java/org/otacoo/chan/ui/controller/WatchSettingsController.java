@@ -23,9 +23,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.provider.Settings;
-import android.widget.CompoundButton;
-
-import androidx.appcompat.widget.SwitchCompat;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
@@ -36,12 +33,10 @@ import org.otacoo.chan.ui.settings.ListSettingView;
 import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
-import org.otacoo.chan.ui.view.CrossfadeView;
 import org.otacoo.chan.utils.AndroidUtils;
 
-public class WatchSettingsController extends SettingsController implements CompoundButton.OnCheckedChangeListener {
-    private CrossfadeView crossfadeView;
-
+public class WatchSettingsController extends SettingsController {
+    private SettingView watchEnabledView;
     private SettingView enableBackground;
 
     private SettingView backgroundTimeout;
@@ -56,26 +51,23 @@ public class WatchSettingsController extends SettingsController implements Compo
     public void onCreate() {
         super.onCreate();
 
-        boolean enabled = ChanSettings.watchEnabled.get();
-
         navigation.setTitle(R.string.settings_screen_watch);
 
-        view = inflateRes(R.layout.controller_watch);
-        content = view.findViewById(R.id.scrollview_content);
-        crossfadeView = view.findViewById(R.id.crossfade);
-
-        crossfadeView.toggle(enabled, false);
-
-        SwitchCompat globalSwitch = new SwitchCompat(context);
-        globalSwitch.setChecked(enabled);
-        globalSwitch.setOnCheckedChangeListener(this);
-        navigation.setRightView(globalSwitch);
+        setupLayout();
 
         populatePreferences();
 
         buildPreferences();
 
-        if (!ChanSettings.watchBackground.get()) {
+        boolean watchEnabled = ChanSettings.watchEnabled.get();
+        if (!watchEnabled) {
+            setSettingViewVisibility(enableBackground, false, false);
+            setSettingViewVisibility(backgroundTimeout, false, false);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                setSettingViewVisibility(normalChannel, false, false);
+                setSettingViewVisibility(mentionChannel, false, false);
+            }
+        } else if (!ChanSettings.watchBackground.get()) {
             setSettingViewVisibility(backgroundTimeout, false, false);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 setSettingViewVisibility(normalChannel, false, false);
@@ -85,14 +77,26 @@ public class WatchSettingsController extends SettingsController implements Compo
     }
 
     @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        ChanSettings.watchEnabled.set(isChecked);
-        crossfadeView.toggle(isChecked, true);
-    }
-
-    @Override
     public void onPreferenceChange(SettingView item) {
         super.onPreferenceChange(item);
+
+        if (item == watchEnabledView) {
+            boolean enabled = ChanSettings.watchEnabled.get();
+            setSettingViewVisibility(enableBackground, enabled, true);
+            if (!enabled) {
+                setSettingViewVisibility(backgroundTimeout, false, true);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setSettingViewVisibility(normalChannel, false, true);
+                    setSettingViewVisibility(mentionChannel, false, true);
+                }
+            } else if (!ChanSettings.watchBackground.get()) {
+                setSettingViewVisibility(backgroundTimeout, false, true);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setSettingViewVisibility(normalChannel, false, true);
+                    setSettingViewVisibility(mentionChannel, false, true);
+                }
+            }
+        }
 
         if (item == enableBackground) {
             boolean enabled = ChanSettings.watchBackground.get();
@@ -105,10 +109,13 @@ public class WatchSettingsController extends SettingsController implements Compo
     }
 
     private void populatePreferences() {
-        SettingsGroup settings = new SettingsGroup(R.string.settings_group_watch);
+        SettingsGroup threadWatcher = new SettingsGroup(R.string.settings_group_watch);
 
-//        settings.add(new BooleanSettingView(this, ChanSettings.watchCountdown, string(R.string.setting_watch_countdown), string(R.string.setting_watch_countdown_description)));
-        enableBackground = settings.add(new BooleanSettingView(this, ChanSettings.watchBackground, R.string.setting_watch_enable_background, R.string.setting_watch_enable_background_description));
+        watchEnabledView = threadWatcher.add(new BooleanSettingView(this, ChanSettings.watchEnabled,
+                R.string.setting_watch_enable, R.string.setting_watch_info));
+
+//        threadWatcher.add(new BooleanSettingView(this, ChanSettings.watchCountdown, string(R.string.setting_watch_countdown), string(R.string.setting_watch_countdown_description)));
+        enableBackground = threadWatcher.add(new BooleanSettingView(this, ChanSettings.watchBackground, R.string.setting_watch_enable_background, R.string.setting_watch_enable_background_description));
 
         int[] timeouts = new int[]{
                 60 * 1000,
@@ -127,7 +134,7 @@ public class WatchSettingsController extends SettingsController implements Compo
             String name = context.getResources().getQuantityString(R.plurals.minutes, value, value);
             timeoutsItems[i] = new ListSettingView.Item<>(name, timeouts[i]);
         }
-        backgroundTimeout = settings.add(new ListSettingView<Integer>(this, ChanSettings.watchBackgroundInterval, R.string.setting_watch_background_timeout, timeoutsItems) {
+        backgroundTimeout = threadWatcher.add(new ListSettingView<Integer>(this, ChanSettings.watchBackgroundInterval, R.string.setting_watch_background_timeout, timeoutsItems) {
             @Override
             public String getBottomDescription() {
                 return getString(R.string.setting_watch_background_timeout_description) + "\n\n" + items.get(selected).name;
@@ -137,14 +144,14 @@ public class WatchSettingsController extends SettingsController implements Compo
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             injector().instance(ThreadWatchNotifications.class).ensureChannels();
 
-            normalChannel = settings.add(new LinkSettingView(this, R.string.setting_watch_channel_normal, 0, v -> {
+            normalChannel = threadWatcher.add(new LinkSettingView(this, R.string.setting_watch_channel_normal, 0, v -> {
                 Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
                 intent.putExtra(Settings.EXTRA_CHANNEL_ID, ThreadWatchNotifications.CHANNEL_ID_WATCH_NORMAL);
                 AndroidUtils.openIntent(intent);
             }));
 
-            mentionChannel = settings.add(new LinkSettingView(this, R.string.setting_watch_channel_mention, 0, v -> {
+            mentionChannel = threadWatcher.add(new LinkSettingView(this, R.string.setting_watch_channel_mention, 0, v -> {
                 Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
                 intent.putExtra(Settings.EXTRA_CHANNEL_ID, ThreadWatchNotifications.CHANNEL_ID_WATCH_MENTION);
@@ -152,6 +159,13 @@ public class WatchSettingsController extends SettingsController implements Compo
             }));
         }
 
-        groups.add(settings);
+        groups.add(threadWatcher);
+
+        SettingsGroup threads = new SettingsGroup(R.string.settings_group_threads);
+
+        threads.add(new BooleanSettingView(this, ChanSettings.highlightOpenThread,
+                R.string.setting_highlight_open_thread, 0));
+
+        groups.add(threads);
     }
 }

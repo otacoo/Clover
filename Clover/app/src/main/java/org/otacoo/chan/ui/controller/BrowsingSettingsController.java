@@ -93,9 +93,6 @@ public class BrowsingSettingsController extends SettingsController {
             threads.add(new BooleanSettingView(this, ChanSettings.postPinThread,
                     R.string.setting_post_pin, 0));
 
-            threads.add(new BooleanSettingView(this, ChanSettings.highlightOpenThread,
-                    R.string.setting_highlight_open_thread, 0));
-
             groups.add(threads);
         }
 
