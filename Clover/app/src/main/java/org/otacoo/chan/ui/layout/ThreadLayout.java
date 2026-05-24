@@ -872,7 +872,6 @@ public class ThreadLayout extends CoordinatorLayout implements
     private void showReplyButton(final boolean show) {
         if (show != showingReplyButton && replyButtonEnabled) {
             showingReplyButton = show;
-            replyButton.setRotation(ChanSettings.bottomReply.get() ? 180f : 0f);
 
             replyButton.animate()
                     .setInterpolator(new DecelerateInterpolator(2f))
