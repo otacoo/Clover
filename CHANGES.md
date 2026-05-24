@@ -47,7 +47,7 @@
 
 ### Misc changes
 - Video thumbnails will now be decoded and appear in the reply view
-- Improved video initiation a bit when using VP9 decoder (note: if videos take a few seconds to start, try setting the decoder to *System only* and use the WebView fallbacl)
+- Improved video initiation a bit when using VP9 decoder (note: if videos take a few seconds to start, try setting the decoder to *System only* and use the WebView fallback)
 - Appended (default) to 100% Thumbnail Scale (issue #31)
 - The UI will now refresh after changing thumb scale or font sizes
 - Increased number of items in history by 20 (cleanup happens at 120, which trims them to 70 items)
