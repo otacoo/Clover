@@ -26,6 +26,7 @@ import android.graphics.drawable.StateListDrawable;
 import android.view.MotionEvent;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.ViewCompat;
@@ -139,12 +140,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     private final ValueAnimator mShowHideAnimator = ValueAnimator.ofFloat(0, 1);
     @AnimationState
     private int mAnimationState = ANIMATION_STATE_OUT;
-    private final Runnable mHideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            hide(HIDE_DURATION_MS);
-        }
-    };
+    private final Runnable mHideRunnable = () -> hide(HIDE_DURATION_MS);
     private final OnScrollListener mOnScrollListener = new OnScrollListener() {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -266,6 +262,8 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
                 mShowHideAnimator.setStartDelay(0);
                 mShowHideAnimator.start();
                 break;
+            case ANIMATION_STATE_FADING_IN, ANIMATION_STATE_IN:
+                break;
         }
     }
 
@@ -286,6 +284,8 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
                 mShowHideAnimator.setDuration(duration);
                 mShowHideAnimator.start();
                 break;
+            case ANIMATION_STATE_FADING_OUT, ANIMATION_STATE_OUT:
+                break;
         }
     }
 
@@ -299,7 +299,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     }
 
     @Override
-    public void onDrawOver(Canvas canvas, RecyclerView parent, RecyclerView.State state) {
+    public void onDrawOver(@NonNull Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
         if (mRecyclerViewWidth != getRecyclerViewWidth()
                 || mRecyclerViewHeight != getRecyclerViewHeight()) {
             mRecyclerViewWidth = getRecyclerViewWidth();
@@ -451,7 +451,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     }
 
     @Override
-    public boolean onInterceptTouchEvent(RecyclerView recyclerView, MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@NonNull RecyclerView recyclerView, @NonNull MotionEvent ev) {
         final boolean handled;
         if (mState == STATE_VISIBLE) {
             boolean insideVerticalThumb = isPointInsideVerticalThumb(ev.getX(), ev.getY());
@@ -462,7 +462,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
                     mDragState = DRAG_X;
                     mHorizontalDragX = (int) ev.getX();
                     mHorizontalDragThumbWidth = mHorizontalThumbWidth;
-                } else if (insideVerticalThumb) {
+                } else {
                     mDragState = DRAG_Y;
                     mVerticalDragY = (int) ev.getY();
                     mVerticalDragThumbHeight = mVerticalThumbHeight;
@@ -473,16 +473,12 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
             } else {
                 handled = false;
             }
-        } else if (mState == STATE_DRAGGING) {
-            handled = true;
-        } else {
-            handled = false;
-        }
+        } else handled = mState == STATE_DRAGGING;
         return handled;
     }
 
     @Override
-    public void onTouchEvent(RecyclerView recyclerView, MotionEvent me) {
+    public void onTouchEvent(@NonNull RecyclerView recyclerView, @NonNull MotionEvent me) {
         if (mState == STATE_HIDDEN) {
             return;
         }
@@ -495,7 +491,7 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
                     mDragState = DRAG_X;
                     mHorizontalDragX = (int) me.getX();
                     mHorizontalDragThumbWidth = mHorizontalThumbWidth;
-                } else if (insideVerticalThumb) {
+                } else {
                     mDragState = DRAG_Y;
                     mVerticalDragY = (int) me.getY();
                     mVerticalDragThumbHeight = mVerticalThumbHeight;
@@ -576,17 +572,17 @@ public class FastScroller extends ItemDecoration implements OnItemTouchListener 
     @VisibleForTesting
     boolean isPointInsideVerticalThumb(float x, float y) {
         // width divided by 2 for rtl? keeping it the same as upstream, but seems illogical.
-        return (isLayoutRTL() ? x <= mRecyclerViewLeftPadding + mTargetWidth / 2
+        return (isLayoutRTL() ? x <= mRecyclerViewLeftPadding + (float) mTargetWidth / 2
                 : x >= mRecyclerViewLeftPadding + mRecyclerViewWidth - mTargetWidth)
-                && y >= mVerticalThumbCenterY - mVerticalThumbHeight / 2 - mTargetWidth
-                && y <= mVerticalThumbCenterY + mVerticalThumbHeight / 2 + mTargetWidth;
+                && y >= mVerticalThumbCenterY - (float) mVerticalThumbHeight / 2 - mTargetWidth
+                && y <= mVerticalThumbCenterY + (float) mVerticalThumbHeight / 2 + mTargetWidth;
     }
 
     @VisibleForTesting
     boolean isPointInsideHorizontalThumb(float x, float y) {
         return (y >= mRecyclerViewTopPadding + mRecyclerViewHeight - mTargetWidth)
-                && x >= mHorizontalThumbCenterX - mHorizontalThumbWidth / 2 - mTargetWidth
-                && x <= mHorizontalThumbCenterX + mHorizontalThumbWidth / 2 + mTargetWidth;
+                && x >= mHorizontalThumbCenterX - (float) mHorizontalThumbWidth / 2 - mTargetWidth
+                && x <= mHorizontalThumbCenterX + (float) mHorizontalThumbWidth / 2 + mTargetWidth;
     }
 
     @VisibleForTesting
