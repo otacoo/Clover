@@ -114,7 +114,7 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     }
 
     public void onEventMainThread(AndroidUtils.SnackbarEvent event) {
-        updateSnackbarShowing(event.showing);
+        updateSnackbarShowing(event.showing());
     }
 
     private void updateSnackbarShowing(boolean showing) {
