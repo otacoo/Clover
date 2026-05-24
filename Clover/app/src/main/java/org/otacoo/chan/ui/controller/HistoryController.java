@@ -30,6 +30,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -71,7 +72,6 @@ public class HistoryController extends Controller implements
     private DatabaseSavedReplyManager databaseSavedReplyManager;
 
     private CrossfadeView crossfade;
-    private RecyclerView recyclerView;
     private HistoryAdapter adapter;
 
     public HistoryController(Context context) {
@@ -103,7 +103,7 @@ public class HistoryController extends Controller implements
 
         view = inflateRes(R.layout.controller_history);
         crossfade = view.findViewById(R.id.crossfade);
-        recyclerView = view.findViewById(R.id.recycler_view);
+        RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
 
@@ -169,8 +169,8 @@ public class HistoryController extends Controller implements
     }
 
     private class HistoryAdapter extends RecyclerView.Adapter<HistoryCell> implements DatabaseManager.TaskResult<List<History>> {
-        private List<History> sourceList = new ArrayList<>();
-        private List<History> displayList = new ArrayList<>();
+        private final List<History> sourceList = new ArrayList<>();
+        private final List<History> displayList = new ArrayList<>();
         private String searchQuery;
 
         private boolean resultPending = false;
@@ -179,6 +179,7 @@ public class HistoryController extends Controller implements
             setHasStableIds(true);
         }
 
+        @NonNull
         @Override
         public HistoryCell onCreateViewHolder(ViewGroup parent, int viewType) {
             return new HistoryCell(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_history, parent, false));
@@ -243,10 +244,10 @@ public class HistoryController extends Controller implements
     }
 
     private class HistoryCell extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private ThumbnailView thumbnail;
-        private TextView text;
-        private TextView subtext;
-        private ImageView delete;
+        private final ThumbnailView thumbnail;
+        private final TextView text;
+        private final TextView subtext;
+        private final ImageView delete;
 
         public HistoryCell(View itemView) {
             super(itemView);
