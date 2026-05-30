@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "org.otacoo.chan"
-        minSdk = 23
+        minSdk = 24
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 29
         //noinspection ExpiredTargetSdkVersion
