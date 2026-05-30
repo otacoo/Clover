@@ -4,7 +4,7 @@ import java.security.MessageDigest;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.nio.charset.StandardCharsets;
 
 public class Chan8ProofOfWork {
@@ -28,7 +28,7 @@ public class Chan8ProofOfWork {
 
         int cores = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         ExecutorService exec = Executors.newFixedThreadPool(cores);
-        AtomicInteger solution = new AtomicInteger(-1);
+        AtomicLong solution = new AtomicLong(-1);
 
         try {
             for (int i = 0; i < cores; i++) {
@@ -42,7 +42,7 @@ public class Chan8ProofOfWork {
                             byte[] hash = digest.digest((token + n).getBytes(StandardCharsets.UTF_8));
                             int bits = countLeadingZeroBits(hash);
                             if (bits >= difficulty) {
-                                solution.compareAndSet(-1, (int) n);
+                                solution.compareAndSet(-1, n);
                                 break;
                             }
                             n += cores;
@@ -55,14 +55,18 @@ public class Chan8ProofOfWork {
             exec.shutdown();
             // wait until finished or cancelled
             while (!exec.awaitTermination(200, TimeUnit.MILLISECONDS)) {
-                if (cancelled) break;
+                if (cancelled) {
+                    exec.shutdownNow();
+                    break;
+                }
             }
         } catch (InterruptedException e) {
+            exec.shutdownNow();
             Thread.currentThread().interrupt();
         }
 
-        int v = solution.get();
-        return v >= 0 ? v : null;
+        long v = solution.get();
+        return v >= 0 ? (int) v : null;
     }
 
     private static int countLeadingZeroBits(byte[] hash) {

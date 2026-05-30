@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Chan8PowInterceptor implements Interceptor {
     private static final String TAG = "Chan8PowInterceptor";
+    public static final String SILENT_POW_HEADER = "X-Clover-Silent-PoW";
     private static final String POW_BYPASS_HEADER = "X-Clover-8chan-Bypass";
     private static final int TIMEOUT = 30000;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
@@ -184,6 +185,11 @@ public class Chan8PowInterceptor implements Interceptor {
         try {
             if (!acquired) {
                 if (is403Pow || is200HtmlPow) resp.close(); // abandon; wait for solver thread
+                // If this is a non-silent (user-visible) request, show the snackbar now — the
+                // solver thread may be processing a silent pre-warm request and won't show it.
+                if (req.header(SILENT_POW_HEADER) == null) {
+                    Chan8PowNotifier.onPowStarted(true);
+                }
                 // Wait for the thread that is performing POW to finish
                 try {
                     localLatch.await();
@@ -232,6 +238,8 @@ public class Chan8PowInterceptor implements Interceptor {
             String token = NetModule.firstMatch(html, "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>");
             Integer difficulty = NetModule.extractPowDifficulty(html);
 
+            boolean silentPow = req.header(SILENT_POW_HEADER) != null;
+
             if (token == null || difficulty == null) {
                 Logger.w(TAG, "POW required but challenge parse failed; user must Login via WebView");
                 Chan8PowNotifier.onPowFailed();
@@ -239,10 +247,9 @@ public class Chan8PowInterceptor implements Interceptor {
                 return resp;
             }
 
-            Chan8PowNotifier.onPowStarted();
+            Chan8PowNotifier.onPowStarted(!silentPow);
 
             int algorithm = NetModule.extractPowAlgorithm(html);
-            // Logger.w(TAG, "POW algorithm=" + algorithm + " difficulty=" + difficulty);
             long t0 = System.currentTimeMillis();
             Chan8ProofOfWork solver = new Chan8ProofOfWork(token, difficulty, algorithm);
             Integer solution = solver.find();
@@ -258,16 +265,15 @@ public class Chan8PowInterceptor implements Interceptor {
             // – xBlockRequired or is200HtmlPow-with-body: same path as the original request
             // – is403Pow or is200HtmlPow-fallback-via-captcha.js: /captcha.js
             String submitPath = useCaptchaJsSubmit ? "/captcha.js" : req.url().encodedPath();
-              String queryParams;
-              if (html != null && html.contains("powblock=") && html.contains("pbchal=")) {
-                  queryParams = "?powblock=" + solution + "&pbchal=" + token;
-              } else {
-                  queryParams = "?pow=" + solution + "&t=" + token;
-              }
-              String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams; 
-              // Logger.w(TAG, "POW submit URL: " + (submitUrl.length() > 120 ? submitUrl.substring(0, 120) + "…" : submitUrl));
+            String queryParams;
+            if (html != null && html.contains("powblock=") && html.contains("pbchal=")) {
+                queryParams = "?powblock=" + solution + "&pbchal=" + token;
+            } else {
+                queryParams = "?pow=" + solution + "&t=" + token;
+            }
+            String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams;
 
-              if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above         
+            if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above
    
             // Clear stale POW cookies (e.g. from a restored backup) before submitting the
             // solution, so the server starts a clean session from the new tokens.
@@ -299,14 +305,8 @@ public class Chan8PowInterceptor implements Interceptor {
             }
 
             List<String> setCookies = submitResp.headers("Set-Cookie");
-            // if (!setCookies.isEmpty()) {
-            //     Logger.w(TAG, "POW submit Set-Cookie count=" + setCookies.size());
-            // }
             String completeStatus = submitResp.header("X-PoWBlock-Status");
             if (completeStatus == null) completeStatus = submitResp.header("X-PoW-Status");
-            // if (completeStatus != null && !completeStatus.equalsIgnoreCase("complete")) {
-            //     Logger.w(TAG, "POW submit 302 missing X-PoWBlock-Status: complete (got: " + completeStatus + ")");
-            // }
             submitResp.close();
 
             // Persist POW_TOKEN/POW_ID into site user settings if present
