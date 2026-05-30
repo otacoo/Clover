@@ -590,6 +590,16 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 }
                 if (selectable) {
                     comment.setCustomSelectionActionModeCallback(selectionCallback);
+                    comment.setOnFocusChangeListener((v, hasFocus) -> {
+                        if (!hasFocus) {
+                            CharSequence t = ((TextView) v).getText();
+                            if (t instanceof Spannable) {
+                                Spannable s = (Spannable) t;
+                                s.removeSpan(BACKGROUND_SPAN);
+                                android.text.Selection.removeSelection(s);
+                            }
+                        }
+                    });
                 }
                 // Sets focusable to auto, clickable and longclickable to true.
                 comment.setMovementMethod(commentMovementMethod);
