@@ -34,6 +34,7 @@ import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.SiteAuthentication;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.IOUtils;
@@ -77,6 +78,7 @@ public class CaptchaLayout extends WebView implements AuthenticationLayoutInterf
 
         WebSettings settings = getSettings();
         settings.setJavaScriptEnabled(true);
+        setUserAgentString(settings);
 
         setWebChromeClient(new WebChromeClient() {
             @Override
@@ -183,6 +185,13 @@ public class CaptchaLayout extends WebView implements AuthenticationLayoutInterf
                     layout.onCaptchaEntered(challenge, response);
                 }
             });
+        }
+    }
+
+    private static void setUserAgentString(WebSettings settings) {
+        String ua = ChanSettings.customUserAgent.get();
+        if (!ua.isEmpty()) {
+            settings.setUserAgentString(ua);
         }
     }
 }

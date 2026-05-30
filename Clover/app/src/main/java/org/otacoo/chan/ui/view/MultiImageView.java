@@ -878,6 +878,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         fallbackWebView.getSettings().setAllowFileAccess(true);
         fallbackWebView.getSettings().setAllowFileAccessFromFileURLs(true);
         fallbackWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+        String ua = ChanSettings.customUserAgent.get();
+        if (!ua.isEmpty()) {
+            fallbackWebView.getSettings().setUserAgentString(ua);
+        }
         fallbackWebView.setWebChromeClient(new android.webkit.WebChromeClient());
 
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);

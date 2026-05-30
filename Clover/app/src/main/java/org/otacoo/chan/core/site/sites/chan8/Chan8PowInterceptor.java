@@ -1,9 +1,13 @@
 package org.otacoo.chan.core.site.sites.chan8;
 
+import androidx.annotation.NonNull;
+
 import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.utils.Logger;
 
@@ -23,7 +27,7 @@ public class Chan8PowInterceptor implements Interceptor {
             if (nonRedirectClient != null) return nonRedirectClient;
             okhttp3.CookieJar jar = new okhttp3.CookieJar() {
                 @Override
-                public void saveFromResponse(okhttp3.HttpUrl url, List<okhttp3.Cookie> cookies) {
+                public void saveFromResponse(@NonNull okhttp3.HttpUrl url, @NonNull List<okhttp3.Cookie> cookies) {
                     java.net.CookieManager cm = NetModule.getSharedCookieManager();
                     if (cm == null) return;
                     try {
@@ -43,8 +47,9 @@ public class Chan8PowInterceptor implements Interceptor {
                     } catch (Exception ignored) {}
                 }
 
+                @NonNull
                 @Override
-                public List<okhttp3.Cookie> loadForRequest(okhttp3.HttpUrl url) {
+                public List<okhttp3.Cookie> loadForRequest(@NonNull okhttp3.HttpUrl url) {
                     List<okhttp3.Cookie> result = new java.util.ArrayList<>();
                     java.net.CookieManager cm = NetModule.getSharedCookieManager();
                     if (cm == null) return result;
@@ -65,7 +70,8 @@ public class Chan8PowInterceptor implements Interceptor {
                 }
             };
 
-            nonRedirectClient = new okhttp3.OkHttpClient.Builder()
+            OkHttpClient main = Chan.injector().instance(OkHttpClient.class);
+            nonRedirectClient = main.newBuilder()
                     .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                     .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
                     .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
@@ -77,6 +83,7 @@ public class Chan8PowInterceptor implements Interceptor {
         }
     }
 
+    @NonNull
     @Override
     @SuppressWarnings("deprecation")
     public Response intercept(Chain chain) throws java.io.IOException {

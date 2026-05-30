@@ -28,6 +28,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteAuthentication;
 import org.otacoo.chan.utils.AndroidUtils;
@@ -69,6 +70,10 @@ public class GenericWebViewAuthenticationLayout extends WebView implements Authe
         // Older versions just have to manually go back or something.
         if (Build.VERSION.SDK_INT >= 17) {
             WebSettings settings = getSettings();
+            String ua = ChanSettings.customUserAgent.get();
+            if (!ua.isEmpty()) {
+                settings.setUserAgentString(ua);
+            }
             settings.setJavaScriptEnabled(true);
             addJavascriptInterface(new WebInterface(this), "WebInterface");
         }

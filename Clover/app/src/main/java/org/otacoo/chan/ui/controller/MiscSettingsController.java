@@ -22,6 +22,8 @@ import static org.otacoo.chan.Chan.injector;
 import android.app.AlertDialog;
 import android.content.Context;
 
+import androidx.appcompat.widget.SwitchCompat;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
@@ -33,6 +35,7 @@ import org.otacoo.chan.ui.settings.IntegerSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
+import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.StringSettingView;
 import org.otacoo.chan.utils.AndroidUtils;
 
@@ -41,7 +44,8 @@ import java.util.Locale;
 import de.greenrobot.event.EventBus;
 
 public class MiscSettingsController extends SettingsController {
-
+    private SettingView proxyEnabledView;
+    private SettingView dnsOverHttpsView;
 
     public MiscSettingsController(Context context) {
         super(context);
@@ -94,7 +98,7 @@ public class MiscSettingsController extends SettingsController {
         {
             SettingsGroup proxy = new SettingsGroup(R.string.settings_group_proxy);
 
-            proxy.add(new BooleanSettingView(this, ChanSettings.proxyEnabled,
+            proxyEnabledView = proxy.add(new BooleanSettingView(this, ChanSettings.proxyEnabled,
                     R.string.setting_proxy_enabled, 0));
 
             proxy.add(new StringSettingView(this, ChanSettings.proxyAddress,
@@ -109,7 +113,7 @@ public class MiscSettingsController extends SettingsController {
             {
                 SettingsGroup doh = new SettingsGroup(R.string.setting_group_dns_over_https);
 
-                doh.add(new BooleanSettingView(this, ChanSettings.dnsOverHttps,
+                dnsOverHttpsView = doh.add(new BooleanSettingView(this, ChanSettings.dnsOverHttps,
                         R.string.setting_group_dns_enable, R.string.setting_group_dns_enable_description));
 
                 groups.add(doh);
@@ -124,6 +128,39 @@ public class MiscSettingsController extends SettingsController {
                 groups.add(ua);
             }
         }
+    }
+
+    @Override
+    public void onPreferenceChange(SettingView item) {
+        if (item == proxyEnabledView && ChanSettings.proxyEnabled.get()) {
+            new AlertDialog.Builder(context)
+                    .setTitle(R.string.proxy_warning_title)
+                    .setMessage(R.string.proxy_warning_message)
+                    .setPositiveButton(R.string.ok, null)
+                    .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                        ChanSettings.proxyEnabled.set(false);
+                        SwitchCompat switcher = item.view.findViewById(R.id.switcher);
+                        if (switcher != null) {
+                            switcher.setChecked(false);
+                        }
+                    })
+                    .show();
+        }
+        if (item == dnsOverHttpsView && ChanSettings.dnsOverHttps.get()) {
+            new AlertDialog.Builder(context)
+                    .setTitle(R.string.doh_warning_title)
+                    .setMessage(R.string.doh_warning_message)
+                    .setPositiveButton(R.string.ok, null)
+                    .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                        ChanSettings.dnsOverHttps.set(false);
+                        SwitchCompat switcher = item.view.findViewById(R.id.switcher);
+                        if (switcher != null) {
+                            switcher.setChecked(false);
+                        }
+                    })
+                    .show();
+        }
+        super.onPreferenceChange(item);
     }
 
     private void setupClearThreadHidesSetting(SettingsGroup post) {

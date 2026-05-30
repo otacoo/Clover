@@ -559,7 +559,7 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_bottom_reply">Bottom reply</string>
     <string name="setting_bottom_reply_description">Open the reply dialog from the bottom</string>
     <string name="setting_enable_reply_fab">Enable the floating reply button</string>
-    <string name="setting_enable_reply_fab_description">Disabling replaces the round button with a menu option</string>
+    <string name="setting_enable_reply_fab_description">Disabling replaces the floating button with a menu option</string>
     <string name="setting_enable_top_bottom_fab">Enable Top and Bottom buttons</string>
     <string name="setting_enable_top_bottom_fab_description">Easy up and down navigation</string>
     <string name="setting_enable_accessible_post_info">Enable accessible post info</string>
@@ -636,11 +636,15 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_proxy_enabled">Enable proxy</string>
     <string name="setting_proxy_address">Proxy server address</string>
     <string name="setting_proxy_port">Proxy server port</string>
+    <string name="proxy_warning_title">Proxy warning</string>
+    <string name="proxy_warning_message">The proxy will be applied to all app traffic including WebView (captcha, authentication, reports). Press OK to enable.</string>
 
     <!-- Misc DNS over HTTPS group -->
     <string name="setting_group_dns_over_https">DNS over HTTPS</string>
     <string name="setting_group_dns_enable">Enable DOH (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Requires app restart to take effect</string>
+    <string name="setting_group_dns_enable_description">DOH does not apply to WebView-based features (captcha, auth)</string>
+    <string name="doh_warning_title">DOH warning</string>
+    <string name="doh_warning_message">Android WebView does not use DNS over HTTPS. Captcha, authentication, and other WebView-based features will still use the standard system DNS and may be visible to your network provider. Press OK to enable.</string>
 
     <!-- Misc User-Agent group -->
     <string name="setting_group_user_agent">Custom User-Agent</string>

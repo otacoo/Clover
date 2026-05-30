@@ -30,6 +30,9 @@ import android.webkit.WebSettings;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.webkit.ProxyConfig;
+import androidx.webkit.ProxyController;
+import androidx.webkit.WebViewFeature;
 
 import org.codejargon.feather.Feather;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -159,6 +162,36 @@ public class Chan extends Application implements
                             .penaltyLog()
                             .build());
 
+        }
+
+        ChanSettings.customUserAgent.addCallback((setting, value) -> {
+            userAgent = createUserAgent();
+        });
+        ChanSettings.proxyEnabled.addCallback((setting, value) -> updateWebViewProxy());
+        ChanSettings.proxyAddress.addCallback((setting, value) -> updateWebViewProxy());
+        ChanSettings.proxyPort.addCallback((setting, value) -> updateWebViewProxy());
+        updateWebViewProxy();
+    }
+
+    private static void updateWebViewProxy() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
+            return;
+        }
+        java.net.Proxy proxy = ChanSettings.getProxy();
+        if (proxy != null && proxy.address() instanceof java.net.InetSocketAddress) {
+            java.net.InetSocketAddress addr = (java.net.InetSocketAddress) proxy.address();
+            String host = addr.getHostString();
+            int port = addr.getPort();
+            if (host == null || host.isEmpty()) {
+                ProxyController.getInstance().clearProxyOverride(Runnable::run, () -> {});
+                return;
+            }
+            ProxyConfig config = new ProxyConfig.Builder()
+                    .addProxyRule(host + ":" + port)
+                    .build();
+            ProxyController.getInstance().setProxyOverride(config, Runnable::run, () -> {});
+        } else {
+            ProxyController.getInstance().clearProxyOverride(Runnable::run, () -> {});
         }
     }
 

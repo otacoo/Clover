@@ -26,6 +26,7 @@ import android.webkit.WebView;
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.model.Post;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteRequestModifier;
 import org.otacoo.chan.ui.helper.PostHelper;
@@ -76,6 +77,10 @@ public class ReportController extends Controller {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        String ua = ChanSettings.customUserAgent.get();
+        if (!ua.isEmpty()) {
+            settings.setUserAgentString(ua);
+        }
         webView.loadUrl(url.toString());
         view = webView;
     }
