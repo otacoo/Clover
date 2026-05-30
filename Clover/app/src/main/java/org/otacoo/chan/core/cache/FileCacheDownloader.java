@@ -25,7 +25,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.WorkerThread;
 
-import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.IOUtils;
 import org.otacoo.chan.utils.Logger;
 
@@ -253,11 +252,7 @@ public class FileCacheDownloader implements Runnable {
 
         Request request = requestBuilder.build();
 
-        OkHttpClient client = httpClient.newBuilder()
-                .proxy(ChanSettings.getProxy())
-                .build();
-
-        call = client.newCall(request);
+        call = httpClient.newCall(request);
 
         Response response = call.execute();
 
@@ -325,13 +320,6 @@ public class FileCacheDownloader implements Runnable {
         } else {
             postProgress(total, total);
         }
-
-        IOUtils.closeQuietly(source);
-        IOUtils.closeQuietly(sink);
-
-        call = null;
-        IOUtils.closeQuietly(body);
-        body = null;
     }
 
     @WorkerThread

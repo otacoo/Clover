@@ -47,8 +47,8 @@ public class CacheHandler {
      * An estimation of the current size of the directory. Used to check if trim must be run
      * because the folder exceeds the maximum size.
      */
-    private AtomicLong size = new AtomicLong();
-    private AtomicBoolean trimRunning = new AtomicBoolean(false);
+    private final AtomicLong size = new AtomicLong();
+    private final AtomicBoolean trimRunning = new AtomicBoolean(false);
 
     @SuppressWarnings("this-escape")
     public CacheHandler(File directory, long maxSize) {
@@ -71,7 +71,7 @@ public class CacheHandler {
         return new File(directory, hash(key));
     }
 
-    @MainThread
+    @AnyThread
     protected void fileWasAdded(File file) {
         long adjustedSize = size.addAndGet(file.length());
 

@@ -27,13 +27,13 @@ public final class Chan8RateLimit {
 
     /** Primary domain, always the default on a fresh start. */
     public static final String PRIMARY_DOMAIN = "8chan.moe";
-        /** Fallback domain when PRIMARY_DOMAIN is unreachable. */
-        public static final String SECONDARY_DOMAIN = "8chan.st";
+    /** Fallback domain when PRIMARY_DOMAIN is unreachable. */
+    public static final String SECONDARY_DOMAIN = "8chan.st";
 
-        private static final String[] DOMAIN_ORDER = new String[] {
-            PRIMARY_DOMAIN,
-            SECONDARY_DOMAIN
-        };
+    private static final String[] DOMAIN_ORDER = new String[] {
+        PRIMARY_DOMAIN,
+        SECONDARY_DOMAIN
+    };
 
     // Active domain for this session.  In-memory only — resets to primary on restart.
     private static volatile String activeDomain = PRIMARY_DOMAIN;
