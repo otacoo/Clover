@@ -85,14 +85,16 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
                 @Override
                 public void onBoardsReceived(Boards boards) {
                     boardManager.updateAvailableBoardsForSite(site, boards.boards);
-                    AndroidUtils.runOnUiThread(() ->
-                            AndroidUtils.showThemedSnackbar("Board list refreshed.", Snackbar.LENGTH_SHORT));
+                    AndroidUtils.runOnUiThread(() -> {
+                        if (callback != null) callback.showBoardsRefreshed();
+                    });
                 }
 
                 @Override
                 public void onBoardsFailed(String reason) {
-                    AndroidUtils.runOnUiThread(() ->
-                            AndroidUtils.showThemedSnackbar(reason, Snackbar.LENGTH_LONG));
+                    AndroidUtils.runOnUiThread(() -> {
+                        if (callback != null) callback.showBoardsFailed(reason);
+                    });
                 }
             });
         }
@@ -402,6 +404,10 @@ public class BoardSetupPresenter implements SimpleObservable.SimpleObserver<Void
         void showRemovedSnackbar(Board board);
 
         void boardsWereAdded(int count);
+
+        void showBoardsRefreshed();
+
+        void showBoardsFailed(String reason);
     }
 
     public interface AddCallback {

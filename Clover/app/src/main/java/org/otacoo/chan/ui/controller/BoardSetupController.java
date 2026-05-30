@@ -223,6 +223,16 @@ public class BoardSetupController extends Controller implements View.OnClickList
         AndroidUtils.showThemedSnackbar(view, text, Snackbar.LENGTH_SHORT);
     }
 
+    @Override
+    public void showBoardsRefreshed() {
+        AndroidUtils.showThemedSnackbar(view, "Board list refreshed.", Snackbar.LENGTH_SHORT);
+    }
+
+    @Override
+    public void showBoardsFailed(String reason) {
+        AndroidUtils.showThemedSnackbar(view, reason, Snackbar.LENGTH_LONG);
+    }
+
     private class SavedBoardsAdapter extends RecyclerView.Adapter<SavedBoardCell> {
         private List<Board> savedBoards;
 
