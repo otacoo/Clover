@@ -2,28 +2,39 @@ package org.otacoo.chan.core.di;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import org.codejargon.feather.Provides;
 import org.otacoo.chan.core.cache.FileCache;
 import org.otacoo.chan.core.net.ChanInterceptor;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.ui.view.AuthWebView;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.HttpCookie;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 
-import okhttp3.Authenticator;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.otacoo.chan.core.net.AppCookieJar;
 import org.otacoo.chan.core.site.sites.chan8.Chan8PowInterceptor;
 
@@ -31,13 +42,12 @@ public class NetModule {
     private static final long FILE_CACHE_DISK_SIZE = 50 * 1024 * 1024;
     private static final String FILE_CACHE_NAME = "filecache";
     private static final int TIMEOUT = 30000;
-    private static final String TAG = "NetModule";
 
     // expose the internal java.net.CookieManager so callers can mirror
     // WebView cookies (which are otherwise inaccessible when HttpOnly).
-    private static java.net.CookieManager sharedCookieManager;
+    private static CookieManager sharedCookieManager;
 
-    public static java.net.CookieManager getSharedCookieManager() {
+    public static CookieManager getSharedCookieManager() {
         return sharedCookieManager;
     }
 
@@ -46,14 +56,15 @@ public class NetModule {
     public static void syncCookiesToJar(String url) {
         if (sharedCookieManager == null) return;
         // Ensure CookieManager calls happen on WebView thread (main thread).
-        if (!org.otacoo.chan.ui.view.AuthWebView.isOnWebViewThread()) {
-            final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-            org.otacoo.chan.utils.AndroidUtils.runOnUiThread(() -> {
+        if (!AuthWebView.isOnWebViewThread()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            AndroidUtils.runOnUiThread(() -> {
                 doSyncCookie(url);
                 latch.countDown();
             });
             try {
-                latch.await(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                //noinspection ResultOfMethodCallIgnored -> proceed regardless of timeout
+                latch.await(500, TimeUnit.MILLISECONDS);
             } catch (InterruptedException ignored) {
             }
         } else {
@@ -64,38 +75,23 @@ public class NetModule {
     private static void doSyncCookie(String url) {
         android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
         // Sync cookies for the exact URL.
-        String raw = cm.getCookie(url);
-        // Logger.i("NetModule", "doSyncCookie raw=" + raw + " for url=" + url);
-        syncRaw(url, raw);
+        syncRaw(url, cm.getCookie(url));
         // Also try the root of the same host in case cookies are set with path=/ and
         // some devices only return them when queried at the root.
         try {
-            java.net.URI uri = new java.net.URI(url);
+            URI uri = new URI(url);
             if (uri.getPath() != null && !uri.getPath().equals("/") && !uri.getPath().isEmpty()) {
                 String root = uri.getScheme() + "://" + uri.getHost() + "/";
-                String rootRaw = cm.getCookie(root);
-                // Logger.i("NetModule", "doSyncCookie raw=" + rootRaw + " for root=" + root);
-                syncRaw(root, rootRaw);
+                syncRaw(root, cm.getCookie(root));
             }
         } catch (Exception ignored) {}
     }
 
-    /**
-     * Returns true if {@code name} is an essential cookie for 8chan browsing.
-     */
-    public static boolean is8chanEssentialCookie(String name) {
-        if (name == null) return false;
-        return name.equals("POW_TOKEN")
-                || name.equals("POW_ID")
-                || name.startsWith("TOS")
-                || name.equals("bypass");
-    }
-
-    /** Parse "name=value; …" and store each cookie in the jar for its source domain only. */
+    // Parse "name=value; ..." and store each cookie in the jar for its source domain only.
     private static void syncRaw(String url, String raw) {
         if (raw == null || raw.isEmpty()) return;
         try {
-            java.net.URI uri = new java.net.URI(url);
+            URI uri = new URI(url);
             String host = uri.getHost();
             String[] parts = raw.split(";\\s*");
             for (String part : parts) {
@@ -105,18 +101,12 @@ public class NetModule {
                 String value = part.substring(eq + 1).trim();
 
                 // 'inbound' is a transient POWBlock redirect cookie; forwarding it re-triggers the challenge.
-                if (name.equals("inbound")) {
-                    //Logger.i("NetModule", "skipping transient cookie '" + name + "' for " + host);
-                    continue;
-                }
+                if (name.equals("inbound")) continue;
 
                 // captcha cookies are managed by OkHttp; skip the stale WebView copy.
-                if (name.equals("captchaid") || name.equals("captchaexpiration")) {
-                    // Logger.d("NetModule", "skipping captcha session cookie '" + name + "' for " + host);
-                    continue;
-                }
+                if (name.equals("captchaid") || name.equals("captchaexpiration")) continue;
 
-                java.net.HttpCookie hc = new java.net.HttpCookie(name, value);
+                HttpCookie hc = new HttpCookie(name, value);
                 hc.setDomain(host);
                 hc.setPath("/");
                 sharedCookieManager.getCookieStore().add(uri, hc);
@@ -126,16 +116,15 @@ public class NetModule {
         }
     }
 
-    /** Build raw cookie header for {@code url} from the CookieStore, excluding 'inbound'. */
+    // Build raw cookie header for {url} from the CookieStore, excluding 'inbound'.
     static String buildRawCookieHeader(HttpUrl url) {
         if (sharedCookieManager == null) return null;
         try {
-            java.net.URI uri = url.uri();
-            java.util.List<java.net.HttpCookie> cookies =
-                    sharedCookieManager.getCookieStore().get(uri);
+            URI uri = url.uri();
+            List<HttpCookie> cookies = sharedCookieManager.getCookieStore().get(uri);
             if (cookies == null || cookies.isEmpty()) return null;
             StringBuilder sb = new StringBuilder();
-            for (java.net.HttpCookie hc : cookies) {
+            for (HttpCookie hc : cookies) {
                 if ("inbound".equals(hc.getName())) continue;
                 if (sb.length() > 0) sb.append("; ");
                 sb.append(hc.getName()).append("=").append(hc.getValue());
@@ -154,37 +143,12 @@ public class NetModule {
         return buildRawCookieHeader(httpUrl);
     }
 
-    public static boolean has8chanSessionCookies(String url) {
-        String raw = getRawCookieHeader(url);
-        if (raw == null || raw.isEmpty()) return false;
-        return raw.contains("POW_TOKEN=") && raw.contains("POW_ID=");
-    }
-
     public static String firstMatch(String text, String regex) {
         if (text == null || regex == null) return null;
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile(regex, java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(text);
+        Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(text);
         if (!m.find()) return null;
         String v = m.groupCount() >= 1 ? m.group(1) : null;
         return v != null ? v.trim() : null;
-    }
-
-    public static String extractPowToken(String html) {
-        if (html == null) return null;
-        String[] patterns = new String[] {
-                // POWBlock v1.6 uses <pre id=c style=display:none>TOKEN</pre>
-                // The [^>]* allows any extra attributes between the id and >
-                "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>",
-                "['\"]c['\"]\\s*[:=]\\s*['\"]([^'\"]+)['\"]",
-                "[?&]t=([A-Za-z0-9%._~+\\-=/|]+)",
-                "\\bt\\s*[:=]\\s*['\"]([A-Za-z0-9%._~+\\-=/|]+)['\"]"
-        };
-        for (String pattern : patterns) {
-            String value = firstMatch(html, pattern);
-            if (value != null && !value.isEmpty()) return value;
-        }
-        return null;
     }
 
     public static Integer extractPowDifficulty(String html) {
@@ -230,6 +194,7 @@ public class NetModule {
 
     @Provides
     @Singleton
+    @SuppressWarnings("unused") // called by Feather DI via reflection
     public OkHttpClient provideOkHttpClient(UserAgentProvider userAgentProvider) {
         AppCookieJar cookieJar = new AppCookieJar();
         // expose the cookie manager for WebView sync and other helpers
@@ -245,10 +210,11 @@ public class NetModule {
                 .addInterceptor(new ChanInterceptor(userAgentProvider))
                 // Application interceptor handles automatic 8chan POW bypass
                 .addInterceptor(new Chan8PowInterceptor())
-                .addNetworkInterceptor(new okhttp3.Interceptor() {
+                .addNetworkInterceptor(new Interceptor() {
+                    @NonNull
                     @Override
-                    public okhttp3.Response intercept(okhttp3.Interceptor.Chain chain) throws java.io.IOException {
-                        okhttp3.Request req = chain.request();
+                    public Response intercept(@NonNull Interceptor.Chain chain) throws IOException {
+                        Request req = chain.request();
 
                         // For 8chan: replace OkHttp's cookie header with raw values from the shared CookieStore.
                         // This preserves HttpOnly cookies and avoids OkHttp's quoting/encoding differences.
@@ -309,6 +275,7 @@ public class NetModule {
 
     @Provides
     @Singleton
+    @SuppressWarnings("unused") // called by Feather DI via reflection
     public FileCache provideFileCache(Context applicationContext, UserAgentProvider userAgentProvider, OkHttpClient okHttpClient) {
         return new FileCache(new File(getCacheDir(applicationContext), FILE_CACHE_NAME), FILE_CACHE_DISK_SIZE, userAgentProvider.getUserAgent(), okHttpClient);
     }
