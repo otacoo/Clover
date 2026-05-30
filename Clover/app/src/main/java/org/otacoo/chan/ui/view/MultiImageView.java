@@ -49,7 +49,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
@@ -131,7 +130,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private FileCacheDownloader gifRequest;
     private FileCacheDownloader videoRequest;
 
-    private VideoView videoView;
     private PlayerView exoPlayerView;
     private View playerRoot;
     private boolean videoError = false;
@@ -257,37 +255,37 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             }
             this.mode = newMode;
 
-            AndroidUtils.waitForMeasure(this, view -> {
-                switch (newMode) {
-                    case LOWRES:
-                        boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
-                                && postImage.imageUrl != null
-                                && postImage.type != PostImage.Type.MOVIE
-                                && postImage.type != PostImage.Type.SWF;
-                        String url;
-                        if (useFullSize) {
-                            url = postImage.imageUrl.toString();
-                        } else {
-                            okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
-                            url = thumbUrl != null ? thumbUrl.toString() : null;
-                        }
-                        setThumbnail(url, center);
-                        break;
-                    case BIGIMAGE:
-                        setBigImage(postImage.imageUrl.toString());
-                        break;
-                    case GIF:
-                        setGif(postImage.imageUrl.toString());
-                        break;
-                    case MOVIE:
-                        setVideo(postImage.imageUrl.toString());
-                        break;
-                    case OTHER:
-                        setOther(postImage.imageUrl.toString());
-                        break;
-                }
-                return true;
-            });
+            if (newMode == Mode.MOVIE) {
+                setVideo(postImage.imageUrl.toString());
+            } else if (newMode == Mode.OTHER) {
+                setOther(postImage.imageUrl.toString());
+            } else {
+                AndroidUtils.waitForMeasure(this, view -> {
+                    switch (newMode) {
+                        case LOWRES:
+                            boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                                    && postImage.imageUrl != null
+                                    && postImage.type != PostImage.Type.MOVIE
+                                    && postImage.type != PostImage.Type.SWF;
+                            String url;
+                            if (useFullSize) {
+                                url = postImage.imageUrl.toString();
+                            } else {
+                                okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+                                url = thumbUrl != null ? thumbUrl.toString() : null;
+                            }
+                            setThumbnail(url, center);
+                            break;
+                        case BIGIMAGE:
+                            setBigImage(postImage.imageUrl.toString());
+                            break;
+                        case GIF:
+                            setGif(postImage.imageUrl.toString());
+                            break;
+                    }
+                    return true;
+                });
+            }
         }
     }
 
@@ -346,8 +344,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             if (playerPlayPause != null) {
                 playerPlayPause.setImageResource(R.drawable.ic_play_circle_filled_white);
             }
-        } else if (videoView != null) {
-            videoView.pause();
         }
     }
 
@@ -592,7 +588,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             onModeLoaded(Mode.GIF, view);
             drawable.start();
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.e(TAG, "APNG decode failed, falling back", e);
             boolean tiling = fallbackMode == Mode.BIGIMAGE;
             setBitImageFileInternal(file, tiling, fallbackMode);
         }
@@ -605,7 +601,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             try {
                 drawable = new GifDrawable(file.getAbsolutePath());
             } catch (IOException e) {
-                e.printStackTrace();
+                Logger.e(TAG, "GIF decode failed", e);
                 AndroidUtils.runOnUiThread(() -> {
                     if (isAttachedToWindow()) {
                         onError(new Exception(e.getMessage()));
@@ -614,7 +610,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 return;
             } catch (OutOfMemoryError e) {
                 Runtime.getRuntime().gc();
-                e.printStackTrace();
+                Logger.e(TAG, "GIF decode OOM", e);
                 AndroidUtils.runOnUiThread(() -> {
                     if (isAttachedToWindow()) {
                         onOutOfMemoryError();
@@ -717,6 +713,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         addView(root, 0, lp);
 
         isMuted = ChanSettings.videoDefaultMuted.get();
+        // Show the player view immediately.
+        // Audio track detection is deferred to STATE_READY via checkAudioTracks().
+        onModeLoaded(Mode.MOVIE, playerRoot);
         startExoPlayer(file);
         callback.onVideoLoaded(this);
     }
@@ -790,7 +789,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 if (playbackState == Player.STATE_READY) {
                     AndroidUtils.runOnUiThread(() -> {
                         if (isAttachedToWindow() && exoPlayer != null) {
-                            onModeLoaded(Mode.MOVIE, playerRoot);
                             checkAudioTracks();
                         }
                     });
@@ -1110,10 +1108,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         }
     }
 
-    private void cleanupVideo(VideoView videoView) {
-        videoView.stopPlayback();
-    }
-
     private void cleanupExo() {
         handler.removeCallbacks(updateTimeTask);
         handler.removeCallbacks(hideControllerTask);
@@ -1313,14 +1307,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             videoRequest = null;
         }
 
-        cleanupWebView();
-
         // Stop all active view content
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-            if (child instanceof VideoView) {
-                cleanupVideo((VideoView) child);
-            } else if (child instanceof GifImageView gif) {
+            if (child instanceof GifImageView gif) {
                 if (gif.getDrawable() instanceof GifDrawable) {
                     ((GifDrawable) gif.getDrawable()).stop();
                 }
@@ -1357,10 +1347,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 View child = getChildAt(i);
                 if (child != playView) {
                     if (child != view) {
-                        if (child instanceof VideoView) {
-                            cleanupVideo((VideoView) child);
-                        }
-
                         removeViewAt(i);
                     } else {
                         alreadyAttached = true;
@@ -1375,11 +1361,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
         hasContent = true;
         callback.onModeLoaded(this, mode);
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
     }
 
     @Override
