@@ -609,10 +609,6 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="setting_proxy_address">Adresse du serveur proxy</string>
     <string name="setting_proxy_port">Port du serveur proxy</string>
 
-    <string name="setting_group_dns_over_https">DNS sur HTTPS</string>
-    <string name="setting_group_dns_enable">Activer DOH (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Nécessite un redémarrage de l\'application</string>
-
     <string name="setting_group_user_agent">User-Agent personnalisé</string>
     <string name="setting_group_user_agent_ua">Définir un User-Agent personnalisé</string>
     <string name="setting_group_user_agent_ua_desc">Vide pour le système, redémarrage requis</string>

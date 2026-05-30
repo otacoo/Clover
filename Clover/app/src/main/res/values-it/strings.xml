@@ -604,10 +604,6 @@ Se altri filtri sono abilitati per esso, non funzionerà.
     <string name="setting_proxy_address">Indirizzo server proxy</string>
     <string name="setting_proxy_port">Porta server proxy</string>
 
-    <string name="setting_group_dns_over_https">DNS su HTTPS</string>
-    <string name="setting_group_dns_enable">Abilita DOH (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Richiede riavvio app</string>
-
     <string name="setting_group_user_agent">User-Agent personalizzato</string>
     <string name="setting_group_user_agent_ua">Imposta User-Agent personalizzato</string>
     <string name="setting_group_user_agent_ua_desc">Vuoto per sistema, riavvio richiesto</string>

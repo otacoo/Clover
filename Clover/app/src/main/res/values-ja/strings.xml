@@ -560,10 +560,6 @@
     <string name="setting_proxy_address">プロキシサーバーアドレス</string>
     <string name="setting_proxy_port">プロキシサーバーポート</string>
 
-    <string name="setting_group_dns_over_https">DNS over HTTPS</string>
-    <string name="setting_group_dns_enable">DOH(Cloudflare)を有効にする</string>
-    <string name="setting_group_dns_enable_description">アプリの再起動が必要です</string>
-
     <string name="setting_group_user_agent">カスタムUser-Agent</string>
     <string name="setting_group_user_agent_ua">カスタムUser-Agentを設定</string>
     <string name="setting_group_user_agent_ua_desc">システムデフォルトは空白、再起動が必要</string>

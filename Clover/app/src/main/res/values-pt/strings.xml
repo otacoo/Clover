@@ -602,10 +602,6 @@ Se outros filtros estiverem ativados para ele, não funcionará.
     <string name="setting_proxy_address">Endereço do servidor proxy</string>
     <string name="setting_proxy_port">Porta do servidor proxy</string>
 
-    <string name="setting_group_dns_over_https">DNS sobre HTTPS</string>
-    <string name="setting_group_dns_enable">Ativar DOH (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Requer reinicialização do app</string>
-
     <string name="setting_group_user_agent">User-Agent personalizado</string>
     <string name="setting_group_user_agent_ua">Definir User-Agent personalizado</string>
     <string name="setting_group_user_agent_ua_desc">Vazio para padrão do sistema, requer

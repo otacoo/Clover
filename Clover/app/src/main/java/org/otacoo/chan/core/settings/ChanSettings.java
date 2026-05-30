@@ -315,7 +315,6 @@ public class ChanSettings {
     public static final OptionsSetting<SwipeGesture> swipeToClose;
     public static final OptionsSetting<SwipeGesture> swipeToSave;
     public static final BooleanSetting doubleTapPlayPause;
-    public static final BooleanSetting dnsOverHttps;
 
     public static final StringSetting customUserAgent;
     public static final StringSetting customCFClearanceCommand;
@@ -452,7 +451,6 @@ public class ChanSettings {
         swipeToClose = new OptionsSetting<>(p, "preference_swipe_to_close", SwipeGesture.class, SwipeGesture.NONE);
         swipeToSave = new OptionsSetting<>(p, "preference_swipe_to_save", SwipeGesture.class, SwipeGesture.NONE);
         doubleTapPlayPause = new BooleanSetting(p, "preference_double_tap_play_pause", false);
-        dnsOverHttps = new BooleanSetting(p, "dns_over_https", false);
 
         customUserAgent = new StringSetting(p, "custom_user_agent", "");
         customCFClearanceCommand = new StringSetting(p, "custom_cfclearance_command", "");

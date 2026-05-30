@@ -623,10 +623,6 @@
     <string name="setting_proxy_address">Адрес прокси-сервера</string>
     <string name="setting_proxy_port">Порт прокси-сервера</string>
 
-    <string name="setting_group_dns_over_https">DNS через HTTPS</string>
-    <string name="setting_group_dns_enable">Включить DOH (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Требуется перезапуск приложения</string>
-
     <string name="setting_group_user_agent">Пользовательский User-Agent</string>
     <string name="setting_group_user_agent_ua">Установить пользовательский User-Agent</string>
     <string name="setting_group_user_agent_ua_desc">Пусто для системного, требуется перезапуск</string>

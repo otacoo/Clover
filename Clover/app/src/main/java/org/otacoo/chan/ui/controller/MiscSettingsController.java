@@ -45,7 +45,6 @@ import de.greenrobot.event.EventBus;
 
 public class MiscSettingsController extends SettingsController {
     private SettingView proxyEnabledView;
-    private SettingView dnsOverHttpsView;
 
     public MiscSettingsController(Context context) {
         super(context);
@@ -115,16 +114,6 @@ public class MiscSettingsController extends SettingsController {
 
             groups.add(proxy);
 
-            // DNS Over HTTP Group
-            {
-                SettingsGroup doh = new SettingsGroup(R.string.setting_group_dns_over_https);
-
-                dnsOverHttpsView = doh.add(new BooleanSettingView(this, ChanSettings.dnsOverHttps,
-                        R.string.setting_group_dns_enable, R.string.setting_group_dns_enable_description));
-
-                groups.add(doh);
-            }
-
             // User-Agent group
             {
                 SettingsGroup ua = new SettingsGroup(R.string.setting_group_user_agent);
@@ -145,20 +134,6 @@ public class MiscSettingsController extends SettingsController {
                     .setPositiveButton(R.string.ok, null)
                     .setNegativeButton(R.string.cancel, (dialog, which) -> {
                         ChanSettings.proxyEnabled.set(false);
-                        SwitchCompat switcher = item.view.findViewById(R.id.switcher);
-                        if (switcher != null) {
-                            switcher.setChecked(false);
-                        }
-                    })
-                    .show();
-        }
-        if (item == dnsOverHttpsView && ChanSettings.dnsOverHttps.get()) {
-            new AlertDialog.Builder(context)
-                    .setTitle(R.string.doh_warning_title)
-                    .setMessage(R.string.doh_warning_message)
-                    .setPositiveButton(R.string.ok, null)
-                    .setNegativeButton(R.string.cancel, (dialog, which) -> {
-                        ChanSettings.dnsOverHttps.set(false);
                         SwitchCompat switcher = item.view.findViewById(R.id.switcher);
                         if (switcher != null) {
                             switcher.setChecked(false);

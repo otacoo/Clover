@@ -604,10 +604,6 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="setting_proxy_address">Proxy-Serveradresse</string>
     <string name="setting_proxy_port">Proxy-Serverport</string>
 
-    <string name="setting_group_dns_over_https">DNS über HTTPS</string>
-    <string name="setting_group_dns_enable">DOH aktivieren (Cloudflare)</string>
-    <string name="setting_group_dns_enable_description">Erfordert App-Neustart</string>
-
     <string name="setting_group_user_agent">Benutzerdefinierter User-Agent</string>
     <string name="setting_group_user_agent_ua">Benutzerdefinierten User-Agent setzen</string>
     <string name="setting_group_user_agent_ua_desc">Leer für System, Neustart erforderlich</string>

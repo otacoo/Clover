@@ -10,13 +10,10 @@ import org.otacoo.chan.utils.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -25,10 +22,8 @@ import javax.inject.Singleton;
 
 import okhttp3.Authenticator;
 import okhttp3.Credentials;
-import okhttp3.Dns;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import okhttp3.dnsoverhttps.DnsOverHttps;
 import org.otacoo.chan.core.net.AppCookieJar;
 import org.otacoo.chan.core.site.sites.chan8.Chan8PowInterceptor;
 
@@ -307,39 +302,6 @@ public class NetModule {
             return response.request().newBuilder()
                     .header("Proxy-Authorization", Credentials.basic(username, password))
                     .build();
-        });
-
-        final Dns dohDns;
-        try {
-            OkHttpClient dnsClient = new OkHttpClient.Builder().build();
-            dohDns = new DnsOverHttps.Builder()
-                    .client(dnsClient)
-                    .url(HttpUrl.parse("https://cloudflare-dns.com/dns-query"))
-                    .bootstrapDnsHosts(Arrays.asList(
-                            InetAddress.getByName("162.159.36.1"),
-                            InetAddress.getByName("162.159.46.1"),
-                            InetAddress.getByName("1.1.1.1"),
-                            InetAddress.getByName("1.0.0.1"),
-                            InetAddress.getByName("162.159.132.53"),
-                            InetAddress.getByName("2606:4700:4700::1111"),
-                            InetAddress.getByName("2606:4700:4700::1001"),
-                            InetAddress.getByName("2606:4700:4700::0064"),
-                            InetAddress.getByName("2606:4700:4700::6400")
-                    ))
-                    .build();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Failed to build DnsOverHttps (bootstrap IPs should never fail)", e);
-        }
-        builder.dns(hostname -> {
-            if (!ChanSettings.dnsOverHttps.get()) {
-                return Dns.SYSTEM.lookup(hostname);
-            }
-            try {
-                return dohDns.lookup(hostname);
-            } catch (IllegalArgumentException e) {
-                // DnsOverHttps.isPrivateHost crashes on short hostnames (localhost, "" etc.)
-                return Dns.SYSTEM.lookup(hostname);
-            }
         });
 
         return builder.build();
