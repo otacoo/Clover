@@ -262,7 +262,7 @@ public class FileCacheDownloader implements Runnable {
             if (code == 404 && url.endsWith(".png")) {
                 String fallbackUrl = url.substring(0, url.length() - 4);
                 request = requestBuilder.url(fallbackUrl).build();
-                call = client.newCall(request);
+                call = httpClient.newCall(request);
                 response = call.execute();
                 if (!response.isSuccessful()) {
                     code = response.code();
