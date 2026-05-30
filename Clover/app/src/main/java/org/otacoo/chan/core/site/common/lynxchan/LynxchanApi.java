@@ -10,13 +10,13 @@ import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.site.SiteEndpoints;
 import org.otacoo.chan.core.site.common.CommonSite;
 import org.otacoo.chan.core.site.parser.ChanReaderProcessingQueue;
-import org.jsoup.parser.Parser;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import okhttp3.HttpUrl;
@@ -181,7 +181,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
             // Catalog entries supply only "thumb" (no "path"). Derive the full image path by
             // stripping the "t_" thumbnail prefix.  e.g. /.media/t_fd97ac… → /.media/fd97ac…
             String imagePath = standalonePath;
-            if (imagePath == null && standaloneThumb != null) {
+            if (imagePath == null) {
                 int lastSlash = standaloneThumb.lastIndexOf('/');
                 if (lastSlash != -1) {
                     String name = standaloneThumb.substring(lastSlash + 1);
@@ -194,7 +194,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
 
             // Extension: prefer explicit dot-extension in the path, fall back to mime type.
             String ext = "";
-            if (imagePath != null) {
+            {
                 int lastDot  = imagePath.lastIndexOf('.');
                 int lastSlash = imagePath.lastIndexOf('/');
                 if (lastDot != -1 && lastDot > lastSlash) {
@@ -203,11 +203,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
             }
             if (ext.isEmpty() && standaloneMime != null) {
                 switch (standaloneMime) {
-                    case "image/jpeg":  ext = "jpg";  break;
-                    case "image/jpg":   ext = "jpg";  break;
+                    case "image/jpeg", "image/jpg":  ext = "jpg";  break;
                     case "image/jxl":   ext = "jxl";  break;
-                    case "image/png":   ext = "png";  break;
-                    case "image/apng":  ext = "png";  break;
+                    case "image/png", "image/apng":   ext = "png";  break;
                     case "image/gif":   ext = "gif";  break;
                     case "image/avif":  ext = "avif"; break;
                     case "image/webp":  ext = "webp"; break;
@@ -231,13 +229,13 @@ public class LynxchanApi extends CommonSite.CommonApi {
             // one.  Append the known extension so the full-image URL resolves correctly.
             // APNG images are currently served without extension on 8chan
             boolean isApng = "image/apng".equals(standaloneMime);
-            if (imagePath != null && !ext.isEmpty() && !isApng) {
+            if (!ext.isEmpty() && !isApng) {
                 int dot   = imagePath.lastIndexOf('.');
                 int sl    = imagePath.lastIndexOf('/');
                 if (dot <= sl) imagePath = imagePath + "." + ext; // no extension yet
             }
 
-            String usePath = imagePath != null ? imagePath : standaloneThumb;
+            String usePath = imagePath;
             String filename = usePath;
             int lastSlash = usePath.lastIndexOf('/');
             if (lastSlash != -1) filename = usePath.substring(lastSlash + 1);
@@ -250,7 +248,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
             // Ensure the arguments passed to SiteEndpoints do not contain leading slashes
             // because HttpUrl.Builder#addPathSegments interprets them literally or doubles them.
             String cleanImagePath = imagePath;
-            if (cleanImagePath != null && cleanImagePath.startsWith("/")) {
+            if (cleanImagePath.startsWith("/")) {
                 cleanImagePath = cleanImagePath.substring(1);
             }
             String cleanThumbPath = standaloneThumb;
@@ -320,10 +318,14 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 break;
             case "markdown":
                 if (reader.peek() != JsonToken.NULL) {
+                    String md = reader.nextString();
+                    // Strip 8chan @@grid-... interactive OP widget block.
+                    // Matches both the plain form (@@grid-) and the hljs-highlighted form (@<tags>@grid<tags>-).
+                    md = md.replaceAll("(?s)<span class=\"blockCode\"><code>(?:@@grid-|@(?:<[^>]+>)*@grid(?:<[^>]+>)*-).*?]\\}\\s*</code></span>", "");
                     // Lynxchan uses bare \n between HTML elements; convert to <br> so
                     // the CommentParser renders line-breaks correctly.
-                    String md = reader.nextString().replace("\n", "<br>");
-                    md = md.replaceAll("\\[code\\](.*?)\\[/code\\]", "<pre><code>$1</code></pre>");
+                    md = md.replace("\n", "<br>");
+                    md = md.replaceAll("\\[code](.*?)\\[/code]", "<pre><code>$1</code></pre>");
                     builder.comment(md);
                 } else {
                     reader.skipValue();
@@ -332,7 +334,10 @@ public class LynxchanApi extends CommonSite.CommonApi {
             case "message":
             case "comment":
                 if (reader.peek() != JsonToken.NULL) {
-                    builder.comment(reader.nextString());
+                    String msg = reader.nextString();
+                    // Strip 8chan @@grid-... interactive widget blocks from the raw [code] form.
+                    msg = msg.replaceAll("(?s)\\[code][\\r\\n]+@@grid-.*?]\\}[\\r\\n]*\\[/code]", "");
+                    builder.comment(msg);
                 } else {
                     reader.skipValue();
                 }
@@ -345,7 +350,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
                         builder.setUnixTimestampSeconds(reader.nextLong());
                     } else if (reader.peek() == JsonToken.STRING) {
                         String dateStr = reader.nextString();
-                        builder.setUnixTimestampSeconds(ISO_8601.parse(dateStr).getTime() / 1000L);
+                        builder.setUnixTimestampSeconds(Objects.requireNonNull(ISO_8601.parse(dateStr)).getTime() / 1000L);
                     } else {
                         reader.skipValue();
                     }
@@ -504,11 +509,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
         }
         if (ext.isEmpty() && mime != null) {
             switch (mime) {
-                case "image/jpeg":  ext = "jpg";  break;
-                case "image/jpg":   ext = "jpg";  break;
+                case "image/jpeg", "image/jpg":  ext = "jpg";  break;
                 case "image/jxl":   ext = "jxl";  break;
-                case "image/png":   ext = "png";  break;
-                case "image/apng":  ext = "png";  break;
+                case "image/png", "image/apng":   ext = "png";  break;
                 case "image/gif":   ext = "gif";  break;
                 case "image/avif":  ext = "avif"; break;
                 case "image/webp":  ext = "webp"; break;
