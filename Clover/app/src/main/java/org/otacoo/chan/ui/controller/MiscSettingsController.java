@@ -107,6 +107,12 @@ public class MiscSettingsController extends SettingsController {
             proxy.add(new IntegerSettingView(this, ChanSettings.proxyPort,
                     R.string.setting_proxy_port, R.string.setting_proxy_port));
 
+            proxy.add(new StringSettingView(this, ChanSettings.proxyUsername,
+                    R.string.setting_proxy_username, R.string.setting_proxy_username));
+
+            proxy.add(new StringSettingView(this, ChanSettings.proxyPassword,
+                    R.string.setting_proxy_password, R.string.setting_proxy_password));
+
             groups.add(proxy);
 
             // DNS Over HTTP Group

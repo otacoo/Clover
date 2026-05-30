@@ -278,6 +278,8 @@ public class ChanSettings {
     public static final BooleanSetting proxyEnabled;
     public static final StringSetting proxyAddress;
     public static final IntegerSetting proxyPort;
+    public static final StringSetting proxyUsername;
+    public static final StringSetting proxyPassword;
 
     public static final CounterSetting historyOpenCounter;
     public static final CounterSetting threadOpenCounter;
@@ -426,6 +428,8 @@ public class ChanSettings {
         proxyEnabled = new BooleanSetting(p, "preference_proxy_enabled", false);
         proxyAddress = new StringSetting(p, "preference_proxy_address", "");
         proxyPort = new IntegerSetting(p, "preference_proxy_port", 80);
+        proxyUsername = new StringSetting(p, "preference_proxy_username", "");
+        proxyPassword = new StringSetting(p, "preference_proxy_password", "");
 
         proxyEnabled.addCallback((setting, value) -> loadProxy());
         proxyAddress.addCallback((setting, value) -> loadProxy());
@@ -539,6 +543,20 @@ public class ChanSettings {
      */
     public static Proxy getProxy() {
         return proxy;
+    }
+
+    /**
+     * Returns the proxy username, or empty string if none configured.
+     */
+    public static String getProxyUsername() {
+        return proxyUsername.get();
+    }
+
+    /**
+     * Returns the proxy password, or empty string if none configured.
+     */
+    public static String getProxyPassword() {
+        return proxyPassword.get();
     }
 
     /** Call after restoring settings from backup so proxy is updated. */

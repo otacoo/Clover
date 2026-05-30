@@ -636,6 +636,8 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_proxy_enabled">Enable proxy</string>
     <string name="setting_proxy_address">Proxy server address</string>
     <string name="setting_proxy_port">Proxy server port</string>
+    <string name="setting_proxy_username">Proxy username (optional)</string>
+    <string name="setting_proxy_password">Proxy password (optional)</string>
     <string name="proxy_warning_title">Proxy warning</string>
     <string name="proxy_warning_message">The proxy will be applied to all app traffic including WebView (captcha, authentication, reports). Press OK to enable.</string>
 

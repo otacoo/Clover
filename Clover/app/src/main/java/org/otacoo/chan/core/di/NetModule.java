@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
 
+import okhttp3.Authenticator;
+import okhttp3.Credentials;
 import okhttp3.Dns;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -295,6 +297,16 @@ public class NetModule {
             @Override
             public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
             }
+        });
+
+        builder.proxyAuthenticator((route, response) -> {
+            String username = ChanSettings.getProxyUsername();
+            String password = ChanSettings.getProxyPassword();
+            if (username.isEmpty()) return null; // no auth configured
+            if (response.request().header("Proxy-Authorization") != null) return null; // already tried, avoid loop
+            return response.request().newBuilder()
+                    .header("Proxy-Authorization", Credentials.basic(username, password))
+                    .build();
         });
 
         final Dns dohDns;
