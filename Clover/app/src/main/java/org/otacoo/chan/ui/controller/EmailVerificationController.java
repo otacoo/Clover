@@ -141,13 +141,11 @@ public class EmailVerificationController extends Controller {
         AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
     }
 
-    // Clear all 4chan cookies before creating the WebView so the signin page gets a clean session.
+    // Clear cookies for the site being verified before creating the WebView so it gets a clean session.
     private void clearSiteCookies() {
         CookieManager cm = CookieManager.getInstance();
         
         java.util.Set<String> apexes = new java.util.HashSet<>();
-        apexes.add("4chan.org");
-        apexes.add("4channel.org");
 
         if (initialUrl != null) {
             try {
@@ -156,7 +154,9 @@ public class EmailVerificationController extends Controller {
                 if (host != null) {
                     if (host.endsWith("4chan.org")) {
                         apexes.add("4chan.org");
+                        apexes.add("4channel.org");
                     } else if (host.endsWith("4channel.org")) {
+                        apexes.add("4chan.org");
                         apexes.add("4channel.org");
                     } else {
                         // For other domains, try to find the apex.
@@ -259,10 +259,6 @@ public class EmailVerificationController extends Controller {
                     FrameLayout.LayoutParams.MATCH_PARENT));
         }
         webView.loadUrl(initialUrl);
-
-        if (requiredCookies != null && requiredCookies.length > 0) {
-            AndroidUtils.showThemedSnackbar(view, "Please solve the verification challenge to continue.", Snackbar.LENGTH_LONG);
-        }
     }
 
     private void checkCookies() {

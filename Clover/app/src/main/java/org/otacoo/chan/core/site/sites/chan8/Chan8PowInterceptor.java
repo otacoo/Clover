@@ -188,7 +188,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 // If this is a non-silent (user-visible) request, show the snackbar now — the
                 // solver thread may be processing a silent pre-warm request and won't show it.
                 if (req.header(SILENT_POW_HEADER) == null) {
-                    Chan8PowNotifier.onPowStarted(true);
+                    Chan8PowNotifier.onPowStarted();
                 }
                 // Wait for the thread that is performing POW to finish
                 try {
@@ -247,7 +247,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 return resp;
             }
 
-            Chan8PowNotifier.onPowStarted(!silentPow);
+            if (!silentPow) Chan8PowNotifier.onPowStarted();
 
             int algorithm = NetModule.extractPowAlgorithm(html);
             long t0 = System.currentTimeMillis();
