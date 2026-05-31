@@ -48,7 +48,7 @@ To build and test locally, see the [BUILD.md](docs/BUILD.md) instructions.
 
 
 ## License
-Clover is [GPLv3](https://github.com/floens/Clover/blob/dev/COPYING.txt), [licenses of the used libraries](https://github.com/otacoo/Clover/blob/dev/Clover/app/src/main/assets/html/licenses.html).
+Clover is [GPLv3](https://github.com/otacoo/Clover/blob/main/COPYING.txt), [licenses of the used libraries](https://github.com/otacoo/Clover/blob/main/Clover/app/src/main/assets/html/licenses.html).
 
 
 ## Contributor chain
