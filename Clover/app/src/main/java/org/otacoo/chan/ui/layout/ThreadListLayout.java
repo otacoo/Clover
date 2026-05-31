@@ -32,6 +32,7 @@ import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
@@ -175,6 +176,13 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         if (!ChanSettings.toolbarBottom.get()) {
             searchStatus.setPadding(searchStatus.getPaddingLeft(), searchStatus.getPaddingTop() + toolbarHeight(),
                     searchStatus.getPaddingRight(), searchStatus.getPaddingBottom());
+        } else {
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) searchStatus.getLayoutParams();
+            params.gravity = Gravity.BOTTOM;
+            searchStatus.setLayoutParams(params);
+
+            searchStatus.setPadding(searchStatus.getPaddingLeft(), searchStatus.getPaddingTop(),
+                    searchStatus.getPaddingRight(), searchStatus.getPaddingBottom() + toolbarHeight());
         }
     }
 
@@ -474,15 +482,15 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             final ViewPropertyAnimator viewPropertyAnimator = searchStatus.animate();
             viewPropertyAnimator.setListener(null);
             viewPropertyAnimator.setInterpolator(new DecelerateInterpolator(2f));
-            viewPropertyAnimator.setDuration(600);
+            viewPropertyAnimator.setDuration(300);
 
             if (open) {
                 searchStatus.setVisibility(View.VISIBLE);
-                searchStatus.setTranslationY(-height);
+                searchStatus.setTranslationY(ChanSettings.toolbarBottom.get() ? height : -height);
                 viewPropertyAnimator.translationY(0f);
             } else {
                 searchStatus.setTranslationY(0f);
-                viewPropertyAnimator.translationY(-height);
+                viewPropertyAnimator.translationY(ChanSettings.toolbarBottom.get() ? height : -height);
                 viewPropertyAnimator.setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -809,9 +817,13 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         boolean bottomReply = ChanSettings.bottomReply.get();
         boolean topOverlayConsumesToolbar = !ChanSettings.toolbarBottom.get()
                 && ((replyOpen && !bottomReply) || searchOpen);
+        boolean bottomOverlayConsumesToolbar = ChanSettings.toolbarBottom.get()
+                && searchOpen;
 
         if (ChanSettings.toolbarBottom.get()) {
-            bottom += toolbarHeight();
+            if (!bottomOverlayConsumesToolbar) {
+                bottom += toolbarHeight();
+            }
         } else if (!topOverlayConsumesToolbar) {
             top += toolbarHeight();
         }
@@ -831,7 +843,11 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                     MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
             );
-            top += searchStatus.getMeasuredHeight();
+            if (ChanSettings.toolbarBottom.get()) {
+                bottom += searchStatus.getMeasuredHeight();
+            } else {
+                top += searchStatus.getMeasuredHeight();
+            }
         }
 
         recyclerView.setPadding(left, top, right, bottom);
