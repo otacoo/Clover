@@ -209,43 +209,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_inline_quote_color">#ffb5bd68</item>
         <item name="post_last_seen_color">#89c5c8c6</item>
     </style>
-
-    <style name="Chan.Theme.Tako" parent="Chan.Theme.Dark">
-        <item name="colorPrimary">#ff21212e</item>
-        <item name="colorAccent">#fff3b375</item>
-        <item name="loading_bar_color">#fff3b375</item>
-
-        <item name="backcolor">#ff21212e</item>
-        <item name="backcolor_secondary">#ff2a2a3c</item>
-
-        <item name="android:textColor">#ffe3e0f2</item>
-        <item name="text_color_primary">#ffe3e0f2</item>
-        <item name="text_color_secondary">#ffcbc4ce</item>
-        <item name="text_color_hint">#ff958f99</item>
-        <item name="text_color_reveal_spoiler">#ff21212e</item>
-
-        <item name="post_name_color">#fff3b375</item>
-        <item name="post_subject_color">#ff66577e</item>
-        <item name="post_details_color">#ff958f99</item>
-        <item name="post_quote_color">#ff84531e</item>
-        <item name="post_highlight_quote_color">#ff4e4065</item>
-        <item name="post_inline_quote_color">#ff66577e</item>
-        <item name="post_link_color">#fff3b375</item>
-        <item name="post_spoiler_color">#ffe3e0f2</item>
-        <item name="post_capcode_color">#ff84531e</item>
-        <item name="post_last_seen_color">#fff3b375</item>
-
-        <item name="post_id_background_light">#ff2a2a3c</item>
-        <item name="post_saved_reply_color">#ff303044</item>
-        <item name="post_highlighted_color">#ff36364d</item>
-        <item name="post_selected_color">#ff303044</item>
-
-        <item name="divider_color">#ff262636</item>
-        <item name="divider_split_color">#ff262636</item>
-
-        <item name="dropdown_dark_color">#ffe3e0f2</item>
-        <item name="dropdown_dark_pressed_color">#ffe3e0f2</item>
-    </style>
     
     <style name="Chan.Theme.Insomnia" parent="Chan.Theme.Dark">
         <item name="colorPrimary">#ff212121</item>
@@ -434,6 +397,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="dropdown_dark_pressed_color">#6633b5e5</item>
     </style>
 
+    <style name="Chan.Theme.Tako" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#ff21212e</item>
+        <item name="colorAccent">#fff3b375</item>
+        <item name="loading_bar_color">#fff3b375</item>
+
+        <item name="backcolor">#ff21212e</item>
+        <item name="backcolor_secondary">#ff2a2a3c</item>
+
+        <item name="android:textColor">#ffe3e0f2</item>
+        <item name="text_color_primary">#ffe3e0f2</item>
+        <item name="text_color_secondary">#ffcbc4ce</item>
+        <item name="text_color_hint">#ff958f99</item>
+        <item name="text_color_reveal_spoiler">#ff21212e</item>
+
+        <item name="post_name_color">#fff3b375</item>
+        <item name="post_subject_color">#ff66577e</item>
+        <item name="post_details_color">#ff958f99</item>
+        <item name="post_quote_color">#ff84531e</item>
+        <item name="post_highlight_quote_color">#ff4e4065</item>
+        <item name="post_inline_quote_color">#ff66577e</item>
+        <item name="post_link_color">#fff3b375</item>
+        <item name="post_spoiler_color">#ffe3e0f2</item>
+        <item name="post_capcode_color">#ff84531e</item>
+        <item name="post_last_seen_color">#fff3b375</item>
+
+        <item name="post_id_background_light">#ff2a2a3c</item>
+        <item name="post_saved_reply_color">#ff303044</item>
+        <item name="post_highlighted_color">#ff36364d</item>
+        <item name="post_selected_color">#ff303044</item>
+
+        <item name="divider_color">#ff262636</item>
+        <item name="divider_split_color">#ff262636</item>
+
+        <item name="dropdown_dark_color">#ffe3e0f2</item>
+        <item name="dropdown_dark_pressed_color">#ffe3e0f2</item>
+    </style>
+
     <style name="Chan.Theme.Creamy" parent="Chan.Theme">
         <item name="colorPrimary">#ffEF233C</item>
         <item name="colorAccent">#ffD90429</item>
@@ -455,6 +455,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_inline_quote_color">#ff8D99AE</item>
         <item name="post_link_color">#ffD90429</item>
         <item name="post_last_seen_color">#ffE41433</item>
+        <item name="post_highlighted_color">#ffFADCE0</item>
+        <item name="post_saved_reply_color">#ffE1E5E8</item>
+        <item name="post_selected_color">#1A2B2D42</item>
 
         <item name="divider_split_color">#ffBDC6D1</item>
     </style>
@@ -480,6 +483,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_inline_quote_color">#ff515151</item>
         <item name="post_link_color">#ff000000</item>
         <item name="post_last_seen_color">#ff000000</item>
+        <item name="post_highlighted_color">#ffEAEAEA</item>
+        <item name="post_saved_reply_color">#ffF0F0F0</item>
+        <item name="post_selected_color">#1A000000</item>
 
         <item name="divider_split_color">#ffCFCFCF</item>
     </style>
@@ -507,7 +513,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_link_color">#ffefdcbc</item>
         <item name="post_spoiler_color">#ff454545</item>
         <item name="post_last_seen_color">#ff93b3a3</item>
-        <item name="post_highlighted_color">#ff8cd0d3</item>
+        <item name="post_highlighted_color">#ff4f5b5b</item>
         <item name="post_selected_color">#ff494949</item>
         <item name="post_saved_reply_color">#ff494949</item>
 
