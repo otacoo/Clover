@@ -266,7 +266,7 @@ public class Chan4CookieStore {
         for (String header : setCookieHeaders) {
             String val = header.split(";")[0].trim();
             for (String domain : PASS_DOMAINS) {
-                cm.setCookie(domain, val);
+                cm.setCookie(domain, header);
             }
             if (val.startsWith("pass_id=")) {
                 String freshId = val.substring("pass_id=".length());
