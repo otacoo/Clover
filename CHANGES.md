@@ -1,3 +1,42 @@
+## 2026-05-31 – v3.6.2
+
+### Proxy, DNS over HTTPS, & Custom User-Agent (issue #32)
+
+Read [issue #32](https://github.com/otacoo/Clover/issues/32), the tl;dr is that these options were leaking during WebViews and DNS over HTTPS has been removed.
+
+**Proxy:**
+ - **New:** Add support for Proxy authentication (username & password)
+ - Added an info dialog before enabling the proxy
+ - Fixed issues where the Proxy was leaking the users IP when using WebViews (4chan captcha, Email Verification, POWBlock et al)
+
+**DNS over HTTPS:**
+  - Removed the option.
+  - DoH does not work natively with WebViews and was leaking the users DNS when using WebViews. This type of proxying is best used at the system level
+
+**Custom User-Agent:**
+- The Custom User-Agent will now correctly apply during WebViews
+- Changing the Custom UA requires an app restart
+
+### 4chan
+- Fixed an issue where the `4chan_pass` cookie was inadvertently being stored as a session cookie, causing it to periodically expire and trigger harder captchas
+
+### 8chan
+- The interactive OP data will be now skipped in /gacha/ threads
+- Fixed an issue where hard POW hashes could fail
+- Fixed an issue where doing the 8chan verification or accepting the TOS would wipe out all 4chan cookies
+- Ensure the Proof-of-Work (POWBlock) challenge responds correctly on fresh installs and properly sequences its snackbar
+
+### Appearance
+- Darkened switch button colors for the Light theme (issue #33)
+- Fixed missing or badly contrasting color values for the Creamy, Sapporo & Zenburned themes to improve text readability
+
+### Misc changes & fixes
+- Fixed an issue with the *Bottom Toolbar* option leaving a big gap at the top when opening the search tab
+- Raised the minSDK back again (24)
+- The board list snackbar will now push the Floating Action Button (FAB) up instead of overlapping it
+- Fixed an issue with clearing the previous background text selection when tapping elsewhere (issue #31)
+
+
 ## 2026-05-24 – v3.6.1
 
 - The reply badge can now be enabled for the regular image viewer, not just the album.
