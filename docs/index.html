@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clover Docs</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #58a6ff;
+  margin-bottom: 24px;
+}
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tool-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #c9d1d9;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tool-link:hover { background: #1c2128; border-color: #58a6ff; }
+.tool-link .name { font-weight: 500; color: #e6edf3; }
+.tool-link .desc { font-size: 0.78rem; color: #8b949e; }
+</style>
+</head>
+<body>
+<h1>Clover Tools</h1>
+<div class="tools">
+  <a class="tool-link" href="tools/filter_converter.html">
+    <div>
+      <div class="name">4chanX → Clover Filter Converter</div>
+      <div class="desc">Convert 4chanX text-based filters into Clover JSON format</div>
+    </div>
+  </a>
+</div>
+</body>
+</html>

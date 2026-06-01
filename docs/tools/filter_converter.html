@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4chanX → Clover Filter Converter</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 0.85rem;
+      margin-bottom: 32px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .subtitle-text {
+      flex: 1;
+    }
+
+    .info-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #58a6ff;
+      color: #58a6ff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-style: italic;
+      font-family: serif;
+      margin-right: 8px;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .info-sep {
+      width: 1px;
+      background: #8b949e;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .panels {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: #21262d;
+      padding: 14px 18px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .panel-header h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e6edf3;
+    }
+
+    .panel-header p {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 2px;
+    }
+
+    .dropzone {
+      flex: 1;
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      position: relative;
+    }
+
+    .dropzone:hover {
+      background: #1c2128;
+    }
+
+    .dropzone.drag-over {
+      background: #1a2332;
+      border-color: #58a6ff;
+    }
+
+    .dropzone.has-file {
+      cursor: default;
+    }
+
+    .file-info {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dropzone.has-file .placeholder {
+      display: none;
+    }
+
+    .dropzone.has-file .file-info {
+      display: flex;
+    }
+
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: #8b949e;
+    }
+
+    .placeholder svg {
+      width: 32px;
+      height: 32px;
+      opacity: 0.5;
+    }
+
+    .placeholder span {
+      font-size: 0.8rem;
+    }
+
+    .file-name {
+      font-size: 0.85rem;
+      color: #e6edf3;
+      font-weight: 500;
+    }
+
+    .file-meta {
+      font-size: 0.7rem;
+      color: #8b949e;
+    }
+
+    .file-reset {
+      font-size: 0.7rem;
+      color: #f85149;
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-primary {
+      background: #238636;
+      color: #fff;
+      border-color: #2ea043;
+    }
+
+    .btn-primary:hover {
+      background: #2ea043;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #238636;
+    }
+
+    .btn-secondary {
+      background: #21262d;
+      color: #c9d1d9;
+      border-color: #30363d;
+    }
+
+    .btn-secondary:hover {
+      background: #30363d;
+    }
+
+    .summary {
+      width: 100%;
+      max-width: 900px;
+      font-size: 0.8rem;
+      color: #8b949e;
+      display: none;
+    }
+
+    .summary.visible {
+      display: block;
+    }
+
+    .summary table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .summary th,
+    .summary td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.78rem;
+    }
+
+    .summary th {
+      background: #21262d;
+      color: #c9d1d9;
+      font-weight: 500;
+    }
+
+    .summary td {
+      color: #8b949e;
+    }
+
+    .summary td:nth-child(1) {
+      color: #c9d1d9;
+    }
+
+    .footer {
+      margin-top: auto;
+      padding-top: 24px;
+      font-size: 0.7rem;
+      color: #484f58;
+      text-align: center;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>4chanX → Clover Filter Converter</h1>
+  <p class="subtitle"><span class="info-icon">i</span><span class="info-sep"></span><span class="subtitle-text">This
+      tool converts 4chanX text-based filters into Clover's JSON filter format and then merges with your Clover settings
+      backup, leaving both original files intact.<br><br><strong style="color:#56a364">Converted:</strong> general,
+      comment, subject, name, tripcode, unique&nbsp;ID, flag, filename.<br><strong
+        style="color:#e06469">Skipped:</strong> MD5, dimensions, filesize, email, pass, post&nbsp;ID, capcode.</span>
+  </p>
+
+  <div class="panels">
+    <div class="panel" id="panel4chan">
+      <div class="panel-header">
+        <h2>4chanX Settings</h2>
+        <p>Drop your 4chanX settings JSON file or click to browse.</p>
+      </div>
+      <div class="dropzone" id="zone4chan">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 16V4m0 0L8 8m4-4l4 4M4 18v2h16v-2" />
+          </svg>
+          <span>Drop 4chanX_settings.json here</span>
+        </div>
+        <div class="file-info">
+          <span class="file-name" id="name4chan"></span>
+          <span class="file-meta" id="meta4chan"></span>
+          <button class="file-reset" id="reset4chan">Remove file</button>
+        </div>
+      </div>
+      <input type="file" id="file4chan" accept=".json">
+    </div>
+
+    <div class="panel" id="panelClover">
+      <div class="panel-header">
+        <h2>Clover Settings</h2>
+        <p>Drop your Clover settings backup JSON file or click to browse.</p>
+      </div>
+      <div class="dropzone" id="zoneClover">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 16V4m0 0L8 8m4-4l4 4M4 18v2h16v-2" />
+          </svg>
+          <span>Drop clover_settings.json here</span>
+        </div>
+        <div class="file-info">
+          <span class="file-name" id="nameClover"></span>
+          <span class="file-meta" id="metaClover"></span>
+          <button class="file-reset" id="resetClover">Remove file</button>
+        </div>
+      </div>
+      <input type="file" id="fileClover" accept=".json">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btnConvert" disabled>Convert 4chanX Filters to Clover</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="footer">Clover Filter Converter &mdash; runs entirely in the browser. No data is uploaded.<br>This tool
+    was LLM coded by DeepSeek V4 Flash.</div>
+
+  <script>
+    (function () {
+      const $ = (s) => document.querySelector(s);
+      const el4chan = $('#zone4chan'), file4chan = $('#file4chan');
+      const elClover = $('#zoneClover'), fileClover = $('#fileClover');
+      const btnConvert = $('#btnConvert'), summary = $('#summary');
+
+      let fourchanData = null, cloverData = null;
+
+      // ── Drop zone helpers ──────────────────────────────────────
+      function setupDrop(zone, input, nameEl, metaEl, resetEl, onLoad) {
+        zone.addEventListener('click', () => input.click());
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zone.classList.remove('drag-over');
+          const f = e.dataTransfer.files[0];
+          if (f) handleFile(f, zone, nameEl, metaEl, onLoad);
+        });
+        input.addEventListener('change', () => {
+          const f = input.files[0];
+          if (f) handleFile(f, zone, nameEl, metaEl, onLoad);
+        });
+        resetEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          zone.classList.remove('has-file');
+          input.value = '';
+          onLoad(null);
+          checkReady();
+        });
+      }
+
+      function handleFile(file, zone, nameEl, metaEl, onLoad) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const data = JSON.parse(reader.result);
+            nameEl.textContent = file.name;
+            metaEl.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+            zone.classList.add('has-file');
+            onLoad(data);
+            checkReady();
+          } catch (err) {
+            alert('Invalid JSON file: ' + file.name);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      setupDrop(el4chan, file4chan, $('#name4chan'), $('#meta4chan'), $('#reset4chan'),
+        (d) => { fourchanData = d; });
+
+      setupDrop(elClover, fileClover, $('#nameClover'), $('#metaClover'), $('#resetClover'),
+        (d) => { cloverData = d; });
+
+      function checkReady() {
+        btnConvert.disabled = !(fourchanData && cloverData);
+      }
+
+      // ── 4chanX filter line parser ──────────────────────────────
+
+      // Maps a 4chanX filter category key to the Clover FilterType flag(s).
+      const CATEGORY_TO_TYPE = {
+        general: 0x04 | 0x10,  // COMMENT | SUBJECT = 20
+        comment: 0x04,         // COMMENT = 4
+        subject: 0x10,         // SUBJECT = 16
+        name: 0x02,         // NAME = 2
+        tripcode: 0x01,         // TRIPCODE = 1
+        uniqueID: 0x08,         // ID = 8
+        capcode: null,          // unsupported
+        postID: null,          // unsupported (post number, not poster ID)
+        email: null,          // unsupported
+        flag: 0x40,         // COUNTRY = 64
+        filename: 0x20,         // FILENAME = 32
+        dimensions: null,          // unsupported (image dimensions)
+        filesize: null,          // unsupported (file size)
+        MD5: null,          // unsupported (image hash)
+      };
+
+      // FilterType.flag values — also tells us which types use regex vs exact match
+      const FLAG = {
+        TRIPCODE: 0x01, NAME: 0x02, COMMENT: 0x04, ID: 0x08,
+        SUBJECT: 0x10, FILENAME: 0x20, COUNTRY: 0x40
+      };
+      // Types that are compiled as regex (isRegex=true in FilterType enum)
+      const REGEX_TYPES = FLAG.COMMENT | FLAG.ID | FLAG.SUBJECT | FLAG.FILENAME;
+
+      // FilterAction enum values
+      const ACTION = { HIDE: 0, COLOR: 1, REMOVE: 2, WATCH: 3, PIN: 4 };
+
+      // Default site ID for 4chan — auto-detected from existing Clover filters.
+      // ORMLite auto_increment starts at 1, so this is the typical value.
+
+      // Auto-detect the 4chan site's database row ID from existing Clover filters.
+      function detectFourchanSiteId(cloverFilters) {
+        for (const f of cloverFilters || []) {
+          if (!f.boards) continue;
+          const parts = f.boards.split(',');
+          for (const p of parts) {
+            const colonIdx = p.indexOf(':');
+            if (colonIdx === -1) continue;
+            const code = p.substring(colonIdx + 1).trim();
+            if (/^[a-z]{1,4}$/.test(code)) {
+              return parseInt(p.substring(0, colonIdx));
+            }
+          }
+        }
+        return 1;
+      }
+
+      // Will be set at conversion time
+      let detectedSiteId = 1;
+
+      /**
+       * Parse a single 4chanX filter line like:
+       *   /bbc/i;boards:b,gif;op:only;
+       */
+      function parseFilterLine(line) {
+        line = line.trim();
+        if (!line || line.startsWith('#')) return null;
+        const m = line.match(/^\/(.+?)\/([a-z]*)\s*(;.*)?$/);
+        if (!m) return null;
+        const pattern = m[1], flags = m[2] || '', optionsStr = m[3] || '';
+        const caseInsensitive = flags.includes('i');
+        const options = {};
+        const parts = optionsStr.split(';');
+        for (const part of parts) {
+          const trimmed = part.trim();
+          if (!trimmed) continue;
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx === -1) {
+            options[trimmed] = true;
+          } else {
+            options[trimmed.substring(0, colonIdx).trim()] = trimmed.substring(colonIdx + 1).trim();
+          }
+        }
+        const typeOverride = options.type || null;
+        if (typeOverride === 'filename') {
+          return buildFilter(line, pattern, true, 0x20, options, ACTION.REMOVE);
+        }
+        return { pattern: pattern, caseInsensitive: caseInsensitive, options, raw: line };
+      }
+
+      function buildFilter(raw, pattern, caseInsensitive, typeFlags, options, actionWithHighlight) {
+        const hasHighlight = options.highlight === true;
+        const action = hasHighlight ? ACTION.COLOR : actionWithHighlight;
+        const color = hasHighlight ? -65536 : -65536;
+        const onlyOnOP = options.op === 'only' || options.op === 'yes';
+
+        // Format pattern: regex types get /pattern/i, non-regex get plain text
+        const isRegexType = (typeFlags & REGEX_TYPES) !== 0;
+        let cloverPattern;
+        if (isRegexType) {
+          cloverPattern = caseInsensitive ? '/' + pattern + '/i' : '/' + pattern + '/';
+        } else {
+          cloverPattern = pattern;
+        }
+        let boards = null;
+        let allBoards = false;
+        if (options.boards) {
+          const codes = options.boards.split(',').map(s => s.trim()).filter(Boolean);
+          if (codes.length > 0) {
+            boards = codes.map(c => detectedSiteId + ':' + c).join(',');
+          }
+        }
+        if (!boards) allBoards = true;
+        return {
+          enabled: true,
+          type: typeFlags,
+          pattern: pattern,
+          allBoards: allBoards,
+          boards: boards || '',
+          action: action,
+          color: color,
+          order: 0,
+          onlyOnOP: onlyOnOP,
+        };
+      }
+
+      function parseCategory(categoryKey, rawText) {
+        if (!rawText || typeof rawText !== 'string') return [];
+        const filters = [];
+        const lines = rawText.split('\n');
+        for (const line of lines) {
+          const parsed = parseFilterLine(line);
+          if (!parsed) continue;
+          // parseFilterLine may return a complete filter (for type overrides)
+          // or an intermediate parse object with .pattern / .options
+          if (parsed.enabled !== undefined) {
+            filters.push(parsed);
+            continue;
+          }
+          const typeFlags = CATEGORY_TO_TYPE[categoryKey] || 0x04;
+          const f = buildFilter(parsed.raw, parsed.pattern, parsed.caseInsensitive,
+            typeFlags, parsed.options, ACTION.REMOVE);
+          filters.push(f);
+        }
+        return filters;
+      }
+
+      /**
+       * Convert all 4chanX Conf filter fields into Clover filter objects.
+       */
+      function convertFourchanXFilters(fourchanConf) {
+        const allFilters = [];
+        const categories = [
+          'general', 'comment', 'subject', 'name', 'tripcode',
+          'uniqueID', 'flag', 'filename'
+        ];
+
+        for (const cat of categories) {
+          if (CATEGORY_TO_TYPE[cat] == null) continue;
+          const raw = fourchanConf[cat];
+          if (!raw) continue;
+          const parsed = parseCategory(cat, raw);
+          allFilters.push(...parsed);
+        }
+
+        return allFilters;
+      }
+
+      // ── Merge ──────────────────────────────────────────────────
+
+      function mergeFilters(existingCloverFilters, convertedFilters) {
+        const merged = existingCloverFilters ? [...existingCloverFilters] : [];
+        // Remove any existing filters that came from a previous 4chanX conversion?
+        // For now just append all new ones. The user can deduplicate manually.
+        // Assign orders: existing keep theirs, new ones get order after the last.
+        const maxOrder = merged.reduce((max, f) => Math.max(max, f.order || 0), 0);
+        for (let i = 0; i < convertedFilters.length; i++) {
+          convertedFilters[i].order = maxOrder + i + 1;
+          merged.push(convertedFilters[i]);
+        }
+        return merged;
+      }
+
+      // ── Download ───────────────────────────────────────────────
+
+      function downloadJSON(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // ── Convert button ─────────────────────────────────────────
+
+      btnConvert.addEventListener('click', () => {
+        if (!fourchanData || !cloverData) return;
+
+        const conf = fourchanData.Conf;
+        if (!conf) {
+          alert('Invalid 4chanX settings file: missing "Conf" section.');
+          return;
+        }
+
+        // Auto-detect site ID from existing Clover filters
+        const existingFilters = cloverData.filters || [];
+        detectedSiteId = detectFourchanSiteId(existingFilters);
+
+        // Convert
+        const convertedFilters = convertFourchanXFilters(conf);
+
+        // Merge
+        const merged = mergeFilters(existingFilters, convertedFilters);
+
+        // Build output
+        const output = { ...cloverData };
+        output.filters = merged;
+
+        // Show summary
+        const html = `
+      <h3>Conversion Summary</h3>
+      <table>
+        <tr><th>Detected 4chan site ID</th><td>${detectedSiteId}</td></tr>
+        <tr><th>4chanX filter lines parsed</th><td>${convertedFilters.length}</td></tr>
+        <tr><th>Existing Clover filters</th><td>${existingFilters.length}</td></tr>
+        <tr><th>Total after merge</th><td>${merged.length}</td></tr>
+      </table>
+    `;
+        summary.innerHTML = html;
+        summary.classList.add('visible');
+
+        // Download
+        downloadJSON(output, 'clover_settings_merged.json');
+      });
+
+    })();
+  </script>
+</body>
+</html>
