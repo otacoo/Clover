@@ -305,6 +305,8 @@ If any other filters are enabled for it, it will not work.
     <string name="filter_add_button">Add filter</string>
     <string name="filter_enable_all">Enable all</string>
     <string name="filter_disable_all">Disable all</string>
+    <string name="filter_remove_all">Remove all</string>
+    <string name="filter_remove_all_confirm">Hold to confirm\u2026</string>
 
     <string name="board_select_all">Select all</string>
     <string name="board_select_none">Select none</string>

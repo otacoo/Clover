@@ -56,6 +56,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:text="@string/filter_enable_all"
             android:textColor="?attr/text_color_primary" />
 
+        <Button
+            android:id="@+id/remove_button"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/filter_remove_all"
+            android:textColor="?attr/text_color_primary" />
+
     </LinearLayout>
 
     <View

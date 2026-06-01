@@ -24,6 +24,8 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -42,6 +44,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -51,6 +55,7 @@ import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.layout.FilterLayout;
 import org.otacoo.chan.ui.toolbar.ToolbarMenuItem;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,6 +77,8 @@ public class FiltersController extends Controller implements
     FilterEngine filterEngine;
 
     private Button enableButton;
+    private Button removeButton;
+    private final Handler holdHandler = new Handler(Looper.getMainLooper());
     private FilterAdapter adapter;
     private ItemTouchHelper itemTouchHelper;
     private boolean locked;
@@ -124,6 +131,9 @@ public class FiltersController extends Controller implements
 
         enableButton = view.findViewById(R.id.enable_button);
         enableButton.setOnClickListener(this);
+
+        removeButton = view.findViewById(R.id.remove_button);
+        removeButton.setOnTouchListener(new RemoveAllTouchListener());
 
         adapter = new FilterAdapter();
         recyclerView.setAdapter(adapter);
@@ -410,5 +420,50 @@ public class FiltersController extends Controller implements
             }
             return false;
         }
+    }
+
+    private class RemoveAllTouchListener implements View.OnTouchListener {
+        private static final long HOLD_DURATION = 2000L;
+        private boolean holdFired = false;
+        private final Runnable holdAction = () -> {
+            holdFired = true;
+            removeButton.setAlpha(1f);
+            removeButton.setText(R.string.filter_remove_all);
+            deleteAllFilters();
+        };
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (locked) return false;
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    holdFired = false;
+                    v.setAlpha(0.6f);
+                    removeButton.setText(R.string.filter_remove_all_confirm);
+                    holdHandler.postDelayed(holdAction, HOLD_DURATION);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    holdHandler.removeCallbacks(holdAction);
+                    if (!holdFired) {
+                        v.setAlpha(1f);
+                        removeButton.setText(R.string.filter_remove_all);
+                    }
+                    break;
+            }
+            return false;
+        }
+    }
+
+    private void deleteAllFilters() {
+        locked = true;
+        List<Filter> allFilters = filterEngine.getAllFilters();
+        for (Filter f : allFilters) {
+            filterEngine.deleteFilter(f);
+        }
+        adapter.load();
+        locked = false;
+        updateEnableButton();
+        AndroidUtils.showThemedSnackbar(view, "All filters removed.", Snackbar.LENGTH_SHORT);
     }
 }
