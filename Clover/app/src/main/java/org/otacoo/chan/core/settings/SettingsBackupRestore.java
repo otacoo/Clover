@@ -265,6 +265,7 @@ public final class SettingsBackupRestore {
             o.put("action", f.action);
             o.put("color", f.color);
             o.put("order", f.order);
+            o.put("onlyOnOP", f.onlyOnOP);
             filtersArr.put(o);
         }
         out.put(KEY_FILTERS, filtersArr);
@@ -442,6 +443,7 @@ public final class SettingsBackupRestore {
                     f.action = o.getInt("action");
                     f.color = o.getInt("color");
                     f.order = o.optInt("order", 0);
+                    f.onlyOnOP = o.optBoolean("onlyOnOP", false);
                     databaseManager.runTask(databaseManager.getDatabaseFilterManager().createFilter(f));
                 }
             }
