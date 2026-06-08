@@ -1179,6 +1179,8 @@ function buildSingleViewTasksUI(data) {
                         var tasks = container.querySelectorAll('.t-single-task');
                         if (taskIdx + 1 < tasks.length) {
                             tasks[taskIdx + 1].scrollIntoView({behavior: 'smooth', block: 'start'});
+                        } else {
+                            document.getElementById('t-native-submit').scrollIntoView({behavior: 'smooth', block: 'nearest'});
                         }
                     }
                 };
