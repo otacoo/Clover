@@ -47,9 +47,12 @@ import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.ui.view.ViewPagerAdapter;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CookieManagerController extends StyledToolbarNavigationController implements View.OnClickListener {
@@ -120,7 +123,6 @@ public class CookieManagerController extends StyledToolbarNavigationController i
 
     // Remove a cookie from AppCookieJar's java.net.CookieManager for non-4chan sites.
     private void removeCookieFromJar(Site site, List<String> domains, String cookieName) {
-        if (isChan4(site)) return;
         java.net.CookieManager cm = NetModule.getSharedCookieManager();
         if (cm == null) return;
         for (String domain : domains) {
@@ -138,7 +140,6 @@ public class CookieManagerController extends StyledToolbarNavigationController i
 
     // Add or update a cookie in AppCookieJar's java.net.CookieManager for non-4chan sites.
     private void setCookieInJar(Site site, List<String> domains, String cookieName, String cookieValue) {
-        if (isChan4(site)) return;
         java.net.CookieManager cm = NetModule.getSharedCookieManager();
         if (cm == null) return;
         for (String domain : domains) {
@@ -450,12 +451,47 @@ public class CookieManagerController extends StyledToolbarNavigationController i
             return scrollView;
         }
 
+        private String getCookieExpiry(Site site, List<String> domains, String cookieName) {
+            java.net.CookieManager cm = NetModule.getSharedCookieManager();
+            if (cm == null) return "Unknown";
+            // Scan all URIs in the store — domain-based lookup may miss cookies
+            // stored under a different subdomain.
+            for (java.net.URI uri : cm.getCookieStore().getURIs()) {
+                for (java.net.HttpCookie hc : cm.getCookieStore().get(uri)) {
+                    if (cookieName.equals(hc.getName())) {
+                        long maxAge = hc.getMaxAge();
+                        if (maxAge < 0) return "Session";
+                        if (maxAge == 0) return "Deleted";
+                        long expiryMs = System.currentTimeMillis() + maxAge * 1000L;
+                        return new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                                .format(new Date(expiryMs));
+                    }
+                }
+            }
+            return isChan4(site) ? "Unknown (WebView)" : "Unknown";
+        }
+
         private void showEditCookieDialog(Site site, List<String> domains, String name, String oldVal) {
+            String expiry = getCookieExpiry(site, domains, name);
+
+            LinearLayout root = new LinearLayout(context);
+            root.setOrientation(LinearLayout.VERTICAL);
+            root.setPadding(0, AndroidUtils.dp(16), 0, 0);
+
             android.widget.EditText et = new android.widget.EditText(context);
             et.setText(oldVal);
+            root.addView(et);
+
+            TextView expiryLabel = new TextView(context);
+            expiryLabel.setText("Expires: " + expiry);
+            expiryLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            expiryLabel.setTextColor(0xFF8B949E);
+            expiryLabel.setPadding(0, AndroidUtils.dp(12), 0, 0);
+            root.addView(expiryLabel);
+
             new AlertDialog.Builder(context)
                     .setTitle("Edit " + name + " (" + site.name() + ")")
-                    .setView(et)
+                    .setView(root)
                     .setPositiveButton(R.string.save, (d, w) -> {
                         String newVal = et.getText().toString();
                         CookieManager cm = CookieManager.getInstance();
