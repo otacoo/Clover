@@ -1,3 +1,25 @@
+## 2026-06-10 – v3.6.3
+
+>[!NOTE]
+>It's not just you, it seems the Email Verification cookie is being *ignored* (dropped?) all of a sudden?\
+>I have not been able to identify if it's Clover causing this or if it's coming from 4chan; despite the 60s cooldowns and harder captchas... posting still works as normal.\
+>I deleted my 4chan_pass cookie, went through the Email Verification process and started getting easier captchas again, this leads me to believe it's coming from 4chan itself but I cannot confirm with 100% certainty.
+
+### 4chan Cookies
+- Added some missing attributes to the email verification cookie (`4chan_pass`) (unlikely to be the cause)
+
+### Cookie Manager
+- Clicking a cookie in the Cookie Manager now shows its expiration date below the value edit field
+- Cloudflare cookies set directly by WebView (4chan captcha) will show `Unknown (WebView)`
+
+### Filters
+- Add a `Remove All` button to the Filters, requires a 2-second hold to confirm
+- The filter backup/restore system now correctly exports and imports the `onlyOnOP` field
+- Created a tool to convert 4chanX filters to Clover: [Click here](https://otacoo.github.io/Clover/tools/filter_converter.html).
+
+### Captcha
+- Single-view captcha: the Submit button now scrolls into view after selecting the final answer
+
 ## 2026-05-31 – v3.6.2
 
 ### Proxy, DNS over HTTPS, & Custom User-Agent (issue #32)
