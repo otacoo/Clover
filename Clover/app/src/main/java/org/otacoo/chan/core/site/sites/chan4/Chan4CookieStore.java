@@ -22,11 +22,13 @@ import android.text.TextUtils;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 
+import org.otacoo.chan.core.di.NetModule;
 import org.otacoo.chan.core.settings.SettingProvider;
 import org.otacoo.chan.core.settings.SharedPreferencesSettingProvider;
 import org.otacoo.chan.core.settings.StringSetting;
 import org.otacoo.chan.utils.AndroidUtils;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,16 +59,33 @@ public class Chan4CookieStore {
             "https://www.4chan.org"
     };
 
-    private final StringSetting passId;
+    private static final String PASS_ID_KEY = "preference_pass_id";
 
     public Chan4CookieStore() {
-        SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
-        passId = new StringSetting(p, "preference_pass_id", "");
     }
 
-    // Returns the passId StringSetting for external callers that need direct access (e.g. login flow). */
+    public String getPassIdValue() {
+        java.net.CookieManager jar = NetModule.getSharedCookieManager();
+        if (jar != null) {
+            for (java.net.URI uri : jar.getCookieStore().getURIs()) {
+                String host = uri.getHost();
+                if (host != null && (host.endsWith("4chan.org") || host.endsWith("4channel.org"))) {
+                    for (java.net.HttpCookie hc : jar.getCookieStore().get(uri)) {
+                        if ("pass_id".equals(hc.getName())) {
+                            String v = hc.getValue();
+                            if (v != null && !v.isEmpty() && !"0".equals(v)) return v;
+                        }
+                    }
+                }
+            }
+        }
+        // Fallback during migration: check SharedPrefs
+        return AndroidUtils.getPreferences().getString(PASS_ID_KEY, "");
+    }
+
     public StringSetting getPassId() {
-        return passId;
+        SettingProvider p = new SharedPreferencesSettingProvider(AndroidUtils.getPreferences());
+        return new StringSetting(p, PASS_ID_KEY, "");
     }
 
     // Returns the chanPass string value directly from CookieManager for external callers (e.g. SiteSetupController). */
@@ -89,7 +108,7 @@ public class Chan4CookieStore {
     // both tokens should be injected. Do NOT use this to drive "Logged in" UI or
     // postRequiresAuthentication - use Chan4.actions.isLoggedIn() (pass_id only) for those.
     public boolean isPassAuthenticated() {
-        return !passId.get().isEmpty() || !getChanPass().isEmpty();
+        return !getPassIdValue().isEmpty() || !getChanPass().isEmpty();
     }
 
     // Returns true if pass_id (non-zero) or pass_enabled=1 is present in the WebView cookie store.
@@ -114,7 +133,28 @@ public class Chan4CookieStore {
     // WebView store so subsequent WebView-based captcha loads recognise the device.
     // Passing an empty string (logout) expires pass_id and pass_enabled in the WebView.
     public void setPassId(String value) {
-        passId.set(value);
+        // Persist to SharedPrefs for backward compatibility during migration
+        AndroidUtils.getPreferences().edit().putString(PASS_ID_KEY, value).apply();
+        // Write to java.net store (canonical)
+        java.net.CookieManager jar = NetModule.getSharedCookieManager();
+        if (value.isEmpty()) {
+            expirePassFromJar(jar);
+        } else {
+            for (String domain : SESSION_DOMAINS) {
+                try {
+                    java.net.URI uri = new java.net.URI(domain);
+                    java.net.HttpCookie hcId = new java.net.HttpCookie("pass_id", value);
+                    hcId.setDomain(uri.getHost());
+                    hcId.setPath("/");
+                    jar.getCookieStore().add(uri, hcId);
+                    java.net.HttpCookie hcEnabled = new java.net.HttpCookie("pass_enabled", "1");
+                    hcEnabled.setDomain(uri.getHost());
+                    hcEnabled.setPath("/");
+                    jar.getCookieStore().add(uri, hcEnabled);
+                } catch (Exception ignored) {}
+            }
+        }
+        // Also write to WebView for captcha compatibility
         CookieManager cm = CookieManager.getInstance();
         if (value.isEmpty()) {
             expirePassSessionCookies(cm);
@@ -130,8 +170,9 @@ public class Chan4CookieStore {
     // Sets a new 4chan_pass value directly to the WebView store for all 4chan domains.
     public void setChanPass(String value) {
         CookieManager cm = CookieManager.getInstance();
+        java.net.CookieManager jar = NetModule.getSharedCookieManager();
         if (value.isEmpty()) {
-            String expired = "4chan_pass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+            String expired = "4chan_pass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.4chan.org; Secure; HttpOnly";
             for (String domain : PASS_DOMAINS) {
                 cm.setCookie(domain, expired);
                 android.net.Uri uri = android.net.Uri.parse(domain);
@@ -144,9 +185,27 @@ public class Chan4CookieStore {
                     cm.setCookie(domain, expired + "; Domain=." + host);
                 }
             }
+            if (jar != null) removeFromJar(jar, "4chan_pass");
         } else {
-            String cookie = "4chan_pass=" + value + "; expires=Fri, 31 Dec 2038 23:59:59 GMT; path=/";
+            // 10 years from now so the cookie doesn't expire in our lifetime
+            String expiresDate = new java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", java.util.Locale.US)
+                    .format(new java.util.Date(System.currentTimeMillis() + 10L * 365 * 24 * 3600 * 1000));
+            String cookie = "4chan_pass=" + value
+                    + "; expires=" + expiresDate
+                    + "; path=/"
+                    + "; domain=.4chan.org"
+                    + "; Secure"
+                    + "; HttpOnly";
             for (String domain : PASS_DOMAINS) cm.setCookie(domain, cookie);
+            if (jar != null) {
+                for (String domain : SESSION_DOMAINS) {
+                    try {
+                        for (java.net.HttpCookie hc : java.net.HttpCookie.parse(cookie)) {
+                            jar.getCookieStore().add(new java.net.URI(domain), hc);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
         }
         cm.flush();
     }
@@ -157,19 +216,17 @@ public class Chan4CookieStore {
     // pass_id / pass_enabled  - paid 4chan Pass
     // 4chan_pass              - email verification token
     public void init() {
-        CookieManager cm = CookieManager.getInstance();
-        boolean flushed = false;
-
-        String id = passId.get();
-        if (!id.isEmpty()) {
-            for (String domain : PASS_DOMAINS) {
-                cm.setCookie(domain, "pass_enabled=1;");
-                cm.setCookie(domain, "pass_id=" + id + ";");
-            }
-            flushed = true;
+        // This covers pass_id, pass_enabled, 4chan_pass, cf_clearance, __cf_bm, etc.
+        for (String domain : SESSION_DOMAINS) {
+            try {
+                NetModule.syncCookiesToJar(domain);
+            } catch (Exception ignored) {}
         }
-
-        if (flushed) cm.flush();
+        // Ensure pass_id/pass_enabled survive even if WebView DB was cleared
+        String id = getPassIdValue();
+        if (!id.isEmpty() && !id.equals("0")) {
+            setPassId(id);
+        }
     }
 
     // Builds the full cookie: header value for OkHttp requests to 4chan.
@@ -194,7 +251,7 @@ public class Chan4CookieStore {
 
         // Pass identity always from SharedPrefs
         if (isPassAuthenticated()) {
-            String id = passId.get();
+            String id = getPassIdValue();
             if (!id.isEmpty()) {
                 parts.add("pass_id=" + id);
                 parts.add("pass_enabled=1");
@@ -240,7 +297,7 @@ public class Chan4CookieStore {
         CookieManager cm = CookieManager.getInstance();
 
         if (isPassAuthenticated()) {
-            String id = passId.get();
+            String id = getPassIdValue();
             if (!id.isEmpty()) {
                 cm.setCookie("https://sys.4chan.org/", "pass_enabled=1;");
                 cm.setCookie("https://sys.4chan.org/", "pass_id=" + id + ";");
@@ -263,6 +320,7 @@ public class Chan4CookieStore {
     // Forwards cookies to the WebView store and updates passId (paid) in SharedPrefs if 4chan rotates it
     public void onServerCookies(List<String> setCookieHeaders) {
         CookieManager cm = CookieManager.getInstance();
+        java.net.CookieManager jar = NetModule.getSharedCookieManager();
         for (String header : setCookieHeaders) {
             String val = header.split(";")[0].trim();
             for (String domain : PASS_DOMAINS) {
@@ -271,11 +329,49 @@ public class Chan4CookieStore {
             if (val.startsWith("pass_id=")) {
                 String freshId = val.substring("pass_id=".length());
                 if (!freshId.isEmpty() && !freshId.equals("0")) {
-                    passId.set(freshId);
+                    AndroidUtils.getPreferences().edit().putString(PASS_ID_KEY, freshId).apply();
+                }
+            }
+            if (jar != null) {
+                for (String domain : SESSION_DOMAINS) {
+                    try {
+                        java.net.URI uri = new java.net.URI(domain);
+                        for (java.net.HttpCookie hc : java.net.HttpCookie.parse(header)) {
+                            jar.getCookieStore().add(uri, hc);
+                        }
+                    } catch (Exception ignored) {}
                 }
             }
         }
         cm.flush();
+    }
+
+    private void removeFromJar(java.net.CookieManager jar, String cookieName) {
+        for (String domain : SESSION_DOMAINS) {
+            try {
+                java.net.URI uri = new java.net.URI(domain);
+                for (java.net.HttpCookie hc : jar.getCookieStore().get(uri)) {
+                    if (cookieName.equals(hc.getName())) {
+                        jar.getCookieStore().remove(uri, hc);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void expirePassFromJar(java.net.CookieManager jar) {
+        if (jar == null) return;
+        for (String domain : SESSION_DOMAINS) {
+            try {
+                java.net.URI uri = new java.net.URI(domain);
+                for (java.net.HttpCookie hc : jar.getCookieStore().get(uri)) {
+                    String n = hc.getName();
+                    if ("pass_id".equals(n) || "pass_enabled".equals(n)) {
+                        jar.getCookieStore().remove(uri, hc);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     private void expirePassSessionCookies(CookieManager cm) {

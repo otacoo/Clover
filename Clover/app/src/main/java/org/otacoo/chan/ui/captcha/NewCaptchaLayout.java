@@ -62,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
@@ -879,7 +880,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 }
             }
         }
-        return set.isEmpty() ? null : TextUtils.join("; ", set);
+        String result = set.isEmpty() ? null : TextUtils.join("; ", set);
+        return result;
     }
 
     // Clears only in-memory state and localStorage so 4chan can re-run fingerprinting (mcl.js / Cloudflare). Does NOT delete any cookies.

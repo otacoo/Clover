@@ -97,6 +97,8 @@ public class AppCookieJar implements CookieJar {
     public List<Cookie> loadForRequest(HttpUrl url) {
         try {
             java.net.URI uri = url.uri();
+            boolean is4chan = url.host().endsWith("4chan.org") || url.host().endsWith("4channel.org");
+            if (is4chan) return new ArrayList<>();
             List<Cookie> result = cookiesFromStore(uri, url);
             // 4chan.org cookies are owned entirely by Chan4CookieStore; never sync them here.
             if (result.isEmpty() && url.host().contains("8chan")) {
