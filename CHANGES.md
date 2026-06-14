@@ -1,3 +1,7 @@
+## 2026-06-14 – v3.6.4
+
+- Filters: Fix an issue where *Apply to OP only* modifier was only working for WATCH or PIN actions
+
 ## 2026-06-10 – v3.6.3
 
 >[!NOTE]
@@ -18,7 +22,7 @@
 - Created a tool to convert 4chanX filters to Clover: [Click here](https://otacoo.github.io/Clover/tools/filter_converter.html).
 
 ### Captcha
-- Single-view captcha: the Submit button now scrolls into view after selecting the final answer
+- Single page captcha: the Submit button now scrolls into view after selecting the final answer
 
 ## 2026-05-31 – v3.6.2
 
