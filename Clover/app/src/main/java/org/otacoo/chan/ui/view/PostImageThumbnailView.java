@@ -17,12 +17,15 @@
  */
 package org.otacoo.chan.ui.view;
 
+import static org.otacoo.chan.Chan.injector;
+
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -32,9 +35,14 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.core.cache.FileCache;
+import org.otacoo.chan.core.cache.FileCacheListener;
+import org.otacoo.chan.core.cache.FileCacheProvider;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
+
+import java.io.File;
 
 public class PostImageThumbnailView extends ThumbnailView implements View.OnLongClickListener {
     private PostImage postImage;
@@ -126,10 +134,38 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         }
 
         ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        boolean isImage = postImage.type != PostImage.Type.MOVIE;
+        if (!ChanSettings.shareUrl.get() && isImage) {
+            AndroidUtils.showThemedSnackbar(this, "Downloading image\u2026", Snackbar.LENGTH_SHORT);
+            FileCache fileCache = injector().instance(FileCache.class);
+            fileCache.downloadFile(postImage.imageUrl.toString(), new FileCacheListener() {
+                @Override
+                public void onSuccess(File file) {
+                    AndroidUtils.runOnUiThread(() -> {
+                        Uri uri = FileCacheProvider.getUriForFile(file);
+                        ClipData clip = ClipData.newUri(AndroidUtils.getAppContext().getContentResolver(),
+                                postImage.filename, uri);
+                        clipboard.setPrimaryClip(clip);
+                        AndroidUtils.showThemedSnackbar(PostImageThumbnailView.this, R.string.image_copied, Snackbar.LENGTH_SHORT);
+                    });
+                }
+
+                @Override
+                public void onFail(boolean notFound) {
+                    AndroidUtils.runOnUiThread(() ->
+                            copyUrlToClipboard(clipboard));
+                }
+            });
+            return true;
+        }
+
+        copyUrlToClipboard(clipboard);
+        return true;
+    }
+
+    private void copyUrlToClipboard(ClipboardManager clipboard) {
         ClipData clip = ClipData.newPlainText("File URL", postImage.imageUrl.toString());
         clipboard.setPrimaryClip(clip);
         AndroidUtils.showThemedSnackbar(this, R.string.url_text_copied, Snackbar.LENGTH_SHORT);
-
-        return true;
     }
 }

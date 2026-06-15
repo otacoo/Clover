@@ -31,8 +31,11 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
+import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -83,6 +86,7 @@ import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.ImageDecoder;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -496,7 +500,46 @@ public class ReplyLayout extends LoadView implements
             Context context = getContext();
             ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData primary = clipboardManager.getPrimaryClip();
-            String clipboardContent = primary != null ? primary.getItemAt(0).coerceToText(context).toString() : "";
+            if (primary == null) return false;
+            ClipData.Item item = primary.getItemAt(0);
+
+            // If clipboard has an image URI, copy it directly to cache
+            Uri clipUri = item.getUri();
+            if (clipUri != null) {
+                File cacheFile = new File(context.getCacheDir(), "picked_file_clip");
+                String filename = guessClipFilename(context, clipUri);
+                new Thread(() -> {
+                    try {
+                        ParcelFileDescriptor fd = context.getContentResolver().openFileDescriptor(clipUri, "r");
+                        if (fd != null) {
+                            FileInputStream is = new FileInputStream(fd.getFileDescriptor());
+                            FileOutputStream os = new FileOutputStream(cacheFile);
+                            byte[] buf = new byte[8192];
+                            int read, total = 0;
+                            while ((read = is.read(buf)) != -1) {
+                                if (total > 26214400) {
+                                    is.close(); os.close();
+                                    AndroidUtils.runOnUiThread(() ->
+                                            AndroidUtils.showThemedSnackbar(ReplyLayout.this, "File too large", Snackbar.LENGTH_SHORT));
+                                    return;
+                                }
+                                os.write(buf, 0, read);
+                                total += read;
+                            }
+                            is.close();
+                            os.close();
+                            AndroidUtils.runOnUiThread(() -> presenter.onFilePicked(filename, cacheFile));
+                        }
+                    } catch (Exception e) {
+                        AndroidUtils.runOnUiThread(() ->
+                                AndroidUtils.showThemedSnackbar(ReplyLayout.this, "Copy failed", Snackbar.LENGTH_SHORT));
+                    }
+                }).start();
+                return true;
+            }
+
+            // Fall back: treat clipboard text as a URL to download
+            String clipboardContent = item.coerceToText(context).toString();
             final URL clipboardURL = new URL(clipboardContent);
             final File cacheFile = new File(context.getCacheDir(), "picked_file_dl");
 
@@ -1361,5 +1404,27 @@ public class ReplyLayout extends LoadView implements
         ChanThread getThread();
 
         void showImageReencodingWindow();
+    }
+
+    private static String guessClipFilename(Context context, Uri uri) {
+        try {
+            android.database.Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
+            if (cursor != null) {
+                cursor.moveToFirst();
+                int nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (nameIdx >= 0) {
+                    String name = cursor.getString(nameIdx);
+                    cursor.close();
+                    if (name != null && name.contains(".")) return name;
+                }
+                cursor.close();
+            }
+        } catch (Exception ignored) {}
+        String path = uri.getLastPathSegment();
+        if (path != null) {
+            int dot = path.lastIndexOf('.');
+            if (dot >= 0 && path.length() - dot <= 6) return "clipboard." + path.substring(dot + 1);
+        }
+        return "clipboard.png";
     }
 }
