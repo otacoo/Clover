@@ -1,3 +1,16 @@
+## 2026-06-15 – v3.6.5
+
+Refactor Share as URL:
+  - Renamed to *Share and copy as URL*
+  - When Enabled:
+    - Long-tapping an image will copy the image URL
+    - Using the *Share* option will share the URL to the image
+    - Long-tapping the attach button will download the image from the URL
+  - When Disabled:
+    - Long-tapping an image will download and copy the image
+    - Using the *Share* option will share the image directly
+    - Long-tapping the attach button will attach the image from the clipboard
+
 ## 2026-06-14 – v3.6.4
 
 - Filters: Fix an issue where *Apply to OP only* modifier was only working for WATCH or PIN actions
