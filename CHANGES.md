@@ -1,3 +1,10 @@
+## 2026-06-25 – v3.6.6
+
+- Fix an issue where the up/down symbol within the FAB button could stop showing after some time when toggled successively (issue #34)
+- Themes:
+  - *Primary text color* will now correctly apply to thread views
+  - Fix an issue where saved custom themes would show the base theme's colors instead of the user picked colors
+
 ## 2026-06-15 – v3.6.5
 
 Refactor Share as URL:
