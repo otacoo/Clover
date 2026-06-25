@@ -39,6 +39,7 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     private int currentCollapseTranslation;
     private boolean snackbarShowing;
     private int desiredVisibility = VISIBLE;
+    private int savedImageRes;
 
     public HidingFloatingActionButton(Context context) {
         super(context);
@@ -50,6 +51,12 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
 
     public HidingFloatingActionButton(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+    }
+
+    @Override
+    public void setImageResource(int resId) {
+        savedImageRes = resId;
+        super.setImageResource(resId);
     }
 
     public void setToolbar(Toolbar toolbar) {
@@ -120,9 +127,12 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
         if (snackbarShowing != showing) {
             snackbarShowing = showing;
             if (showing) {
-                hide();
+                super.setVisibility(GONE);
             } else if (desiredVisibility == VISIBLE) {
-                show();
+                super.setVisibility(VISIBLE);
+                if (savedImageRes != 0) {
+                    super.setImageResource(savedImageRes);
+                }
             }
         }
     }
