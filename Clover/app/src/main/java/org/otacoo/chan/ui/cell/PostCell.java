@@ -351,6 +351,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         icons.setHeight(sp(textSizeSp));
         icons.setPadding(paddingPx, dp(4), paddingPx, 0);
         comment.setTextSize(textSizeSp);
+        if (theme != null) comment.setTextColor(theme.textPrimary);
         comment.setPadding(paddingPx, paddingPx, paddingPx, 0);
         replies.setTextSize(textSizeSp);
         replies.setPadding(paddingPx, 0, paddingPx, paddingPx);
