@@ -140,6 +140,7 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
         
         TextView headerText = fixedHeader.findViewById(R.id.text);
         headerText.setText(R.string.drawer_pinned);
+        headerText.setTextColor(theme().textPrimary);
         headerText.setTypeface(ROBOTO_MEDIUM);
 
         ImageView clear = fixedHeader.findViewById(R.id.clear);
