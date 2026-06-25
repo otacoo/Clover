@@ -148,7 +148,7 @@ public class ThemeHelper {
 
             Object value = entry.getValue();
             if (value instanceof Number) {
-                normalized.put((String) entry.getKey(), ((Number) value).intValue());
+                normalized.put((String) entry.getKey(), (int) ((Number) value).longValue());
             } else if (value instanceof String) {
                 try {
                     normalized.put((String) entry.getKey(), (int) Long.parseLong((String) value));

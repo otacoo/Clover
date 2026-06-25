@@ -657,7 +657,7 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
 
             Object value = entry.getValue();
             if (value instanceof Number) {
-                sanitized.put((String) entry.getKey(), ((Number) value).intValue());
+                sanitized.put((String) entry.getKey(), (int) ((Number) value).longValue());
             } else if (value instanceof String) {
                 try {
                     sanitized.put((String) entry.getKey(), (int) Long.parseLong((String) value));
