@@ -514,10 +514,15 @@ public class ThemeSettingsController extends Controller implements View.OnClickL
 
         // Track shapes so the spinner listener can update all previews
         final List<GradientDrawable> colorShapes = new ArrayList<>();
+        final boolean[] initialSelectionPending = {true};
 
         baseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (initialSelectionPending[0]) {
+                    initialSelectionPending[0] = false;
+                    return;
+                }
                 if (colorShapes.isEmpty()) return;
                 Theme base = defaultThemes.get(position);
                 for (int i = 0; i < attrNames.length; i++) {
