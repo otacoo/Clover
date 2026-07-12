@@ -216,6 +216,7 @@ public class ChanSettings {
     public static final StringSetting boardOrder;
 
     public static final StringSetting postDefaultName;
+    public static final StringSetting postDefaultOptions;
     public static final BooleanSetting postPinThread;
     public static final BooleanSetting alwaysShowReplyTags;
 
@@ -357,6 +358,7 @@ public class ChanSettings {
         boardOrder = new StringSetting(p, "preference_board_order", PostsFilter.Order.BUMP.name);
 
         postDefaultName = new StringSetting(p, "preference_default_name", "");
+        postDefaultOptions = new StringSetting(p, "preference_default_options", "");
         postPinThread = new BooleanSetting(p, "preference_pin_on_post", true);
         alwaysShowReplyTags = new BooleanSetting(p, "preference_always_show_reply_tags", false);
 

@@ -146,7 +146,10 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         }
         
         if (TextUtils.isEmpty(draft.options)) {
-            draft.options = loadable.draftOptions;
+            draft.options = ChanSettings.postDefaultOptions.get();
+            if (TextUtils.isEmpty(draft.options)) {
+                draft.options = loadable.draftOptions;
+            }
         }
         
         if (TextUtils.isEmpty(draft.flag)) {

@@ -609,6 +609,7 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="settings_group_reply">Reply</string>
     <string name="setting_post_pin">Bookmark thread on post</string>
     <string name="setting_post_default_name">Default post name</string>
+    <string name="setting_post_default_options">Default reply option</string>
     <string name="setting_always_show_reply_tags">Always show formatting tags</string>
 
     <!-- Browsing post group -->

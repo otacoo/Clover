@@ -103,6 +103,9 @@ public class BrowsingSettingsController extends SettingsController {
             posts.add(new StringSettingView(this, ChanSettings.postDefaultName,
                     R.string.setting_post_default_name, R.string.setting_post_default_name));
 
+            posts.add(new StringSettingView(this, ChanSettings.postDefaultOptions,
+                    R.string.setting_post_default_options, R.string.setting_post_default_options));
+
             requiresUiRefresh.add(posts.add(new BooleanSettingView(this,
                     ChanSettings.anonymize,
                     R.string.setting_anonymize, 0)));
