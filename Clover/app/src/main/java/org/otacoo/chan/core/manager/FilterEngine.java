@@ -160,7 +160,7 @@ public class FilterEngine {
 
     @AnyThread
     public boolean matches(Filter filter, Post.Builder post) {
-        if ((filter.type & FilterType.TRIPCODE.flag) != 0 && matches(filter, FilterType.TRIPCODE.isRegex, post.tripcode, false)) {
+        if ((filter.type & FilterType.TRIPCODE.flag) != 0 && matches(filter, filter.pattern.startsWith("/"), post.tripcode, false)) {
             return true;
         }
 
