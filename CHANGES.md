@@ -1,3 +1,9 @@
+## 2026-07-12 – v3.6.7
+
+**New option:** Default reply option
+  - Allows setting a default option for the reply form, like sage or noko
+- Filters: filter engine can now filter posts with tripcodes by using regex (e.g. `/^!/`)
+
 ## 2026-06-25 – v3.6.6
 
 - Fix an issue where the up/down symbol within the FAB button could stop showing after some time when toggled successively (issue #34)
