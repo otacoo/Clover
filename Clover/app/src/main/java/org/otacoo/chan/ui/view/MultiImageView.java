@@ -206,8 +206,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
-                if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
-                        && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
+                if (exoPlayer != null && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
                     if (exoPlayer.isPlaying()) {
                         exoPlayer.pause();
                     } else {
@@ -217,11 +216,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         exoPlayer.play();
                     }
                     checkAudioTracks();
-                    if (playerControllerContainer != null) {
-                        playerControllerContainer.setVisibility(View.VISIBLE);
-                        handler.removeCallbacks(hideControllerTask);
-                        handler.postDelayed(hideControllerTask, ChanSettings.videoPlayerTimeout.get() * 1000L);
-                    }
                     return true;
                 }
                 return false;
