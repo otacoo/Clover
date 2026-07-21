@@ -507,8 +507,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_name_color">#ffc0bed1</item>
         <item name="post_subject_color">#ffaaaaaa</item>
         <item name="post_details_color">#ff888888</item>
-        <item name="post_quote_color">#ff7f9f7f</item>
-        <item name="post_highlight_quote_color">#fff8f893</item>
+        <item name="post_quote_color">#fff8f893</item>
+        <item name="post_highlight_quote_color">#ff7f9f7f</item>
         <item name="post_inline_quote_color">#ff8cd0d3</item>
         <item name="post_link_color">#ffefdcbc</item>
         <item name="post_spoiler_color">#ff454545</item>
@@ -537,8 +537,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_name_color">#ff78938a</item>
         <item name="post_subject_color">#ff525e75</item>
         <item name="post_details_color">#ff657980</item>
-        <item name="post_quote_color">#ff78938a</item>
-        <item name="post_highlight_quote_color">#ff92ba92</item>
+        <item name="post_quote_color">#ff92ba92</item>
+        <item name="post_highlight_quote_color">#ff78938a</item>
         <item name="post_inline_quote_color">#ff85a78e</item>
         <item name="post_link_color">#ff525e75</item>
         <item name="post_last_seen_color">#ff78938a</item>
