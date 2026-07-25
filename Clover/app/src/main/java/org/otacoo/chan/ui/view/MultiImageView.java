@@ -82,6 +82,7 @@ import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
+import org.otacoo.chan.utils.RotationGestureDetector;
 
 import java.io.File;
 import java.io.IOException;
@@ -164,6 +165,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     private boolean backgroundToggle;
     private final GestureDetector gestureDetector;
+    private final RotationGestureDetector rotationDetector;
+    private int currentOrientation = 0;
+    private float rotationDeltaAccumulator = 0f;
 
     public MultiImageView(Context context) {
         this(context, null);
@@ -219,6 +223,20 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                     return true;
                 }
                 return false;
+            }
+        });
+
+        rotationDetector = new RotationGestureDetector(new RotationGestureDetector.OnRotationGestureListener() {
+            @Override
+            public void onRotation(RotationGestureDetector detector) {
+                if (ChanSettings.fingerRotate.get()) {
+                    rotationDeltaAccumulator += detector.getAngle();
+                    if (Math.abs(rotationDeltaAccumulator) > 45f) {
+                        int delta = rotationDeltaAccumulator > 0 ? 90 : 270;
+                        rotationDeltaAccumulator = 0;
+                        setOrientation((currentOrientation + delta) % 360);
+                    }
+                }
             }
         });
 
@@ -351,6 +369,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        rotationDetector.onTouchEvent(ev);
+        if (ev.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN && ev.getPointerCount() == 2) {
+            rotationDeltaAccumulator = 0f;
+        }
+
         if (!isZoomed()) {
             if (gestureDetector.onTouchEvent(ev)) {
                 ev.setAction(MotionEvent.ACTION_CANCEL);
@@ -1146,6 +1169,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     public void setOrientation(int orientation) {
+        if (orientation >= 0) {
+            currentOrientation = orientation;
+        }
         CustomScaleImageView imageView = findScaleImageView();
         GifImageView gifView = findGifImageView();
         ImageView animatedView = findAnimatedImageView();
