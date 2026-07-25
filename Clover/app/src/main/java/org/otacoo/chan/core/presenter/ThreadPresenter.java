@@ -739,6 +739,7 @@ public class ThreadPresenter implements
 
     @Override
     public void onPostNoClicked(Post post) {
+        threadPresenterCallback.hidePostsPopup();
         threadPresenterCallback.quote(post, false);
         // Scroll the quoted post to the top of the visible area (right below the reply form)
         List<Post> posts = threadPresenterCallback.getDisplayingPosts();
