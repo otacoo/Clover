@@ -1,3 +1,19 @@
+## 2026-07-26 – v3.7.0
+
+**New feature:** Sound posts
+  - Detects [sound=] tag in filename, adds an unmute button to the toolbar to play audio
+  - For videos, start playback of the video first then unmute, both streams will then sync
+  
+**New option:** Gestures: Two-Finger rotate
+  - Tap and rotate an image with two fingers
+
+**New option:** Gestures: Double-tap to play/pause
+  - Double-tap a video to toggle playback
+
+### Bug fixes & others
+- Fix a bug where tapping a post number to reply would scroll the thread to the top (issue #36)
+- Adjusted highlighted quotelink colors for Zenburned and Tranquil themes
+
 ## 2026-07-12 – v3.6.7
 
 **New option:** Default reply option
