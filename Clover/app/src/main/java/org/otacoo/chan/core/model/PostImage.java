@@ -37,6 +37,8 @@ public class PostImage {
     public final boolean spoiler;
     public final long size;
 
+    public final String soundUrl;
+
     public final Type type;
 
     public int replyCount = 0;
@@ -52,6 +54,7 @@ public class PostImage {
         this.imageHeight = builder.imageHeight;
         this.spoiler = builder.spoiler;
         this.size = builder.size;
+        this.soundUrl = builder.soundUrl;
 
         switch (extension) {
             case "gif":
@@ -102,6 +105,7 @@ public class PostImage {
         private boolean spoiler;
         private long size;
         private String md5;
+        private String soundUrl;
 
         public Builder() {
         }
@@ -159,6 +163,11 @@ public class PostImage {
 
         public Builder md5(String md5) {
             this.md5 = md5;
+            return this;
+        }
+
+        public Builder soundUrl(String soundUrl) {
+            this.soundUrl = soundUrl;
             return this;
         }
 

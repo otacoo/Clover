@@ -246,18 +246,40 @@ public class FutabaChanReader implements ChanReader {
         if (fileId != null && fileName != null && fileExt != null) {
             Map<String, String> args = makeArgument("tim", fileId,
                     "ext", fileExt);
+            String displayName = org.jsoup.parser.Parser.unescapeEntities(fileName, false);
+            String soundUrl = null;
+            // Parse [sound=URL] from filename (4chan sound posts)
+            int soundStart = displayName.indexOf("[sound=");
+            if (soundStart >= 0) {
+                int valStart = soundStart + 7;
+                int end = displayName.indexOf(']', valStart);
+                if (end > valStart) {
+                    String rawUrl = displayName.substring(valStart, end);
+                    try {
+                        String decoded = java.net.URLDecoder.decode(rawUrl, "UTF-8");
+                        String lower = decoded.toLowerCase();
+                        int q = lower.indexOf('?'), f = lower.indexOf('#');
+                        String pathOnly = lower.substring(0, q > 0 ? q : f > 0 ? f : lower.length());
+                        if (pathOnly.matches(".*\\.(mp3|ogg|opus|flac|m4a|aac|wav|weba)$")
+                                && !pathOnly.matches(".*\\.[a-z0-9]+\\.[a-z0-9]+$")) {
+                            soundUrl = decoded;
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
             PostImage image = new PostImage.Builder()
                     .originalName(String.valueOf(fileId))
                     .thumbnailUrl(endpoints.thumbnailUrl(builder, false, args))
                     .spoilerThumbnailUrl(endpoints.thumbnailUrl(builder, true, args))
                     .imageUrl(endpoints.imageUrl(builder, args))
-                    .filename(org.jsoup.parser.Parser.unescapeEntities(fileName, false))
+                    .filename(displayName)
                     .extension(fileExt)
                     .imageWidth(fileWidth)
                     .imageHeight(fileHeight)
                     .spoiler(fileSpoiler)
                     .size(fileSize)
                     .md5(md5)
+                    .soundUrl(soundUrl)
                     .build();
             // Insert it at the beginning.
             files.add(0, image);
@@ -358,18 +380,29 @@ public class FutabaChanReader implements ChanReader {
         if (fileId != null && fileName != null && fileExt != null) {
             Map<String, String> args = makeArgument("tim", fileId,
                     "ext", fileExt);
+            String displayName = org.jsoup.parser.Parser.unescapeEntities(fileName, false);
+            String soundUrl = null;
+            if (displayName.startsWith("[sound=")) {
+                int end = displayName.indexOf(']');
+                if (end > 0) {
+                    String rawUrl = displayName.substring(7, end);
+                    try { soundUrl = java.net.URLDecoder.decode(rawUrl, "UTF-8"); } catch (Exception ignored) {}
+                    displayName = displayName.substring(end + 1);
+                }
+            }
             return new PostImage.Builder()
                     .originalName(String.valueOf(fileId))
                     .thumbnailUrl(endpoints.thumbnailUrl(builder, false, args))
                     .spoilerThumbnailUrl(endpoints.thumbnailUrl(builder, true, args))
                     .imageUrl(endpoints.imageUrl(builder, args))
-                    .filename(org.jsoup.parser.Parser.unescapeEntities(fileName, false))
+                    .filename(displayName)
                     .extension(fileExt)
                     .imageWidth(fileWidth)
                     .imageHeight(fileHeight)
                     .spoiler(fileSpoiler)
                     .size(fileSize)
                     .md5(md5)
+                    .soundUrl(soundUrl)
                     .build();
         }
         return null;

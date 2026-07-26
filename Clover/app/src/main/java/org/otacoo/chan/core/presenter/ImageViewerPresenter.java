@@ -196,9 +196,10 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
     }
 
     private void onPageSwipedTo(int position) {
-        // Reset volume icon.
-        // If it has audio, we'll know after it is loaded.
-        callback.showVolumeMenuItem(false, true);
+        // Reset volume icon, unless it has a sound post
+        PostImage pi = images.get(position);
+        boolean hasSound = pi != null && pi.soundUrl != null;
+        callback.showVolumeMenuItem(hasSound, true);
 
         PostImage postImage = images.get(selectedPosition);
         setTitle(postImage, position);
@@ -373,7 +374,9 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
 
     @Override
     public void onVideoLoaded(MultiImageView multiImageView) {
-        callback.showVolumeMenuItem(false, muted);
+        PostImage pi = getCurrentPostImage();
+        boolean hasSound = pi != null && pi.soundUrl != null;
+        callback.showVolumeMenuItem(hasSound, muted);
     }
 
     @Override

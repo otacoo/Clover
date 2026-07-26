@@ -364,7 +364,60 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (exoPlayer != null) {
             exoPlayer.setVolume(muted ? 0f : 1f);
         }
+        if (muted && soundPlayer != null) {
+            stopSound();
+        } else if (!muted && currentSoundUrl != null && soundPlayer == null) {
+            playSoundUrl(currentSoundUrl);
+        }
         updateMuteButtonIcon();
+    }
+
+    private String currentSoundUrl;
+    private ExoPlayer soundPlayer;
+
+    public void setSoundUrl(String url) {
+        stopSound();
+        currentSoundUrl = url;
+    }
+
+    private void stopSound() {
+        if (soundPlayer != null) {
+            soundPlayer.release();
+            soundPlayer = null;
+        }
+    }
+
+    private void playSoundUrl(String url) {
+        if (soundPlayer != null) return;
+        Logger.d("MultiImageView", "playSoundUrl: downloading " + url);
+        org.otacoo.chan.core.cache.FileCache fc = injector().instance(org.otacoo.chan.core.cache.FileCache.class);
+        fc.downloadFile(url, new org.otacoo.chan.core.cache.FileCacheListener() {
+            @Override
+            public void onSuccess(File file) {
+                Logger.d("MultiImageView", "playSoundUrl: downloaded ok, size=" + file.length());
+                AndroidUtils.runOnUiThread(() -> {
+                    if (soundPlayer != null) return;
+                    soundPlayer = new ExoPlayer.Builder(getContext()).build();
+                    soundPlayer.setMediaItem(androidx.media3.common.MediaItem.fromUri(file.toURI().toString()));
+                    soundPlayer.prepare();
+                    soundPlayer.play();
+                    // Loop audio if video auto-loop is enabled
+                    if (ChanSettings.videoAutoLoop.get()) {
+                        soundPlayer.setRepeatMode(androidx.media3.common.Player.REPEAT_MODE_ONE);
+                    }
+                    // Sync: restart video from 0:00 so both play together
+                    if (exoPlayer != null && !isMuted) {
+                        exoPlayer.seekTo(0);
+                        exoPlayer.play();
+                    }
+                });
+            }
+
+            @Override
+            public void onFail(boolean notFound) {
+                Logger.e("MultiImageView", "playSoundUrl: download failed, notFound=" + notFound);
+            }
+        });
     }
 
     @Override
@@ -1132,6 +1185,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             exoPlayer.release();
             exoPlayer = null;
         }
+        stopSound();
         exoPlayerView = null;
         cleanupWebView();
     }

@@ -421,6 +421,16 @@ public class ImageViewerController extends Controller implements ImageViewerPres
 
         updateGoPostBadge();
 
+        // Show volume button for sound posts
+        if (postImage.soundUrl != null && !spoiler) {
+            showVolumeMenuItem(true, true);
+            ImageViewerAdapter imgAdapter = (ImageViewerAdapter) pager.getAdapter();
+            if (imgAdapter != null) {
+                MultiImageView mv = imgAdapter.find(postImage);
+                if (mv != null) mv.setSoundUrl(postImage.soundUrl);
+            }
+        }
+
         if (toolbarMenu == null) return;
         MultiImageView.Mode imageMode = getImageMode(postImage);
         boolean enabled = !spoiler && (imageMode == MultiImageView.Mode.BIGIMAGE || imageMode == MultiImageView.Mode.GIF);
