@@ -19,6 +19,7 @@ package org.otacoo.chan.ui.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
@@ -26,6 +27,10 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 public class CustomScaleImageView extends SubsamplingScaleImageView {
     private Callback callback;
+
+    // Live rotation of image
+    private float extraRotation = 0f;
+    private float extraScale = 1f;
 
     public CustomScaleImageView(Context context) {
         this(context, null);
@@ -42,6 +47,58 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
 
     public void setCallback(Callback callback) {
         this.callback = callback;
+    }
+
+    public void setExtraRotation(float degrees) {
+        extraRotation = degrees;
+        extraScale = computeFitScale(degrees);
+        invalidate();
+    }
+
+    public void resetExtraRotation() {
+        extraRotation = 0f;
+        extraScale = 1f;
+        invalidate();
+    }
+
+    // Scales the rotated image down so its bounding box still fits the
+    // viewport while rotating; the user's own zoom multiplies on top of it.
+    private float computeFitScale(float degrees) {
+        int w = getWidth();
+        int h = getHeight();
+        if (w <= 0 || h <= 0) return 1f;
+        float angle = Math.abs(degrees) % 180f;
+        if (angle > 90f) angle = 180f - angle;
+        if (angle < 0.5f) return 1f;
+        float sw = getSWidth();
+        float sh = getSHeight();
+        if (sw <= 0 || sh <= 0) return 1f;
+        float fit = Math.min(w / sw, h / sh);
+        float fitW = sw * fit;
+        float fitH = sh * fit;
+        double rad = Math.toRadians(angle);
+        double cos = Math.abs(Math.cos(rad));
+        double sin = Math.abs(Math.sin(rad));
+        float bboxW = (float) (fitW * cos + fitH * sin);
+        float bboxH = (float) (fitW * sin + fitH * cos);
+        return Math.min(1f, Math.min(w / bboxW, h / bboxH));
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (extraRotation != 0f) {
+            int w = getWidth();
+            int h = getHeight();
+            canvas.save();
+            canvas.rotate(extraRotation, w / 2f, h / 2f);
+            if (extraScale != 1f) {
+                canvas.scale(extraScale, extraScale, w / 2f, h / 2f);
+            }
+            super.onDraw(canvas);
+            canvas.restore();
+        } else {
+            super.onDraw(canvas);
+        }
     }
 
     @Override
