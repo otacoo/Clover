@@ -441,6 +441,15 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     @Override
+    public void openReVerify() {
+        Loadable loadable = presenter.getLoadable();
+        if (loadable != null) {
+            callback.openSiteAuthentication(loadable.getSite(),
+                    "https://sys.4chan.org/signin", "Email Verification");
+        }
+    }
+
+    @Override
     public void showPosts(ChanThread thread, PostsFilter filter) {
         threadListLayout.showPosts(thread, filter, visible != Visible.THREAD);
         switchVisible(Visible.THREAD);

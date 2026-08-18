@@ -169,6 +169,16 @@ public class Chan4CookieStore {
 
     // Sets a new 4chan_pass value directly to the WebView store for all 4chan domains.
     public void setChanPass(String value) {
+        // Archive the token under the current connection so it can be reused
+        // when the user is back on this network; a token verified on Wi-Fi
+        // does not match on mobile data and vice versa.
+        String networkKey = Chan4NetworkProfiles.getCurrentNetworkKey();
+        if (value.isEmpty()) {
+            Chan4NetworkProfiles.removePassForNetwork(networkKey);
+        } else {
+            Chan4NetworkProfiles.setPassForNetwork(networkKey, value);
+        }
+
         CookieManager cm = CookieManager.getInstance();
         java.net.CookieManager jar = NetModule.getSharedCookieManager();
         if (value.isEmpty()) {
@@ -256,7 +266,12 @@ public class Chan4CookieStore {
                 parts.add("pass_id=" + id);
                 parts.add("pass_enabled=1");
             }
-            String pass = getChanPass();
+            // Prefer the token archived for the current connection, falling
+            // back to the live store when no per-network token is known.
+            String pass = Chan4NetworkProfiles.getPassForCurrentNetwork();
+            if (pass.isEmpty()) {
+                pass = getChanPass();
+            }
             if (!pass.isEmpty()) {
                 parts.add("4chan_pass=" + pass);
             }
@@ -295,6 +310,14 @@ public class Chan4CookieStore {
     // and report pages receive the correct pass identity for this device.
     public void syncToWebView(WebView webView) {
         CookieManager cm = CookieManager.getInstance();
+
+        // Make the WebView carry the token archived for the current
+        // connection, so captcha sessions match the token the post will be
+        // sent with.
+        String archivedPass = Chan4NetworkProfiles.getPassForCurrentNetwork();
+        if (!archivedPass.isEmpty() && !archivedPass.equals(getChanPass())) {
+            setChanPass(archivedPass);
+        }
 
         if (isPassAuthenticated()) {
             String id = getPassIdValue();

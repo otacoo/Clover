@@ -772,6 +772,15 @@ public class ReplyLayout extends LoadView implements
     }
 
     @Override
+    public void suggestReVerify() {
+        Snackbar snackbar = Snackbar.make(this,
+                R.string.reply_reverify_suggestion, Snackbar.LENGTH_LONG);
+        snackbar.setAction(R.string.reply_reverify_action, v -> callback.openReVerify());
+        AndroidUtils.applyThemedStyle(snackbar, this);
+        snackbar.show();
+    }
+
+    @Override
     public void loadDraftIntoViews(Reply draft) {
         name.setText(draft.name);
         subject.setText(draft.subject);
@@ -1404,6 +1413,8 @@ public class ReplyLayout extends LoadView implements
         ChanThread getThread();
 
         void showImageReencodingWindow();
+
+        void openReVerify();
     }
 
     private static String guessClipFilename(Context context, Uri uri) {

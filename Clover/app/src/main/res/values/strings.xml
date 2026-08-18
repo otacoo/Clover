@@ -368,6 +368,8 @@ If any other filters are enabled for it, it will not work.
     <string name="reply_error">Error posting</string>
     <string name="reply_error_empty">Nothing to post (add a comment or attach a file)</string>
     <string name="reply_error_message">Error posting: %s</string>
+    <string name="reply_reverify_suggestion">Your device verification may not match this connection</string>
+    <string name="reply_reverify_action">Verify</string>
     <string name="reply_attach_from_url">Long-press to attach from URL</string>
     <string name="reply_pick_with">Choose file picker</string>
     <string name="reply_picker_use_once">Use once</string>

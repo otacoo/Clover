@@ -740,6 +740,11 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         threadListLayoutCallback.showImageReencodingWindow();
     }
 
+    @Override
+    public void openReVerify() {
+        threadListLayoutCallback.openReVerify();
+    }
+
     public int[] getIndexAndTop() {
         int index = 0;
         int top = 0;
@@ -978,6 +983,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         boolean shouldToolbarCollapse();
 
         void showImageReencodingWindow();
+
+        void openReVerify();
 
         void onScrolling(int dy);
     }
