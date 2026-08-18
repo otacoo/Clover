@@ -132,6 +132,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private View newPostsBar;
     private TextView newPostsText;
     private TextView newPostsAction;
+    private boolean newPostsBarShowing;
     private static final int NEW_POSTS_DISMISS_DELAY_MS = 3500;
     private final Runnable dismissNewPostsRunnable = () -> showNewPostsNotification(false, -1);
 
@@ -785,21 +786,48 @@ public class ThreadLayout extends CoordinatorLayout implements
             newPostsBar.setAlpha(1f);
             removeCallbacks(dismissNewPostsRunnable);
             postDelayed(dismissNewPostsRunnable, NEW_POSTS_DISMISS_DELAY_MS);
-            
-            AndroidUtils.notifySnackbarShowing(true);
+
+            setNewPostsBarShowing(true);
         } else {
             removeCallbacks(dismissNewPostsRunnable);
             if (newPostsBar.getVisibility() == View.VISIBLE) {
                 newPostsBar.animate()
                         .alpha(0f)
                         .setDuration(200)
-                        .withEndAction(() -> {
-                            newPostsBar.setVisibility(View.GONE);
-                            AndroidUtils.notifySnackbarShowing(false);
-                        })
+                        .withEndAction(() -> newPostsBar.setVisibility(View.GONE))
                         .start();
             }
+
+            setNewPostsBarShowing(false);
         }
+    }
+
+    // Lift the FAB container above the new posts bar while it is showing so
+    // the top/bottom buttons stay usable
+    private void setNewPostsBarShowing(boolean showing) {
+        if (newPostsBarShowing == showing) {
+            return;
+        }
+        newPostsBarShowing = showing;
+
+        int lift = getNewPostsBarHeight() + dp(12);
+        fabContainer.animate()
+                .translationY(showing ? -lift : 0f)
+                .setInterpolator(new DecelerateInterpolator())
+                .setDuration(200)
+                .start();
+    }
+
+    private int getNewPostsBarHeight() {
+        int width = getWidth();
+        if (width <= 0) {
+            return dp(48);
+        }
+        newPostsBar.measure(
+                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int height = newPostsBar.getMeasuredHeight();
+        return height > 0 ? height : dp(48);
     }
 
     @Override
@@ -993,7 +1021,7 @@ public class ThreadLayout extends CoordinatorLayout implements
                     newPostsBar.animate().cancel();
                     newPostsBar.setVisibility(View.GONE);
                     newPostsBar.setAlpha(1f);
-                    AndroidUtils.notifySnackbarShowing(false);
+                    setNewPostsBarShowing(false);
                 }
             }
 
