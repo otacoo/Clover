@@ -182,13 +182,13 @@ public class ThreadWatchNotifications extends NotificationHelper {
         NotificationChannel normalChannel = new NotificationChannel(
                 CHANNEL_ID_WATCH_NORMAL, "Thread updates",
                 NotificationManager.IMPORTANCE_DEFAULT);
-        normalChannel.setDescription("Normal posts for threads");
+        normalChannel.setDescription("When a thread receives a new post.");
         notificationManager.createNotificationChannel(normalChannel);
 
         NotificationChannel mentionChannel = new NotificationChannel(
                 CHANNEL_ID_WATCH_MENTION, "Thread mentions",
                 NotificationManager.IMPORTANCE_HIGH);
-        mentionChannel.setDescription("Posts were you were mentioned");
+        mentionChannel.setDescription("Posts where you are mentioned.");
         mentionChannel.enableVibration(true);
         mentionChannel.enableLights(true);
         notificationManager.createNotificationChannel(mentionChannel);
