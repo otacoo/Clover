@@ -161,9 +161,12 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         recyclerView.addOnScrollListener(scrollListener);
         reply.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             if (replyOpen && bottom - top != oldBottom - oldTop) {
-                applyReplyLayoutMode();
-                setRecyclerViewPadding();
-                threadListLayoutCallback.replyLayoutChanged();
+                post(() -> {
+                    if (!replyOpen) return;
+                    applyReplyLayoutMode();
+                    setRecyclerViewPadding();
+                    threadListLayoutCallback.replyLayoutChanged();
+                });
             }
         });
 
