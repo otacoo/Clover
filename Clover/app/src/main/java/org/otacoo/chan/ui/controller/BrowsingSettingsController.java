@@ -93,6 +93,11 @@ public class BrowsingSettingsController extends SettingsController {
             threads.add(new BooleanSettingView(this, ChanSettings.postPinThread,
                     R.string.setting_post_pin, 0));
 
+            threads.add(new BooleanSettingView(this,
+                    ChanSettings.fetchDeletedPostsAutomatically,
+                    R.string.setting_fetch_deleted_posts_automatically,
+                    R.string.setting_fetch_deleted_posts_automatically_description));
+
             groups.add(threads);
         }
 
