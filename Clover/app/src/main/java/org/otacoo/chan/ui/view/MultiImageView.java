@@ -44,6 +44,7 @@ import android.view.MotionEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -210,6 +211,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
+                handler.removeCallbacks(deferredTapTask);
                 if (exoPlayer != null && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
                     if (exoPlayer.isPlaying()) {
                         exoPlayer.pause();
@@ -220,6 +222,26 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         exoPlayer.play();
                     }
                     checkAudioTracks();
+                    return true;
+                }
+
+                GifImageView gifView = findGifImageView();
+                if (gifView != null && gifView.getDrawable() instanceof GifDrawable gifDrawable) {
+                    if (gifDrawable.isRunning()) {
+                        gifDrawable.pause();
+                    } else {
+                        gifDrawable.start();
+                    }
+                    return true;
+                }
+
+                ImageView animatedView = findAnimatedImageView();
+                if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
+                    if (apng.isRunning()) {
+                        apng.pause();
+                    } else {
+                        apng.resume();
+                    }
                     return true;
                 }
                 return false;
@@ -446,6 +468,17 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     @Override
     public void onClick(View v) {
+        handler.removeCallbacks(deferredTapTask);
+        handler.postDelayed(deferredTapTask, ViewConfiguration.getDoubleTapTimeout());
+    }
+
+    private final Runnable hideControllerTask = () -> {
+        if (playerControllerContainer != null) {
+            playerControllerContainer.setVisibility(View.GONE);
+        }
+    };
+
+    private final Runnable deferredTapTask = () -> {
         if (playerControllerContainer != null && playerControllerContainer.getVisibility() == View.VISIBLE) {
             playerControllerContainer.setVisibility(View.GONE);
         } else if (playerControllerContainer != null) {
@@ -455,12 +488,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         }
 
         callback.onTap(this);
-    }
-
-    private final Runnable hideControllerTask = () -> {
-        if (playerControllerContainer != null) {
-            playerControllerContainer.setVisibility(View.GONE);
-        }
     };
 
     @Override
