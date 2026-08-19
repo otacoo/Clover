@@ -212,7 +212,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
                 handler.removeCallbacks(deferredTapTask);
-                if (exoPlayer != null && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
+                if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
+                        && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
                     if (exoPlayer.isPlaying()) {
                         exoPlayer.pause();
                     } else {
