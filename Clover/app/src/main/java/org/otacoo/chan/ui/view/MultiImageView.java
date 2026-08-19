@@ -226,24 +226,26 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                     return true;
                 }
 
-                GifImageView gifView = findGifImageView();
-                if (gifView != null && gifView.getDrawable() instanceof GifDrawable gifDrawable) {
-                    if (gifDrawable.isRunning()) {
-                        gifDrawable.pause();
-                    } else {
-                        gifDrawable.start();
+                if (ChanSettings.doubleTapPlayPause.get()) {
+                    GifImageView gifView = findGifImageView();
+                    if (gifView != null && gifView.getDrawable() instanceof GifDrawable gifDrawable) {
+                        if (gifDrawable.isRunning()) {
+                            gifDrawable.pause();
+                        } else {
+                            gifDrawable.start();
+                        }
+                        return true;
                     }
-                    return true;
-                }
 
-                ImageView animatedView = findAnimatedImageView();
-                if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
-                    if (apng.isRunning()) {
-                        apng.pause();
-                    } else {
-                        apng.resume();
+                    ImageView animatedView = findAnimatedImageView();
+                    if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
+                        if (apng.isRunning()) {
+                            apng.pause();
+                        } else {
+                            apng.resume();
+                        }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
