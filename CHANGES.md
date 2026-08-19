@@ -1,3 +1,40 @@
+## 2026-08-19 – v3.8.0
+
+### New options & features
+**Archives**
+- **New option:** Automatically fetch deleted posts (Browsing > Threads)
+- Add a button to "FETCH FROM ARCHIVES" in 404 threads
+- Add a menu entry in threads for Fetching deleted posts
+
+*Notes:* 
+- Not all archives may work correctly, some will not have working quotelinks, others won't have images.
+- For boards with multiple archives, the app will test the first archive in the archive list; if it can't connect or fetch it should try the next compatible archive when trying to fetch again.
+
+**Gestures: Double-tap to play/pause**
+
+- Improved the feature, GIF and APNG images can now be double-tapped to pause their animations.
+- Double-tapping a video will no longer show the controls.
+
+**Gestures: Two-Finger rotate**
+
+- Changed the way two-finger rotation works, will be more elastic and rotate around a center pivot, let me know if it's better or worse.
+
+**Mark as my ID**
+- Add a menu entry for posts with IDs to mark all the posts with that ID as yours.
+
+**Per-connection 4chan_pass**
+
+Clover will now store the *4chan_pass* cookie on a per-connection basis (e.g. Wi-Fi, mobile internet, VPN etc). This should theoretically allow users to verify their email with different device fingerprints and seamlessly be able to switch connections.\
+The app will first serve the cookie that's available, if it's rejected by 4chan a snackbar will appear prompting the user to verify their email.
+
+### Bug fixes & others
+- Reduce padding for video controls overlay (issue #37)
+- The new posts snackbar will no longer hide the top/bottom FAB button
+- Fix a bug where opening the reply view would make the app force a relayout and cause stutters
+- Improve pinned threads (bookmarks) fetching on app start to avoid out-of-memory crashes on low-end devices
+- Fix an issue where tapping a cross-linked post to reply would scroll the thread to the top
+
+
 ## 2026-07-26 – v3.7.0
 
 **New feature:** Sound posts
