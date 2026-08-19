@@ -115,10 +115,8 @@ public class WatchManager {
 
     private static final long FOREGROUND_INTERVAL = 15 * 1000;
     private static final long FOREGROUND_INITIAL_DELAY = 1000;
-    // Milliseconds between successive pin polling in a foreground update cycle.
-    // Spreads N pins evenly: pin-0 fires immediately, pin-1 fires 1.5s later, etc.
-    // Keeps all requests within the 15s window for up to 10 pins.
-    private static final long WATCHER_STAGGER_MS = 1500L;
+    // Safety net: when a foreground pin load stalls, continue with the next pin.
+    private static final long FOREGROUND_UPDATE_STALL_TIMEOUT = 30 * 1000L;
     private static final int MESSAGE_UPDATE = 1;
     private static final int REQUEST_CODE_WATCH_UPDATE = 2;
     private static final String WATCHER_UPDATE_ACTION = getAppContext().getPackageName() + ".intent.action.WATCHER_UPDATE";
@@ -151,6 +149,12 @@ public class WatchManager {
     private Set<PinWatcher> waitingForPinWatchersForBackgroundUpdate;
     private PowerManager.WakeLock wakeLock;
     private long lastBackgroundUpdateTime;
+
+    // Foreground pin updates are serialized: one pin loads at a time, so
+    // several large threads are never parsed simultaneously (which OOMs
+    // low-memory devices on app start).
+    private int foregroundUpdateIndex = 0;
+    private boolean foregroundUpdateWaiting = false;
 
     private final ThreadWatchNotifications threadWatchNotifications;
 
@@ -553,6 +557,10 @@ public class WatchManager {
 
         // Changing interval type, like when watching is disabled or the app goes to the background
         if (currentInterval != intervalType) {
+            // Restart the serialized foreground update cycle from the first pin.
+            foregroundUpdateIndex = 0;
+            foregroundUpdateWaiting = false;
+
             // Handle the preview state
             switch (currentInterval) {
                 case FOREGROUND:
@@ -678,26 +686,51 @@ public class WatchManager {
                 manageLock(true);
             }
         } else {
-            // Foreground updates: stagger each pin by WATCHER_STAGGER_MS so all N requests
-            // are spread instead of all hitting the server simultaneously.
+            // Foreground updates: load one pin at a time so multiple large
+            // threads are never parsed simultaneously.
             waitingForPinWatchersForBackgroundUpdate = null;
-            for (int i = 0; i < watchingPins.size(); i++) {
-                final Pin pin = watchingPins.get(i);
+            startForegroundUpdates(watchingPins);
+        }
+    }
+
+    // Loads watching pins one at a time: the next pin only starts once the
+    // previous load completes (success or error), keeping peak memory low.
+    private void startForegroundUpdates(List<Pin> watchingPins) {
+        if (foregroundUpdateWaiting) return;
+
+        while (foregroundUpdateIndex < watchingPins.size()) {
+            Pin pin = watchingPins.get(foregroundUpdateIndex);
+            foregroundUpdateIndex++;
+            PinWatcher pinWatcher = getPinWatcher(pin);
+            if (pinWatcher != null && pinWatcher.update(false)) {
+                // A request started: wait for pinWatcherUpdated() before
+                // continuing with the next pin.
+                foregroundUpdateWaiting = true;
+                handler.post(() -> postPinChanged(pin));
+
+                // Stall safety net: if the load never completes, keep going.
                 handler.postDelayed(() -> {
-                    PinWatcher pinWatcher = getPinWatcher(pin);
-                    if (pinWatcher != null && pinWatcher.update(false)) {
-                        // Defer so ThreadPresenter's onChanLoaderData runs first
-                        handler.post(() -> postPinChanged(pin));
+                    if (foregroundUpdateWaiting) {
+                        foregroundUpdateWaiting = false;
+                        startForegroundUpdates(getWatchingPins());
                     }
-                }, (long) i * WATCHER_STAGGER_MS);
+                }, FOREGROUND_UPDATE_STALL_TIMEOUT);
+                return;
             }
         }
+        foregroundUpdateIndex = 0;
     }
 
     private void pinWatcherUpdated(PinWatcher pinWatcher) {
         updateState();
         // Defer
         handler.post(() -> postPinChanged(pinWatcher.pin));
+
+        if (foregroundUpdateWaiting) {
+            // A foreground pin finished loading: continue with the next pin.
+            foregroundUpdateWaiting = false;
+            startForegroundUpdates(getWatchingPins());
+        }
 
         if (waitingForPinWatchersForBackgroundUpdate != null) {
             waitingForPinWatchersForBackgroundUpdate.remove(pinWatcher);
