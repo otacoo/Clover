@@ -303,6 +303,25 @@ public abstract class ThreadController extends Controller implements
     }
 
     @Override
+    public void presentArchiveUnlock(String domain, Runnable onUnlocked, Runnable onCancelled) {
+        // Don't stack duplicate unlock screens; release the waiting fetch.
+        if (navigationController != null
+                && navigationController.getTop() instanceof ArchiveUnlockController) {
+            onCancelled.run();
+            return;
+        }
+
+        ArchiveUnlockController c = new ArchiveUnlockController(context, domain, onUnlocked, onCancelled);
+        if (navigationController != null) {
+            navigationController.pushController(c);
+        } else if (doubleNavigationController != null) {
+            doubleNavigationController.pushController(c);
+        } else {
+            presentController(c);
+        }
+    }
+
+    @Override
     public void openFilterForTripcode(String tripcode) {
         FiltersController filtersController = new FiltersController(context);
         if (doubleNavigationController != null) {

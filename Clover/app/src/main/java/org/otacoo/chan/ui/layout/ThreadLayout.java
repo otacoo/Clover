@@ -118,6 +118,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     private TextView errorText;
     private Button errorRetryButton;
     private Button errorAuthButton;
+    private Button errorArchiveButton;
     private PostPopupHelper postPopupHelper;
     private ImageOptionsHelper imageReencodingHelper;
     private Visible visible;
@@ -177,6 +178,8 @@ public class ThreadLayout extends CoordinatorLayout implements
         errorRetryButton = errorLayout.findViewById(R.id.button);
         errorAuthButton = errorLayout.findViewById(R.id.auth_button);
         errorAuthButton.setOnClickListener(this);
+        errorArchiveButton = errorLayout.findViewById(R.id.archive_button);
+        errorArchiveButton.setOnClickListener(this);
 
         // Inflate thread loading layout
         progressLayout = layoutInflater.inflate(R.layout.layout_thread_progress, this, false);
@@ -274,6 +277,8 @@ public class ThreadLayout extends CoordinatorLayout implements
                 String webUrl = loadable.getSite().resolvable().desktopUrl(loadable, null);
                 callback.openSiteAuthentication(loadable.getSite(), webUrl, "Site Authentication");
             }
+        } else if (v == errorArchiveButton) {
+            presenter.loadFromArchive();
         } else if (v == replyButton) {
             threadListLayout.openReply(true);
         } else if (v == topButton) {
@@ -472,13 +477,39 @@ public class ThreadLayout extends CoordinatorLayout implements
             errorMessage = error.getMessage();
         }
 
+        boolean canFetchArchive = error.isNotFound()
+                && presenter.getLoadable() != null
+                && presenter.getLoadable().getSite() instanceof org.otacoo.chan.core.site.sites.chan4.Chan4;
+
         if (visible == Visible.THREAD) {
             threadListLayout.showError(errorMessage);
         } else {
             switchVisible(Visible.ERROR);
             errorText.setText(errorMessage);
             errorAuthButton.setVisibility(verificationRequired ? VISIBLE : GONE);
+            errorArchiveButton.setVisibility(canFetchArchive ? VISIBLE : GONE);
         }
+    }
+
+    @Override
+    public void showArchiveError(String message) {
+        if (visible == Visible.THREAD) {
+            threadListLayout.showError(message);
+        } else {
+            switchVisible(Visible.ERROR);
+            errorText.setText(message);
+            errorAuthButton.setVisibility(GONE);
+            errorArchiveButton.setVisibility(VISIBLE);
+        }
+    }
+
+    @Override
+    public void presentArchiveUnlock(String domain, Runnable onUnlocked, Runnable onCancelled) {
+        if (!presenter.isBound()) {
+            onCancelled.run();
+            return;
+        }
+        callback.presentArchiveUnlock(domain, onUnlocked, onCancelled);
     }
 
     @Override
@@ -1107,6 +1138,8 @@ public class ThreadLayout extends CoordinatorLayout implements
         boolean shouldToolbarCollapse();
 
         void openSiteAuthentication(Site site, String url, String title);
+
+        void presentArchiveUnlock(String domain, Runnable onUnlocked, Runnable onCancelled);
 
         void openFilterForTripcode(String tripcode);
     }

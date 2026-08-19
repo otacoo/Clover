@@ -95,6 +95,7 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
                 .withSubItem(R.string.action_open_browser, this::openBrowserClicked);
         if (loadable.site instanceof Chan4) { //archives are 4chan only
             menuOverflowBuilder.withSubItem(R.string.thread_open_external_archive, this::openExternalArchiveClicked);
+            menuOverflowBuilder.withSubItem(R.string.thread_fetch_deleted_posts, this::fetchDeletedPostsClicked);
         }
         menuOverflowBuilder
                 .withSubItem(R.string.thread_view_my_posts, this::showMyPosts)
@@ -145,6 +146,11 @@ public class ViewThreadController extends ThreadController implements ThreadLayo
         } else {
             AndroidUtils.showThemedSnackbar(view, R.string.thread_no_external_archives, Snackbar.LENGTH_SHORT);
         }
+    }
+
+    private void fetchDeletedPostsClicked(ToolbarMenuSubItem item) {
+        AndroidUtils.showThemedSnackbar(view, R.string.thread_fetching_deleted_posts, Snackbar.LENGTH_SHORT);
+        threadLayout.getPresenter().fetchDeletedPostsFromArchive();
     }
 
     private void openBrowserClicked(ToolbarMenuSubItem item) {

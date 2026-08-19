@@ -122,6 +122,18 @@ public class MiscSettingsController extends SettingsController {
                         R.string.setting_group_user_agent_ua, R.string.setting_group_user_agent_ua_desc));
                 groups.add(ua);
             }
+
+            // Archive group
+            {
+                SettingsGroup archive = new SettingsGroup(R.string.setting_group_archives);
+
+                archive.add(new BooleanSettingView(this,
+                        ChanSettings.fetchDeletedPostsAutomatically,
+                        R.string.setting_fetch_deleted_posts_automatically,
+                        R.string.setting_fetch_deleted_posts_automatically_description));
+
+                groups.add(archive);
+            }
         }
     }
 

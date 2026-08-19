@@ -62,6 +62,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
     private final List<ChanLoaderCallback> listeners = new ArrayList<>();
     private final Loadable loadable;
     private ChanThread thread;
+    private boolean archiveLoaded = false;
 
     private ChanLoaderRequest request;
 
@@ -117,10 +118,34 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
         return thread;
     }
 
+    public boolean isArchiveLoaded() {
+        return archiveLoaded;
+    }
+
+    /**
+     * Replaces the live thread with an archived copy. The thread is gone from
+     * 4chan forever, so no further requests or refresh timers are started.
+     */
+    public void setArchivedThread(ChanThread archivedThread) {
+        clearTimer();
+        if (request != null) {
+            request.getOkHttpCall().cancel();
+            request = null;
+        }
+        archiveLoaded = true;
+        thread = archivedThread;
+        lastLoadTime = Time.get();
+        for (ChanLoaderCallback l : listeners) {
+            l.onChanLoaderData(thread);
+        }
+    }
+
     /**
      * Request data for the first time.
      */
     public void requestData() {
+        if (archiveLoaded) return;
+
         clearTimer();
 
         if (request != null) {
@@ -149,7 +174,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
     public boolean requestMoreData() {
         clearPendingRunnable();
 
-        if (loadable.isThreadMode() && request == null) {
+        if (loadable.isThreadMode() && !archiveLoaded && request == null) {
             request = getData();
             return true;
         } else {

@@ -21,6 +21,8 @@ import static org.otacoo.chan.utils.AndroidUtils.getString;
 
 import android.text.TextUtils;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.database.DatabaseManager;
@@ -45,6 +47,8 @@ import org.otacoo.chan.core.site.http.DeleteRequest;
 import org.otacoo.chan.core.site.http.DeleteResponse;
 import org.otacoo.chan.core.site.http.HttpCall;
 import org.otacoo.chan.core.site.loader.ChanThreadLoader;
+import org.otacoo.chan.core.site.sites.chan4.Chan4;
+import org.otacoo.chan.core.site.sites.chan4.Chan4ArchiveFetcher;
 import org.otacoo.chan.ui.adapter.PostAdapter;
 import org.otacoo.chan.ui.adapter.PostsFilter;
 import org.otacoo.chan.ui.cell.PostCellInterface;
@@ -57,7 +61,11 @@ import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -102,6 +110,13 @@ public class ThreadPresenter implements
 
     private int preSearchIndex = -1;
     private int preSearchTop = 0;
+
+    private boolean archiveLoading = false;
+    private static final long ARCHIVE_FETCH_INTERVAL_MS = 10 * 60 * 1000L;
+    private static final Map<String, Long> lastArchiveFetch = new HashMap<>();
+
+    private final Chan4ArchiveFetcher.UnlockPresenter unlockPresenter = (domain, onUnlocked, onCancelled) ->
+            threadPresenterCallback.presentArchiveUnlock(domain, onUnlocked, onCancelled);
 
     @Inject
     public ThreadPresenter(WatchManager watchManager,
@@ -344,6 +359,8 @@ public class ThreadPresenter implements
 
         showPosts();
 
+        maybeFetchDeletedPostsAutomatically(result);
+
         if (loadable.isThreadMode()) {
             int lastLoaded = loadable.lastLoaded;
             List<Post> posts = result.posts;
@@ -383,6 +400,172 @@ public class ThreadPresenter implements
     @Override
     public void onChanLoaderError(ChanLoaderException error) {
         threadPresenterCallback.showError(error);
+    }
+
+    public boolean isArchiveLoading() {
+        return archiveLoading;
+    }
+
+    /**
+     * Fetches this (404'd) thread from the archives and replaces the live
+     * thread with the archived copy. No further polling happens afterwards.
+     */
+    public void loadFromArchive() {
+        if (chanLoader == null || loadable == null || archiveLoading) return;
+        if (!(loadable.site instanceof Chan4)) return;
+        archiveLoading = true;
+        threadPresenterCallback.showLoading();
+        Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
+            @Override
+            public void onSuccess(List<Post> posts) {
+                archiveLoading = false;
+                if (chanLoader == null || loadable == null) return;
+                if (loadable.title == null || loadable.title.isEmpty()) {
+                    loadable.title = PostHelper.getTitle(posts.get(0), loadable);
+                }
+                ChanThread archivedThread = new ChanThread(loadable, new ArrayList<>(posts));
+                // The loader normally sets op in processResponse; do it here
+                // or addHistory() NPEs on a null op.
+                Post op = posts.get(0);
+                archivedThread.op = op;
+                archivedThread.closed = op.isClosed();
+                archivedThread.archived = op.isArchived();
+                chanLoader.setArchivedThread(archivedThread);
+                AndroidUtils.showThemedSnackbar(
+                        getString(R.string.thread_archive_restored), Snackbar.LENGTH_LONG);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                archiveLoading = false;
+                if (chanLoader == null || loadable == null) return;
+                threadPresenterCallback.showArchiveError(message);
+            }
+        }, unlockPresenter);
+    }
+
+    /**
+     * Fetches the thread from the archives and merges the result into the
+     * current thread: posts missing from the live thread are inserted at their
+     * original positions (marked deleted, rendered greyed), and posts whose
+     * file was removed on 4chan get their image restored from the archive.
+     */
+    public void fetchDeletedPostsFromArchive() {
+        if (chanLoader == null || loadable == null || archiveLoading) return;
+        ChanThread thread = chanLoader.getThread();
+        if (thread == null || loadable.isCatalogMode()) return;
+        if (!(loadable.site instanceof Chan4)) return;
+        archiveLoading = true;
+        Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
+            @Override
+            public void onSuccess(List<Post> posts) {
+                archiveLoading = false;
+                if (chanLoader == null || loadable == null) return;
+                ChanThread current = chanLoader.getThread();
+                if (current == null) return;
+
+                Map<Integer, Post> currentByNo = new HashMap<>();
+                for (Post post : current.posts) {
+                    currentByNo.put(post.no, post);
+                }
+
+                List<Post> merged = new ArrayList<>(current.posts);
+                int added = 0;
+                int restored = 0;
+                for (Post archived : posts) {
+                    Post existing = currentByNo.get(archived.no);
+                    if (existing == null) {
+                        // Deleted on 4chan entirely: insert greyed at its place.
+                        archived.deleted.set(true);
+                        merged.add(archived);
+                        added++;
+                    } else if (!existing.deleted.get()
+                            && (existing.fileDeleted || existing.images.isEmpty())
+                            && !archived.images.isEmpty()) {
+                        // Post still lives, but 4chan removed its file:
+                        // swap in the archived copy with the image intact.
+                        int index = merged.indexOf(existing);
+                        if (index >= 0) {
+                            merged.set(index, archived);
+                        }
+                        restored++;
+                    }
+                }
+
+                if (added > 0 || restored > 0) {
+                    Collections.sort(merged, (a, b) -> Integer.compare(a.no, b.no));
+                    current.posts.clear();
+                    current.posts.addAll(merged);
+                    if (!merged.isEmpty() && merged.get(0) == current.op) {
+                        // OP unchanged; nothing to fix.
+                    } else if (!merged.isEmpty() && merged.get(0).isOP) {
+                        current.op = merged.get(0);
+                    }
+                    showPosts();
+
+                    if (added > 0 && restored > 0) {
+                        AndroidUtils.showThemedSnackbar(
+                                AndroidUtils.getAppContext().getString(
+                                        R.string.thread_archive_deleted_restored, added)
+                                        + " " + AndroidUtils.getAppContext().getString(
+                                        R.string.thread_archive_images_restored, restored),
+                                Snackbar.LENGTH_LONG);
+                    } else if (added > 0) {
+                        AndroidUtils.showThemedSnackbar(
+                                AndroidUtils.getAppContext().getString(
+                                        R.string.thread_archive_deleted_restored, added),
+                                Snackbar.LENGTH_LONG);
+                    } else {
+                        AndroidUtils.showThemedSnackbar(
+                                AndroidUtils.getAppContext().getString(
+                                        R.string.thread_archive_images_restored, restored),
+                                Snackbar.LENGTH_LONG);
+                    }
+                } else {
+                    AndroidUtils.showThemedSnackbar(
+                            getString(R.string.thread_archive_deleted_none), Snackbar.LENGTH_LONG);
+                }
+            }
+
+            @Override
+            public void onFailure(String message) {
+                archiveLoading = false;
+                if (chanLoader == null || loadable == null) return;
+                AndroidUtils.showThemedSnackbar(message, Snackbar.LENGTH_LONG);
+            }
+        }, unlockPresenter);
+    }
+
+    // Only when the app already knows posts were deleted, to minimize archive
+    // connections. Rate limited per thread.
+    private void maybeFetchDeletedPostsAutomatically(ChanThread result) {
+        if (!ChanSettings.fetchDeletedPostsAutomatically.get()) return;
+        if (loadable == null || chanLoader == null || archiveLoading) return;
+        if (chanLoader.isArchiveLoaded() || result == null || result.posts.isEmpty()) return;
+        if (!loadable.isThreadMode() || !(loadable.site instanceof Chan4)) return;
+
+        boolean deletionsKnown = false;
+        for (Post post : result.posts) {
+            if (post.deleted.get()) {
+                deletionsKnown = true;
+                break;
+            }
+        }
+        if (!deletionsKnown) {
+            Post op = result.op;
+            if (op != null && op.getReplies() > result.posts.size()) {
+                deletionsKnown = true;
+            }
+        }
+        if (!deletionsKnown) return;
+
+        String key = loadable.boardCode + ":" + loadable.no;
+        long now = System.currentTimeMillis();
+        Long last = lastArchiveFetch.get(key);
+        if (last != null && now - last < ARCHIVE_FETCH_INTERVAL_MS) return;
+        lastArchiveFetch.put(key, now);
+
+        fetchDeletedPostsFromArchive();
     }
 
     /*
@@ -939,7 +1122,8 @@ public class ThreadPresenter implements
             historyAdded = true;
             History history = new History();
             history.loadable = loadable;
-            PostImage image = chanLoader.getThread().op.image();
+            ChanThread thread = chanLoader.getThread();
+            PostImage image = thread != null && thread.op != null ? thread.op.image() : null;
             history.thumbnailUrl = image == null ? "" : image.getThumbnailUrl().toString();
             databaseManager.runTaskAsync(databaseManager.getDatabaseHistoryManager().addHistory(history));
         }
@@ -959,6 +1143,10 @@ public class ThreadPresenter implements
         void postClicked(Post post);
 
         void showError(ChanLoaderException error);
+
+        void showArchiveError(String message);
+
+        void presentArchiveUnlock(String domain, Runnable onUnlocked, Runnable onCancelled);
 
         void showLoading();
 

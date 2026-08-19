@@ -136,4 +136,50 @@ public class ArchivesManager {
         } catch (JSONException ignored) { }
         return result;
     }
+
+    /**
+     * Detailed archive records for a 4chan board, restricted to fuuka and
+     * foolfuuka archives whose JSON API can be fetched directly.
+     */
+    public List<ArchiveSite> archiveSitesForBoard(String code) {
+        List<ArchiveSite> result = new ArrayList<>();
+        if (archivesList == null) return result;
+        try {
+            for (int i = 0; i < archivesList.length(); i++) {
+                JSONObject a = archivesList.getJSONObject(i);
+                String software = a.optString("software", "");
+                if (!"fuuka".equals(software) && !"foolfuuka".equals(software)) {
+                    continue;
+                }
+                JSONArray boardCodes = a.getJSONArray("boards");
+                boolean matches = false;
+                for (int j = 0; j < boardCodes.length(); j++) {
+                    if (boardCodes.getString(j).equals(code)) {
+                        matches = true;
+                        break;
+                    }
+                }
+                if (matches) {
+                    result.add(new ArchiveSite(
+                            a.getString("name"),
+                            a.getString("domain"),
+                            software));
+                }
+            }
+        } catch (JSONException ignored) { }
+        return result;
+    }
+
+    /** A single fuuka/foolfuuka archive record. */
+    public static class ArchiveSite {
+        public final String name;
+        public final String domain;
+        public final String software;
+
+        public ArchiveSite(String name, String domain, String software) {
+            this.name = name;
+            this.domain = domain;
+            this.software = software;
+        }
+    }
 }

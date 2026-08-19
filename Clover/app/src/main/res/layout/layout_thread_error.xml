@@ -49,4 +49,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         android:text="Open in Browser (Verify)"
         android:visibility="gone" />
 
+    <Button
+        android:id="@+id/archive_button"
+        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="4dp"
+        android:minWidth="140dp"
+        android:text="@string/thread_fetch_from_archive"
+        android:visibility="gone" />
+
 </LinearLayout>
