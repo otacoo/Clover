@@ -140,6 +140,8 @@ public class ThreadPresenter implements
             unbindLoadable();
         }
 
+        threadPresenterCallback.hidePostsPopup();
+
         // Reset search state so a catalog search filter doesn't bleed into threads
         searchOpen = !TextUtils.isEmpty(loadable.searchQuery);
         searchQuery = loadable.searchQuery;
@@ -881,6 +883,8 @@ public class ThreadPresenter implements
                 Loadable thread = databaseManager.getDatabaseLoadableManager().get(Loadable.forThread(board.site, board, link.threadId));
                 thread.markedNo = link.postId;
 
+                threadPresenterCallback.hidePostsPopup();
+
                 threadPresenterCallback.showThread(thread);
             }
         } else if (linkable.type == PostLinkable.Type.DEAD) {
@@ -924,13 +928,12 @@ public class ThreadPresenter implements
     public void onPostNoClicked(Post post) {
         threadPresenterCallback.hidePostsPopup();
         threadPresenterCallback.quote(post, false);
-        // Scroll the quoted post to the top of the visible area (right below the reply form)
-        List<Post> posts = threadPresenterCallback.getDisplayingPosts();
-        for (int i = 0; i < posts.size(); i++) {
-            if (posts.get(i).no == post.no) {
-                threadPresenterCallback.scrollToTopOf(i);
-                break;
-            }
+        // Scroll the quoted post to the top of the visible area (right below
+        // the reply form). The position must come from the thread list, never
+        // from the posts popup.
+        int index = threadPresenterCallback.getThreadListPosition(post);
+        if (index >= 0) {
+            threadPresenterCallback.scrollToTopOf(index);
         }
     }
 
@@ -1179,6 +1182,8 @@ public class ThreadPresenter implements
         void scrollTo(int displayPosition, boolean smooth);
 
         void scrollToTopOf(int displayPosition);
+
+        int getThreadListPosition(Post post);
 
         void restoreScrollPosition(int index, int topOffset);
 
