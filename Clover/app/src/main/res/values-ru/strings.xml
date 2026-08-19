@@ -184,6 +184,17 @@
     <string name="thread_no_external_archives">Нет архивов для этой борды или сайта.</string>
     <string name="thread_view_my_posts">Показать мои посты</string>
     <string name="thread_no_posts_of_mine">Вы не постили в этом треде.</string>
+    <string name="thread_fetch_from_archive">Загрузить из архива</string>
+    <string name="thread_fetch_deleted_posts">Загрузить удалённые посты</string>
+    <string name="thread_fetching_deleted_posts">Загрузка удалённых постов из архивов…</string>
+    <string name="thread_archive_restored">Показана архивная копия этого треда</string>
+    <string name="thread_archive_deleted_restored">%d удалённых постов восстановлено из архива</string>
+    <string name="thread_archive_images_restored">%d удалённых изображений восстановлено из архива</string>
+    <string name="thread_archive_deleted_none">В архивах не найдено удалённых постов</string>
+    <string name="archive_unlock_title">Проверка Cloudflare</string>
+    <string name="setting_group_archives">Архивы</string>
+    <string name="setting_fetch_deleted_posts_automatically">Автоматически загружать удалённые посты</string>
+    <string name="setting_fetch_deleted_posts_automatically_description">Загружать посты, удалённые 4chan, из архивов, когда известно, что они отсутствуют</string>
 
     <string name="thread_empty_setup_title">Нечего показать</string>
     <string name="thread_empty_setup_body">Нажмите здесь, чтобы добавить борду на сайт.</string>

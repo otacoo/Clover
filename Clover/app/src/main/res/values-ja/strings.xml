@@ -150,6 +150,17 @@
     <string name="thread_no_external_archives">このboardまたはサイトのアーカイブはありません。</string>
     <string name="thread_view_my_posts">自分のpostを表示</string>
     <string name="thread_no_posts_of_mine">このthreadにはpostしていません。</string>
+    <string name="thread_fetch_from_archive">アーカイブから取得</string>
+    <string name="thread_fetch_deleted_posts">削除されたpostを取得</string>
+    <string name="thread_fetching_deleted_posts">アーカイブから削除されたpostを取得中…</string>
+    <string name="thread_archive_restored">このthreadのアーカイブ版を表示しています</string>
+    <string name="thread_archive_deleted_restored">アーカイブから%d件の削除されたpostを復元しました</string>
+    <string name="thread_archive_images_restored">アーカイブから%d件の削除された画像を復元しました</string>
+    <string name="thread_archive_deleted_none">アーカイブに削除されたpostは見つかりませんでした</string>
+    <string name="archive_unlock_title">Cloudflareチェック</string>
+    <string name="setting_group_archives">アーカイブ</string>
+    <string name="setting_fetch_deleted_posts_automatically">削除されたpostを自動的に取得</string>
+    <string name="setting_fetch_deleted_posts_automatically_description">4chanによって削除されたpostが欠落していることが判明した場合にアーカイブから取得します</string>
 
     <string name="thread_empty_setup_title">表示するものがありません</string>
     <string name="thread_empty_setup_body">ここをタップしてサイトにboardを追加してください。</string>

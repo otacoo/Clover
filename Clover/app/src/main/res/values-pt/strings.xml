@@ -164,6 +164,17 @@
     <string name="thread_no_external_archives">Sem arquivos para este board ou site.</string>
     <string name="thread_view_my_posts">Ver meus posts</string>
     <string name="thread_no_posts_of_mine">Você não postou neste thread.</string>
+    <string name="thread_fetch_from_archive">Buscar do arquivo</string>
+    <string name="thread_fetch_deleted_posts">Buscar posts excluídos</string>
+    <string name="thread_fetching_deleted_posts">Buscando posts excluídos dos arquivos…</string>
+    <string name="thread_archive_restored">Mostrando cópia arquivada deste thread</string>
+    <string name="thread_archive_deleted_restored">%d posts excluídos restaurados do arquivo</string>
+    <string name="thread_archive_images_restored">%d imagens excluídas restauradas do arquivo</string>
+    <string name="thread_archive_deleted_none">Nenhum post excluído encontrado nos arquivos</string>
+    <string name="archive_unlock_title">Verificação Cloudflare</string>
+    <string name="setting_group_archives">Arquivos</string>
+    <string name="setting_fetch_deleted_posts_automatically">Buscar posts excluídos automaticamente</string>
+    <string name="setting_fetch_deleted_posts_automatically_description">Buscar nos arquivos posts excluídos pelo 4chan quando forem conhecidos como ausentes</string>
 
     <string name="thread_empty_setup_title">Nada para mostrar</string>
     <string name="thread_empty_setup_body">Toque aqui para adicionar um board a um site.</string>

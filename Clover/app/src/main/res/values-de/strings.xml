@@ -166,6 +166,17 @@
     <string name="thread_no_external_archives">Keine Archive für dieses Board oder diese Seite.</string>
     <string name="thread_view_my_posts">Meine Posts anzeigen</string>
     <string name="thread_no_posts_of_mine">Du hast in diesem Thread nicht gepostet.</string>
+    <string name="thread_fetch_from_archive">Aus Archiv laden</string>
+    <string name="thread_fetch_deleted_posts">Gelöschte Posts laden</string>
+    <string name="thread_fetching_deleted_posts">Gelöschte Posts werden aus Archiven geladen…</string>
+    <string name="thread_archive_restored">Archivierte Kopie dieses Threads wird angezeigt</string>
+    <string name="thread_archive_deleted_restored">%d gelöschte Posts aus dem Archiv wiederhergestellt</string>
+    <string name="thread_archive_images_restored">%d gelöschte Bilder aus dem Archiv wiederhergestellt</string>
+    <string name="thread_archive_deleted_none">Keine gelöschten Posts in Archiven gefunden</string>
+    <string name="archive_unlock_title">Cloudflare-Prüfung</string>
+    <string name="setting_group_archives">Archive</string>
+    <string name="setting_fetch_deleted_posts_automatically">Gelöschte Posts automatisch laden</string>
+    <string name="setting_fetch_deleted_posts_automatically_description">Von 4chan gelöschte Posts aus Archiven laden, wenn bekannt ist, dass sie fehlen</string>
 
     <string name="thread_empty_setup_title">Nichts zu zeigen</string>
     <string name="thread_empty_setup_body">Hier tippen, um ein Board zu einer Seite hinzuzufügen.</string>
