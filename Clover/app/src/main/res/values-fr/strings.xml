@@ -314,6 +314,7 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
         supprimer.</string>
 
     <string name="post_highlight_id">Surligner l\'ID</string>
+    <string name="post_mark_my_id">Marquer comme mon ID</string>
     <string name="post_highlight_tripcode">Surligner le tripcode</string>
     <string name="post_filter_tripcode">Filtrer le tripcode</string>
     <string name="post_text_copied">Texte copié dans le presse-papiers</string>

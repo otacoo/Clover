@@ -313,6 +313,7 @@ Se altri filtri sono abilitati per esso, non funzionerà.
         rimuovere tutti.</string>
 
     <string name="post_highlight_id">Evidenzia ID</string>
+    <string name="post_mark_my_id">Segna come mio ID</string>
     <string name="post_highlight_tripcode">Evidenzia tripcode</string>
     <string name="post_filter_tripcode">Filtra tripcode</string>
     <string name="post_text_copied">Testo copiato negli appunti</string>

@@ -289,6 +289,7 @@
     <string name="drawer_pins_non_cleared_try_all">ブックマークは消去されませんでした。長押しですべて削除。</string>
 
     <string name="post_highlight_id">IDをハイライト</string>
+    <string name="post_mark_my_id">自分のIDとしてマーク</string>
     <string name="post_highlight_tripcode">トリップコードをハイライト</string>
     <string name="post_filter_tripcode">トリップコードをフィルター</string>
     <string name="post_text_copied">テキストをクリップボードにコピーしました</string>

@@ -308,6 +308,7 @@ Se outros filtros estiverem ativados para ele, não funcionará.
         todos.</string>
 
     <string name="post_highlight_id">Destacar ID</string>
+    <string name="post_mark_my_id">Marcar como meu ID</string>
     <string name="post_highlight_tripcode">Destacar tripcode</string>
     <string name="post_filter_tripcode">Filtrar tripcode</string>
     <string name="post_text_copied">Texto copiado para a área de transferência</string>

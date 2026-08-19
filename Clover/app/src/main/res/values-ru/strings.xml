@@ -328,6 +328,7 @@
         все.</string>
 
     <string name="post_highlight_id">Выделить ID</string>
+    <string name="post_mark_my_id">Отметить как мой ID</string>
     <string name="post_highlight_tripcode">Выделить трипкод</string>
     <string name="post_filter_tripcode">Фильтровать трипкод</string>
     <string name="post_text_copied">Текст скопирован в буфер обмена</string>

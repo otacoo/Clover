@@ -342,6 +342,7 @@ If any other filters are enabled for it, it will not work.
     <string name="drawer_pins_non_cleared_try_all">No bookmarks cleared. Hold to remove all.</string>
 
     <string name="post_highlight_id">Highlight ID</string>
+    <string name="post_mark_my_id">Mark as my ID</string>
     <string name="post_highlight_tripcode">Highlight tripcode</string>
     <string name="post_filter_tripcode">Filter tripcode</string>
     <string name="post_text_copied">Text copied to clipboard</string>

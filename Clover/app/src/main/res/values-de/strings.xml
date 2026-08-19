@@ -311,6 +311,7 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
         entfernen.</string>
 
     <string name="post_highlight_id">ID hervorheben</string>
+    <string name="post_mark_my_id">Als meine ID markieren</string>
     <string name="post_highlight_tripcode">Tripcode hervorheben</string>
     <string name="post_filter_tripcode">Tripcode filtern</string>
     <string name="post_text_copied">Text in Zwischenablage kopiert</string>

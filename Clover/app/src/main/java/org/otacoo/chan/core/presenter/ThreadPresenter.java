@@ -92,6 +92,7 @@ public class ThreadPresenter implements
     private static final int POST_OPTION_FILTER_TRIPCODE = 14;
     private static final int POST_OPTION_EXTRA = 15;
     private static final int POST_OPTION_UNSAVE = 16;
+    private static final int POST_OPTION_MARK_ID = 17;
 
     private ThreadPresenterCallback threadPresenterCallback;
     private WatchManager watchManager;
@@ -764,6 +765,7 @@ public class ThreadPresenter implements
         if (loadable.isThreadMode()) {
             if (!TextUtils.isEmpty(post.id)) {
                 menu.add(new FloatingMenuItem(POST_OPTION_HIGHLIGHT_ID, R.string.post_highlight_id));
+                menu.add(new FloatingMenuItem(POST_OPTION_MARK_ID, R.string.post_mark_my_id));
             }
 
             if (!TextUtils.isEmpty(post.tripcode)) {
@@ -824,6 +826,9 @@ public class ThreadPresenter implements
                 break;
             case POST_OPTION_HIGHLIGHT_ID:
                 threadPresenterCallback.highlightPostId(post.id);
+                break;
+            case POST_OPTION_MARK_ID:
+                markPostIdAsMine(post.id);
                 break;
             case POST_OPTION_HIGHLIGHT_TRIPCODE:
                 threadPresenterCallback.highlightPostTripcode(post.tripcode);
@@ -974,6 +979,27 @@ public class ThreadPresenter implements
             return true;
         } else {
             return false;
+        }
+    }
+
+    // Marks every post in the thread with the given poster ID as "ours"
+    private void markPostIdAsMine(String id) {
+        ChanThread thread = chanLoader.getThread();
+        if (thread == null || TextUtils.isEmpty(id)) return;
+
+        DatabaseSavedReplyManager databaseSavedReplyManager = databaseManager.getDatabaseSavedReplyManager();
+        List<Post> posts = new ArrayList<>(thread.posts);
+        boolean changed = false;
+        for (Post post : posts) {
+            if (id.equals(post.id) && !databaseSavedReplyManager.isSaved(post.board, post.no)) {
+                SavedReply savedReply = SavedReply.fromSiteBoardNoPassword(
+                        post.board.site, post.board, post.no, "");
+                databaseManager.runTask(databaseSavedReplyManager.saveReply(savedReply));
+                changed = true;
+            }
+        }
+        if (changed) {
+            requestData();
         }
     }
 

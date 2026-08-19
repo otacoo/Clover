@@ -310,6 +310,7 @@ Si hay otros filtros habilitados para él, no funcionará.
         eliminar todos.</string>
 
     <string name="post_highlight_id">Resaltar ID</string>
+    <string name="post_mark_my_id">Marcar como mi ID</string>
     <string name="post_highlight_tripcode">Resaltar tripcode</string>
     <string name="post_filter_tripcode">Filtrar tripcode</string>
     <string name="post_text_copied">Texto copiado al portapapeles</string>
