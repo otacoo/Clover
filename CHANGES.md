@@ -1,3 +1,7 @@
+## 2026-08-20 – v3.8.1
+
+- Revert Two-finger Rotation changes
+
 ## 2026-08-19 – v3.8.0
 
 ### New options & features
