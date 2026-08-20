@@ -168,7 +168,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private final GestureDetector gestureDetector;
     private final RotationGestureDetector rotationDetector;
     private int currentOrientation = 0;
-    private float liveRotationAngle = 0f;
+    private float rotationDeltaAccumulator = 0f;
 
     public MultiImageView(Context context) {
         this(context, null);
@@ -254,14 +254,14 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         rotationDetector = new RotationGestureDetector(new RotationGestureDetector.OnRotationGestureListener() {
             @Override
             public void onRotation(RotationGestureDetector detector) {
-                if (!ChanSettings.fingerRotate.get()) return;
-                // Zoom motion is ignored entirely, so pinching
-                // doesn't accidentally rotate the image.
-                if (!detector.isRotationDominant()) return;
-                liveRotationAngle += detector.getAngle();
-                // Live rotate the content around the center focal point,
-                // snapped to the nearest 90° when the fingers lift.
-                applyLiveRotation();
+                if (ChanSettings.fingerRotate.get()) {
+                    rotationDeltaAccumulator += detector.getAngle();
+                    if (Math.abs(rotationDeltaAccumulator) > 45f) {
+                        int delta = rotationDeltaAccumulator > 0 ? 90 : 270;
+                        rotationDeltaAccumulator = 0;
+                        setOrientation((currentOrientation + delta) % 360);
+                    }
+                }
             }
         });
 
@@ -448,15 +448,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         rotationDetector.onTouchEvent(ev);
-        int action = ev.getActionMasked();
-        if (action == MotionEvent.ACTION_POINTER_DOWN && ev.getPointerCount() == 2) {
-            // Start a fresh rotation gesture.
-            liveRotationAngle = 0f;
-        } else if (action == MotionEvent.ACTION_POINTER_UP) {
-            // Rotate gesture ended: snap to the nearest 90°.
-            endRotationGesture();
-        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            resetLiveRotation();
+        if (ev.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN && ev.getPointerCount() == 2) {
+            rotationDeltaAccumulator = 0f;
         }
 
         if (!isZoomed()) {
@@ -1257,87 +1250,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             }
         }
         backgroundToggle = !backgroundToggle;
-    }
-
-    private View findRotatableContentView() {
-        CustomScaleImageView imageView = findScaleImageView();
-        if (imageView != null) return imageView;
-        GifImageView gifView = findGifImageView();
-        if (gifView != null) return gifView;
-        return findAnimatedImageView();
-    }
-
-    private void applyLiveRotation() {
-        View content = findRotatableContentView();
-        if (content == null || getWidth() <= 0 || getHeight() <= 0) return;
-
-        CustomScaleImageView imageView = findScaleImageView();
-        if (content == imageView && imageView != null) {
-            imageView.setExtraRotation(liveRotationAngle);
-            return;
-        }
-
-        content.setRotation(liveRotationAngle);
-
-        float factor = 1f;
-        float angle = Math.abs(liveRotationAngle) % 180f;
-        if (angle > 90f) angle = 180f - angle;
-        if (angle >= 0.5f) {
-            double rad = Math.toRadians(angle);
-            double cos = Math.abs(Math.cos(rad));
-            double sin = Math.abs(Math.sin(rad));
-
-            float fitW, fitH;
-            if (content instanceof ImageView iv && iv.getDrawable() != null) {
-                int iw = iv.getDrawable().getIntrinsicWidth();
-                int ih = iv.getDrawable().getIntrinsicHeight();
-                if (iw > 0 && ih > 0) {
-                    float fit = Math.min(getWidth() / (float) iw, getHeight() / (float) ih);
-                    fitW = iw * fit;
-                    fitH = ih * fit;
-                } else {
-                    fitW = getWidth();
-                    fitH = getHeight();
-                }
-            } else {
-                fitW = getWidth();
-                fitH = getHeight();
-            }
-
-            float bboxW = (float) (fitW * cos + fitH * sin);
-            float bboxH = (float) (fitW * sin + fitH * cos);
-            factor = Math.min(1f, Math.min(getWidth() / bboxW, getHeight() / bboxH));
-        }
-        content.setScaleX(factor);
-        content.setScaleY(factor);
-    }
-
-    private void resetLiveRotation() {
-        liveRotationAngle = 0f;
-        CustomScaleImageView imageView = findScaleImageView();
-        if (imageView != null) {
-            imageView.resetExtraRotation();
-        }
-        View content = findRotatableContentView();
-        if (content != null && content != imageView) {
-            content.setRotation(0f);
-            content.setScaleX(1f);
-            content.setScaleY(1f);
-        }
-    }
-
-    private void endRotationGesture() {
-        if (Math.abs(liveRotationAngle) > 1f) {
-            int snapped = Math.round(liveRotationAngle / 90f) * 90;
-            int newOrientation = ((currentOrientation + snapped) % 360 + 360) % 360;
-            resetLiveRotation();
-            // Only re-commit the orientation when it actually changed
-            if (newOrientation != currentOrientation) {
-                setOrientation(newOrientation);
-            }
-        } else {
-            resetLiveRotation();
-        }
     }
 
     public void setOrientation(int orientation) {
