@@ -33,6 +33,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -45,6 +46,7 @@ import android.view.MotionEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -134,6 +136,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     private PlayerView exoPlayerView;
     private View playerRoot;
+    private ImageView videoStartupOverlay;
     private boolean videoError = false;
     private int vp9FallbackStage = 0; // 0=initial, 1=libvpx retry, 2=c2.android retry
     private ExoPlayer exoPlayer;
@@ -803,6 +806,20 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         AndroidUtils.showThemedSnackbar(this, R.string.file_not_viewable, Snackbar.LENGTH_LONG);
     }
 
+    // This returns the bitmap of the currently shown thumbnail (LOWRES content), if any.
+    private Bitmap findThumbnailBitmap() {
+        for (int i = getChildCount() - 1; i >= 0; i--) {
+            View child = getChildAt(i);
+            if (child instanceof ImageView && child != playView) {
+                Drawable drawable = ((ImageView) child).getDrawable();
+                if (drawable instanceof BitmapDrawable bitmapDrawable) {
+                    return bitmapDrawable.getBitmap();
+                }
+            }
+        }
+        return null;
+    }
+
     private void setVideoFile(final File file) {
         if (ChanSettings.videoOpenExternal.get()) {
             Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -816,12 +833,22 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         }
 
         // Attach the player view first so its Surface exists before ExoPlayer starts
+        Bitmap thumbnailBitmap = findThumbnailBitmap();
         View root = LayoutInflater.from(getContext()).inflate(R.layout.clover_player_view, this, false);
         exoPlayerView = root.findViewById(R.id.exo_player_view);
         playerControllerContainer = root.findViewById(R.id.player_controller_container);
         playerController = root.findViewById(R.id.player_controller);
         setupPlayerController();
         playView.setVisibility(View.GONE);
+        // Keep the thumbnail visible over the player view until the video starts to avoid gaps.
+        videoStartupOverlay = null;
+        if (thumbnailBitmap != null) {
+            ImageView overlay = new ImageView(getContext());
+            overlay.setImageBitmap(thumbnailBitmap);
+            ((FrameLayout) root).addView(overlay, 1,
+                    new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+            videoStartupOverlay = overlay;
+        }
         playerRoot = root;
         vp9FallbackStage = 0;
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -899,6 +926,15 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         exoPlayer.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)));
 
         exoPlayer.addListener(new Player.Listener() {
+            @Override
+            public void onRenderedFirstFrame() {
+                AndroidUtils.runOnUiThread(() -> {
+                    if (isAttachedToWindow() && exoPlayer != null) {
+                        hideVideoStartupOverlay();
+                    }
+                });
+            }
+
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_READY) {
@@ -1226,6 +1262,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private void cleanupExo() {
         handler.removeCallbacks(updateTimeTask);
         handler.removeCallbacks(hideControllerTask);
+        hideVideoStartupOverlay();
         if (exoPlayer != null) {
             exoPlayer.release();
             exoPlayer = null;
@@ -1233,6 +1270,16 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         stopSound();
         exoPlayerView = null;
         cleanupWebView();
+    }
+
+    private void hideVideoStartupOverlay() {
+        if (videoStartupOverlay != null) {
+            ViewGroup parent = (ViewGroup) videoStartupOverlay.getParent();
+            if (parent != null) {
+                parent.removeView(videoStartupOverlay);
+            }
+            videoStartupOverlay = null;
+        }
     }
 
     private void cleanupWebView() {
