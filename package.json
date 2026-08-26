@@ -1,6 +1,6 @@
 {
   "name": "clover",
-  "version": "3.8.1",
+  "version": "3.8.2",
   "description": "Clover Android app release management",
   "private": true,
   "scripts": {

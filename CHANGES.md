@@ -1,3 +1,8 @@
+## 2026-08-26 – v3.8.2
+
+- Fix an issue that added a delay to single-tap closing of images
+- Improved the feel of video playback start
+
 ## 2026-08-20 – v3.8.1
 
 - Revert Two-finger Rotation changes
