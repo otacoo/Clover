@@ -38,13 +38,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -203,47 +203,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         return true;
                     } else if (!isUp && saveGesture == org.otacoo.chan.core.settings.ChanSettings.SwipeGesture.DOWN) {
                         if (callback != null) callback.onSwipeToSave(MultiImageView.this);
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            @Override
-            public boolean onDoubleTap(@NonNull MotionEvent e) {
-                handler.removeCallbacks(deferredTapTask);
-                if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
-                        && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
-                    if (exoPlayer.isPlaying()) {
-                        exoPlayer.pause();
-                    } else {
-                        if (exoPlayer.getPlaybackState() == Player.STATE_ENDED) {
-                            exoPlayer.seekTo(0);
-                        }
-                        exoPlayer.play();
-                    }
-                    checkAudioTracks();
-                    return true;
-                }
-
-                if (ChanSettings.doubleTapPlayPause.get()) {
-                    GifImageView gifView = findGifImageView();
-                    if (gifView != null && gifView.getDrawable() instanceof GifDrawable gifDrawable) {
-                        if (gifDrawable.isRunning()) {
-                            gifDrawable.pause();
-                        } else {
-                            gifDrawable.start();
-                        }
-                        return true;
-                    }
-
-                    ImageView animatedView = findAnimatedImageView();
-                    if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
-                        if (apng.isRunning()) {
-                            apng.pause();
-                        } else {
-                            apng.resume();
-                        }
                         return true;
                     }
                 }
@@ -462,10 +421,66 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         return super.dispatchTouchEvent(ev);
     }
 
+    private static final long DOUBLE_TAP_WINDOW_MS = 220;
+
+    private long lastClickTime;
+
     @Override
     public void onClick(View v) {
         handler.removeCallbacks(deferredTapTask);
-        handler.postDelayed(deferredTapTask, ViewConfiguration.getDoubleTapTimeout());
+
+        long now = SystemClock.uptimeMillis();
+        boolean doubleTap = now - lastClickTime < DOUBLE_TAP_WINDOW_MS;
+        lastClickTime = now;
+
+        if (doubleTap && handleDoubleTapAction()) {
+            return;
+        }
+
+        if (exoPlayer == null && findGifImageView() == null && findAnimatedImageView() == null) {
+            deferredTapTask.run();
+        } else {
+            handler.postDelayed(deferredTapTask, DOUBLE_TAP_WINDOW_MS);
+        }
+    }
+
+    private boolean handleDoubleTapAction() {
+        if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
+                && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
+            if (exoPlayer.isPlaying()) {
+                exoPlayer.pause();
+            } else {
+                if (exoPlayer.getPlaybackState() == Player.STATE_ENDED) {
+                    exoPlayer.seekTo(0);
+                }
+                exoPlayer.play();
+            }
+            checkAudioTracks();
+            return true;
+        }
+
+        if (ChanSettings.doubleTapPlayPause.get()) {
+            GifImageView gifView = findGifImageView();
+            if (gifView != null && gifView.getDrawable() instanceof GifDrawable gifDrawable) {
+                if (gifDrawable.isRunning()) {
+                    gifDrawable.pause();
+                } else {
+                    gifDrawable.start();
+                }
+                return true;
+            }
+
+            ImageView animatedView = findAnimatedImageView();
+            if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
+                if (apng.isRunning()) {
+                    apng.pause();
+                } else {
+                    apng.resume();
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     private final Runnable hideControllerTask = () -> {
