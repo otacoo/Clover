@@ -116,9 +116,10 @@ public class AlbumViewController extends Controller implements
                 getString(R.string.setting_board_grid_span_count_default),
                 context.getString(R.string.setting_board_grid_span_count_item, 2),
                 context.getString(R.string.setting_board_grid_span_count_item, 3),
-                context.getString(R.string.setting_board_grid_span_count_item, 4)
+                context.getString(R.string.setting_board_grid_span_count_item, 4),
+                context.getString(R.string.setting_board_grid_span_count_item, 5)
         };
-        int[] values = new int[]{0, 2, 3, 4};
+        int[] values = new int[]{0, 2, 3, 4, 5};
         int current = ChanSettings.albumGridSpanCount.get();
         int selected = 0;
         for (int i = 0; i < values.length; i++) {
