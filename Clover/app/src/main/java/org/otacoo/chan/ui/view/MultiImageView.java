@@ -414,12 +414,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             rotationDeltaAccumulator = 0f;
         }
 
-        if (!isZoomed()) {
-            if (gestureDetector.onTouchEvent(ev)) {
-                ev.setAction(MotionEvent.ACTION_CANCEL);
-                super.dispatchTouchEvent(ev);
-                return true;
-            }
+        if (gestureDetector.onTouchEvent(ev)) {
+            ev.setAction(MotionEvent.ACTION_CANCEL);
+            super.dispatchTouchEvent(ev);
+            return true;
         }
         return super.dispatchTouchEvent(ev);
     }
