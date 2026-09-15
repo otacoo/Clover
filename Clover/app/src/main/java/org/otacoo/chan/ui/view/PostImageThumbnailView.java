@@ -100,16 +100,30 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         this.ratio = ratio;
     }
 
+    // Play-icon geometry cached on size change; drawing runs per frame.
+    private final Rect playIconBounds = new Rect();
+    private boolean playIconBoundsValid = false;
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        playIconBoundsValid = false;
+    }
+
     @Override
     public void draw(@NonNull Canvas canvas) {
         super.draw(canvas);
 
-        if (postImage != null && postImage.type == PostImage.Type.MOVIE && !error) {
-            int x = (int) (getWidth() / 2.0 - playIcon.getIntrinsicWidth() / 2.0);
-            int y = (int) (getHeight() / 2.0 - playIcon.getIntrinsicHeight() / 2.0);
-
-            bounds.set(x, y, x + playIcon.getIntrinsicWidth(), y + playIcon.getIntrinsicHeight());
-            playIcon.setBounds(bounds);
+        if (postImage != null && postImage.type == PostImage.Type.MOVIE && !error && playIcon != null) {
+            if (!playIconBoundsValid) {
+                int iconW = playIcon.getIntrinsicWidth();
+                int iconH = playIcon.getIntrinsicHeight();
+                int x = (int) (getWidth() / 2.0 - iconW / 2.0);
+                int y = (int) (getHeight() / 2.0 - iconH / 2.0);
+                playIconBounds.set(x, y, x + iconW, y + iconH);
+                playIconBoundsValid = true;
+            }
+            playIcon.setBounds(playIconBounds);
             playIcon.draw(canvas);
         }
     }
