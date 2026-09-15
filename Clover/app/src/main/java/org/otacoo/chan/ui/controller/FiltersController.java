@@ -463,12 +463,16 @@ public class FiltersController extends Controller implements
     private void deleteAllFilters() {
         locked = true;
         List<Filter> allFilters = filterEngine.getAllFilters();
-        for (Filter f : allFilters) {
-            filterEngine.deleteFilter(f);
-        }
-        adapter.load();
-        locked = false;
-        updateEnableButton();
-        AndroidUtils.showThemedSnackbar(view, "All filters removed.", Snackbar.LENGTH_SHORT);
+        databaseManager.runTaskAsync(() -> {
+            for (Filter f : allFilters) {
+                filterEngine.deleteFilter(f);
+            }
+            return null;
+        }, result -> {
+            adapter.load();
+            locked = false;
+            updateEnableButton();
+            AndroidUtils.showThemedSnackbar(view, R.string.filter_all_removed, Snackbar.LENGTH_SHORT);
+        });
     }
 }
