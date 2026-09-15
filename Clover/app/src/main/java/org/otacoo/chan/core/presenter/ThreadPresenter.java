@@ -750,7 +750,7 @@ public class ThreadPresenter implements
 
             if (!post.images.isEmpty()) {
                 for (int j = 0; j < post.images.size(); j++) {
-                    if (post.images.get(j) == postImage) {
+                    if (post.images.get(j).equalUrl(postImage)) {
                         scrollToPost(post, false);
                         highlightPost(post);
                         return;
