@@ -329,9 +329,7 @@ public class WatchManager {
 
     public void toggleWatch(Pin pin) {
         pin.watching = !pin.watching;
-
-        updateState();
-        postPinChanged(pin);
+        updatePin(pin);
     }
 
     public void onPostSeen(Pin pin, int postNo) {
