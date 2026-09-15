@@ -72,6 +72,7 @@ import org.otacoo.chan.ui.theme.ThemeHelper;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -151,11 +152,41 @@ public class AndroidUtils {
         if (videoUrl == null || (!videoUrl.contains("youtube.com") && !videoUrl.contains("youtu.be"))) {
             return null;
         }
+        synchronized (youtubeTitleCache) {
+            if (youtubeTitleCache.containsKey(videoUrl)) {
+                return youtubeTitleCache.get(videoUrl);
+            }
+        }
+        String title = fetchYoutubeTitle(videoUrl);
+        synchronized (youtubeTitleCache) {
+            // Cache misses too (as null) so one bad/slow link doesn't stall every refresh.
+            if (youtubeTitleCache.size() >= YOUTUBE_TITLE_CACHE_MAX) {
+                youtubeTitleCache.clear();
+            }
+            youtubeTitleCache.put(videoUrl, title);
+        }
+        return title;
+    }
+
+    private static final int YOUTUBE_TITLE_CACHE_MAX = 200;
+    private static final Map<String, String> youtubeTitleCache = new HashMap<>();
+    private static volatile okhttp3.OkHttpClient youtubeClient;
+
+    private static String fetchYoutubeTitle(String videoUrl) {
         try {
             String encodedUrl = java.net.URLEncoder.encode(videoUrl, "UTF-8");
             String oembedUrl = "https://www.youtube.com/oembed?url=" + encodedUrl + "&format=json";
-            
-            okhttp3.OkHttpClient client = org.otacoo.chan.Chan.injector().instance(okhttp3.OkHttpClient.class);
+
+            okhttp3.OkHttpClient client = youtubeClient;
+            if (client == null) {
+                okhttp3.OkHttpClient base =
+                        org.otacoo.chan.Chan.injector().instance(okhttp3.OkHttpClient.class);
+                client = base.newBuilder()
+                        .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                        .readTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                        .build();
+                youtubeClient = client;
+            }
             okhttp3.Request request = new okhttp3.Request.Builder()
                     .url(oembedUrl)
                     .build();
