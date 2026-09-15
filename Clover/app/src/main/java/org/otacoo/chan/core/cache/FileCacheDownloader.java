@@ -69,7 +69,7 @@ public class FileCacheDownloader implements Runnable {
     private Future<?> future;
 
     // Worker thread.
-    private Call call;
+    private volatile Call call;
     private ResponseBody body;
 
     static FileCacheDownloader fromCallbackClientUrlOutputUserAgent(
@@ -115,6 +115,17 @@ public class FileCacheDownloader implements Runnable {
     @MainThread
     public void cancel() {
         if (cancel.compareAndSet(false, true)) {
+            // Abort an in-flight request immediately instead of waiting for
+            // the next chunk boundary; the resulting IOException is treated
+            // as a cancel below.
+            Call c = call;
+            if (c != null) {
+                c.cancel();
+            }
+            Future<?> f = future;
+            if (f != null) {
+                f.cancel(true);
+            }
             // Did not start running yet, mark finished here.
             if (!running.get()) {
                 callback.downloaderFinished(this);
@@ -185,7 +196,8 @@ public class FileCacheDownloader implements Runnable {
                     int code = ((HttpCodeIOException) e).code;
                     log("exception: http error, code: " + code, e);
                     isNotFound = code == 404;
-                } else if (e instanceof CancelException) {
+                } else if (e instanceof CancelException || cancel.get()
+                        || e instanceof java.io.InterruptedIOException) {
                     // Don't log the stack.
                     log("exception: cancelled");
                     cancelled = true;
