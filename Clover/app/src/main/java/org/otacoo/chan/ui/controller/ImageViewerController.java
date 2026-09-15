@@ -664,6 +664,13 @@ public class ImageViewerController extends Controller implements ImageViewerPres
                                         bitmap = BitmapFactory.decodeStream(stream);
                                     }
                                     if (bitmap != null) {
+                                        // Share with ThumbnailView so later transitions
+                                        // and binds hit the memory cache instead of
+                                        // decoding again.
+                                        okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+                                        if (thumbUrl != null) {
+                                            ThumbnailView.putBitmap(thumbUrl.toString(), bitmap);
+                                        }
                                         AndroidUtils.runOnUiThread(() -> {
                                             if (alive && startAnimation != null) {
                                                 previewImage.setBitmap(bitmap);
