@@ -170,12 +170,9 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         } else if (itemViewType == TYPE_LAST_SEEN) {
             return -2;
         } else {
-            Post post = displayList.get(getPostPosition(position));
-            int repliesFromSize;
-            synchronized (post.repliesFrom) {
-                repliesFromSize = post.repliesFrom.size();
-            }
-            return ((long) repliesFromSize << 32L) + (long) post.no + (compact ? 1L : 0L);
+            // Stable per post: reply counts, saved/deleted flags and compact mode
+            // are content, handled by areContentsTheSame() and notifyDataSetChanged().
+            return displayList.get(getPostPosition(position)).no;
         }
     }
 
