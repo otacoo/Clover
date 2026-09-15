@@ -206,26 +206,33 @@ public class FloatingMenu {
         }
 
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+            private final int[] lastPos = new int[]{Integer.MIN_VALUE, Integer.MIN_VALUE};
+
             @Override
             public void onGlobalLayout() {
-                if (popupWindow == null) {
-                    anchor.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    globalLayoutListener = null;
-                } else {
-                    if (popupWindow.isShowing()) {
-                        // Recalculate anchor position
-                        popupWindow.show();
-                    }
+                if (popupWindow == null || !anchor.isAttachedToWindow()) {
+                    removeGlobalLayoutListener();
+                    return;
+                }
+                if (!popupWindow.isShowing()) {
+                    return;
+                }
+                // Only re-show when the anchor actually moved: re-showing
+                // triggers layout, which would otherwise loop forever.
+                int[] pos = new int[2];
+                anchor.getLocationOnScreen(pos);
+                if (pos[0] != lastPos[0] || pos[1] != lastPos[1]) {
+                    lastPos[0] = pos[0];
+                    lastPos[1] = pos[1];
+                    // Recalculate anchor position
+                    popupWindow.show();
                 }
             }
         };
         anchor.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
 
         popupWindow.setOnDismissListener(() -> {
-            if (globalLayoutListener != null) {
-                anchor.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
-                globalLayoutListener = null;
-            }
+            removeGlobalLayoutListener();
             popupWindow = null;
             callback.onFloatingMenuDismissed(FloatingMenu.this);
         });
@@ -244,15 +251,25 @@ public class FloatingMenu {
     }
 
     public void dismiss() {
-        if (globalLayoutListener != null) {
-            anchor.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
-            globalLayoutListener = null;
-        }
+        removeGlobalLayoutListener();
         if (popupWindow != null) {
             if (popupWindow.isShowing()) {
                 popupWindow.dismiss();
             }
             popupWindow = null;
+        }
+    }
+
+    private void removeGlobalLayoutListener() {
+        if (globalLayoutListener != null) {
+            try {
+                if (anchor.isAttachedToWindow() && anchor.getViewTreeObserver().isAlive()) {
+                    anchor.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+                }
+            } catch (Exception ignored) {
+            } finally {
+                globalLayoutListener = null;
+            }
         }
     }
 
