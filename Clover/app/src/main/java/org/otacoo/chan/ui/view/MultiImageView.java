@@ -852,6 +852,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         }
         playerRoot = root;
         vp9FallbackStage = 0;
+        videoError = false;
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(root, 0, lp);
 
