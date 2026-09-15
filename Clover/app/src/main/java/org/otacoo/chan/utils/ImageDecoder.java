@@ -27,21 +27,24 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Simple ImageDecoder. Taken from Volley ImageRequest.
  */
 public class ImageDecoder {
 
+    private static final ExecutorService DECODE_EXECUTOR = Executors.newFixedThreadPool(2);
+
     public static void decodeFileOnBackgroundThread(final File file, final int maxWidth, final int maxHeight, ImageDecoderCallback callback) {
-        Thread thread = new Thread(() -> {
+        DECODE_EXECUTOR.execute(() -> {
             final Bitmap bitmap = decodeFile(file, maxWidth, maxHeight);
 
             AndroidUtils.runOnUiThread(() -> {
                 callback.onImageBitmap(file, bitmap);
             });
         });
-        thread.start();
     }
 
     public interface ImageDecoderCallback {
