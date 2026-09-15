@@ -160,6 +160,9 @@ public class Toolbar extends LinearLayout implements
     }
 
     public void setCollapse(int offset, boolean animated) {
+        if (getHeight() == 0) {
+            return;
+        }
         scrollOffset += offset;
         scrollOffset = Math.max(0, Math.min(getHeight(), scrollOffset));
 
