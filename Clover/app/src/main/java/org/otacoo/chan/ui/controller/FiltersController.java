@@ -167,12 +167,17 @@ public class FiltersController extends Controller implements
     }
 
     private void setFilters(List<Filter> filters, boolean enabled) {
-        for (Filter filter : filters) {
-            filter.enabled = enabled;
-            filterEngine.createOrUpdateFilter(filter);
-        }
-        adapter.load();
-        updateEnableButton();
+        locked = true;
+        databaseManager.runTaskAsync(() -> {
+            for (Filter filter : filters) {
+                filter.enabled = enabled;
+                filterEngine.createOrUpdateFilter(filter);
+            }
+            return null;
+        }, result -> {
+            adapter.load();
+            updateEnableButton();
+        });
     }
 
     private void searchClicked(ToolbarMenuItem item) {
@@ -183,7 +188,6 @@ public class FiltersController extends Controller implements
         @SuppressLint("InflateParams")
         final ScrollView root = (ScrollView) LayoutInflater.from(context).inflate(R.layout.layout_filter, null);
         final FilterLayout filterLayout = (FilterLayout) root.getChildAt(0);
-
         final AlertDialog alertDialog = new AlertDialog.Builder(context)
                 .setView(root)
                 .setPositiveButton(R.string.save, (dialog, which) -> {
