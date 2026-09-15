@@ -494,6 +494,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     };
 
     private final Runnable deferredTapTask = () -> {
+        if (!isAttachedToWindow()) return;
         if (playerControllerContainer != null && playerControllerContainer.getVisibility() == View.VISIBLE) {
             playerControllerContainer.setVisibility(View.GONE);
         } else if (playerControllerContainer != null) {
@@ -502,7 +503,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             handler.postDelayed(hideControllerTask, ChanSettings.videoPlayerTimeout.get() * 1000L);
         }
 
-        callback.onTap(this);
+        if (callback != null) {
+            callback.onTap(this);
+        }
     };
 
     @Override
@@ -1476,6 +1479,12 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             videoRequest.cancel();
             videoRequest = null;
         }
+
+        handler.removeCallbacks(deferredTapTask);
+        handler.removeCallbacks(hideControllerTask);
+        handler.removeCallbacks(updateTimeTask);
+        hasContent = false;
+        videoError = false;
 
         // Stop all active view content
         for (int i = 0; i < getChildCount(); i++) {
