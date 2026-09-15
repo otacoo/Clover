@@ -72,13 +72,15 @@ public class SavedReply {
 
         SavedReply other = (SavedReply) o;
 
-        return no == other.no && board.equals(other.board) && siteId == other.siteId;
+        return no == other.no && siteId == other.siteId
+                && (board == null ? other.board == null : board.equals(other.board));
     }
 
     @Override
     public int hashCode() {
-        int result = board.hashCode();
+        int result = board == null ? 0 : board.hashCode();
         result = 31 * result + no;
+        result = 31 * result + siteId;
         return result;
     }
 }

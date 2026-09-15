@@ -54,13 +54,15 @@ public class ThreadHide {
 
         ThreadHide that = (ThreadHide) o;
 
-        return no == that.no && board.equals(that.board) && site == that.site;
+        return no == that.no && site == that.site
+                && (board == null ? that.board == null : board.equals(that.board));
     }
 
     @Override
     public int hashCode() {
-        int result = board.hashCode();
+        int result = board == null ? 0 : board.hashCode();
         result = 31 * result + no;
+        result = 31 * result + site;
         return result;
     }
 
