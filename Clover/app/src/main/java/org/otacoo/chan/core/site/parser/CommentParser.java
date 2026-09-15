@@ -37,6 +37,7 @@ import org.otacoo.chan.ui.span.AbsoluteSizeSpanHashed;
 import org.otacoo.chan.ui.span.ForegroundColorSpanHashed;
 import org.otacoo.chan.ui.span.SjisSpan;
 import org.otacoo.chan.ui.theme.Theme;
+import org.otacoo.chan.utils.Logger;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -49,6 +50,7 @@ import java.util.regex.Pattern;
 
 @AnyThread
 public class CommentParser {
+    private static final String TAG = "CommentParser";
     public static final String SAVED_REPLY_SUFFIX = " (You)";
     public static final String OP_REPLY_SUFFIX = " (OP)";
     public static final String EXTERN_THREAD_LINK_SUFFIX = " \u2192"; // arrow to the right
@@ -230,7 +232,8 @@ public class CommentParser {
                 handlerLink.key = text;
                 handlerLink.value = new PostLinkable.ThreadLink(post.board.code, -1, postNo);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Logger.w(TAG, "handleDeadAnchor failed for '" + text + "'", e);
             handlerLink = null;
         }
 
@@ -367,7 +370,10 @@ public class CommentParser {
             }
         } else {
             Matcher quoteMatcher = quotePattern.matcher(path);
-            if (quoteMatcher.matches()) {
+            // Only relative quote links (e.g. "#p123") are internal quotes:
+            // an absolute URL that merely happens to contain "#pN" is an
+            // external link, not a quote into this thread.
+            if (quoteMatcher.matches() && !hasExplicitHost(href)) {
                 String quoteIdStr = quoteMatcher.group(1);
                 if (quoteIdStr != null) {
                     t = PostLinkable.Type.QUOTE;
@@ -438,6 +444,10 @@ public class CommentParser {
             path = href;
         }
         return path;
+    }
+
+    private boolean hasExplicitHost(String href) {
+        return href.startsWith("//") || href.startsWith("http://") || href.startsWith("https://");
     }
 
     public SpannableString span(CharSequence text, Object... additionalSpans) {
