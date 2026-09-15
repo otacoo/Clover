@@ -61,6 +61,9 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
     private Post post;
     private PostCellInterface.PostCellCallback callback;
     private boolean compact = false;
+    private boolean boundPostDeleted;
+    private int boundPostFilterColor;
+    private boolean boundPostFileDeleted;
 
     private FixedRatioLinearLayout content;
     private PostImageThumbnailView thumbnailView;
@@ -176,7 +179,13 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
                         boolean selectable, boolean highlighted, boolean selected, int markedNo,
                         boolean showDivider, ChanSettings.PostViewMode postViewMode,
                         boolean compact) {
-        if (this.post == post) {
+        if (this.post == post
+                && this.callback == callback
+                && this.compact == compact
+                && post != null
+                && this.boundPostDeleted == post.deleted.get()
+                && this.boundPostFilterColor == post.filterHighlightedColor
+                && this.boundPostFileDeleted == post.fileDeleted) {
             return;
         }
 
@@ -192,6 +201,11 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         this.theme = theme;
         this.post = post;
         this.callback = callback;
+        if (post != null) {
+            this.boundPostDeleted = post.deleted.get();
+            this.boundPostFilterColor = post.filterHighlightedColor;
+            this.boundPostFileDeleted = post.fileDeleted;
+        }
         
         thumbnailView.setOnNetworkErrorListener(code -> {
             if (code == 404 && this.post != null && !this.post.deleted.get()) {
