@@ -366,15 +366,15 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             }
 
             // The 16dp padding now belongs to the counter, for a bigger touch area
-            holder.textView.setPadding(holder.textView.getPaddingLeft(), holder.textView.getPaddingTop(),
-                    0, holder.textView.getPaddingBottom());
-            holder.watchCountText.setPadding(dp(16), holder.watchCountText.getPaddingTop(),
+            setPaddingIfChanged(holder.textView, holder.textView.getPaddingLeft(),
+                    holder.textView.getPaddingTop(), 0, holder.textView.getPaddingBottom());
+            setPaddingIfChanged(holder.watchCountText, dp(16), holder.watchCountText.getPaddingTop(),
                     holder.watchCountText.getPaddingRight(), holder.watchCountText.getPaddingBottom());
         } else {
             // The 16dp padding now belongs to the textview, for better ellipsize
             holder.watchCountText.setVisibility(View.GONE);
-            holder.textView.setPadding(holder.textView.getPaddingLeft(), holder.textView.getPaddingTop(),
-                    dp(16), holder.textView.getPaddingBottom());
+            setPaddingIfChanged(holder.textView, holder.textView.getPaddingLeft(),
+                    holder.textView.getPaddingTop(), dp(16), holder.textView.getPaddingBottom());
         }
 
         boolean isHighlighted = this.highlighted != null && pin.id == this.highlighted.id;
@@ -392,6 +392,13 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private void applyOrder() {
         watchManager.reorder(pins);
         notifyDataSetChanged();
+    }
+
+    private static void setPaddingIfChanged(View view, int left, int top, int right, int bottom) {
+        if (view.getPaddingLeft() != left || view.getPaddingTop() != top
+                || view.getPaddingRight() != right || view.getPaddingBottom() != bottom) {
+            view.setPadding(left, top, right, bottom);
+        }
     }
 
     private class SearchPinViewHolder extends RecyclerView.ViewHolder {
