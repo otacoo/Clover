@@ -39,11 +39,11 @@ import org.otacoo.chan.utils.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,11 +64,16 @@ import okhttp3.Response;
 public class Chan4ArchiveFetcher {
     private static final String TAG = "Chan4ArchiveFetcher";
     private static final long FETCH_TIMEOUT_MS = 20000;
+    // Upper bound for the worker wait in fetchJsonInWebView: the in-page
+    // polling timeout plus a margin for a wedged WebView/main thread.
+    private static final long WEBVIEW_WAIT_TIMEOUT_MS = FETCH_TIMEOUT_MS + 30000L;
+    // Upper bound for waiting on a manual Cloudflare unlock by the user.
+    private static final long UNLOCK_WAIT_TIMEOUT_MS = 5 * 60_000L;
     private static final int MAX_ARCHIVE_ATTEMPTS = 5;
 
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(2);
-    private static final Map<String, String> rememberedArchives = new HashMap<>();
-    private static final Set<String> webViewOnlyDomains = new HashSet<>();
+    private static final Map<String, String> rememberedArchives = new ConcurrentHashMap<>();
+    private static final Set<String> webViewOnlyDomains = ConcurrentHashMap.newKeySet();
 
     public interface Callback {
         void onSuccess(List<Post> posts);
@@ -197,10 +202,16 @@ public class Chan4ArchiveFetcher {
                     }
                 }));
         synchronized (lock) {
+            // Bounded wait: a destroyed activity or a never-answered prompt
+            // must not park this pool thread forever.
+            long deadline = System.currentTimeMillis() + UNLOCK_WAIT_TIMEOUT_MS;
             while (!done[0]) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) break;
                 try {
-                    lock.wait(500);
+                    lock.wait(Math.min(remaining, 500));
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
             }
@@ -425,12 +436,20 @@ public class Chan4ArchiveFetcher {
                                 } catch (Exception ignored) {
                                 }
                                 if (text == null || text.isEmpty()) {
+                                    if (System.currentTimeMillis() - start[0] > FETCH_TIMEOUT_MS) {
+                                        finish.run();
+                                        return;
+                                    }
                                     handler.postDelayed(this, 1000);
                                     return;
                                 }
                                 if (isChallenge(text)) {
                                     // Challenge page: its JS may still redirect
-                                    // to the real content; keep polling.
+                                    // to the real content; keep polling within the timeout.
+                                    if (System.currentTimeMillis() - start[0] > FETCH_TIMEOUT_MS) {
+                                        finish.run();
+                                        return;
+                                    }
                                     handler.postDelayed(this, 1000);
                                 } else {
                                     Logger.d(TAG, "fetchJsonInWebView read: domain=" + domain
@@ -459,8 +478,23 @@ public class Chan4ArchiveFetcher {
         });
 
         synchronized (lock) {
+            // Bounded wait: if the main thread never runs the fetch (activity
+            // gone) or the WebView wedges, fail instead of parking this pool
+            // thread forever and wedging future archive fetches.
+            long deadline = System.currentTimeMillis() + WEBVIEW_WAIT_TIMEOUT_MS;
             while (!done[0]) {
-                lock.wait(500);
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) break;
+                try {
+                    lock.wait(Math.min(remaining, 500));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if (!done[0]) {
+                done[0] = true;
+                lock.notifyAll();
             }
         }
 
