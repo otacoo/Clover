@@ -457,6 +457,40 @@ public class ThreadPresenter implements
         }, unlockPresenter);
     }
 
+    // Recomputes repliesFrom across the given posts (same logic as
+    // ChanReaderRequest): inserted/restored archive posts must take part
+    // in the reply graph, otherwise replies to/from them are invisible.
+    private void rebuildRepliesFrom(List<Post> posts) {
+        Map<Integer, Post> postsByNo = new HashMap<>();
+        for (int i = 0; i < posts.size(); i++) {
+            postsByNo.put(posts.get(i).no, posts.get(i));
+        }
+
+        Map<Integer, List<Integer>> replies = new HashMap<>();
+        for (int i = 0; i < posts.size(); i++) {
+            Post sourcePost = posts.get(i);
+            for (int replyTo : sourcePost.repliesTo) {
+                List<Integer> value = replies.get(replyTo);
+                if (value == null) {
+                    value = new ArrayList<>(3);
+                    replies.put(replyTo, value);
+                }
+                value.add(sourcePost.no);
+            }
+        }
+
+        for (Map.Entry<Integer, List<Integer>> entry : replies.entrySet()) {
+            Post subject = postsByNo.get(entry.getKey());
+            // Sometimes a post replies to a ghost, a post that doesn't exist.
+            if (subject != null) {
+                synchronized (subject.repliesFrom) {
+                    subject.repliesFrom.clear();
+                    subject.repliesFrom.addAll(entry.getValue());
+                }
+            }
+        }
+    }
+
     /**
      * Fetches the thread from the archives and merges the result into the
      * current thread: posts missing from the live thread are inserted at their
@@ -509,10 +543,26 @@ public class ThreadPresenter implements
                     Collections.sort(merged, (a, b) -> Integer.compare(a.no, b.no));
                     current.posts.clear();
                     current.posts.addAll(merged);
-                    if (!merged.isEmpty() && merged.get(0) == current.op) {
-                        // OP unchanged; nothing to fix.
-                    } else if (!merged.isEmpty() && merged.get(0).isOP) {
-                        current.op = merged.get(0);
+                    rebuildRepliesFrom(merged);
+                    if (!merged.isEmpty()) {
+                        Post newOp = null;
+                        if (current.op != null) {
+                            for (Post p : merged) {
+                                if (p.no == current.op.no) {
+                                    newOp = p;
+                                    break;
+                                }
+                            }
+                        }
+                        if (newOp == null) {
+                            for (Post p : merged) {
+                                if (p.isOP) {
+                                    newOp = p;
+                                    break;
+                                }
+                            }
+                        }
+                        current.op = newOp != null ? newOp : merged.get(0);
                     }
                     showPosts();
 
