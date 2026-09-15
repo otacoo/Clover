@@ -122,10 +122,17 @@ public class DatabaseHideManager {
             // often transient (id == 0), which would match zero rows while the
             // memory map was already cleared, resurrecting the hide on reload.
             DeleteBuilder<ThreadHide, Integer> builder = helper.threadHideDao.deleteBuilder();
-            builder.where()
-                    .eq("site", hide.site)
-                    .and().eq("board", hide.board)
-                    .and().eq("no", hide.no);
+            if (hide.board == null) {
+                builder.where()
+                        .eq("site", hide.site)
+                        .and().isNull("board")
+                        .and().eq("no", hide.no);
+            } else {
+                builder.where()
+                        .eq("site", hide.site)
+                        .and().eq("board", hide.board)
+                        .and().eq("no", hide.no);
+            }
             builder.delete();
             return null;
         };
