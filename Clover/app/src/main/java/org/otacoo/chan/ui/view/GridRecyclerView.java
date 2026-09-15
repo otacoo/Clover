@@ -71,12 +71,27 @@ public class GridRecyclerView extends RecyclerView {
     @Override
     protected void onMeasure(int widthSpec, int heightSpec) {
         super.onMeasure(widthSpec, heightSpec);
-        int spanCount = fixedSpanCount > 0 ? fixedSpanCount : Math.max(1, getMeasuredWidth() / spanWidth);
-        gridLayoutManager.setSpanCount(spanCount);
-        int oldRealSpanWidth = realSpanWidth;
-        realSpanWidth = getMeasuredWidth() / spanCount;
-        if (realSpanWidth != oldRealSpanWidth) {
-            getAdapter().notifyDataSetChanged();
+        if (gridLayoutManager == null) return;
+        int spanCount = fixedSpanCount > 0 ? fixedSpanCount
+                : (spanWidth > 0 ? Math.max(1, getMeasuredWidth() / spanWidth) : 1);
+        if (gridLayoutManager.getSpanCount() != spanCount) {
+            gridLayoutManager.setSpanCount(spanCount);
+        }
+        int newRealSpanWidth = getMeasuredWidth() / Math.max(1, spanCount);
+        if (newRealSpanWidth != realSpanWidth) {
+            realSpanWidth = newRealSpanWidth;
+            if (getAdapter() != null) {
+                // Never notify synchronously from measure (RecyclerView may be
+                // computing layout); defer past the current traversal.
+                removeCallbacks(refreshRunnable);
+                post(refreshRunnable);
+            }
         }
     }
+
+    private final Runnable refreshRunnable = () -> {
+        if (getAdapter() != null) {
+            getAdapter().notifyDataSetChanged();
+        }
+    };
 }
