@@ -64,6 +64,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -144,7 +145,7 @@ public class WatchManager {
 
     private IntervalType currentInterval = IntervalType.NONE;
 
-    private final Map<Pin, PinWatcher> pinWatchers = new HashMap<>();
+    private final Map<Pin, PinWatcher> pinWatchers = new ConcurrentHashMap<>();
 
     private Set<PinWatcher> waitingForPinWatchersForBackgroundUpdate;
     private PowerManager.WakeLock wakeLock;
@@ -308,7 +309,7 @@ public class WatchManager {
     }
 
     public List<Pin> getAllPins() {
-        return pins;
+        return new ArrayList<>(pins);
     }
 
     public List<Pin> getWatchingPins() {
@@ -448,9 +449,10 @@ public class WatchManager {
     }
 
     public void addAll(List<Pin> pins) {
-        Collections.sort(pins, SORT_PINS);
-        for (int i = 0; i < pins.size(); i++) {
-            Pin pin = pins.get(i);
+        List<Pin> sorted = new ArrayList<>(pins);
+        Collections.sort(sorted, SORT_PINS);
+        for (int i = 0; i < sorted.size(); i++) {
+            Pin pin = sorted.get(i);
             createPin(pin);
         }
     }
