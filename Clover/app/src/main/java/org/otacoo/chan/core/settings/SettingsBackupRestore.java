@@ -375,7 +375,7 @@ public final class SettingsBackupRestore {
                                 board.workSafe = bo.optBoolean("workSafe", false);
 
                                 // Save the user-set fields to database.
-                                databaseManager.runTask(databaseManager.getDatabaseBoardManager().updateIncludingUserFields(board));
+                                databaseManager.runTask(databaseManager.getDatabaseBoardManager().createOrUpdate(board));
                             }
                         }
                     }
@@ -395,7 +395,10 @@ public final class SettingsBackupRestore {
                     r.board = o.getString("board");
                     r.no = o.getInt("no");
                     r.password = o.optString("password", "");
-                    databaseManager.runTask(databaseManager.getDatabaseSavedReplyManager().saveReply(r));
+                    if (databaseManager.runTask(
+                            databaseManager.getDatabaseSavedReplyManager().findSavedReply(siteId, r.board, r.no)) == null) {
+                        databaseManager.runTask(databaseManager.getDatabaseSavedReplyManager().saveReply(r));
+                    }
                 }
             }
             if (selectedKeys.contains(KEY_PINS) && obj.has(KEY_PINS)) {
@@ -429,11 +432,16 @@ public final class SettingsBackupRestore {
                     if (pin.thumbnailUrl.isEmpty()) pin.thumbnailUrl = null;
                     pin.order = o.optInt("order", -1);
                     pin.archived = o.optBoolean("archived", false);
-                    databaseManager.runTask(databaseManager.getDatabasePinManager().createPin(pin));
+                    if (databaseManager.runTask(
+                            databaseManager.getDatabasePinManager().findPinByLoadableId(loadable.id)) == null) {
+                        databaseManager.runTask(databaseManager.getDatabasePinManager().createPin(pin));
+                    }
                 }
             }
             if (version >= BACKUP_VERSION_FILTERS && selectedKeys.contains(KEY_FILTERS) && obj.has(KEY_FILTERS)) {
                 JSONArray arr = obj.getJSONArray(KEY_FILTERS);
+                List<Filter> existingFilters = databaseManager.runTask(
+                        databaseManager.getDatabaseFilterManager().getFilters());
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
                     Filter f = new Filter();
@@ -449,13 +457,33 @@ public final class SettingsBackupRestore {
                     f.color = o.optInt("color", 0xffff0000);
                     f.order = o.optInt("order", 0);
                     f.onlyOnOP = o.optBoolean("onlyOnOP", false);
-                    databaseManager.runTask(databaseManager.getDatabaseFilterManager().createFilter(f));
+                    if (!hasMatchingFilter(existingFilters, f)) {
+                        databaseManager.runTask(databaseManager.getDatabaseFilterManager().createFilter(f));
+                        existingFilters.add(f);
+                    }
                 }
             }
         } else {
             // Old backup format (v1) - restore all preferences without selective import
             applyPreferencesFromRoot(prefs, obj);
         }
+    }
+
+    private static boolean hasMatchingFilter(List<Filter> existing, Filter candidate) {
+        for (int i = 0; i < existing.size(); i++) {
+            Filter f = existing.get(i);
+            if (f.enabled == candidate.enabled
+                    && f.type == candidate.type
+                    && f.action == candidate.action
+                    && f.allBoards == candidate.allBoards
+                    && f.onlyOnOP == candidate.onlyOnOP
+                    && f.color == candidate.color
+                    && java.util.Objects.equals(f.pattern, candidate.pattern)
+                    && java.util.Objects.equals(f.boards, candidate.boards)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void applyPreferences(SharedPreferences prefs, JSONObject obj) throws Exception {

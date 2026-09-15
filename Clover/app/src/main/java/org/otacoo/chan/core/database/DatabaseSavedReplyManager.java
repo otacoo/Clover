@@ -170,6 +170,17 @@ public class DatabaseSavedReplyManager {
         };
     }
 
+    public Callable<SavedReply> findSavedReply(final int siteId, final String boardCode, final int no) {
+        return () -> {
+            QueryBuilder<SavedReply, Integer> builder = helper.savedDao.queryBuilder();
+            List<SavedReply> query = builder.where()
+                    .eq("site", siteId)
+                    .and().eq("board", boardCode)
+                    .and().eq("no", no).query();
+            return query.isEmpty() ? null : query.get(0);
+        };
+    }
+
     public Callable<Void> deleteSavedReplies(Site site) {
         return () -> {
             DeleteBuilder<SavedReply, Integer> builder = helper.savedDao.deleteBuilder();

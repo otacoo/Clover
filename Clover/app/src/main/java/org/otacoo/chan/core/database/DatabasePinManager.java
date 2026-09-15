@@ -55,6 +55,14 @@ public class DatabasePinManager {
         };
     }
 
+    public Callable<Pin> findPinByLoadableId(final int loadableId) {
+        return () -> {
+            List<Pin> query = helper.pinDao.queryBuilder().where()
+                    .eq("loadable_id", loadableId).query();
+            return query.isEmpty() ? null : query.get(0);
+        };
+    }
+
     public Callable<Void> deletePin(final Pin pin) {
         return new Callable<Void>() {
             @Override
