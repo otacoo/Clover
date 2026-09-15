@@ -346,6 +346,12 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 playerPlayPause.setImageResource(R.drawable.ic_play_circle_filled_white);
             }
         }
+        if (soundPlayer != null) {
+            soundPlayer.pause();
+        }
+        if (fallbackWebView != null) {
+            fallbackWebView.onPause();
+        }
     }
 
     public void setVolume(boolean muted) {
@@ -386,6 +392,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 Logger.d("MultiImageView", "playSoundUrl: downloaded ok, size=" + file.length());
                 AndroidUtils.runOnUiThread(() -> {
                     if (soundPlayer != null) return;
+                    if (!isAttachedToWindow()) return;
+                    if (!url.equals(currentSoundUrl)) return;
+                    if (isMuted) return;
                     soundPlayer = new ExoPlayer.Builder(getContext()).build();
                     soundPlayer.setMediaItem(androidx.media3.common.MediaItem.fromUri(file.toURI().toString()));
                     soundPlayer.prepare();
@@ -1052,12 +1061,24 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 "</body></html>";
         fallbackWebView.loadDataWithBaseURL("file:///", html, "text/html", "UTF-8", null);
 
-        if (exoPlayerView != null) {
-            removeView(exoPlayerView);
-        }
+        // exoPlayerView is a child of playerRoot, not a direct child:
+        // remove the whole root and drop the refs to the detached views.
         if (playerRoot != null) {
             removeView(playerRoot);
         }
+        playerRoot = null;
+        exoPlayerView = null;
+        playerControllerContainer = null;
+        playerController = null;
+        playerPlayPause = null;
+        playerSeekBar = null;
+        playerPosition = null;
+        playerDuration = null;
+        playerPlaybackSpeed = null;
+        playerMute = null;
+        playerBack = null;
+        playerDownload = null;
+        playerTopController = null;
 
         addView(fallbackWebView, 0, lp);
         onModeLoaded(Mode.MOVIE, fallbackWebView);
@@ -1295,6 +1316,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
     private void cleanupWebView() {
         if (fallbackWebView != null) {
+            fallbackWebView.stopLoading();
             removeView(fallbackWebView);
             fallbackWebView.loadUrl("about:blank");
             fallbackWebView.destroy();
