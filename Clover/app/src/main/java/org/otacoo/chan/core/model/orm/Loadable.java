@@ -234,7 +234,9 @@ public class Loadable implements SiteReference, BoardReference {
 
         Loadable other = (Loadable) object;
 
-        if (site.id() != other.site.id()) {
+        int siteId = site == null ? -1 : site.id();
+        int otherSiteId = other.site == null ? -1 : other.site.id();
+        if (siteId != otherSiteId) {
             return false;
         }
 
@@ -244,9 +246,10 @@ public class Loadable implements SiteReference, BoardReference {
                     return true;
                 case Mode.CATALOG:
                 case Mode.BOARD:
-                    return boardCode.equals(other.boardCode);
+                    return boardCode == null ? other.boardCode == null : boardCode.equals(other.boardCode);
                 case Mode.THREAD:
-                    return boardCode.equals(other.boardCode) && no == other.no;
+                    return no == other.no
+                            && (boardCode == null ? other.boardCode == null : boardCode.equals(other.boardCode));
                 default:
                     throw new IllegalArgumentException();
             }
@@ -257,6 +260,10 @@ public class Loadable implements SiteReference, BoardReference {
 
     @Override
     public int hashCode() {
+        // Note: site is deliberately excluded: cached instances get their
+        // site assigned after creation, and changing a field used by
+        // hashCode while the object is a map key would lose the entry.
+        // Omitting it is still contract-valid (equal objects hash equally).
         int result = mode;
 
         if (mode == Mode.THREAD || mode == Mode.CATALOG || mode == Mode.BOARD) {
