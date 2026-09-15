@@ -39,6 +39,7 @@ import androidx.core.content.ContextCompat;
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
+import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.layout.FixedRatioLinearLayout;
 import org.otacoo.chan.ui.text.FastTextView;
@@ -312,7 +313,8 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
 
         boolean showFlags = true;
         ChanSettings.HideFlagsMode hideFlagsMode = ChanSettings.hideFlags.get();
-        boolean threadMode = callback.getLoadable().isThreadMode();
+        Loadable loadable = callback == null ? null : callback.getLoadable();
+        boolean threadMode = loadable != null && loadable.isThreadMode();
         if (hideFlagsMode == ChanSettings.HideFlagsMode.ALL) {
             showFlags = false;
         } else if (hideFlagsMode == ChanSettings.HideFlagsMode.THREAD && threadMode) {
