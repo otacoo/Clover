@@ -226,12 +226,30 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
         AndroidUtils.runOnUiThread(this::updateNotification);
     }
 
+    // Progress callbacks fire every 100ms; rebuilding + posting the
+    // notification each time is wasteful churn. Throttle to ~1/s.
+    private static final long NOTIFICATION_MIN_INTERVAL_MS = 1000;
+    private volatile long lastNotificationUpdate = 0;
+
     @Override
     public void imageSaveTaskProgress(ImageSaveTask task, long downloaded, long total) {
         if (!activeTasks.contains(task)) return;
         currentProgress.set(downloaded);
         currentProgressMax.set(total);
-        AndroidUtils.runOnUiThread(this::updateNotification);
+        long now = System.currentTimeMillis();
+        long last = lastNotificationUpdate;
+        if (now - last < NOTIFICATION_MIN_INTERVAL_MS) return;
+        if (compareAndSetLastUpdate(last, now)) {
+            AndroidUtils.runOnUiThread(this::updateNotification);
+        }
+    }
+
+    private boolean compareAndSetLastUpdate(long expected, long newValue) {
+        synchronized (this) {
+            if (lastNotificationUpdate != expected) return false;
+            lastNotificationUpdate = newValue;
+            return true;
+        }
     }
 
     @Override
