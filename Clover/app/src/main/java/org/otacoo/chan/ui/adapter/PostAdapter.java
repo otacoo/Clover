@@ -202,10 +202,26 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         final List<Post> oldList = new java.util.ArrayList<>(displayList);
         final int oldLastSeen = lastSeenIndicatorPosition;
-        
+
         displayList.clear();
         displayList.addAll(newList);
         lastSeenIndicatorPosition = newLastSeen;
+
+        // Fast path: an auto-refresh with no new posts presents the exact same
+        // Post instances at the same positions. Skip DiffUtil + dispatch
+        // entirely (they allocate heavily and rebind rows for nothing).
+        if (oldLastSeen == newLastSeen && oldList.size() == newList.size()) {
+            boolean identical = true;
+            for (int i = 0; i < newList.size(); i++) {
+                if (oldList.get(i) != newList.get(i)) {
+                    identical = false;
+                    break;
+                }
+            }
+            if (identical) {
+                return;
+            }
+        }
 
         androidx.recyclerview.widget.DiffUtil.DiffResult diffResult = androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
             @Override
