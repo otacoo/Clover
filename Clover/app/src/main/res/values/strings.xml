@@ -527,6 +527,7 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="settings_restore_description">Load settings from a file</string>
     <string name="settings_backup_success">Settings backed up successfully</string>
     <string name="settings_restore_success">Settings restored. Restart the app for all changes to take effect.</string>
+    <string name="settings_restore_running">Restoring settings…</string>
     <string name="settings_backup_failed">Backup failed</string>
     <string name="settings_restore_failed">Restore failed</string>
     <string name="settings_custom_theme_reset">Corrupted custom theme data was reset to defaults.</string>

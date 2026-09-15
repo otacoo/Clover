@@ -346,20 +346,31 @@ public class MainSettingsController extends SettingsController implements Settin
     }
     
     // Perform the actual restore with selected keys.
+    // Runs on a background thread: importFull does many DB writes plus a
+    // full preferences commit (fsync) and would ANR the UI on large backups.
+    private static final java.util.concurrent.ExecutorService RESTORE_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+
     private void performRestore(String backupJson, Set<String> selectedKeys) {
-        try {
-            SettingsBackupRestore.importFull(databaseManager, AndroidUtils.getPreferences(), backupJson, selectedKeys);
-            ChanSettings.reloadProxy();
-            AndroidUtils.showThemedSnackbar(view, R.string.settings_restore_success, Snackbar.LENGTH_LONG);
-            StartActivity startActivity = getStartActivity(context);
-            if (startActivity != null) {
-                startActivity.restartApp();
+        AndroidUtils.showThemedSnackbar(view, R.string.settings_restore_running, Snackbar.LENGTH_LONG);
+        RESTORE_EXECUTOR.execute(() -> {
+            try {
+                SettingsBackupRestore.importFull(databaseManager, AndroidUtils.getPreferences(), backupJson, selectedKeys);
+                AndroidUtils.runOnUiThread(() -> {
+                    AndroidUtils.showThemedSnackbar(view, R.string.settings_restore_success, Snackbar.LENGTH_LONG);
+                    StartActivity startActivity = getStartActivity(context);
+                    if (startActivity != null) {
+                        startActivity.restartApp();
+                    }
+                });
+            } catch (Exception e) {
+                Logger.e("MainSettingsController", "Restore failed", e);
+                String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
+                String finalMsg = context.getString(R.string.settings_restore_failed) + ": " + msg;
+                AndroidUtils.runOnUiThread(() ->
+                        AndroidUtils.showThemedSnackbar(view, finalMsg, Snackbar.LENGTH_LONG));
             }
-        } catch (Exception e) {
-            Logger.e("MainSettingsController", "Restore failed", e);
-            String msg = e.getMessage() != null ? e.getMessage() : context.getString(R.string.settings_restore_failed);
-            AndroidUtils.showThemedSnackbar(view, context.getString(R.string.settings_restore_failed) + ": " + msg, Snackbar.LENGTH_LONG);
-        }
+        });
     }
 
     // Unwraps context (e.g. ContextWrapper) to find StartActivity so restore can trigger restart.
