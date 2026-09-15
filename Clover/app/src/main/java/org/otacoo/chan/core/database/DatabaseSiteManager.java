@@ -19,7 +19,10 @@ package org.otacoo.chan.core.database;
 
 
 import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.SelectArg;
+import com.j256.ormlite.stmt.UpdateBuilder;
 
 import org.otacoo.chan.core.model.orm.SiteModel;
 import org.otacoo.chan.core.site.Site;
@@ -86,11 +89,22 @@ public class DatabaseSiteManager {
 
     public Callable<Void> updateOrdering(final List<Integer> siteIdsWithCorrectOrder) {
         return () -> {
+            // Single prepared statement reused for all rows: stale ids simply
+            // match nothing instead of NPE-ing on a null queryForId result.
+            SelectArg id = new SelectArg();
+            SelectArg order = new SelectArg();
+
+            UpdateBuilder<SiteModel, Integer> updateBuilder = helper.siteDao.updateBuilder();
+            updateBuilder.where().eq("id", id);
+            updateBuilder.updateColumnValue("order", order);
+            PreparedUpdate<SiteModel> statement = updateBuilder.prepare();
+
             for (int i = 0; i < siteIdsWithCorrectOrder.size(); i++) {
-                Integer id = siteIdsWithCorrectOrder.get(i);
-                SiteModel m = helper.siteDao.queryForId(id);
-                m.order = i;
-                helper.siteDao.update(m);
+                Integer siteId = siteIdsWithCorrectOrder.get(i);
+                if (siteId == null) continue;
+                id.setValue(siteId);
+                order.setValue(i);
+                helper.siteDao.update(statement);
             }
             return null;
         };
