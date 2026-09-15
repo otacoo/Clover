@@ -128,19 +128,22 @@ public class Chan8PowInterceptor implements Interceptor {
             }
         }
 
-        // Handle 429 rate-limit: back off and retry once.
+        // Handle 429 rate-limit: fail fast instead of sleeping on the shared
+        // dispatcher thread (a sleep here would stall all app requests).
+        // The snackbar informs the user; they can retry manually.
         if (resp.code() == 429 && req.url().host().contains("8chan")) {
-            String retryAfterHeader = resp.header("Retry-After");
-            long sleepMs = 5_000L;
-            if (retryAfterHeader != null) {
-                try { sleepMs = Long.parseLong(retryAfterHeader.trim()) * 1000L; } catch (NumberFormatException ignored) {}
-            }
-            sleepMs = Math.min(sleepMs, 30_000L);
-            Logger.w(TAG, "429 rate-limited; sleeping " + sleepMs + "ms before retry");
+            Logger.w(TAG, "429 rate-limited; failing fast");
             Chan8PowNotifier.showRateLimit();
             resp.close();
-            try { Thread.sleep(sleepMs); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-            resp = chain.proceed(req);
+            return new okhttp3.Response.Builder()
+                    .request(req)
+                    .protocol(okhttp3.Protocol.HTTP_1_1)
+                    .code(429)
+                    .message("Too Many Requests")
+                    .body(okhttp3.ResponseBody.create(
+                            okhttp3.MediaType.parse("text/plain; charset=utf-8"),
+                            "Rate limited"))
+                    .build();
         }
 
         if (!req.url().host().contains("8chan") || req.header(POW_BYPASS_HEADER) != null) {
@@ -190,9 +193,12 @@ public class Chan8PowInterceptor implements Interceptor {
                 if (req.header(SILENT_POW_HEADER) == null) {
                     Chan8PowNotifier.onPowStarted();
                 }
-                // Wait for the thread that is performing POW to finish
+                // Wait for the thread that is performing POW to finish, with a bound
+                // so a stuck solver can never park this dispatcher thread forever.
                 try {
-                    localLatch.await();
+                    if (!localLatch.await(90, TimeUnit.SECONDS)) {
+                        Logger.w(TAG, "Timed out waiting for POW solver; retrying anyway");
+                    }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
