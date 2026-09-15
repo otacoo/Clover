@@ -248,11 +248,13 @@ public class ThumbnailView extends View {
         Request request = rb.build();
 
         currentCall = client.newCall(request);
+        final String requestUrl = url;
         currentCall.enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (call.isCanceled()) return;
                 AndroidUtils.runOnUiThread(() -> {
+                    if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
                     error = true;
                     errorText = getString(R.string.thumbnail_load_failed_network);
                     onImageSet();
@@ -269,6 +271,7 @@ public class ThumbnailView extends View {
                 if (!response.isSuccessful()) {
                     final int code = response.code();
                     AndroidUtils.runOnUiThread(() -> {
+                        if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
                         error = true;
                         errorText = getString(R.string.thumbnail_load_failed_server);
                         onImageSet();
@@ -301,11 +304,13 @@ public class ThumbnailView extends View {
                     if (bitmap != null) {
                         sMemoryCache.put(url, bitmap);
                         AndroidUtils.runOnUiThread(() -> {
+                            if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
                             setImageBitmap(bitmap);
                             onImageSet();
                         });
                     } else {
                         AndroidUtils.runOnUiThread(() -> {
+                            if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
                             error = true;
                             errorText = getString(R.string.thumbnail_load_failed_server);
                             onImageSet();
@@ -313,6 +318,7 @@ public class ThumbnailView extends View {
                     }
                 } catch (Exception e) {
                     AndroidUtils.runOnUiThread(() -> {
+                        if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
                         error = true;
                         errorText = getString(R.string.thumbnail_load_failed_network);
                         onImageSet();
