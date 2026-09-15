@@ -363,7 +363,10 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     public void setPostViewMode(ChanSettings.PostViewMode postViewMode) {
-        this.postViewMode = postViewMode;
+        if (this.postViewMode != postViewMode) {
+            this.postViewMode = postViewMode;
+            notifyDataSetChanged();
+        }
     }
 
     public void setCompact(boolean compact) {
