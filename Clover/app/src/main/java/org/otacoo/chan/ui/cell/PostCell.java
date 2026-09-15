@@ -113,6 +113,12 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private boolean selected;
     private int markedNo;
     private boolean showDivider;
+    private ChanSettings.PostViewMode postViewMode;
+    private boolean compact;
+    private boolean boundPostDeleted;
+    private int boundPostRepliesSize;
+    private boolean boundPostSavedReply;
+    private int boundPostFilterColor;
 
     private final OnClickListener selfClicked = new OnClickListener() {
         @Override
@@ -292,12 +298,26 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                         boolean showDivider,
                         ChanSettings.PostViewMode postViewMode,
                         boolean compact) {
+        int repliesSize = 0;
+        if (post != null) {
+            synchronized (post.repliesFrom) {
+                repliesSize = post.repliesFrom.size();
+            }
+        }
         if (this.post == post &&
                 this.selectable == selectable &&
                 this.highlighted == highlighted &&
                 this.selected == selected &&
                 this.markedNo == markedNo &&
-                this.showDivider == showDivider) {
+                this.showDivider == showDivider &&
+                this.callback == callback &&
+                this.postViewMode == postViewMode &&
+                this.compact == compact &&
+                post != null &&
+                this.boundPostDeleted == post.deleted.get() &&
+                this.boundPostRepliesSize == repliesSize &&
+                this.boundPostSavedReply == post.isSavedReply &&
+                this.boundPostFilterColor == post.filterHighlightedColor) {
             return;
         }
 
@@ -318,6 +338,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         this.selected = selected;
         this.markedNo = markedNo;
         this.showDivider = showDivider;
+        this.postViewMode = postViewMode;
+        this.compact = compact;
+        if (post != null) {
+            this.boundPostDeleted = post.deleted.get();
+            this.boundPostRepliesSize = repliesSize;
+            this.boundPostSavedReply = post.isSavedReply;
+            this.boundPostFilterColor = post.filterHighlightedColor;
+        }
 
         bindPost(theme, post);
     }
