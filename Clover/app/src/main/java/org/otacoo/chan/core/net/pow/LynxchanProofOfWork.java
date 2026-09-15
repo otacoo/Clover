@@ -30,6 +30,7 @@ public class LynxchanProofOfWork {
     public Integer find() {
         if (bypass == null || bypass.length() < 24) return null;
 
+        ExecutorService exec = null;
         try {
             String session = bypass.substring(24, Math.min(bypass.length(), 24 + 344));
             String hashPart = bypass.length() > 24 + 344 ? bypass.substring(24 + 344) : null;
@@ -37,7 +38,7 @@ public class LynxchanProofOfWork {
             byte[] targetHash = Base64.getDecoder().decode(hashPart.trim());
 
             int cores = Math.max(1, Runtime.getRuntime().availableProcessors());
-            ExecutorService exec = Executors.newFixedThreadPool(cores);
+            exec = Executors.newFixedThreadPool(cores);
             AtomicInteger solution = new AtomicInteger(-1);
 
             for (int i = 0; i < cores; i++) {
@@ -71,11 +72,20 @@ public class LynxchanProofOfWork {
 
             exec.shutdown();
             while (!exec.awaitTermination(200, TimeUnit.MILLISECONDS)) {
-                if (cancelled) break;
+                if (cancelled) {
+                    exec.shutdownNow();
+                    break;
+                }
             }
 
             int v = solution.get();
             return v >= 0 ? v : null;
+        } catch (InterruptedException e) {
+            if (exec != null) {
+                exec.shutdownNow();
+            }
+            Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             org.otacoo.chan.utils.Logger.e("LynxchanProofOfWork", "Failed", e);
             return null;
