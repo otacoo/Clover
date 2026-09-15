@@ -394,8 +394,26 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     private void updatePatternPreview() {
         String text = patternPreview.getText().toString();
-        boolean matches = filterEngine.matches(filter, true, text, true);
+        boolean matches = matchesPreview(text);
         patternPreviewStatus.setText(matches ? R.string.filter_matches : R.string.filter_no_matches);
+    }
+
+    // Mirrors FilterEngine.matches() per enabled type: exact-match types use
+    // equals (regex would wrongly report a match for e.g. "Anonymous123").
+    private boolean matchesPreview(String text) {
+        boolean hasPatternType = false;
+        for (FilterType type : FilterType.values()) {
+            if (!filter.hasFilter(type)) continue;
+            boolean regex = type == FilterType.TRIPCODE
+                    ? filter.pattern != null && filter.pattern.startsWith("/")
+                    : type.isRegex;
+            if (!regex) {
+                if (text.equals(filter.pattern)) return true;
+            } else {
+                hasPatternType = true;
+            }
+        }
+        return hasPatternType && filterEngine.matches(filter, true, text, true);
     }
 
     public interface FilterLayoutCallback {
