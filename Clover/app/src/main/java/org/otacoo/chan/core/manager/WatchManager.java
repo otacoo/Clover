@@ -709,23 +709,30 @@ public class WatchManager {
                 handler.post(() -> postPinChanged(pin));
 
                 // Stall safety net: if the load never completes, keep going.
-                handler.postDelayed(() -> {
-                    if (foregroundUpdateWaiting) {
-                        foregroundUpdateWaiting = false;
-                        startForegroundUpdates(getWatchingPins());
-                    }
-                }, FOREGROUND_UPDATE_STALL_TIMEOUT);
+                handler.removeCallbacks(foregroundUpdateStallRunnable);
+                handler.postDelayed(foregroundUpdateStallRunnable, FOREGROUND_UPDATE_STALL_TIMEOUT);
                 return;
             }
         }
         foregroundUpdateIndex = 0;
     }
 
+    private final Runnable foregroundUpdateStallRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (foregroundUpdateWaiting) {
+                foregroundUpdateWaiting = false;
+                startForegroundUpdates(getWatchingPins());
+            }
+        }
+    };
+
     private void pinWatcherUpdated(PinWatcher pinWatcher) {
         updateState();
         // Defer
         handler.post(() -> postPinChanged(pinWatcher.pin));
 
+        handler.removeCallbacks(foregroundUpdateStallRunnable);
         if (foregroundUpdateWaiting) {
             // A foreground pin finished loading: continue with the next pin.
             foregroundUpdateWaiting = false;
