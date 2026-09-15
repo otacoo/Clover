@@ -366,6 +366,10 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         bound = false;
 
         icons.cancelRequests();
+
+        if (thumbnailView != null) {
+            thumbnailView.cancelRequest();
+        }
     }
 
     private void setCompact(boolean compact) {

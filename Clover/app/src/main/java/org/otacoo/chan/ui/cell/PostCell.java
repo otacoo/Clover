@@ -803,6 +803,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         icons.cancelRequests();
 
+        for (int i = 0; i < thumbnailViews.size(); i++) {
+            thumbnailViews.get(i).cancelRequest();
+        }
+
         setPostLinkableListener(post, false);
     }
 

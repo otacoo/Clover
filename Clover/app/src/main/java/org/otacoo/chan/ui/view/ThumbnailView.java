@@ -329,7 +329,7 @@ public class ThumbnailView extends View {
         return s;
     }
 
-    private void cancelRequest() {
+    public void cancelRequest() {
         if (currentCall != null) {
             currentCall.cancel();
             currentCall = null;
