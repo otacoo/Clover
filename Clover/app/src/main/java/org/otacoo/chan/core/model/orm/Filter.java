@@ -77,6 +77,7 @@ public class Filter {
 
     public Filter copy() {
         Filter copy = new Filter();
+        copy.id = id;
         copy.enabled = enabled;
         copy.type = type;
         copy.pattern = pattern;

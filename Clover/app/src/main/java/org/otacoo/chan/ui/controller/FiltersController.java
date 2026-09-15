@@ -209,7 +209,8 @@ public class FiltersController extends Controller implements
 
         filterLayout.setCallback(enabled -> alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enabled));
 
-        filterLayout.setFilter(filter);
+        // Edit a copy so cancelling the dialog leaves the list untouched.
+        filterLayout.setFilter(filter.copy());
     }
 
     private void deleteFilter(Filter filter) {
