@@ -41,7 +41,7 @@ public class PostImage {
 
     public final Type type;
 
-    public int replyCount = 0;
+    public volatile int replyCount = 0;
 
     private PostImage(Builder builder) {
         this.originalName = builder.originalName;
@@ -82,6 +82,8 @@ public class PostImage {
     }
 
     public boolean equalUrl(PostImage other) {
+        if (other == null) return false;
+        if (imageUrl == null || other.imageUrl == null) return imageUrl == other.imageUrl;
         return imageUrl.equals(other.imageUrl);
     }
 
