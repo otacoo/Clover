@@ -162,6 +162,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private final Runnable updateTimeTask = new Runnable() {
         @Override
         public void run() {
+            if (exoPlayer == null || !isAttachedToWindow()) return;
             updateProgress();
             handler.postDelayed(this, 1000);
         }
@@ -969,6 +970,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                                     : R.drawable.ic_play_circle_filled_white);
                         }
                         if (isPlaying) {
+                            handler.removeCallbacks(updateTimeTask);
                             handler.post(updateTimeTask);
                         } else {
                             handler.removeCallbacks(updateTimeTask);
@@ -1114,6 +1116,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         exoPlayer.seekTo(pendingSeekPosition);
                     }
                     pendingSeekPosition = -1;
+                    handler.removeCallbacks(updateTimeTask);
                     handler.post(updateTimeTask);
                 }
             });
