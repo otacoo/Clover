@@ -54,8 +54,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -69,10 +73,13 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     private static final int MAX_NAME_LENGTH = 50;
     private final NotificationManager notificationManager;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private int doneTasks = 0;
-    private int totalTasks = 0;
-    private long currentProgress = 0;
-    private long currentProgressMax = 0;
+    private final AtomicInteger doneTasks = new AtomicInteger(0);
+    private final AtomicInteger totalTasks = new AtomicInteger(0);
+    private final AtomicLong currentProgress = new AtomicLong(0);
+    private final AtomicLong currentProgressMax = new AtomicLong(0);
+    // Tasks not in this set (e.g. finished after cancelAll) are ignored.
+    private final Set<ImageSaveTask> activeTasks =
+            Collections.newSetFromMap(new ConcurrentHashMap<ImageSaveTask, Boolean>());
 
     private final Storage storage;
     private final FileCache fileCache;
@@ -187,7 +194,7 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             return;
         }
 
-        totalTasks = 0;
+        totalTasks.set(0);
 
         for (ImageSaveTask task : tasks) {
             PostImage postImage = task.getPostImage();
@@ -211,7 +218,8 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
 
             task.setCallback(this);
 
-            totalTasks++;
+            totalTasks.incrementAndGet();
+            activeTasks.add(task);
             executor.execute(task);
         }
 
@@ -220,19 +228,21 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
 
     @Override
     public void imageSaveTaskProgress(ImageSaveTask task, long downloaded, long total) {
-        currentProgress = downloaded;
-        currentProgressMax = total;
+        if (!activeTasks.contains(task)) return;
+        currentProgress.set(downloaded);
+        currentProgressMax.set(total);
         AndroidUtils.runOnUiThread(this::updateNotification);
     }
 
     @Override
     public void imageSaveTaskFinished(ImageSaveTask task, boolean success) {
-        doneTasks++;
-        currentProgress = 0;
-        currentProgressMax = 0;
-        if (doneTasks == totalTasks) {
-            totalTasks = 0;
-            doneTasks = 0;
+        if (!activeTasks.remove(task)) return;
+        int done = doneTasks.incrementAndGet();
+        currentProgress.set(0);
+        currentProgressMax.set(0);
+        if (done == totalTasks.get()) {
+            totalTasks.set(0);
+            doneTasks.set(0);
         }
         
         AndroidUtils.runOnUiThread(() -> {
@@ -248,18 +258,23 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
     }
 
     private void cancelAll() {
+        activeTasks.clear();
         executor.shutdownNow();
         executor = Executors.newSingleThreadExecutor();
 
-        totalTasks = 0;
-        doneTasks = 0;
+        totalTasks.set(0);
+        doneTasks.set(0);
+        currentProgress.set(0);
+        currentProgressMax.set(0);
         updateNotification();
     }
 
     private static final int PROGRESS_NOTIFICATION_ID = 2;
 
     private void updateNotification() {
-        if (totalTasks == 0) {
+        int total = totalTasks.get();
+        int done = doneTasks.get();
+        if (total == 0) {
             notificationManager.cancel(PROGRESS_NOTIFICATION_ID);
         } else {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(
@@ -269,13 +284,14 @@ public class ImageSaver implements ImageSaveTask.ImageSaveTaskCallback {
             builder.setContentText(getString(R.string.image_save_notification_cancel));
             builder.setOngoing(true);
 
-            if (currentProgressMax > 0) {
-                builder.setProgress(1000, (int) ((currentProgress * 1000) / currentProgressMax), false);
+            long max = currentProgressMax.get();
+            if (max > 0) {
+                builder.setProgress(1000, (int) ((currentProgress.get() * 1000) / max), false);
             } else {
-                builder.setProgress(totalTasks, doneTasks, false);
+                builder.setProgress(total, done, false);
             }
 
-            builder.setContentInfo(doneTasks + "/" + totalTasks);
+            builder.setContentInfo(done + "/" + total);
 
             Intent cancelIntent = new Intent(getAppContext(), SaveCancelReceiver.class);
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
