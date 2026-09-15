@@ -22,6 +22,7 @@ import android.util.Log;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 
+import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.repository.SiteRepository;
 import org.otacoo.chan.core.site.Site;
@@ -130,9 +131,29 @@ public class DatabaseLoadableManager {
         // Add it to the cache, refresh contents
         helper.loadableDao.refresh(loadable);
         loadable.site = SiteRepository.forId(loadable.siteId);
-        loadable.board = loadable.site.board(loadable.boardCode);
+        loadable.board = hydrateBoard(loadable.site, loadable.boardCode);
         cachedLoadables.put(loadable, loadable);
         return loadable;
+    }
+
+    /**
+     * Resolves the Board for a loadable. The board lookup goes through the
+     * in-memory board registry, which may not know the board yet (e.g. a
+     * bookmark restored without its board, or a site whose board list was
+     * never fetched). Without a board the loadable is unusable and crashes
+     * later loads, so synthesize the missing board instead of returning null.
+     */
+    private static Board hydrateBoard(Site site, String boardCode) {
+        if (site == null || boardCode == null) {
+            return null;
+        }
+        Board board = site.board(boardCode);
+        if (board == null) {
+            Logger.w(TAG, "Board row missing for " + site.name() + "/" + boardCode
+                    + "; synthesizing it so the loadable stays usable");
+            board = site.createBoard(boardCode, boardCode);
+        }
+        return board;
     }
 
     /** Returns a Callable that gets or creates the loadable in the DB. Used by backup restore. */
@@ -157,7 +178,7 @@ public class DatabaseLoadableManager {
         List<Loadable> rows = builder.where().in("id", ids).query();
         for (Loadable row : rows) {
             row.site = SiteRepository.forId(row.siteId);
-            row.board = row.site.board(row.boardCode);
+            row.board = hydrateBoard(row.site, row.boardCode);
 
             Loadable existing = null;
             for (Loadable key : cachedLoadables.keySet()) {

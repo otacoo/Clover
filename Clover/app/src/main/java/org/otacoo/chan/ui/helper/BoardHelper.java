@@ -106,6 +106,9 @@ public class BoardHelper {
     }
 
     public static boolean matchesUniqueId(Board board, String uniqueId) {
+        if (board == null || board.site == null) {
+            return false;
+        }
         if (!uniqueId.contains(":")) {
             return board.site.id() == 0 && board.code.equals(uniqueId);
         } else {

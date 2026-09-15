@@ -132,14 +132,21 @@ public class FilterEngine {
     public boolean matchesBoard(Filter filter, Board board) {
         if (filter.allBoards || TextUtils.isEmpty(filter.boards)) {
             return true;
-        } else {
-            for (String uniqueId : filter.boards.split(",")) {
-                if (BoardHelper.matchesUniqueId(board, uniqueId)) {
-                    return true;
-                }
-            }
+        }
+        // A null board (e.g. a restored bookmark whose board row doesn't exist
+        // locally yet) can't be scoped: treat board-specific filters as not
+        // matching instead of crashing the load.
+        if (board == null) {
+            Logger.w(TAG, "matchesBoard: board is null, skipping board-scoped filter "
+                    + filter.pattern);
             return false;
         }
+        for (String uniqueId : filter.boards.split(",")) {
+            if (BoardHelper.matchesUniqueId(board, uniqueId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int getFilterBoardCount(Filter filter) {
