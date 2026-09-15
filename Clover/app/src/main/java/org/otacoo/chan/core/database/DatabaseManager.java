@@ -112,9 +112,12 @@ public class DatabaseManager {
         // Loads data into fields.
         runTask(databaseSavedReplyManager.load());
 
-        // Only trims.
+        // Hides are read from memory on the parse path, so load them
+        // synchronously: an early parse must not miss existing hides.
+        runTask(databaseHideManager.load());
+
+        // Only trims (no in-memory state depends on it).
         runTaskAsync(databaseHistoryManager.load());
-        runTaskAsync(databaseHideManager.load());
     }
 
     public DatabasePinManager getDatabasePinManager() {
