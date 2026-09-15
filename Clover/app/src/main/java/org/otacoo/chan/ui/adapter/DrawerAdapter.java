@@ -193,8 +193,9 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 return new DividerHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.drawer_divider, parent, false));
             case TYPE_PIN:
                 return new PinViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.cell_pin, parent, false));
+            default:
+                throw new IllegalArgumentException("Unknown drawer view type " + viewType);
         }
-        return null;
     }
 
     @Override
@@ -259,6 +260,8 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             if (index >= 0 && index < pinnedSearches.size()) {
                 return pinnedSearches.get(index).hashCode();
             }
+        } else if (type == TYPE_DIVIDER) {
+            return Long.MIN_VALUE;
         }
         return position;
     }
