@@ -44,4 +44,9 @@ public class IntegerSetting extends Setting<Integer> {
             onValueChanged();
         }
     }
+
+    @Override
+    protected void invalidateCache() {
+        hasCached = false;
+    }
 }

@@ -44,4 +44,9 @@ public class StringSetting extends Setting<String> {
             onValueChanged();
         }
     }
+
+    @Override
+    protected void invalidateCache() {
+        hasCached = false;
+    }
 }

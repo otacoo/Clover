@@ -44,4 +44,9 @@ public class BooleanSetting extends Setting<Boolean> {
             onValueChanged();
         }
     }
+
+    @Override
+    protected void invalidateCache() {
+        hasCached = false;
+    }
 }

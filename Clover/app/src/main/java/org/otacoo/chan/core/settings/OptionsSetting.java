@@ -66,4 +66,9 @@ public class OptionsSetting<T extends Enum<T> & OptionSettingItem> extends Setti
             onValueChanged();
         }
     }
+
+    @Override
+    protected void invalidateCache() {
+        hasCached = false;
+    }
 }

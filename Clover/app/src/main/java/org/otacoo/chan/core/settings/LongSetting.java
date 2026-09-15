@@ -44,4 +44,9 @@ public class LongSetting extends Setting<Long> {
             onValueChanged();
         }
     }
+
+    @Override
+    protected void invalidateCache() {
+        hasCached = false;
+    }
 }

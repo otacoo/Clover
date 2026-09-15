@@ -18,9 +18,15 @@
 package org.otacoo.chan.core.settings;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Setting<T> {
+    private static final Set<Setting<?>> instances =
+            Collections.newSetFromMap(new ConcurrentHashMap<Setting<?>, Boolean>());
+
     protected final SettingProvider settingProvider;
     protected final String key;
     protected final T def;
@@ -30,11 +36,26 @@ public abstract class Setting<T> {
         this.settingProvider = settingProvider;
         this.key = key;
         this.def = def;
+        instances.add(this);
     }
 
     public abstract T get();
 
     public abstract void set(T value);
+
+    /**
+     * Drops this setting's cached value so the next {@link #get()} re-reads
+     * the provider. The default is a no-op for settings that don't cache.
+     */
+    protected void invalidateCache() {
+    }
+
+    /** Drops cached values of all settings (e.g. after a backup restore). */
+    public static void invalidateAllCaches() {
+        for (Setting<?> setting : instances) {
+            setting.invalidateCache();
+        }
+    }
 
     public T getDefault() {
         return def;
