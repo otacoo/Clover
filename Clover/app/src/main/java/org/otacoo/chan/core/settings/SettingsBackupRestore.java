@@ -467,6 +467,10 @@ public final class SettingsBackupRestore {
             // Old backup format (v1) - restore all preferences without selective import
             applyPreferencesFromRoot(prefs, obj);
         }
+
+        // Preferences were written directly: drop cached setting values so the
+        // restored values take effect without a restart.
+        ChanSettings.invalidateCaches();
     }
 
     private static boolean hasMatchingFilter(List<Filter> existing, Filter candidate) {
