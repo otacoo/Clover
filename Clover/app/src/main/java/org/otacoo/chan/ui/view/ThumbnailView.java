@@ -254,7 +254,12 @@ public class ThumbnailView extends View {
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (call.isCanceled()) return;
                 AndroidUtils.runOnUiThread(() -> {
-                    if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
+                    // Ignore only stale responses for a recycled view that was
+                    // rebound to a different image. The attached-check must not
+                    // be part of this: prefetch/cached holders are detached
+                    // when their response arrives, and dropping it here would
+                    // leak currentCall and block any later re-request.
+                    if (!TextUtils.equals(currentUrl, requestUrl)) return;
                     error = true;
                     errorText = getString(R.string.thumbnail_load_failed_network);
                     onImageSet();
@@ -271,7 +276,7 @@ public class ThumbnailView extends View {
                 if (!response.isSuccessful()) {
                     final int code = response.code();
                     AndroidUtils.runOnUiThread(() -> {
-                        if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
+                        if (!TextUtils.equals(currentUrl, requestUrl)) return;
                         error = true;
                         errorText = getString(R.string.thumbnail_load_failed_server);
                         onImageSet();
@@ -304,13 +309,13 @@ public class ThumbnailView extends View {
                     if (bitmap != null) {
                         sMemoryCache.put(url, bitmap);
                         AndroidUtils.runOnUiThread(() -> {
-                            if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
+                            if (!TextUtils.equals(currentUrl, requestUrl)) return;
                             setImageBitmap(bitmap);
                             onImageSet();
                         });
                     } else {
                         AndroidUtils.runOnUiThread(() -> {
-                            if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
+                            if (!TextUtils.equals(currentUrl, requestUrl)) return;
                             error = true;
                             errorText = getString(R.string.thumbnail_load_failed_server);
                             onImageSet();
@@ -318,7 +323,7 @@ public class ThumbnailView extends View {
                     }
                 } catch (Exception e) {
                     AndroidUtils.runOnUiThread(() -> {
-                        if (!TextUtils.equals(currentUrl, requestUrl) || !isAttachedToWindow()) return;
+                        if (!TextUtils.equals(currentUrl, requestUrl)) return;
                         error = true;
                         errorText = getString(R.string.thumbnail_load_failed_network);
                         onImageSet();
