@@ -117,6 +117,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private org.otacoo.chan.core.site.Site site;
     private String cachedUserAgent;
 
+    // Single handler for all self-scheduled work (load callbacks, expiry
+    // notices, payload retries); cleared wholesale on detach/destroy.
+    private final Handler captchaHandler = new Handler(Looper.getMainLooper());
+
     /** True when an error overlay is showing, preventing any automated resets from clearing it. */
     private volatile boolean showingOverlay;
 
@@ -418,7 +422,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
                 // Asset page is self-contained; theming/hooks are only for the native page
                 if (lastResponseWasAsset) {
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    captchaHandler.postDelayed(() -> {
                         if (getWindowToken() != null) onCaptchaLoaded();
                     }, 500);
                     return;
@@ -633,7 +637,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Schedules a toast notification for when the current captcha session expires
     private void scheduleExpiryNotice(final String key, int seconds) {
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+        captchaHandler.postDelayed(() -> {
             Long expiryTime = globalExpiries.get(key);
             if (expiryTime != null && expiryTime <= System.currentTimeMillis() + 1000) {
                 globalExpiries.remove(key);
@@ -743,7 +747,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             onCaptchaLoaded();
         } else if (nativePayloadRetryAttempts < NATIVE_PAYLOAD_MAX_RETRIES) {
             nativePayloadRetryAttempts++;
-            new Handler(Looper.getMainLooper()).postDelayed(() -> extractPayloadFromNativePageAndLoadAsset(url), NATIVE_PAYLOAD_RETRY_DELAY_MS);
+            captchaHandler.postDelayed(() -> extractPayloadFromNativePageAndLoadAsset(url), NATIVE_PAYLOAD_RETRY_DELAY_MS);
         } else {
             showUnifiedOverlay("Captcha failed to load.", true);
         }
@@ -1022,14 +1026,18 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         visibleInstances.remove(this);
+        // Cancel all pending self-scheduled work (expiry toasts, payload
+        // retries, load callbacks) so nothing runs against a detached view.
+        captchaHandler.removeCallbacksAndMessages(null);
     }
 
-    @Override 
+    @Override
     public void onDestroy() {
         reportedCompletion = true;
         callback = null;
         showingActiveCaptcha = false;
         visibleInstances.remove(this);
+        captchaHandler.removeCallbacksAndMessages(null);
     }
 
     @Override public InputConnection onCreateInputConnection(EditorInfo o) { return null; }
