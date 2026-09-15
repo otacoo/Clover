@@ -36,6 +36,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.cache.FileCache;
+import org.otacoo.chan.core.cache.FileCacheDownloader;
 import org.otacoo.chan.core.cache.FileCacheListener;
 import org.otacoo.chan.core.cache.FileCacheProvider;
 import org.otacoo.chan.core.model.PostImage;
@@ -46,6 +47,7 @@ import java.io.File;
 
 public class PostImageThumbnailView extends ThumbnailView implements View.OnLongClickListener {
     private PostImage postImage;
+    private FileCacheDownloader pendingDownload;
     private final Drawable playIcon;
     private final Rect bounds = new Rect();
     private float ratio = 0f;
@@ -72,6 +74,7 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
 
     public void setPostImage(PostImage postImage, int width, int height, boolean cacheOnly) {
         if (this.postImage != postImage) {
+            cancelPendingDownload();
             this.postImage = postImage;
 
             if (postImage != null) {
@@ -138,10 +141,13 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         if (!ChanSettings.shareUrl.get() && isImage) {
             AndroidUtils.showThemedSnackbar(this, "Downloading image\u2026", Snackbar.LENGTH_SHORT);
             FileCache fileCache = injector().instance(FileCache.class);
-            fileCache.downloadFile(postImage.imageUrl.toString(), new FileCacheListener() {
+            cancelPendingDownload();
+            final PostImage clickedImage = postImage;
+            pendingDownload = fileCache.downloadFile(postImage.imageUrl.toString(), new FileCacheListener() {
                 @Override
                 public void onSuccess(File file) {
                     AndroidUtils.runOnUiThread(() -> {
+                        if (postImage != clickedImage || !isAttachedToWindow()) return;
                         Uri uri = FileCacheProvider.getUriForFile(file);
                         ClipData clip = ClipData.newUri(AndroidUtils.getAppContext().getContentResolver(),
                                 postImage.filename, uri);
@@ -152,8 +158,10 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
 
                 @Override
                 public void onFail(boolean notFound) {
-                    AndroidUtils.runOnUiThread(() ->
-                            copyUrlToClipboard(clipboard));
+                    AndroidUtils.runOnUiThread(() -> {
+                        if (postImage != clickedImage || !isAttachedToWindow()) return;
+                        copyUrlToClipboard(clipboard);
+                    });
                 }
             });
             return true;
@@ -167,5 +175,18 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
         ClipData clip = ClipData.newPlainText("File URL", postImage.imageUrl.toString());
         clipboard.setPrimaryClip(clip);
         AndroidUtils.showThemedSnackbar(this, R.string.url_text_copied, Snackbar.LENGTH_SHORT);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        cancelPendingDownload();
+    }
+
+    private void cancelPendingDownload() {
+        if (pendingDownload != null) {
+            pendingDownload.cancel();
+            pendingDownload = null;
+        }
     }
 }
