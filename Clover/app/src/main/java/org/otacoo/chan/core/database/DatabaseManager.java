@@ -19,6 +19,7 @@ package org.otacoo.chan.core.database;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
 import android.os.Looper;
@@ -240,9 +241,10 @@ public class DatabaseManager {
 
             // Delete duplicate saved replies
             sb.append("\n=== Duplicate saved replies deleted ===\n");
-            try (Cursor c = db.rawQuery("DELETE FROM savedreply WHERE id NOT IN (SELECT MIN(id) FROM savedreply GROUP BY site, board, no)", null)) {
-                sb.append("Deleted ").append(c.getCount()).append(" duplicate saved replies.\n");
-            }
+            long savedBefore = DatabaseUtils.longForQuery(db, "SELECT COUNT(*) FROM savedreply", null);
+            db.execSQL("DELETE FROM savedreply WHERE id NOT IN (SELECT MIN(id) FROM savedreply GROUP BY site, board, no)");
+            long savedAfter = DatabaseUtils.longForQuery(db, "SELECT COUNT(*) FROM savedreply", null);
+            sb.append("Deleted ").append(savedBefore - savedAfter).append(" duplicate saved replies.\n");
 
             // 6. Pins referencing a non-existent loadable
             sb.append("\n=== Orphaned pins (missing loadable) ===\n");
