@@ -158,9 +158,8 @@ public class DeveloperSettingsController extends Controller {
     }
 
     private void setDbSummary() {
-        String dbSummary = "";
-        dbSummary += "Database summary:\n";
-        dbSummary += databaseManager.getSummary();
-        summaryText.setText(dbSummary);
+        // getSummary() does several full-table counts: keep it off the UI thread.
+        databaseManager.runTaskAsync(() -> databaseManager.getSummary(), report ->
+                summaryText.setText("Database summary:\n" + report));
     }
 }

@@ -117,7 +117,9 @@ public class FilterEngine {
 
     public List<Filter> getAllFilters() {
         try {
-            List<Filter> filters = databaseFilterManager.getFilters().call();
+            // Route through the DB thread like every other access; the small
+            // filter table makes the blocking wait negligible.
+            List<Filter> filters = databaseManager.runTask(databaseFilterManager.getFilters());
             Collections.sort(filters, (a, b) -> Integer.compare(a.order, b.order));
             return filters;
         } catch (Exception e) {
