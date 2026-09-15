@@ -84,13 +84,16 @@ public class ThreadStatusCell extends LinearLayout implements View.OnClickListen
 
     public void setError(String error) {
         this.error = error;
-        if (error == null) {
+        if (error == null && isAttachedToWindow()) {
             schedule();
         }
     }
 
     @SuppressLint("SetTextI18n")
     public boolean update() {
+        if (callback == null) {
+            return false;
+        }
         if (error != null) {
             text.setText(error + "\n" + getContext()
                     .getString(R.string.thread_refresh_bar_inactive));
