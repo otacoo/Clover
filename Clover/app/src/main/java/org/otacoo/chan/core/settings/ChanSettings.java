@@ -569,6 +569,12 @@ public class ChanSettings {
         loadProxy();
     }
 
+    /** Drops cached setting values so restored preferences take effect without a restart. */
+    public static void invalidateCaches() {
+        Setting.invalidateAllCaches();
+        reloadProxy();
+    }
+
     private static void loadProxy() {
         if (proxyEnabled.get()) {
             proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyAddress.get(), proxyPort.get()));
