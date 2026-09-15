@@ -28,6 +28,10 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import org.otacoo.chan.R;
 
 public class DrawerWidthAdjustingLayout extends DrawerLayout {
+    private View drawerPanel;
+    private final java.util.List<android.graphics.Rect> gestureExclusionRects = new java.util.ArrayList<>(2);
+    private int lastExclusionWidth = -1;
+    private int lastExclusionHeight = -1;
     public DrawerWidthAdjustingLayout(Context context) {
         super(context);
     }
@@ -41,14 +45,26 @@ public class DrawerWidthAdjustingLayout extends DrawerLayout {
     }
 
     @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        drawerPanel = findViewById(R.id.drawer_panel);
+    }
+
+    @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            int edgeWidth = org.otacoo.chan.utils.AndroidUtils.dp(20);
-            java.util.List<android.graphics.Rect> rects = new java.util.ArrayList<>();
-            rects.add(new android.graphics.Rect(0, 0, edgeWidth, getHeight())); // Left edge
-            rects.add(new android.graphics.Rect(getWidth() - edgeWidth, 0, getWidth(), getHeight())); // Right edge
-            setSystemGestureExclusionRects(rects);
+            int width = getWidth();
+            int height = getHeight();
+            if (width != lastExclusionWidth || height != lastExclusionHeight) {
+                lastExclusionWidth = width;
+                lastExclusionHeight = height;
+                int edgeWidth = org.otacoo.chan.utils.AndroidUtils.dp(20);
+                gestureExclusionRects.clear();
+                gestureExclusionRects.add(new android.graphics.Rect(0, 0, edgeWidth, height)); // Left edge
+                gestureExclusionRects.add(new android.graphics.Rect(width - edgeWidth, 0, width, height)); // Right edge
+                setSystemGestureExclusionRects(gestureExclusionRects);
+            }
         }
     }
 
@@ -59,7 +75,7 @@ public class DrawerWidthAdjustingLayout extends DrawerLayout {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
 //        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
-        View drawer = findViewById(R.id.drawer_panel);
+        View drawer = drawerPanel != null ? drawerPanel : findViewById(R.id.drawer_panel);
 
         int width = Math.min(widthSize - dp(56), dp(56) * 6);
         if (drawer.getLayoutParams().width != width) {
