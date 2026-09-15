@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -43,6 +44,7 @@ import android.text.format.DateUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
+import android.text.style.ImageSpan;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -1004,6 +1006,15 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         // Keep the anchor off the screen border when right-aligned so it
         // stays easy to tap.
         repliesRp.rightMargin = anchorRight ? dp(8) : 0;
+        // Keep the pill from touching the divider below it, and add breathing
+        // room between the post content above and the anchor.
+        repliesRp.bottomMargin = bgAndIcon ? dp(6) : 0;
+        repliesRp.topMargin = bgAndIcon ? dp(12) : 0;
+        // Left-side pills shouldn't touch the screen border either: align
+        // them with the message content above (at least the cell padding).
+        if (bgAndIcon && !anchorRight && repliesRp.leftMargin < paddingPx) {
+            repliesRp.leftMargin = paddingPx;
+        }
         replies.setLayoutParams(repliesRp);
 
         if (bgAndIcon) {
@@ -1014,9 +1025,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         } else if (replyAnchorBgApplied) {
             replyAnchorBgApplied = false;
             replies.setBackground(AndroidUtils.getAttrDrawable(getContext(), android.R.attr.selectableItemBackgroundBorderless));
-            int padH = dp(10);
-            replies.setPadding(Math.max(0, replies.getPaddingLeft() - padH), replies.getPaddingTop(),
-                    Math.max(0, replies.getPaddingRight() - padH), replies.getPaddingBottom());
+            replies.setPadding(paddingPx, replies.getPaddingTop(), paddingPx, replies.getPaddingBottom());
             replies.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_secondary));
         }
 
@@ -1038,14 +1047,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     private void applyReplyAnchorBackground() {
-        // Rounded pill in the secondary post color, so it stands out slightly
-        // from the post background in both themes.
+        // Rounded rectangle in the secondary post color, so it stands out
+        // slightly from the post background in both themes.
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-        bg.setCornerRadius(dp(14));
+        bg.setCornerRadius(dp(2));
         bg.setColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
         replies.setBackground(bg);
-        int padH = dp(10);
-        replies.setPadding(replies.getPaddingLeft() + padH, dp(2), replies.getPaddingRight() + padH, dp(2));
+        // Replace the default horizontal padding with a tighter pill padding.
+        replies.setPadding(dp(3), dp(2), dp(3), dp(2));
         replies.setTextColor(theme.textPrimary);
     }
 
@@ -1071,7 +1080,19 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             repliesIconDrawable = new android.graphics.drawable.BitmapDrawable(getResources(), bmp);
             repliesIconColor = theme.textSecondary;
         }
-        return TextUtils.concat(PostHelper.addIcon(repliesIconDrawable, dp(14)), text);
+
+        // Vertically center the icon on the text line (ALIGN_CENTER requires
+        // API 29; older versions fall back to baseline alignment).
+        SpannableString iconSpan = new SpannableString("  ");
+        ImageSpan imageSpan;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            imageSpan = new ImageSpan(repliesIconDrawable, ImageSpan.ALIGN_CENTER);
+        } else {
+            imageSpan = new ImageSpan(repliesIconDrawable);
+        }
+        imageSpan.getDrawable().setBounds(0, 0, dp(14), dp(14));
+        iconSpan.setSpan(imageSpan, 0, 1, 0);
+        return TextUtils.concat(iconSpan, text);
     }
 
     private void setupTitleClickHandling(boolean noClickable, boolean titleHasFiles) {
