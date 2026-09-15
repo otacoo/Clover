@@ -189,7 +189,17 @@ public class AlbumViewController extends Controller implements
     @Override
     public void scrollToImage(PostImage postImage) {
         int index = postImages.indexOf(postImage);
-        recyclerView.smoothScrollToPosition(index);
+        if (index < 0 && postImage != null) {
+            for (int i = 0; i < postImages.size(); i++) {
+                if (postImages.get(i).equalUrl(postImage)) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+        if (index >= 0) {
+            recyclerView.smoothScrollToPosition(index);
+        }
     }
 
     @Override
