@@ -32,6 +32,7 @@ import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.loader.ChanLoaderRequestParams;
 import org.otacoo.chan.core.site.loader.ChanLoaderResponse;
 import org.otacoo.chan.ui.helper.PostHelper;
+import org.otacoo.chan.utils.Logger;
 import org.otacoo.chan.utils.Time;
 
 import android.text.TextUtils;
@@ -190,9 +191,15 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
             List<Future<Post>> futures = EXECUTOR.invokeAll(tasks);
             for (int i = 0; i < futures.size(); i++) {
                 Future<Post> future = futures.get(i);
-                Post parsedPost = future.get();
-                if (parsedPost != null) {
-                    total.add(parsedPost);
+                try {
+                    Post parsedPost = future.get();
+                    if (parsedPost != null) {
+                        total.add(parsedPost);
+                    }
+                } catch (ExecutionException | RuntimeException e) {
+                    // One malformed post must not abort the whole thread load.
+                    Post.Builder failed = toParse.get(i);
+                    Logger.w(TAG, "Skipping post that failed to parse, no=" + failed.id, e);
                 }
             }
 
