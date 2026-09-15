@@ -42,14 +42,28 @@ public class RotationGestureDetector {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 ptrID1 = event.getPointerId(event.getActionIndex());
+                ptrID2 = INVALID_POINTER_ID;
+                mAngle = 0;
                 break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                ptrID2 = event.getPointerId(event.getActionIndex());
-                sX = event.getX(event.findPointerIndex(ptrID1));
-                sY = event.getY(event.findPointerIndex(ptrID1));
-                fX = event.getX(event.findPointerIndex(ptrID2));
-                fY = event.getY(event.findPointerIndex(ptrID2));
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                int id = event.getPointerId(event.getActionIndex());
+                if (ptrID1 == INVALID_POINTER_ID) {
+                    ptrID1 = id;
+                } else if (ptrID2 == INVALID_POINTER_ID && id != ptrID1) {
+                    ptrID2 = id;
+                }
+                int index1 = event.findPointerIndex(ptrID1);
+                int index2 = event.findPointerIndex(ptrID2);
+                if (ptrID1 != INVALID_POINTER_ID && ptrID2 != INVALID_POINTER_ID
+                        && index1 != -1 && index2 != -1) {
+                    sX = event.getX(index1);
+                    sY = event.getY(index1);
+                    fX = event.getX(index2);
+                    fY = event.getY(index2);
+                    mAngle = 0;
+                }
                 break;
+            }
             case MotionEvent.ACTION_MOVE:
                 if (ptrID1 != INVALID_POINTER_ID && ptrID2 != INVALID_POINTER_ID) {
                     int index1 = event.findPointerIndex(ptrID1);
@@ -74,14 +88,24 @@ public class RotationGestureDetector {
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                ptrID1 = INVALID_POINTER_ID;
+            case MotionEvent.ACTION_POINTER_UP: {
+                int liftedId = event.getPointerId(event.getActionIndex());
+                if (liftedId == ptrID1) {
+                    // Promote the remaining pointer so a third finger
+                    // doesn't inherit a stale id.
+                    ptrID1 = ptrID2;
+                    ptrID2 = INVALID_POINTER_ID;
+                } else if (liftedId == ptrID2) {
+                    ptrID2 = INVALID_POINTER_ID;
+                }
+                mAngle = 0;
+                recenterAngles(event);
                 break;
-            case MotionEvent.ACTION_POINTER_UP:
-                ptrID2 = INVALID_POINTER_ID;
-                break;
+            }
             case MotionEvent.ACTION_CANCEL:
                 ptrID1 = INVALID_POINTER_ID;
                 ptrID2 = INVALID_POINTER_ID;
+                mAngle = 0;
                 break;
         }
     }
