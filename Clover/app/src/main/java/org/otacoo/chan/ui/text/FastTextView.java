@@ -137,6 +137,10 @@ public class FastTextView extends View {
         }
     }
 
+    public FastTextViewMovementMethod getMovementMethod() {
+        return movementMethod;
+    }
+
     public StaticLayout getLayout() {
         return layout;
     }

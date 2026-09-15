@@ -349,6 +349,7 @@ If any other filters are enabled for it, it will not work.
     <string name="post_text_copied">Text copied to clipboard</string>
     <string name="url_text_copied">Image URL copied to clipboard</string>
     <string name="image_copied">Image copied to clipboard</string>
+    <string name="filename_copied">Filename copied to clipboard</string>
     <string name="post_quote">Quote</string>
     <string name="post_web_search">Web search</string>
     <string name="post_quote_text">Quote text</string>
@@ -627,6 +628,9 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_post_default_name">Default post name</string>
     <string name="setting_post_default_options">Default reply option</string>
     <string name="setting_always_show_reply_tags">Always show formatting tags</string>
+    <string name="setting_reply_anchor_position">Reply anchor position</string>
+    <string name="setting_reply_anchor_left">Left</string>
+    <string name="setting_reply_anchor_right">Right</string>
 
     <!-- Browsing post group -->
     <string name="setting_text_only">Text only mode</string>

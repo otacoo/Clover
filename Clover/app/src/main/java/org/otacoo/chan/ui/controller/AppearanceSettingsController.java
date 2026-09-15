@@ -109,6 +109,8 @@ public class AppearanceSettingsController extends SettingsController {
                     ChanSettings.accessiblePostInfo, R.string.setting_enable_accessible_post_info,
                     R.string.setting_enable_accessible_post_info_description)));
 
+            setupReplyAnchorPositionSetting(layout);
+
             groups.add(layout);
         }
 
@@ -243,8 +245,18 @@ public class AppearanceSettingsController extends SettingsController {
                 R.string.setting_layout_mode, layoutModes)));
     }
 
-    private void setupGridColumnsSetting(SettingsGroup layout) {
-        List<ListSettingView.Item<?>> gridColumns = new ArrayList<>();
+    private void setupReplyAnchorPositionSetting(SettingsGroup layout) {
+        List<ListSettingView.Item<?>> positions = new ArrayList<>();
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_left), false));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_right), true));
+        requiresUiRefresh.add(layout.add(new ListSettingView<>(this,
+                ChanSettings.replyAnchorRight,
+                R.string.setting_reply_anchor_position, positions)));
+    }
+
+    private void setupGridColumnsSetting(SettingsGroup layout) {        List<ListSettingView.Item<?>> gridColumns = new ArrayList<>();
         gridColumns.add(new ListSettingView.Item<>(
                 getString(R.string.setting_board_grid_span_count_default), 0));
         for (int columns = 2; columns <= 5; columns++) {

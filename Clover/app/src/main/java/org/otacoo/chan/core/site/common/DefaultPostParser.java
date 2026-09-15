@@ -37,6 +37,7 @@ import org.otacoo.chan.core.site.parser.CommentParser;
 import org.otacoo.chan.core.site.parser.CommentParserHelper;
 import org.otacoo.chan.core.site.parser.PostParser;
 import org.otacoo.chan.ui.span.AbsoluteSizeSpanHashed;
+import org.otacoo.chan.ui.span.FileNameSpan;
 import org.otacoo.chan.ui.span.ForegroundColorSpanHashed;
 import org.otacoo.chan.ui.theme.Theme;
 import org.otacoo.chan.ui.theme.ThemeHelper;
@@ -210,6 +211,13 @@ public class DefaultPostParser implements PostParser {
                 fn.setSpan(new ForegroundColorSpanHashed(theme.detailsColor), 0, fn.length(), 0);
                 fn.setSpan(new AbsoluteSizeSpanHashed(detailsSizePx), 0, fn.length(), 0);
                 fn.setSpan(new UnderlineSpan(), 0, fn.length(), 0);
+                if (!image.spoiler && image.filename != null) {
+                    // Tap to copy; skipped for spoiler images ("Spoiler" is
+                    // not a real filename). Attached from 1 to skip the
+                    // leading newline so it doesn't extend the tap area onto
+                    // the previous line.
+                    fn.setSpan(new FileNameSpan(filename), 1, fn.length(), 0);
+                }
                 fileNames[i] = fn;
 
                 String info = "\n" + image.extension.toUpperCase() + " "

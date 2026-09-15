@@ -25,6 +25,8 @@ import static org.otacoo.chan.utils.AndroidUtils.setRoundItemBackground;
 import static org.otacoo.chan.utils.AndroidUtils.sp;
 
 import android.app.SearchManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -58,6 +60,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
@@ -66,6 +70,7 @@ import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.ui.span.AbsoluteSizeSpanHashed;
+import org.otacoo.chan.ui.span.FileNameSpan;
 import org.otacoo.chan.ui.span.ForegroundColorSpanHashed;
 import org.otacoo.chan.ui.text.FastTextView;
 import org.otacoo.chan.ui.text.FastTextViewMovementMethod;
@@ -75,6 +80,7 @@ import org.otacoo.chan.ui.view.FloatingMenu;
 import org.otacoo.chan.ui.view.FloatingMenuItem;
 import org.otacoo.chan.ui.view.PostImageThumbnailView;
 import org.otacoo.chan.ui.view.ThumbnailView;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Time;
 
 import java.text.BreakIterator;
@@ -441,8 +447,12 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         // Align the replies row with the text column.
         // layout_toRightOf the thumbnail; replicate that indent via leftMargin instead.
+        boolean anchorRight = ChanSettings.replyAnchorRight.get();
         RelativeLayout.LayoutParams repliesLp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
-        if (ChanSettings.layoutTextBelowThumbnails.get()) {
+        if (anchorRight) {
+            // Right-anchored replies align to the screen edge.
+            repliesLp.leftMargin = 0;
+        } else if (ChanSettings.layoutTextBelowThumbnails.get()) {
             repliesLp.leftMargin = 0;
         } else if (!thumbnailViews.isEmpty()) {
             int thumbSize = ChanSettings.thumbnailScale.get() * getResources()
@@ -504,6 +514,12 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         }
 
         title.setText(titleBuilder);
+
+        // Tap on a filename copies it; the movement method also needs to keep
+        // tapping anywhere else in the title behaving like tapping the post.
+        boolean titleHasFiles = !post.images.isEmpty()
+                && ChanSettings.postFilename.get() && post.fileNameSpans != null;
+        setupTitleClickHandling(noClickable, titleHasFiles);
 
         icons.edit();
         icons.set(PostIcons.STICKY, post.isSticky());
@@ -606,6 +622,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             replies.setLayoutParams(repliesRp);
         }
 
+        applyReplyAnchorSide();
+
         if (threadMode) {
             boolean needsSetup = !viewHolderSetupDone || !setupThreadMode || selectable != setupSelectable;
             if (needsSetup) {
@@ -644,10 +662,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 } else {
                     comment.setText(commentText);
                 }
-            }
-
-            if (noClickable) {
-                title.setMovementMethod(titleMovementMethod);
             }
         } else {
             boolean needsSetup = !viewHolderSetupDone || setupThreadMode;
@@ -963,6 +977,50 @@ public class PostCell extends LinearLayout implements PostCellInterface {
      * This version is for the {@link FastTextView}.<br>
      * See {@link PostLinkable} for more information.
      */
+    // Positions the replies anchor ("N replies") on the left (default) or the
+    // right side of the post, per Appearance > Layout. The extra touch area
+    // mirrors to the opposite side of the anchor.
+    private void applyReplyAnchorSide() {
+        boolean anchorRight = ChanSettings.replyAnchorRight.get();
+
+        RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
+        int[] repliesRules = repliesRp.getRules();
+        boolean currentRight = repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] != 0;
+        if (currentRight != anchorRight) {
+            repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] = anchorRight ? RelativeLayout.TRUE : 0;
+            replies.setLayoutParams(repliesRp);
+        }
+
+        RelativeLayout.LayoutParams addLp =
+                (RelativeLayout.LayoutParams) repliesAdditionalArea.getLayoutParams();
+        int[] addRules = addLp.getRules();
+        if (anchorRight) {
+            addRules[RelativeLayout.RIGHT_OF] = 0;
+            addRules[RelativeLayout.ALIGN_PARENT_RIGHT] = 0;
+            addRules[RelativeLayout.LEFT_OF] = R.id.replies;
+            addRules[RelativeLayout.ALIGN_PARENT_LEFT] = RelativeLayout.TRUE;
+        } else {
+            addRules[RelativeLayout.LEFT_OF] = 0;
+            addRules[RelativeLayout.ALIGN_PARENT_LEFT] = 0;
+            addRules[RelativeLayout.RIGHT_OF] = R.id.replies;
+            addRules[RelativeLayout.ALIGN_PARENT_RIGHT] = RelativeLayout.TRUE;
+        }
+        repliesAdditionalArea.setLayoutParams(addLp);
+    }
+
+    private void setupTitleClickHandling(boolean noClickable, boolean titleHasFiles) {
+        if (noClickable || titleHasFiles) {
+            // Make filename spans tappable (tap to copy). The click listener
+            // keeps taps on non-span parts of the title behaving like post
+            // taps.
+            title.setMovementMethod(titleMovementMethod);
+            title.setOnClickListener(selfClicked);
+        } else if (title.getMovementMethod() != null || title.hasOnClickListeners()) {
+            title.setMovementMethod(null);
+            title.setOnClickListener(null);
+        }
+    }
+
     private class PostViewFastMovementMethod implements FastTextViewMovementMethod {
         @Override
         public boolean onTouchEvent(@NonNull FastTextView widget, @NonNull Spanned buffer, @NonNull MotionEvent event) {
@@ -991,7 +1049,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
 
                 if (link.length != 0) {
-                    if (link[0] instanceof PostLinkable) {
+                    if (link[0] instanceof FileNameSpan fileNameSpan) {
+                        copyFilenameToClipboard(widget, fileNameSpan.filename);
+                    } else if (link[0] instanceof PostLinkable) {
                         handlePostLinkableClick(widget, (PostLinkable) link[0]);
                     } else {
                         link[0].onClick(widget);
@@ -1001,6 +1061,15 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             }
 
             return false;
+        }
+    }
+
+    private void copyFilenameToClipboard(View view, String filename) {
+        ClipboardManager clipboard =
+                (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText(null, filename));
+            AndroidUtils.showThemedSnackbar(view, R.string.filename_copied, Snackbar.LENGTH_SHORT);
         }
     }
 
