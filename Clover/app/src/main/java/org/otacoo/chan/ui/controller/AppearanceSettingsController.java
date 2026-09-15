@@ -248,11 +248,15 @@ public class AppearanceSettingsController extends SettingsController {
     private void setupReplyAnchorPositionSetting(SettingsGroup layout) {
         List<ListSettingView.Item<?>> positions = new ArrayList<>();
         positions.add(new ListSettingView.Item<>(
-                getString(R.string.setting_reply_anchor_left), false));
+                getString(R.string.setting_reply_anchor_left), ChanSettings.ReplyAnchorMode.LEFT));
         positions.add(new ListSettingView.Item<>(
-                getString(R.string.setting_reply_anchor_right), true));
+                getString(R.string.setting_reply_anchor_right), ChanSettings.ReplyAnchorMode.RIGHT));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_left_bg), ChanSettings.ReplyAnchorMode.LEFT_BG));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_right_bg), ChanSettings.ReplyAnchorMode.RIGHT_BG));
         requiresUiRefresh.add(layout.add(new ListSettingView<>(this,
-                ChanSettings.replyAnchorRight,
+                ChanSettings.replyAnchor,
                 R.string.setting_reply_anchor_position, positions)));
     }
 

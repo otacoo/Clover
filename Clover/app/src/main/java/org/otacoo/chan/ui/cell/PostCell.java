@@ -447,7 +447,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         // Align the replies row with the text column.
         // layout_toRightOf the thumbnail; replicate that indent via leftMargin instead.
-        boolean anchorRight = ChanSettings.replyAnchorRight.get();
+        boolean anchorRight = ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT
+                || ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT_BG;
         RelativeLayout.LayoutParams repliesLp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
         if (anchorRight) {
             // Right-anchored replies align to the screen edge.
@@ -696,9 +697,15 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 text += ", " + getResources().getQuantityString(R.plurals.image, post.getImagesCount(), post.getImagesCount());
             }
 
-            replies.setText(text);
+            if (replyAnchorBgApplied) {
+                replies.setText(applyReplyAnchorIcon(text));
+                // Pill-shaped anchor: tighter vertical padding than a plain anchor.
+                replies.setPadding(replies.getPaddingLeft(), dp(2), replies.getPaddingRight(), dp(2));
+            } else {
+                replies.setText(text);
+                replies.setPadding(replies.getPaddingLeft(), paddingPx, replies.getPaddingRight(), replies.getPaddingBottom());
+            }
             comment.setPadding(comment.getPaddingLeft(), comment.getPaddingTop(), comment.getPaddingRight(), 0);
-            replies.setPadding(replies.getPaddingLeft(), paddingPx, replies.getPaddingRight(), replies.getPaddingBottom());
         } else {
             replies.setVisibility(View.GONE);
             comment.setPadding(comment.getPaddingLeft(), comment.getPaddingTop(), comment.getPaddingRight(), paddingPx);
@@ -978,17 +985,39 @@ public class PostCell extends LinearLayout implements PostCellInterface {
      * See {@link PostLinkable} for more information.
      */
     // Positions the replies anchor ("N replies") on the left (default) or the
-    // right side of the post, per Appearance > Layout. The extra touch area
-    // mirrors to the opposite side of the anchor.
+    // right side of the post, per Appearance > Layout. Optionally gives it a
+    // rounded background and a reply arrow icon. The extra touch area mirrors
+    // to the opposite side of the anchor.
     private void applyReplyAnchorSide() {
-        boolean anchorRight = ChanSettings.replyAnchorRight.get();
+        ChanSettings.ReplyAnchorMode mode = ChanSettings.replyAnchor.get();
+        boolean anchorRight = mode == ChanSettings.ReplyAnchorMode.RIGHT
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_BG;
+        boolean bgAndIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_BG
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_BG;
 
         RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
         int[] repliesRules = repliesRp.getRules();
         boolean currentRight = repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] != 0;
         if (currentRight != anchorRight) {
             repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] = anchorRight ? RelativeLayout.TRUE : 0;
-            replies.setLayoutParams(repliesRp);
+        }
+        // Keep the anchor off the screen border when right-aligned so it
+        // stays easy to tap.
+        repliesRp.rightMargin = anchorRight ? dp(8) : 0;
+        replies.setLayoutParams(repliesRp);
+
+        if (bgAndIcon) {
+            if (!replyAnchorBgApplied) {
+                replyAnchorBgApplied = true;
+                applyReplyAnchorBackground();
+            }
+        } else if (replyAnchorBgApplied) {
+            replyAnchorBgApplied = false;
+            replies.setBackground(AndroidUtils.getAttrDrawable(getContext(), android.R.attr.selectableItemBackgroundBorderless));
+            int padH = dp(10);
+            replies.setPadding(Math.max(0, replies.getPaddingLeft() - padH), replies.getPaddingTop(),
+                    Math.max(0, replies.getPaddingRight() - padH), replies.getPaddingBottom());
+            replies.setTextColor(AndroidUtils.getAttrColor(getContext(), R.attr.text_color_secondary));
         }
 
         RelativeLayout.LayoutParams addLp =
@@ -1006,6 +1035,43 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             addRules[RelativeLayout.ALIGN_PARENT_RIGHT] = RelativeLayout.TRUE;
         }
         repliesAdditionalArea.setLayoutParams(addLp);
+    }
+
+    private void applyReplyAnchorBackground() {
+        // Rounded pill in the secondary post color, so it stands out slightly
+        // from the post background in both themes.
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setCornerRadius(dp(14));
+        bg.setColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
+        replies.setBackground(bg);
+        int padH = dp(10);
+        replies.setPadding(replies.getPaddingLeft() + padH, dp(2), replies.getPaddingRight() + padH, dp(2));
+        replies.setTextColor(theme.textPrimary);
+    }
+
+    private boolean replyAnchorBgApplied = false;
+    private android.graphics.drawable.BitmapDrawable repliesIconDrawable;
+    private int repliesIconColor = 0;
+
+    // Prepend a small reply-arrow icon to the anchor text (bg + icon modes).
+    private CharSequence applyReplyAnchorIcon(String text) {
+        if (repliesIconDrawable == null || repliesIconColor != theme.textSecondary) {
+            int iconSize = dp(14);
+            android.graphics.drawable.Drawable icon =
+                    ContextCompat.getDrawable(getContext(), R.drawable.ic_reply_arrow_white_24dp);
+            if (icon == null) return text;
+            icon = icon.mutate();
+            icon.setTint(theme.textSecondary);
+
+            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
+                    iconSize, iconSize, android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+            icon.setBounds(0, 0, iconSize, iconSize);
+            icon.draw(canvas);
+            repliesIconDrawable = new android.graphics.drawable.BitmapDrawable(getResources(), bmp);
+            repliesIconColor = theme.textSecondary;
+        }
+        return TextUtils.concat(PostHelper.addIcon(repliesIconDrawable, dp(14)), text);
     }
 
     private void setupTitleClickHandling(boolean noClickable, boolean titleHasFiles) {

@@ -219,7 +219,7 @@ public class ChanSettings {
     public static final StringSetting postDefaultOptions;
     public static final BooleanSetting postPinThread;
     public static final BooleanSetting alwaysShowReplyTags;
-    public static final BooleanSetting replyAnchorRight;
+    public static final OptionsSetting<ReplyAnchorMode> replyAnchor;
 
     public static final BooleanSetting developer;
 
@@ -312,6 +312,24 @@ public class ChanSettings {
         }
     }
 
+    public enum ReplyAnchorMode implements OptionSettingItem {
+        LEFT("left"),
+        RIGHT("right"),
+        LEFT_BG("left_bg"),
+        RIGHT_BG("right_bg");
+
+        final String name;
+
+        ReplyAnchorMode(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getKey() {
+            return name;
+        }
+    }
+
     public static final BooleanSetting fetchYoutubeTitles;
     public static final BooleanSetting swipeWhileZoomedIn;
     public static final OptionsSetting<SwipeGesture> swipeToClose;
@@ -365,7 +383,7 @@ public class ChanSettings {
         postDefaultOptions = new StringSetting(p, "preference_default_options", "");
         postPinThread = new BooleanSetting(p, "preference_pin_on_post", true);
         alwaysShowReplyTags = new BooleanSetting(p, "preference_always_show_reply_tags", false);
-        replyAnchorRight = new BooleanSetting(p, "preference_reply_anchor_right", false);
+        replyAnchor = new OptionsSetting<>(p, "preference_reply_anchor", ReplyAnchorMode.class, ReplyAnchorMode.LEFT);
 
         developer = new BooleanSetting(p, "preference_developer", false);
 

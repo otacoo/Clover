@@ -629,8 +629,10 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_post_default_options">Default reply option</string>
     <string name="setting_always_show_reply_tags">Always show formatting tags</string>
     <string name="setting_reply_anchor_position">Reply anchor position</string>
-    <string name="setting_reply_anchor_left">Left</string>
+    <string name="setting_reply_anchor_left">Left (default)</string>
     <string name="setting_reply_anchor_right">Right</string>
+    <string name="setting_reply_anchor_left_bg">Left (bg + icon)</string>
+    <string name="setting_reply_anchor_right_bg">Right (bg + icon)</string>
 
     <!-- Browsing post group -->
     <string name="setting_text_only">Text only mode</string>
