@@ -223,7 +223,7 @@ public class FuukaPostParser {
                         postNo = readInt(reader);
                         break;
                     case "op":
-                        builder.op("1".equals(readNullableString(reader)));
+                        builder.op(readBoolean(reader));
                         break;
                     case "thread_num":
                         int resto = readInt(reader);
@@ -239,9 +239,11 @@ public class FuukaPostParser {
                         }
                         break;
                     }
-                    case "name":
-                        builder.name(readNullableString(reader));
+                    case "name": {
+                        String name = readNullableString(reader);
+                        if (name != null) builder.name(name);
                         break;
+                    }
                     case "trip": {
                         String trip = readNullableString(reader);
                         if (trip != null && !trip.isEmpty()) builder.tripcode(trip);
@@ -264,13 +266,13 @@ public class FuukaPostParser {
                         break;
                     }
                     case "sticky":
-                        builder.sticky("1".equals(readNullableString(reader)));
+                        builder.sticky(readBoolean(reader));
                         break;
                     case "locked":
-                        builder.closed("1".equals(readNullableString(reader)));
+                        builder.closed(readBoolean(reader));
                         break;
                     case "deleted":
-                        deleted = "1".equals(readNullableString(reader));
+                        deleted = readBoolean(reader);
                         break;
                     case "media":
                         if (reader.peek() == JsonToken.NULL) {
@@ -282,7 +284,7 @@ public class FuukaPostParser {
                                 String mediaKey = reader.nextName();
                                 switch (mediaKey) {
                                     case "spoiler":
-                                        spoiler = "1".equals(readNullableString(reader));
+                                        spoiler = readBoolean(reader);
                                         break;
                                     case "media_orig":
                                         mediaOrig = readNullableString(reader);
@@ -459,9 +461,11 @@ public class FuukaPostParser {
                     case "now":
                         builder.setUnixTimestampSeconds(parseIsoDate(readNullableString(reader)));
                         break;
-                    case "name":
-                        builder.name(readNullableString(reader));
+                    case "name": {
+                        String name = readNullableString(reader);
+                        if (name != null) builder.name(name);
                         break;
+                    }
                     case "trip": {
                         String trip = readNullableString(reader);
                         if (trip != null) builder.tripcode(trip);
@@ -640,6 +644,15 @@ public class FuukaPostParser {
             return null;
         }
         return reader.nextString();
+    }
+
+    // Archives are inconsistent: flags arrive as "1", 1 or true.
+    private static boolean readBoolean(JsonReader reader) throws IOException {
+        if (reader.peek() == JsonToken.BOOLEAN) {
+            return reader.nextBoolean();
+        }
+        String value = readNullableString(reader);
+        return "1".equals(value) || "true".equalsIgnoreCase(value);
     }
 
     private static long parseIsoDate(String iso) {
