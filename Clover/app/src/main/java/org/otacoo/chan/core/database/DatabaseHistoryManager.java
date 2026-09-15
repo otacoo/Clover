@@ -27,6 +27,7 @@ import org.otacoo.chan.utils.Time;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -58,9 +59,19 @@ public class DatabaseHistoryManager {
         return () -> {
             QueryBuilder<History, Integer> historyQuery = helper.historyDao.queryBuilder();
             List<History> date = historyQuery.orderBy("date", false).query();
+            Set<Integer> ids = new HashSet<>();
+            for (int i = 0; i < date.size(); i++) {
+                Loadable loadable = date.get(i).loadable;
+                if (loadable != null && loadable.id != 0) {
+                    ids.add(loadable.id);
+                }
+            }
+            Map<Integer, Loadable> hydrated = databaseLoadableManager.refreshForeignBatch(ids);
             for (int i = 0; i < date.size(); i++) {
                 History history = date.get(i);
-                history.loadable = databaseLoadableManager.refreshForeign(history.loadable);
+                if (history.loadable == null) continue;
+                Loadable cached = hydrated.get(history.loadable.id);
+                history.loadable = cached != null ? cached : databaseLoadableManager.refreshForeign(history.loadable);
             }
             return date;
         };

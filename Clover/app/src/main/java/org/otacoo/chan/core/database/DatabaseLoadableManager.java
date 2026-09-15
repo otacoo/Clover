@@ -140,6 +140,42 @@ public class DatabaseLoadableManager {
         return getLoadable(loadable);
     }
 
+    /**
+     * Hydrates and caches all given loadable ids with a single query instead
+     * of one query per id. Reuses existing cache entries (preserving live
+     * in-memory state) like {@link #refreshForeign(Loadable)} does.
+     *
+     * @return map of loadable id to the cached instance; ids with no DB row are absent.
+     */
+    public Map<Integer, Loadable> refreshForeignBatch(final Set<Integer> ids) throws SQLException {
+        Map<Integer, Loadable> result = new HashMap<>();
+        if (ids == null || ids.isEmpty()) {
+            return result;
+        }
+
+        QueryBuilder<Loadable, Integer> builder = helper.loadableDao.queryBuilder();
+        List<Loadable> rows = builder.where().in("id", ids).query();
+        for (Loadable row : rows) {
+            row.site = SiteRepository.forId(row.siteId);
+            row.board = row.site.board(row.boardCode);
+
+            Loadable existing = null;
+            for (Loadable key : cachedLoadables.keySet()) {
+                if (key.id == row.id) {
+                    existing = key;
+                    break;
+                }
+            }
+            if (existing != null) {
+                result.put(row.id, existing);
+            } else {
+                cachedLoadables.put(row, row);
+                result.put(row.id, row);
+            }
+        }
+        return result;
+    }
+
     private Callable<Loadable> getLoadable(final Loadable loadable) {
         if (!loadable.isThreadMode()) {
             throw new IllegalArgumentException("getLoadable can only be used for thread loadables");

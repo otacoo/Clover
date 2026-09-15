@@ -24,6 +24,7 @@ import org.otacoo.chan.core.model.orm.Pin;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -94,9 +95,19 @@ public class DatabasePinManager {
             @Override
             public List<Pin> call() throws Exception {
                 List<Pin> list = helper.pinDao.queryForAll();
+                Set<Integer> ids = new HashSet<>();
+                for (int i = 0; i < list.size(); i++) {
+                    Loadable loadable = list.get(i).loadable;
+                    if (loadable != null && loadable.id != 0) {
+                        ids.add(loadable.id);
+                    }
+                }
+                Map<Integer, Loadable> hydrated = databaseLoadableManager.refreshForeignBatch(ids);
                 for (int i = 0; i < list.size(); i++) {
                     Pin p = list.get(i);
-                    p.loadable = databaseLoadableManager.refreshForeign(p.loadable);
+                    if (p.loadable == null) continue;
+                    Loadable cached = hydrated.get(p.loadable.id);
+                    p.loadable = cached != null ? cached : databaseLoadableManager.refreshForeign(p.loadable);
                 }
                 return list;
             }
