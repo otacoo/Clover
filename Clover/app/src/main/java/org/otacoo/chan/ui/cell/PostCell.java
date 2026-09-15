@@ -449,20 +449,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         // Align the replies row with the text column.
         // layout_toRightOf the thumbnail; replicate that indent via leftMargin instead.
-        boolean anchorRight = ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT
-                || ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT_BG;
+        // Anchor side/style margins are applied in applyReplyAnchorSide().
         RelativeLayout.LayoutParams repliesLp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
-        if (anchorRight) {
-            // Right-anchored replies align to the screen edge.
+        if (ChanSettings.layoutTextBelowThumbnails.get() || thumbnailViews.isEmpty()) {
             repliesLp.leftMargin = 0;
-        } else if (ChanSettings.layoutTextBelowThumbnails.get()) {
-            repliesLp.leftMargin = 0;
-        } else if (!thumbnailViews.isEmpty()) {
+        } else {
             int thumbSize = ChanSettings.thumbnailScale.get() * getResources()
                     .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
             repliesLp.leftMargin = paddingPx + thumbSize;
-        } else {
-            repliesLp.leftMargin = 0;
         }
         replies.setLayoutParams(repliesLp);
 
@@ -699,8 +693,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 text += ", " + getResources().getQuantityString(R.plurals.image, post.getImagesCount(), post.getImagesCount());
             }
 
+            boolean showIcon = ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
+                    || ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
             if (replyAnchorBgApplied) {
-                replies.setText(applyReplyAnchorIcon(text));
+                replies.setText(showIcon ? applyReplyAnchorIcon(text) : text);
                 // Pill-shaped anchor: tighter vertical padding than a plain anchor.
                 replies.setPadding(replies.getPaddingLeft(), dp(2), replies.getPaddingRight(), dp(2));
             } else {
@@ -993,9 +989,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private void applyReplyAnchorSide() {
         ChanSettings.ReplyAnchorMode mode = ChanSettings.replyAnchor.get();
         boolean anchorRight = mode == ChanSettings.ReplyAnchorMode.RIGHT
-                || mode == ChanSettings.ReplyAnchorMode.RIGHT_BG;
-        boolean bgAndIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_BG
-                || mode == ChanSettings.ReplyAnchorMode.RIGHT_BG;
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
+        boolean bgAndIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_PILL
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL
+                || mode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
+        boolean showIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
 
         RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();
         int[] repliesRules = repliesRp.getRules();
@@ -1004,17 +1005,20 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] = anchorRight ? RelativeLayout.TRUE : 0;
         }
         // Keep the anchor off the screen border when right-aligned so it
-        // stays easy to tap.
-        repliesRp.rightMargin = anchorRight ? dp(8) : 0;
+        // stays easy to tap; left-side pills align with the content instead.
+        if (anchorRight) {
+            repliesRp.leftMargin = 0;
+            repliesRp.rightMargin = dp(8);
+        } else {
+            repliesRp.rightMargin = 0;
+            if (bgAndIcon && repliesRp.leftMargin < paddingPx) {
+                repliesRp.leftMargin = paddingPx;
+            }
+        }
         // Keep the pill from touching the divider below it, and add breathing
         // room between the post content above and the anchor.
         repliesRp.bottomMargin = bgAndIcon ? dp(6) : 0;
         repliesRp.topMargin = bgAndIcon ? dp(12) : 0;
-        // Left-side pills shouldn't touch the screen border either: align
-        // them with the message content above (at least the cell padding).
-        if (bgAndIcon && !anchorRight && repliesRp.leftMargin < paddingPx) {
-            repliesRp.leftMargin = paddingPx;
-        }
         replies.setLayoutParams(repliesRp);
 
         if (bgAndIcon) {

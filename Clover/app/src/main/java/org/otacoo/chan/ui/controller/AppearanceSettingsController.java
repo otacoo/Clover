@@ -252,9 +252,13 @@ public class AppearanceSettingsController extends SettingsController {
         positions.add(new ListSettingView.Item<>(
                 getString(R.string.setting_reply_anchor_right), ChanSettings.ReplyAnchorMode.RIGHT));
         positions.add(new ListSettingView.Item<>(
-                getString(R.string.setting_reply_anchor_left_bg), ChanSettings.ReplyAnchorMode.LEFT_BG));
+                getString(R.string.setting_reply_anchor_left_pill), ChanSettings.ReplyAnchorMode.LEFT_PILL));
         positions.add(new ListSettingView.Item<>(
-                getString(R.string.setting_reply_anchor_right_bg), ChanSettings.ReplyAnchorMode.RIGHT_BG));
+                getString(R.string.setting_reply_anchor_right_pill), ChanSettings.ReplyAnchorMode.RIGHT_PILL));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_left_bg), ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_right_bg), ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON));
         requiresUiRefresh.add(layout.add(new ListSettingView<>(this,
                 ChanSettings.replyAnchor,
                 R.string.setting_reply_anchor_position, positions)));

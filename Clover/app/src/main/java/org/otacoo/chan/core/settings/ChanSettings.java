@@ -315,8 +315,12 @@ public class ChanSettings {
     public enum ReplyAnchorMode implements OptionSettingItem {
         LEFT("left"),
         RIGHT("right"),
-        LEFT_BG("left_bg"),
-        RIGHT_BG("right_bg");
+        LEFT_PILL("left_pill"),
+        RIGHT_PILL("right_pill"),
+        // The pill+icon modes keep the original "bg" keys so selections made
+        // before the pill variants existed keep working.
+        LEFT_PILL_ICON("left_bg"),
+        RIGHT_PILL_ICON("right_bg");
 
         final String name;
 
