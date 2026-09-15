@@ -239,6 +239,10 @@ public class AlbumDownloadController extends Controller implements View.OnClickL
 
         @Override
         public long getItemId(int position) {
+            PostImage postImage = items.get(position).postImage;
+            if (postImage != null && postImage.imageUrl != null) {
+                return postImage.imageUrl.hashCode();
+            }
             return items.get(position).id;
         }
     }
@@ -260,6 +264,10 @@ public class AlbumDownloadController extends Controller implements View.OnClickL
         @Override
         public void onClick(View v) {
             int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION
+                    || adapterPosition < 0 || adapterPosition >= items.size()) {
+                return;
+            }
             AlbumDownloadItem item = items.get(adapterPosition);
             item.checked = !item.checked;
             updateAllChecked();

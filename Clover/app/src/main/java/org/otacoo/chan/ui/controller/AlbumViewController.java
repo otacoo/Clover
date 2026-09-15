@@ -260,7 +260,11 @@ public class AlbumViewController extends Controller implements
 
         @Override
         public long getItemId(int position) {
-            return position;
+            PostImage postImage = postImages.get(position);
+            if (postImage.imageUrl != null) {
+                return postImage.imageUrl.hashCode();
+            }
+            return postImage.thumbnailUrl != null ? postImage.thumbnailUrl.hashCode() : position;
         }
     }
 
@@ -278,6 +282,10 @@ public class AlbumViewController extends Controller implements
         @Override
         public void onClick(View v) {
             int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION
+                    || adapterPosition < 0 || adapterPosition >= postImages.size()) {
+                return;
+            }
             PostImage postImage = postImages.get(adapterPosition);
             openImage(this, postImage);
         }
