@@ -57,6 +57,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewTreeLifecycleOwner;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
@@ -1151,7 +1152,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (rew != null) {
             rew.setOnClickListener(v -> {
                 if (exoPlayer != null) {
-                    exoPlayer.seekTo(Math.max(0, exoPlayer.getCurrentPosition() - 5000));
+                    long duration = exoPlayer.getDuration();
+                    if (duration == C.TIME_UNSET || duration <= 0) return;
+                    exoPlayer.seekTo(Math.max(0, Math.min(exoPlayer.getCurrentPosition() - 5000, duration)));
                 }
             });
         }
@@ -1160,7 +1163,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (ffwd != null) {
             ffwd.setOnClickListener(v -> {
                 if (exoPlayer != null) {
-                    exoPlayer.seekTo(Math.min(exoPlayer.getDuration(), exoPlayer.getCurrentPosition() + 15000));
+                    long duration = exoPlayer.getDuration();
+                    if (duration == C.TIME_UNSET || duration <= 0) return;
+                    exoPlayer.seekTo(Math.max(0, Math.min(exoPlayer.getCurrentPosition() + 15000, duration)));
                 }
             });
         }
@@ -1221,12 +1226,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (exoPlayer == null || playerSeekBar == null) return;
         long time = exoPlayer.getCurrentPosition();
         long length = exoPlayer.getDuration();
-        if (length > 0) {
-            playerSeekBar.setMax((int) length);
-            playerSeekBar.setProgress((int) time);
-            if (playerPosition != null) playerPosition.setText(formatTime(time));
-            if (playerDuration != null) playerDuration.setText(formatTime(length));
-        }
+        if (length == C.TIME_UNSET || length <= 0) return;
+        playerSeekBar.setMax((int) Math.min(length, Integer.MAX_VALUE));
+        playerSeekBar.setProgress((int) Math.max(0, Math.min(time, Integer.MAX_VALUE)));
+        if (playerPosition != null) playerPosition.setText(formatTime(time));
+        if (playerDuration != null) playerDuration.setText(formatTime(length));
     }
 
     private String formatTime(long millis) {
