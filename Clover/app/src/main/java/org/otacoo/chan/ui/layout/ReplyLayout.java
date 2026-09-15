@@ -433,7 +433,22 @@ public class ReplyLayout extends LoadView implements
 
     public void cleanup() {
         presenter.unbindLoadable();
+        cancelPendingRunnables();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        cancelPendingRunnables();
+    }
+
+    private void cancelPendingRunnables() {
         removeCallbacks(closeMessageRunnable);
+        cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+        if (submitSkipPassRunnable != null) {
+            submitHandler.removeCallbacks(submitSkipPassRunnable);
+            submitSkipPassRunnable = null;
+        }
     }
 
     public boolean onBack() {
