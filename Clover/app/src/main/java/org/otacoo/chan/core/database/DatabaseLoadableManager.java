@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DatabaseLoadableManager {
     private static final String TAG = "DatabaseLoadableManager";
@@ -43,7 +44,7 @@ public class DatabaseLoadableManager {
     private DatabaseManager databaseManager;
     private DatabaseHelper helper;
 
-    private Map<Loadable, Loadable> cachedLoadables = new HashMap<>();
+    private Map<Loadable, Loadable> cachedLoadables = new ConcurrentHashMap<>();
 
     public DatabaseLoadableManager(DatabaseManager databaseManager, DatabaseHelper helper) {
         this.databaseManager = databaseManager;
