@@ -135,7 +135,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
         archiveLoaded = true;
         thread = archivedThread;
         lastLoadTime = Time.get();
-        for (ChanLoaderCallback l : listeners) {
+        for (ChanLoaderCallback l : new ArrayList<>(listeners)) {
             l.onChanLoaderData(thread);
         }
     }
@@ -194,7 +194,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
             throw new IllegalStateException("Cannot quick load without already loaded thread");
         }
 
-        for (ChanLoaderCallback l : listeners) {
+        for (ChanLoaderCallback l : new ArrayList<>(listeners)) {
             l.onChanLoaderData(thread);
         }
 
@@ -222,7 +222,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
     public void setTimer() {
         clearPendingRunnable();
 
-        int watchTimeout = WATCH_TIMEOUTS[currentTimeout];
+        int watchTimeout = WATCH_TIMEOUTS[Math.max(0, currentTimeout)];
 
         pendingFuture = executor.schedule(new Runnable() {
             @Override
@@ -305,7 +305,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
             currentTimeout = Math.min(currentTimeout + 1, WATCH_TIMEOUTS.length - 1);
         }
 
-        for (ChanLoaderCallback l : listeners) {
+        for (ChanLoaderCallback l : new ArrayList<>(listeners)) {
             l.onChanLoaderData(thread);
         }
     }
