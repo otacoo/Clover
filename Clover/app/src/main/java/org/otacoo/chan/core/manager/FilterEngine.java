@@ -194,7 +194,13 @@ public class FilterEngine {
         if (post.images != null) {
             StringBuilder filename = new StringBuilder();
             for (PostImage image : post.images) {
-                filename.append(image.filename).append(" ");
+                if (image.filename != null) {
+                    filename.append(image.filename);
+                }
+                if (image.extension != null && !image.extension.isEmpty()) {
+                    filename.append('.').append(image.extension);
+                }
+                filename.append(' ');
             }
             if ((filename.length() > 0) && (filter.type & FilterType.FILENAME.flag) != 0 && matches(filter, FilterType.FILENAME.isRegex, filename.toString(), false)) {
                 return true;
