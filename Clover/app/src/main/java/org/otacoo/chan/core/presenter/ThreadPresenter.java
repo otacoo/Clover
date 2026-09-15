@@ -108,6 +108,7 @@ public class ThreadPresenter implements
     private boolean ignoreLastViewedUpdates = false;
     private boolean inForeground = true;
     private boolean suppressNextNewPostsNotification = false;
+    private boolean pendingBackgroundData = false;
 
     private int preSearchIndex = -1;
     private int preSearchTop = 0;
@@ -208,6 +209,12 @@ public class ThreadPresenter implements
                     // Show loading indicator in the status cell
                     showPosts();
                 }
+                pendingBackgroundData = false;
+            } else if (foreground && pendingBackgroundData && chanLoader.getThread() != null) {
+                // Data (e.g. an archived-thread restore) arrived while backgrounded
+                // and would otherwise never display since watching is off.
+                pendingBackgroundData = false;
+                showPosts();
             } else {
                 chanLoader.clearTimer();
             }
@@ -326,8 +333,11 @@ public class ThreadPresenter implements
     public void onChanLoaderData(ChanThread result) {
         if (!inForeground) {
             // Screen is off: PinWatcher (separate listener) still updates pin counts.
+            // Remember the data so it can be shown when coming back to foreground.
+            pendingBackgroundData = true;
             return;
         }
+        pendingBackgroundData = false;
 
         if (isWatching()) {
             chanLoader.setTimer();
