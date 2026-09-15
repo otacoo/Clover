@@ -112,8 +112,9 @@ public class Board implements SiteReference {
     @DatabaseField
     public boolean spoilers = false;
 
+    // Written by parse workers, read on UI: volatile for safe publication.
     @DatabaseField
-    public int customSpoilers = -1;
+    public volatile int customSpoilers = -1;
 
     @DatabaseField
     public boolean userIds = false;
