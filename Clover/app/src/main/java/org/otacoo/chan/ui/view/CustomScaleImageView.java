@@ -26,6 +26,7 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 public class CustomScaleImageView extends SubsamplingScaleImageView {
     private Callback callback;
+    private boolean readyForwarded;
 
     public CustomScaleImageView(Context context) {
         this(context, null);
@@ -47,16 +48,21 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
     @Override
     protected void onImageLoaded() {
         super.onImageLoaded();
-        if (callback != null) {
-            callback.onReady();
-        }
+        forwardReadyOnce();
     }
 
     @Override
     protected void onReady() {
         super.onReady();
-        if (callback != null) {
-            callback.onReady();
+        forwardReadyOnce();
+    }
+
+    private void forwardReadyOnce() {
+        if (!readyForwarded) {
+            readyForwarded = true;
+            if (callback != null) {
+                callback.onReady();
+            }
         }
     }
 
@@ -64,14 +70,14 @@ public class CustomScaleImageView extends SubsamplingScaleImageView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // If we have multiple pointers, we are likely zooming/pinching.
-        if (event.getPointerCount() > 1) {
+        if (event.getPointerCount() > 1 && getParent() != null) {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
 
         boolean result = super.onTouchEvent(event);
 
         // If we are zoomed in, don't let parent ViewPager intercept our swipes
-        if (getScale() > getMinScale() && !org.otacoo.chan.core.settings.ChanSettings.swipeWhileZoomedIn.get()) {
+        if (getParent() != null && getScale() > getMinScale() && !org.otacoo.chan.core.settings.ChanSettings.swipeWhileZoomedIn.get()) {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
 
