@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -109,24 +109,27 @@ public class PostsFilter {
 
         // Process search
         if (!TextUtils.isEmpty(query)) {
-            String lowerQuery = query.toLowerCase(Locale.ENGLISH);
+            // Single case-insensitive literal pattern: avoids lower-casing every
+            // post's text (allocation churn) on each keystroke.
+            Pattern queryPattern =
+                    Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
             boolean add;
             Iterator<Post> i = posts.iterator();
             while (i.hasNext()) {
                 Post item = i.next();
                 add = false;
-                if (item.comment.toString().toLowerCase(Locale.ENGLISH).contains(lowerQuery)) {
+                if (queryPattern.matcher(item.comment).find()) {
                     add = true;
-                } else if (item.subject.toLowerCase(Locale.ENGLISH).contains(lowerQuery)) {
+                } else if (queryPattern.matcher(item.subject).find()) {
                     add = true;
-                } else if (item.name.toLowerCase(Locale.ENGLISH).contains(lowerQuery)) {
+                } else if (queryPattern.matcher(item.name).find()) {
                     add = true;
                 } else if (!item.images.isEmpty()) {
                     for (PostImage image : item.images) {
-                        if (image.filename != null && image.filename.toLowerCase(Locale.ENGLISH)
-                                .contains(lowerQuery)) {
+                        if (image.filename != null && queryPattern.matcher(image.filename).find()) {
                             add = true;
+                            break;
                         }
                     }
                 }
