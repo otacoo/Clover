@@ -1519,6 +1519,22 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             return;
         }
 
+        if (view != null && mode != this.mode) {
+            // Stale load from a previous mode (e.g. LOWRES->BIGIMAGE->swipe):
+            // drop it instead of mounting content for the wrong mode.
+            if (view instanceof GifImageView gif) {
+                if (gif.getDrawable() instanceof GifDrawable) {
+                    ((GifDrawable) gif.getDrawable()).recycle();
+                }
+            } else if (view instanceof ImageView) {
+                Drawable d = ((ImageView) view).getDrawable();
+                if (d instanceof APNGDrawable) {
+                    ((APNGDrawable) d).stop();
+                }
+            }
+            return;
+        }
+
         if (view != null) {
             // Remove all other views
             boolean alreadyAttached = false;
@@ -1539,7 +1555,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         }
 
         hasContent = true;
-        callback.onModeLoaded(this, mode);
+        if (callback != null) {
+            callback.onModeLoaded(this, mode);
+        }
     }
 
     @Override
