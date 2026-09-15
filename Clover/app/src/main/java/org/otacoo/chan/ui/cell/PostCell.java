@@ -62,6 +62,7 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.PostLinkable;
+import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.ui.span.AbsoluteSizeSpanHashed;
@@ -377,7 +378,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         applyFontSettings();
 
-        threadMode = callback.getLoadable().isThreadMode();
+        Loadable loadable = callback == null ? null : callback.getLoadable();
+        threadMode = loadable != null && loadable.isThreadMode();
 
         setPostLinkableListener(post, true);
 
