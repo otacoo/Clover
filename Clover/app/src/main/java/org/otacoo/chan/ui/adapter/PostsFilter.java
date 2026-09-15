@@ -42,13 +42,13 @@ public class PostsFilter {
             (lhs, rhs) -> rhs.getReplies() - lhs.getReplies();
 
     private static final Comparator<Post> NEWEST_COMPARATOR =
-            (lhs, rhs) -> (int) (rhs.time - lhs.time);
+            (lhs, rhs) -> Long.compare(rhs.time, lhs.time);
 
     private static final Comparator<Post> OLDEST_COMPARATOR =
-            (lhs, rhs) -> (int) (lhs.time - rhs.time);
+            (lhs, rhs) -> Long.compare(lhs.time, rhs.time);
 
     private static final Comparator<Post> MODIFIED_COMPARATOR =
-            (lhs, rhs) -> (int) (rhs.getLastModified() - lhs.getLastModified());
+            (lhs, rhs) -> Long.compare(rhs.getLastModified(), lhs.getLastModified());
 
     private static final Comparator<Post> THREAD_ACTIVITY_COMPARATOR =
             (lhs, rhs) -> {
