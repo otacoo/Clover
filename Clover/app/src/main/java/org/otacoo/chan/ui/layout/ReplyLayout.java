@@ -1060,9 +1060,14 @@ public class ReplyLayout extends LoadView implements
             // Clear previous previews - remove all child views
             previewHolder.removeAllViews();
             
-            // Get content container early
-            LinearLayout contentContainer = (LinearLayout)((ScrollView)replyInputLayout).getChildAt(0);
-            contentContainer = (LinearLayout)contentContainer.getChildAt(0);
+            // Get content container early; bail out (leaving previous previews) if
+            // the layout structure ever changes instead of crashing.
+            if (!(replyInputLayout instanceof ScrollView)) return;
+            View scrollChild = ((ScrollView) replyInputLayout).getChildAt(0);
+            if (!(scrollChild instanceof LinearLayout)) return;
+            View innerChild = ((LinearLayout) scrollChild).getChildAt(0);
+            if (!(innerChild instanceof LinearLayout)) return;
+            LinearLayout contentContainer = (LinearLayout) innerChild;
             
             // AGGRESSIVE removal: remove from both possible parents to ensure clean state
             // Check previewScroll
@@ -1111,7 +1116,7 @@ public class ReplyLayout extends LoadView implements
             if (expanded) {
                 // Add it before the comment_counter or after spoiler
                 int index = contentContainer.indexOfChild(spoiler);
-                contentContainer.addView(previewHolder, index + 1);
+                contentContainer.addView(previewHolder, index >= 0 ? index + 1 : contentContainer.getChildCount());
             } else {
                 // In collapsed mode, add to previewScroll
                 previewScroll.addView(previewHolder);
