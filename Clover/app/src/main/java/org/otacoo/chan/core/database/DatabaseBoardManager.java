@@ -44,6 +44,9 @@ public class DatabaseBoardManager {
                 existing.updateExcludingUserFields(board);
                 helper.boardsDao.update(existing);
                 board.updateExcludingUserFields(existing);
+                // updateExcludingUserFields never copies the id: without this
+                // the caller keeps id == 0 and later updates affect 0 rows.
+                board.id = existing.id;
             } else {
                 helper.boardsDao.create(board);
             }
