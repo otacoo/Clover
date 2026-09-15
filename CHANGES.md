@@ -1,3 +1,36 @@
+## 2026-09-15 – v3.9.0
+
+>[!CAUTION]
+>This update received a lot of new code and optimizations after an AI code review, things may be broken or buggy.\
+>**PLEASE MAKE A BACKUP *BEFORE* YOU UPDATE**!\
+>Report any issues you may find.\
+>Thank you for your understanding!
+
+### New options & features
+
+- **New option:** 5 columns for the image gallery (3-dot menu -> Column count)
+- **New option:** Reply anchor style (Appearance -> Layout)
+  - Choosing from various styles and positions for the reply anchor
+- **New feature:** Filenames can now be tapped to copy
+- Swipe to close/save should now also work while zoomed into an image, with stricter thresholds so panning doesn't accidentally trigger it
+
+### Bug fixes & others
+
+- Fix a crash/blank thread when a single malformed post is loaded
+- Fixed several issues that could cause sluggish or stuttery animations (drawer, image grid, scrolling)
+- Reduced excessive background work (garbage collection) while browsing and refreshing threads
+- Video playback fixes: seeking on very long videos, error handling, and audio continuing to play after leaving a video
+- 8chan: rate limiting no longer stalls all app requests; verification flow is more reliable
+- Archive fetching is more robust and no longer stops working after repeated attempts
+- Fixed thumbnails sometimes staying blank in catalogs
+- Fixed saved replies/highlights sticking around after removing a site
+- Restoring settings from a backup is faster and no longer freezes the app; restored options now apply without a restart
+- Restoring from a backup no longer creates duplicate bookmarks, saved replies or filters
+- Watched thread toggles (from the drawer) are now saved correctly
+- Fixed hidden threads re-appearing after using the undo button
+- Filters: fixed filename filters not matching files with extensions (e.g. `foo.jpg`) (issue #38)
+- Filters: more reliable filter previews, and more forgiving parsing of archived posts
+
 ## 2026-08-26 – v3.8.2
 
 - Fix an issue that added a delay to single-tap closing of images
