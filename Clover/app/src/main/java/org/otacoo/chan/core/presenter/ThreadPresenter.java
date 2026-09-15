@@ -420,12 +420,22 @@ public class ThreadPresenter implements
     }
 
     /**
-     * Fetches this (404'd) thread from the archives and replaces the live
+     * Whether archive fetching is available for the current thread: the site
+     * must declare per-board ARCHIVE support (not just be a Chan4 instance).
+     */
+    private boolean archiveFetchSupported() {
+        return loadable != null && loadable.isThreadMode() && loadable.board != null
+                && loadable.site != null
+                && loadable.site.boardFeature(Site.BoardFeature.ARCHIVE, loadable.board);
+    }
+
+    /**
+     * Fetches the thread from the archives and replaces the live
      * thread with the archived copy. No further polling happens afterwards.
      */
     public void loadFromArchive() {
         if (chanLoader == null || loadable == null || archiveLoading) return;
-        if (!(loadable.site instanceof Chan4)) return;
+        if (!archiveFetchSupported()) return;
         archiveLoading = true;
         threadPresenterCallback.showLoading();
         Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
@@ -501,7 +511,7 @@ public class ThreadPresenter implements
         if (chanLoader == null || loadable == null || archiveLoading) return;
         ChanThread thread = chanLoader.getThread();
         if (thread == null || loadable.isCatalogMode()) return;
-        if (!(loadable.site instanceof Chan4)) return;
+        if (!archiveFetchSupported()) return;
         archiveLoading = true;
         Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
             @Override
@@ -605,7 +615,7 @@ public class ThreadPresenter implements
         if (!ChanSettings.fetchDeletedPostsAutomatically.get()) return;
         if (loadable == null || chanLoader == null || archiveLoading) return;
         if (chanLoader.isArchiveLoaded() || result == null || result.posts.isEmpty()) return;
-        if (!loadable.isThreadMode() || !(loadable.site instanceof Chan4)) return;
+        if (!loadable.isThreadMode() || !archiveFetchSupported()) return;
 
         boolean deletionsKnown = false;
         for (Post post : result.posts) {

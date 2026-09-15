@@ -45,7 +45,8 @@ public abstract class JsonReaderRequest<T> implements Callback {
     @Override
     public void onFailure(@NonNull Call call, @NonNull IOException e) {
         if (call.isCanceled()) return;
-        AndroidUtils.runOnUiThread(() -> listener.onError(e.getMessage()));
+        AndroidUtils.runOnUiThread(() -> listener.onError(
+                e.getMessage() != null ? e.getMessage() : e.toString()));
     }
 
     @Override
