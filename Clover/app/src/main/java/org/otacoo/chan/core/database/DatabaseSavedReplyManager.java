@@ -176,6 +176,16 @@ public class DatabaseSavedReplyManager {
             builder.where().eq("site", site.id());
             builder.delete();
 
+            synchronized (savedRepliesByNo) {
+                for (var it = savedRepliesByNo.values().iterator(); it.hasNext(); ) {
+                    List<SavedReply> list = it.next();
+                    list.removeIf(item -> item.siteId == site.id());
+                    if (list.isEmpty()) {
+                        it.remove();
+                    }
+                }
+            }
+
             return null;
         };
     }
