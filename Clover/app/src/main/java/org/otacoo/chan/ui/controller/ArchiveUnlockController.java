@@ -21,6 +21,7 @@ package org.otacoo.chan.ui.controller;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -46,6 +47,21 @@ public class ArchiveUnlockController extends Controller {
 
     private WebView webView;
     private boolean finished = false;
+
+    private final Runnable pollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (finished) return;
+            String cookies = CookieManager.getInstance().getCookie("https://" + domain + "/");
+            boolean cleared = cookies != null && cookies.contains("cf_clearance");
+            Logger.d(TAG, "poll domain=" + domain + " cleared=" + cleared);
+            if (cleared) {
+                finish(true);
+            } else {
+                handler.postDelayed(pollRunnable, 1000);
+            }
+        }
+    };
 
     public ArchiveUnlockController(Context context, String domain, Runnable onUnlocked, Runnable onCancelled) {
         super(context);
@@ -78,25 +94,13 @@ public class ArchiveUnlockController extends Controller {
     }
 
     private void startPolling() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (finished || !alive) return;
-                String cookies = CookieManager.getInstance().getCookie("https://" + domain + "/");
-                boolean cleared = cookies != null && cookies.contains("cf_clearance");
-                Logger.d(TAG, "poll domain=" + domain + " cleared=" + cleared);
-                if (cleared) {
-                    finish(true);
-                } else {
-                    handler.postDelayed(this, 1000);
-                }
-            }
-        }, 1000);
+        handler.postDelayed(pollRunnable, 1000);
     }
 
     private void finish(boolean unlocked) {
         if (finished) return;
         finished = true;
+        handler.removeCallbacks(pollRunnable);
 
         if (unlocked) {
             onUnlocked.run();
@@ -114,11 +118,16 @@ public class ArchiveUnlockController extends Controller {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacks(pollRunnable);
         if (!finished) {
             finished = true;
             onCancelled.run();
         }
         if (webView != null) {
+            if (webView.getParent() instanceof ViewGroup) {
+                ((ViewGroup) webView.getParent()).removeView(webView);
+            }
+            webView.stopLoading();
             webView.destroy();
             webView = null;
         }
