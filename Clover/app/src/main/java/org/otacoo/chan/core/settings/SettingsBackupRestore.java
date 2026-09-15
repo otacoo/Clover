@@ -374,8 +374,12 @@ public final class SettingsBackupRestore {
                                 board.order = bo.optInt("order", 0);
                                 board.workSafe = bo.optBoolean("workSafe", false);
 
-                                // Save the user-set fields to database.
+                                // createOrUpdate syncs the row and board.id, but
+                                // deliberately skips the user fields (saved/order);
+                                // persist those separately or the "added" state is
+                                // lost on restore.
                                 databaseManager.runTask(databaseManager.getDatabaseBoardManager().createOrUpdate(board));
+                                databaseManager.runTask(databaseManager.getDatabaseBoardManager().updateIncludingUserFields(board));
                             }
                         }
                     }
