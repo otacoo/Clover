@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.otacoo.chan.core.database.DatabaseManager;
+import org.otacoo.chan.core.manager.FilterEngine;
+import org.otacoo.chan.core.manager.FilterType;
 import org.otacoo.chan.core.model.json.site.SiteConfig;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Filter;
@@ -436,12 +438,15 @@ public final class SettingsBackupRestore {
                     JSONObject o = arr.getJSONObject(i);
                     Filter f = new Filter();
                     f.enabled = o.optBoolean("enabled", true);
-                    f.type = o.getInt("type");
-                    f.pattern = o.getString("pattern");
+                    f.type = o.optInt("type", FilterType.SUBJECT.flag | FilterType.COMMENT.flag);
+                    f.pattern = o.optString("pattern", "");
                     f.allBoards = o.optBoolean("allBoards", true);
                     f.boards = o.optString("boards", "");
-                    f.action = o.getInt("action");
-                    f.color = o.getInt("color");
+                    f.action = o.optInt("action", FilterEngine.FilterAction.HIDE.id);
+                    if (f.action < 0 || f.action >= FilterEngine.FilterAction.values().length) {
+                        f.action = FilterEngine.FilterAction.HIDE.id;
+                    }
+                    f.color = o.optInt("color", 0xffff0000);
                     f.order = o.optInt("order", 0);
                     f.onlyOnOP = o.optBoolean("onlyOnOP", false);
                     databaseManager.runTask(databaseManager.getDatabaseFilterManager().createFilter(f));

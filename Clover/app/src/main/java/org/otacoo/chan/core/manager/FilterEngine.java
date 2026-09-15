@@ -61,6 +61,9 @@ public class FilterEngine {
         }
 
         public static FilterAction forId(int id) {
+            if (id < 0 || id >= enums.length || enums[id] == null) {
+                return HIDE;
+            }
             return enums[id];
         }
 
