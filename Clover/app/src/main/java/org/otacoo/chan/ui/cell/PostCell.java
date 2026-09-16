@@ -334,7 +334,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         }
 
         if (this.post != null && bound) {
-            unbindPost(this.post);
+            unbindPost(this.post, true);
             this.post = null;
         }
 
@@ -818,12 +818,23 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     private void unbindPost(Post post) {
+        unbindPost(post, false);
+    }
+
+    // Cancelling thumbnail requests on every detach killed in-flight downloads
+    // the moment a cell scrolled off-screen, so images restarted from zero when
+    // scrolled back (they only seemed to load when exactly in view). Detach
+    // keeps downloads alive (they land in the memory cache); only a rebind to
+    // a different post cancels them.
+    private void unbindPost(Post post, boolean cancelThumbnailRequests) {
         bound = false;
 
         icons.cancelRequests();
 
-        for (int i = 0; i < thumbnailViews.size(); i++) {
-            thumbnailViews.get(i).cancelRequest();
+        if (cancelThumbnailRequests) {
+            for (int i = 0; i < thumbnailViews.size(); i++) {
+                thumbnailViews.get(i).cancelRequest();
+            }
         }
 
         setPostLinkableListener(post, false);

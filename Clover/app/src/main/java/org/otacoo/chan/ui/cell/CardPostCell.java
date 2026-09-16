@@ -194,6 +194,10 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
         }
 
         if (this.post != null && bound) {
+            // Cancel only when rebinding to a different post: cancelling on
+            // detach killed in-flight downloads and made thumbnails restart
+            // from zero when scrolled back into view.
+            thumbnailView.cancelRequest();
             unbindPost(this.post);
             this.post = null;
         }
@@ -367,9 +371,9 @@ public class CardPostCell extends CardView implements PostCellInterface, View.On
 
         icons.cancelRequests();
 
-        if (thumbnailView != null) {
-            thumbnailView.cancelRequest();
-        }
+        // Thumbnail downloads intentionally keep running across detach so
+        // scrolling back shows the image instantly; see setPost for the
+        // rebind-time cancel.
     }
 
     private void setCompact(boolean compact) {
