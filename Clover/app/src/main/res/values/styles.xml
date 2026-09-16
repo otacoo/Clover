@@ -126,6 +126,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="post_id_background_light">#00000000</item>
         <item name="post_id_background_dark">#ffC6C6C6</item>
         <item name="post_last_seen_color">#ffff0000</item>
+
+        <!-- The remaining light-theme attrs resolve to the same values via
+             resolveSpanColors' Chan_Theme fallback; defining them here keeps
+             XML ?attr references (e.g. post_options_drawable) resolvable. -->
+        <item name="post_name_color">#ff117743</item>
+        <item name="post_quote_color">#ffDD0000</item>
+        <item name="post_highlight_quote_color">#950000</item>
+        <item name="post_inline_quote_color">#ff789922</item>
+        <item name="post_capcode_color">#ffff0000</item>
+        <item name="post_selected_color">#20000000</item>
+        <item name="post_options_drawable">@drawable/ic_overflow</item>
+        <item name="text_color_reveal_spoiler">#ffffffff</item>
+        <item name="dropdown_light_color">#ffffffff</item>
+        <item name="dropdown_light_pressed_color">#88ffffff</item>
     </style>
 
     <style name="Chan.Theme.Black" parent="Chan.Theme.Dark">
