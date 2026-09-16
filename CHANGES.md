@@ -1,3 +1,11 @@
+## 2026-09-16 – v3.9.1
+
+- **Startup flashbang:** add mitigations by forcing dark/light mode background depending on Android OS theme used
+- **Tap to copy filename:** snackbar will now correctly push FAB buttons up
+- Fix reply counts and reply links not updating until you scrolled to another part of the thread
+- Fix an issue where thumbnails were re-loading from scratch when scrolling back up/down
+- Fix a crash when switching to dark themes
+
 ## 2026-09-15 – v3.9.0
 
 >[!CAUTION]
@@ -10,7 +18,7 @@
 
 - **New option:** 5 columns for the image gallery (3-dot menu -> Column count)
 - **New option:** Reply anchor style (Appearance -> Layout)
-  - Choosing from various styles and positions for the reply anchor
+  - Choose from various styles and positions for the reply anchor
 - **New feature:** Filenames can now be tapped to copy
 - Swipe to close/save should now also work while zoomed into an image, with stricter thresholds so panning doesn't accidentally trigger it
 
@@ -24,7 +32,7 @@
 - Archive fetching is more robust and no longer stops working after repeated attempts
 - Fixed thumbnails sometimes staying blank in catalogs
 - Fixed saved replies/highlights sticking around after removing a site
-- Restoring settings from a backup is faster and no longer freezes the app; restored options now apply without a restart
+- Restoring settings from a backup is faster and no longer freezes the app
 - Restoring from a backup no longer creates duplicate bookmarks, saved replies or filters
 - Watched thread toggles (from the drawer) are now saved correctly
 - Fixed hidden threads re-appearing after using the undo button
