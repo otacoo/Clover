@@ -46,6 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:icon="@mipmap/ic_launcher"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:label="@string/app_name"
+            android:theme="@style/Chan.Theme.Launch"
             android:targetActivity=".ui.activity.StartActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -61,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:icon="@mipmap/ic_launcher_green"
             android:roundIcon="@mipmap/ic_launcher_green_round"
             android:label="@string/app_name"
+            android:theme="@style/Chan.Theme.Launch"
             android:targetActivity=".ui.activity.StartActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -76,6 +78,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             android:icon="@mipmap/ic_launcher_gold"
             android:roundIcon="@mipmap/ic_launcher_gold_round"
             android:label="@string/app_name"
+            android:theme="@style/Chan.Theme.Launch"
             android:targetActivity=".ui.activity.StartActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -85,6 +88,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         <activity
             android:name=".ui.activity.StartActivity"
+            android:theme="@style/Chan.Theme.Launch"
             android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true">
 

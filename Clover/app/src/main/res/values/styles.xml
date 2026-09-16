@@ -26,6 +26,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         - colorAccent: Buttons and FAB (Floating Action Button) color
         - loading_bar_color: Loading bar color
     -->
+    <!-- Launch theme: follows the system dark mode so the system starting
+         window doesn't flash white for dark-mode users. The real theme is
+         applied in StartActivity.onCreate before any content is drawn. -->
+    <style name="Chan.Theme.Launch" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:navigationBarColor">@color/launch_background</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+    </style>
 
     <!-- Main light theme -->
     <style name="Chan.Theme" parent="Theme.AppCompat.Light.NoActionBar">
