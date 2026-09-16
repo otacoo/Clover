@@ -35,7 +35,9 @@ import org.otacoo.chan.ui.cell.ThreadStatusCell;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int TYPE_POST = 0;
@@ -120,6 +122,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         true,
                         postViewMode,
                         compact);
+                updateBoundState(post);
 
                 break;
             case TYPE_STATUS:
@@ -129,6 +132,41 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 holder.itemView.setBackgroundColor(AndroidUtils.getAttrColor(holder.itemView.getContext(), R.attr.post_last_seen_color));
                 break;
         }
+    }
+
+    // Snapshot of what was last rendered for a post (replies size, saved,
+    // deleted, filter color, stub). Posts mutate in place, so DiffUtil cannot
+    // detect changes by comparing a post against itself.
+    private Loadable boundLoadable;
+    private final Map<Integer, int[]> boundPostState = new HashMap<>();
+
+    private void updateBoundState(Post post) {
+        int[] state = new int[5];
+        synchronized (post.repliesFrom) {
+            state[0] = post.repliesFrom.size();
+        }
+        state[1] = post.isSavedReply ? 1 : 0;
+        state[2] = post.deleted.get() ? 1 : 0;
+        state[3] = post.filterHighlightedColor;
+        state[4] = post.filterStub ? 1 : 0;
+        boundPostState.put(post.no, state);
+    }
+
+    private boolean boundStateMatches(Post post) {
+        int[] state = boundPostState.get(post.no);
+        if (state == null) {
+            // Never rendered: nothing stale to fix here.
+            return true;
+        }
+        int repliesSize;
+        synchronized (post.repliesFrom) {
+            repliesSize = post.repliesFrom.size();
+        }
+        return state[0] == repliesSize
+                && state[1] == (post.isSavedReply ? 1 : 0)
+                && state[2] == (post.deleted.get() ? 1 : 0)
+                && state[3] == post.filterHighlightedColor
+                && state[4] == (post.filterStub ? 1 : 0);
     }
 
     @Override
@@ -180,6 +218,12 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         bound = true;
         showError(null);
 
+        // Snapshots are only meaningful for the currently bound thread.
+        if (boundLoadable != thread.loadable) {
+            boundPostState.clear();
+            boundLoadable = thread.loadable;
+        }
+
         sourceList.clear();
         sourceList.addAll(thread.posts);
 
@@ -207,10 +251,17 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         displayList.addAll(newList);
         lastSeenIndicatorPosition = newLastSeen;
 
-        // Fast path: an auto-refresh with no new posts presents the exact same
-        // Post instances at the same positions. Skip DiffUtil + dispatch
-        // entirely (they allocate heavily and rebind rows for nothing).
-        if (oldLastSeen == newLastSeen && oldList.size() == newList.size()) {
+        // Fast path: an auto-refresh with no visible changes presents the exact same
+        // Post instances, all matching their rendered snapshots. Skip DiffUtil +
+        // dispatch entirely (they allocate heavily and rebind rows for nothing).
+        boolean allSnapshotsMatch = true;
+        for (int i = 0; i < newList.size(); i++) {
+            if (!boundStateMatches(newList.get(i))) {
+                allSnapshotsMatch = false;
+                break;
+            }
+        }
+        if (allSnapshotsMatch && oldLastSeen == newLastSeen && oldList.size() == newList.size()) {
             boolean identical = true;
             for (int i = 0; i < newList.size(); i++) {
                 if (oldList.get(i) != newList.get(i)) {
@@ -271,15 +322,24 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 Post oldPost = oldList.get(oldPostIndex);
                 Post newPost = finalNewList.get(newPostIndex);
                 
-                int oldReplies = 0;
-                synchronized(oldPost.repliesFrom) { oldReplies = oldPost.repliesFrom.size(); }
-                int newReplies = 0;
-                synchronized(newPost.repliesFrom) { newReplies = newPost.repliesFrom.size(); }
+                if (oldPost != newPost) {
+                    // Different post instances: compare the visible fields that
+                    // the cells render.
+                    int oldReplies = 0;
+                    synchronized(oldPost.repliesFrom) { oldReplies = oldPost.repliesFrom.size(); }
+                    int newReplies = 0;
+                    synchronized(newPost.repliesFrom) { newReplies = newPost.repliesFrom.size(); }
+                    if (oldReplies != newReplies) return false;
+                    if (oldPost.isSavedReply != newPost.isSavedReply) return false;
+                    if (oldPost.deleted.get() != newPost.deleted.get()) return false;
+                    if (oldPost.filterHighlightedColor != newPost.filterHighlightedColor) return false;
+                    if (oldPost.filterStub != newPost.filterStub) return false;
+                    return true;
+                }
 
-                if (oldPost.isSavedReply != newPost.isSavedReply) return false;
-                if (oldPost.deleted.get() != newPost.deleted.get()) return false;
-
-                return oldReplies == newReplies;
+                // Same post instance (cached posts are reused across refreshes
+                // and mutate in place): compare against the rendered snapshot.
+                return boundStateMatches(newPost);
             }
         });
 
@@ -322,6 +382,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         lastSeenIndicatorPosition = -1;
         error = null;
         bound = false;
+        boundLoadable = null;
+        boundPostState.clear();
     }
 
     public void showError(String error) {
