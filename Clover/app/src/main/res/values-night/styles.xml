@@ -16,9 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Dark-mode variant of the launch theme: the system starting window
-         uses this so dark-mode users don't get a white flash on launch. -->
-    <style name="Chan.Theme.Launch" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- Dark-mode launch theme: dark starting window, full dark theme attrs. -->
+    <style name="Chan.Theme.Launch" parent="Chan.Theme.Dark">
         <item name="android:windowBackground">@color/launch_background</item>
         <item name="android:navigationBarColor">@color/launch_background</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
