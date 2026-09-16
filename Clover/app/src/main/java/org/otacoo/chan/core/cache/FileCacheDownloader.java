@@ -115,9 +115,6 @@ public class FileCacheDownloader implements Runnable {
     @MainThread
     public void cancel() {
         if (cancel.compareAndSet(false, true)) {
-            // Abort an in-flight request immediately instead of waiting for
-            // the next chunk boundary; the resulting IOException is treated
-            // as a cancel below.
             Call c = call;
             if (c != null) {
                 c.cancel();
@@ -126,7 +123,6 @@ public class FileCacheDownloader implements Runnable {
             if (f != null) {
                 f.cancel(true);
             }
-            // Did not start running yet, mark finished here.
             if (!running.get()) {
                 callback.downloaderFinished(this);
             }

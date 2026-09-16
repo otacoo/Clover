@@ -134,9 +134,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    // Snapshot of what was last rendered for a post (replies size, saved,
-    // deleted, filter color, stub). Posts mutate in place, so DiffUtil cannot
-    // detect changes by comparing a post against itself.
+    // Last rendered state per post (replies, saved, deleted, filter color,
+    // stub): posts mutate in place, so DiffUtil can't compare a post to itself.
     private Loadable boundLoadable;
     private final Map<Integer, int[]> boundPostState = new HashMap<>();
 
@@ -251,9 +250,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         displayList.addAll(newList);
         lastSeenIndicatorPosition = newLastSeen;
 
-        // Fast path: an auto-refresh with no visible changes presents the exact same
-        // Post instances, all matching their rendered snapshots. Skip DiffUtil +
-        // dispatch entirely (they allocate heavily and rebind rows for nothing).
+        // Fast path: nothing changed, skip DiffUtil and dispatch entirely.
         boolean allSnapshotsMatch = true;
         for (int i = 0; i < newList.size(); i++) {
             if (!boundStateMatches(newList.get(i))) {

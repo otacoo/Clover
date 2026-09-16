@@ -194,8 +194,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             public boolean onFling(MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
                 if (e1 == null) return false;
                 boolean zoomed = isZoomed();
-                // While zoomed, panning is a normal drag: demand a much faster,
-                // more vertical fling so pan gestures don't close/save the image.
                 float minVelocity = zoomed ? 2500 : 1000;
                 float ratio = zoomed ? 2.5f : 1.5f;
                 if (Math.abs(velocityY) > Math.abs(velocityX) * ratio && Math.abs(velocityY) > minVelocity) {
@@ -433,9 +431,6 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             rotationDeltaAccumulator = 0f;
         }
 
-        // The detector is always fed (swipe-to-close/save also work while
-        // zoomed); onFling's stricter zoomed thresholds keep normal pans
-        // from triggering it.
         if (gestureDetector.onTouchEvent(ev)) {
             ev.setAction(MotionEvent.ACTION_CANCEL);
             super.dispatchTouchEvent(ev);

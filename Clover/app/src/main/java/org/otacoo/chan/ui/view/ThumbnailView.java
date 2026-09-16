@@ -254,11 +254,8 @@ public class ThumbnailView extends View {
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 if (call.isCanceled()) return;
                 AndroidUtils.runOnUiThread(() -> {
-                    // Ignore only stale responses for a recycled view that was
-                    // rebound to a different image. The attached-check must not
-                    // be part of this: prefetch/cached holders are detached
-                    // when their response arrives, and dropping it here would
-                    // leak currentCall and block any later re-request.
+                    // Ignore responses for a recycled view bound to another
+                    // url; never drop them for detached views.
                     if (!TextUtils.equals(currentUrl, requestUrl)) return;
                     error = true;
                     errorText = getString(R.string.thumbnail_load_failed_network);

@@ -512,8 +512,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
         title.setText(titleBuilder);
 
-        // Tap on a filename copies it; the movement method also needs to keep
-        // tapping anywhere else in the title behaving like tapping the post.
         boolean titleHasFiles = !post.images.isEmpty()
                 && ChanSettings.postFilename.get() && post.fileNameSpans != null;
         setupTitleClickHandling(noClickable, titleHasFiles);
@@ -993,10 +991,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
      * This version is for the {@link FastTextView}.<br>
      * See {@link PostLinkable} for more information.
      */
-    // Positions the replies anchor ("N replies") on the left (default) or the
-    // right side of the post, per Appearance > Layout. Optionally gives it a
-    // rounded background and a reply arrow icon. The extra touch area mirrors
-    // to the opposite side of the anchor.
+    // Positions the replies anchor (left/right, optionally with pill + icon).
     private void applyReplyAnchorSide() {
         ChanSettings.ReplyAnchorMode mode = ChanSettings.replyAnchor.get();
         boolean anchorRight = mode == ChanSettings.ReplyAnchorMode.RIGHT
@@ -1015,8 +1010,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         if (currentRight != anchorRight) {
             repliesRules[RelativeLayout.ALIGN_PARENT_RIGHT] = anchorRight ? RelativeLayout.TRUE : 0;
         }
-        // Keep the anchor off the screen border when right-aligned so it
-        // stays easy to tap; left-side pills align with the content instead.
         if (anchorRight) {
             repliesRp.leftMargin = 0;
             repliesRp.rightMargin = dp(8);
@@ -1026,8 +1019,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 repliesRp.leftMargin = paddingPx;
             }
         }
-        // Keep the pill from touching the divider below it, and add breathing
-        // room between the post content above and the anchor.
         repliesRp.bottomMargin = bgAndIcon ? dp(6) : 0;
         repliesRp.topMargin = bgAndIcon ? dp(12) : 0;
         replies.setLayoutParams(repliesRp);
@@ -1062,13 +1053,10 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     private void applyReplyAnchorBackground() {
-        // Rounded rectangle in the secondary post color, so it stands out
-        // slightly from the post background in both themes.
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
         bg.setCornerRadius(dp(2));
         bg.setColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
         replies.setBackground(bg);
-        // Replace the default horizontal padding with a tighter pill padding.
         replies.setPadding(dp(3), dp(2), dp(3), dp(2));
         replies.setTextColor(theme.textPrimary);
     }
@@ -1077,7 +1065,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private android.graphics.drawable.BitmapDrawable repliesIconDrawable;
     private int repliesIconColor = 0;
 
-    // Prepend a small reply-arrow icon to the anchor text (bg + icon modes).
+    // Prepend a small reply-arrow icon to the anchor text.
     private CharSequence applyReplyAnchorIcon(String text) {
         if (repliesIconDrawable == null || repliesIconColor != theme.textSecondary) {
             int iconSize = dp(14);
@@ -1096,8 +1084,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             repliesIconColor = theme.textSecondary;
         }
 
-        // Vertically center the icon on the text line (ALIGN_CENTER requires
-        // API 29; older versions fall back to baseline alignment).
+        // ALIGN_CENTER needs API 29; older versions align to the baseline.
         SpannableString iconSpan = new SpannableString("  ");
         ImageSpan imageSpan;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1112,9 +1099,6 @@ public class PostCell extends LinearLayout implements PostCellInterface {
 
     private void setupTitleClickHandling(boolean noClickable, boolean titleHasFiles) {
         if (noClickable || titleHasFiles) {
-            // Make filename spans tappable (tap to copy). The click listener
-            // keeps taps on non-span parts of the title behaving like post
-            // taps.
             title.setMovementMethod(titleMovementMethod);
             title.setOnClickListener(selfClicked);
         } else if (title.getMovementMethod() != null || title.hasOnClickListeners()) {
@@ -1166,6 +1150,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         }
     }
 
+    // Tap-to-copy for filename spans in the title.
     private void copyFilenameToClipboard(View view, String filename) {
         ClipboardManager clipboard =
                 (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);

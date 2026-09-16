@@ -217,8 +217,7 @@ public class FloatingMenu {
                 if (!popupWindow.isShowing()) {
                     return;
                 }
-                // Only re-show when the anchor actually moved: re-showing
-                // triggers layout, which would otherwise loop forever.
+                // Re-show only when the anchor moved, else this loops.
                 int[] pos = new int[2];
                 anchor.getLocationOnScreen(pos);
                 if (pos[0] != lastPos[0] || pos[1] != lastPos[1]) {
