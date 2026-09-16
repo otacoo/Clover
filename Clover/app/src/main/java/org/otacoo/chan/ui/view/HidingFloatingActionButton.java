@@ -124,16 +124,32 @@ public class HidingFloatingActionButton extends FloatingActionButton implements 
     }
 
     private void updateSnackbarShowing(boolean showing) {
-        if (snackbarShowing != showing) {
-            snackbarShowing = showing;
-            if (showing) {
+        if (snackbarShowing == showing) {
+            return;
+        }
+        snackbarShowing = showing;
+        if (showing) {
+            // Push the FAB above the snackbar instead of hiding it.
+            int lift = AndroidUtils.getSnackbarHeight() + AndroidUtils.dp(8);
+            if (desiredVisibility == VISIBLE && lift > AndroidUtils.dp(8)) {
+                animate().translationY(-lift)
+                        .setDuration(200)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .start();
+            } else {
                 super.setVisibility(GONE);
-            } else if (desiredVisibility == VISIBLE) {
+            }
+        } else {
+            if (desiredVisibility == VISIBLE) {
                 super.setVisibility(VISIBLE);
                 if (savedImageRes != 0) {
                     super.setImageResource(savedImageRes);
                 }
             }
+            animate().translationY(0f)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
         }
     }
 

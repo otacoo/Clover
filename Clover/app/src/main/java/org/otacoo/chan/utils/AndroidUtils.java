@@ -97,6 +97,7 @@ public class AndroidUtils {
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private static int activeSnackbars = 0;
+    private static int snackbarHeight = 0;
 
     public static void init(Application application) {
         if (AndroidUtils.application == null) {
@@ -608,6 +609,11 @@ public class AndroidUtils {
         return activeSnackbars > 0;
     }
 
+    /** Height of the currently shown snackbar, for pushing floating content above it. */
+    public static int getSnackbarHeight() {
+        return snackbarHeight;
+    }
+
     public static void notifySnackbarShowing(boolean showing) {
         if (showing) {
             activeSnackbars++;
@@ -719,6 +725,7 @@ public class AndroidUtils {
             @Override
             public void onShown(Snackbar sb) {
                 notifySnackbarShowing(true);
+                sb.getView().post(() -> snackbarHeight = sb.getView().getHeight());
             }
 
             @Override
