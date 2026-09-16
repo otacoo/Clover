@@ -81,6 +81,8 @@ public class AppearanceSettingsController extends SettingsController {
 
             setupGridColumnsSetting(layout);
 
+            setupReplyAnchorPositionSetting(layout);
+
             requiresRestart.add(layout.add(new BooleanSettingView(this,
                     ChanSettings.neverHideToolbar,
                     R.string.setting_never_hide_toolbar, 0)));
@@ -108,8 +110,6 @@ public class AppearanceSettingsController extends SettingsController {
             requiresUiRefresh.add(layout.add(new BooleanSettingView(this,
                     ChanSettings.accessiblePostInfo, R.string.setting_enable_accessible_post_info,
                     R.string.setting_enable_accessible_post_info_description)));
-
-            setupReplyAnchorPositionSetting(layout);
 
             groups.add(layout);
         }
