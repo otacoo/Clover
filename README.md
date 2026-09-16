@@ -32,6 +32,10 @@ Clover is a fast Android app for browsing imageboards, such as 4chan and 8chan. 
 - Lainchan
 - 8chan
 
+## Filters
+
+Use the [Filter Converter](https://otacoo.github.io/Clover/tools/filter_converter.html) to convert and merge 4chanX filters to Clover.
+
 ## Issues and features
 Issues can be reported here at the [Issues page](https://github.com/otacoo/Clover/issues).\
 Provide as much detailed info as possible, logs, screenshots etc.
