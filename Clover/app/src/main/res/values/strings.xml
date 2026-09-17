@@ -609,6 +609,7 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_confirm_exit">Confirm before exit</string>
     <string name="setting_disable_back_button">Disable Back button in thread view</string>
     <string name="setting_highlight_open_thread">Highlight currently open thread</string>
+    <string name="setting_always_show_board_name">Always show board name</string>
     <string name="setting_controller_swipeable">Allow screens to be swiped away</string>
     <string name="setting_clear_thread_hides">Clear all thread hides</string>
     <string name="setting_cleared_thread_hides">Cleared all thread hides</string>

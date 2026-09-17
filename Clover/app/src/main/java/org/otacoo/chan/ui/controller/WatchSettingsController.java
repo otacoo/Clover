@@ -166,6 +166,9 @@ public class WatchSettingsController extends SettingsController {
         threads.add(new BooleanSettingView(this, ChanSettings.highlightOpenThread,
                 R.string.setting_highlight_open_thread, 0));
 
+        threads.add(new BooleanSettingView(this, ChanSettings.alwaysShowBoardName,
+                R.string.setting_always_show_board_name, 0));
+
         groups.add(threads);
     }
 }

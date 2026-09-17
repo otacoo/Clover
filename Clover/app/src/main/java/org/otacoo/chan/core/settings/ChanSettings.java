@@ -219,6 +219,7 @@ public class ChanSettings {
     public static final StringSetting postDefaultOptions;
     public static final BooleanSetting postPinThread;
     public static final BooleanSetting alwaysShowReplyTags;
+    public static final BooleanSetting alwaysShowBoardName;
     public static final OptionsSetting<ReplyAnchorMode> replyAnchor;
 
     public static final BooleanSetting developer;
@@ -387,6 +388,7 @@ public class ChanSettings {
         postDefaultOptions = new StringSetting(p, "preference_default_options", "");
         postPinThread = new BooleanSetting(p, "preference_pin_on_post", true);
         alwaysShowReplyTags = new BooleanSetting(p, "preference_always_show_reply_tags", false);
+        alwaysShowBoardName = new BooleanSetting(p, "preference_always_show_board_name", false);
         replyAnchor = new OptionsSetting<>(p, "preference_reply_anchor", ReplyAnchorMode.class, ReplyAnchorMode.LEFT);
 
         developer = new BooleanSetting(p, "preference_developer", false);

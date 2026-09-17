@@ -345,6 +345,13 @@ public class DrawerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private void updatePinViewHolder(PinViewHolder holder, Pin pin) {
         CharSequence text = pin.loadable == null ? "" : pin.loadable.title;
+        // Optionally prepend the board tag when the cached title doesn't
+        // already have one (titles only include it for subject-less threads).
+        if (ChanSettings.alwaysShowBoardName.get()
+                && pin.loadable != null && pin.loadable.isThreadMode()
+                && !TextUtils.isEmpty(text) && !text.toString().startsWith("/")) {
+            text = "/" + pin.loadable.boardCode + "/ \u2013 " + text;
+        }
         if (pin.isError) {
             text = TextUtils.concat(PostHelper.addIcon(PostHelper.trashIcon, sp(14 + 2)), text);
         } else if (pin.archived) {
