@@ -96,7 +96,7 @@ public class CommentParser {
         rule(tagRule("i").italic());
         rule(tagRule("em").italic());
 
-        rule(tagRule("pre").cssClass("prettyprint").monospace().size(sp(12f)));
+        rule(tagRule("pre").cssClass("prettyprint").monospace().size(sp(12f)).action(this::handlePre));
         rule(tagRule("code").monospace().size(sp(12f)));
 
     }
@@ -286,6 +286,17 @@ public class CommentParser {
         res.setSpan(pl, 0, res.length(), 0);
         builder.addLinkable(pl);
         return res;
+    }
+
+    private CharSequence handlePre(Theme theme,
+                                     PostParser.Callback callback,
+                                     Post.Builder builder,
+                                     CharSequence text,
+                                     Element pre) {
+        String s = text.toString();
+        while (s.startsWith("\n")) s = s.substring(1);
+        while (s.endsWith("\n")) s = s.substring(0, s.length() - 1);
+        return TextUtils.concat("\n", s, "\n");
     }
 
     public CharSequence handleTable(Theme theme,
