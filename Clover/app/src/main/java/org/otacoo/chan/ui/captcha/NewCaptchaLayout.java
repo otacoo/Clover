@@ -218,20 +218,22 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return is4chan ? GLOBAL_4CHAN_KEY : (board + "_" + thread_id);
     }
 
-    // Returns how many seconds are left on the 4chan post cooldown
     public int getCooldownRemainingSeconds() {
         String key = getGlobalKey();
         Long endTime = globalCooldowns.get(key);
         if (endTime == null) return 0;
-        return (int) Math.max(0, (endTime - System.currentTimeMillis()) / 1000);
+        long diff = endTime - System.currentTimeMillis();
+        if (diff <= 0) return 0;
+        return (int) ((diff + 999) / 1000);
     }
 
     // Returns how many seconds are left before a new captcha can be requested
     public int getRequestCooldownRemainingSeconds() {
         Long lastRequest = globalCooldowns.get(LAST_REQUEST_KEY);
         if (lastRequest == null) return 0;
-        int remaining = (int) ((lastRequest + 30000L - System.currentTimeMillis()) / 1000);
-        return Math.max(0, remaining);
+        long diff = lastRequest + 30000L - System.currentTimeMillis();
+        if (diff <= 0) return 0;
+        return (int) ((diff + 999) / 1000);
     }
 
     // Checks if we are currently waiting for any cooldown to expire
@@ -244,14 +246,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return cooldownActive;
     }
 
-    // Restores the last known UI state or reloads the captcha page
     @Override
     public void reset() {
         reportedCompletion = false;
-        
-        // Preserve active challenge or error overlay if user returns to it.
-        if (showingActiveCaptcha || showingOverlay) {
-            maybeToast(showingOverlay ? "Returning to error details." : "Returning to active captcha session.", false);
+        if (showingOverlay) {
+            maybeToast("Returning to error details.", false);
             onCaptchaLoaded();
             return;
         }
@@ -263,7 +262,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             cooldownActive = true;
             showingActiveCaptcha = true;
             String savedPayload = globalPayloads.get(key);
-            
+
             try {
                 JSONObject obj = (savedPayload != null && !savedPayload.equals("null")) ? new JSONObject(savedPayload) : new JSONObject();
                 JSONObject inner = obj.optJSONObject("twister");
@@ -279,8 +278,15 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 return;
             }
         }
-        
+
+        if (showingActiveCaptcha) {
+            cooldownActive = false;
+            globalCooldowns.remove(key);
+            onCaptchaLoaded();
+            return;
+        }
         cooldownActive = false;
+        showingActiveCaptcha = false;
         globalPayloads.remove(key);
         globalCooldowns.remove(key);
         hardReset(false, false);
@@ -541,6 +547,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 String payload = extractTwisterPayload(body);
                 if (payload != null) {
                     persistTicket(payload);
+                    trackCooldownFromPayload(payload);
                     String assetHtml = loadAssetWithCaptchaData(payload);
                     if (assetHtml != null) {
                         lastResponseWasAsset = true;
@@ -607,6 +614,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                     showingActiveCaptcha = true;
                     loadDataWithBaseURL(sourceUrl, assetHtml, "text/html", "UTF-8", sourceUrl);
                     onCaptchaLoaded();
+                    if (obj.has("img") || obj.has("tasks")) maybeToast("Captcha ready", false);
                     return;
                 }
             }
@@ -635,16 +643,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    // Schedules a toast notification for when the current captcha session expires
     private void scheduleExpiryNotice(final String key, int seconds) {
         captchaHandler.postDelayed(() -> {
             Long expiryTime = globalExpiries.get(key);
             if (expiryTime != null && expiryTime <= System.currentTimeMillis() + 1000) {
                 globalExpiries.remove(key);
                 globalPayloads.remove(key);
-                if (visibleInstances.contains(this)) {
-                    maybeToast("Captcha session expired.", false);
-                }
+                maybeToast("Captcha expired, request a new one", false);
             }
         }, seconds * 1000L);
     }
@@ -854,11 +859,34 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         } catch (Exception ignored) {}
     }
 
-    // Begins background tracking of a new post cooldown timer
     private void startCooldownTracking(int seconds) {
-        String key = getGlobalKey();
-        globalCooldowns.put(key, System.currentTimeMillis() + (seconds * 1000L));
-        maybeToast("Cooldown to request new captcha started: (" + seconds + "s)", false);
+        globalCooldowns.put(getGlobalKey(), System.currentTimeMillis() + (seconds * 1000L));
+    }
+
+    public static int getGlobal4chanCooldownRemaining() {
+        Long end = globalCooldowns.get(GLOBAL_4CHAN_KEY);
+        if (end == null) return 0;
+        long diff = end - System.currentTimeMillis();
+        if (diff <= 0) return 0;
+        return (int) ((diff + 999) / 1000);
+    }
+
+    private void trackCooldownFromPayload(String payload) {
+        if (payload == null) return;
+        try {
+            JSONObject root = new JSONObject(payload);
+            JSONObject obj = root.optJSONObject("twister");
+            if (obj == null) obj = root;
+            int pcd = obj.optInt("pcd", 0);
+            int cd = obj.optInt("cd", 0);
+            int seconds = Math.max(pcd, cd);
+            if (seconds > 0) {
+                String key = getGlobalKey();
+                globalCooldowns.put(key, System.currentTimeMillis() + (seconds * 1000L));
+                globalPayloads.put(key, payload);
+                cooldownActive = true;
+            }
+        } catch (Exception ignored) {}
     }
 
     // Returns true if the WebView already has a valid cf_clearance cookie
@@ -960,10 +988,9 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
-    // Show a toast if user has enabled captcha toasts or when it is forced.
     private void maybeToast(final String msg, boolean force) {
         if (force || AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
-            AndroidUtils.runOnUiThread(() -> AndroidUtils.showThemedSnackbar(this, msg, Snackbar.LENGTH_LONG));
+            AndroidUtils.runOnUiThread(() -> AndroidUtils.showThemedSnackbar(msg, Snackbar.LENGTH_LONG));
         }
     }
 

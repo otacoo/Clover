@@ -183,22 +183,35 @@ public class ReplyLayout extends LoadView implements
     };
 
     private final Handler cooldownUpdateHandler = new Handler(Looper.getMainLooper());
+    private boolean showingCooldownMessage = false;
     private final Runnable cooldownUpdateRunnable = new Runnable() {
         @Override
         public void run() {
+            int displaySeconds = NewCaptchaLayout.getGlobal4chanCooldownRemaining();
             if (authenticationLayout instanceof NewCaptchaLayout ncl) {
                 int seconds = ncl.getCooldownRemainingSeconds();
                 int requestSeconds = ncl.getRequestCooldownRemainingSeconds();
-                int displaySeconds = Math.max(seconds, requestSeconds);
-
-                if (displaySeconds > 0) {
-                    String label = seconds >= requestSeconds ? "Post cooldown: " : "Request limit: ";
-                    openMessage(true, true, label + displaySeconds + "s", false);
-                    cooldownUpdateHandler.postDelayed(this, 1000);
-                    return;
+                displaySeconds = Math.max(displaySeconds, Math.max(seconds, requestSeconds));
+            }
+            if (displaySeconds > 0) {
+                showingCooldownMessage = true;
+                openMessage(true, true, "Cooldown: " + displaySeconds + "s — tap to view", false);
+                message.setClickable(true);
+                message.setFocusable(true);
+                message.setOnClickListener(v -> presenter.switchPage(ReplyPresenter.Page.AUTHENTICATION, true));
+                cooldownUpdateHandler.postDelayed(this, 1000);
+                return;
+            }
+            if (showingCooldownMessage) {
+                showingCooldownMessage = false;
+                message.setOnClickListener(null);
+                message.setClickable(false);
+                message.setFocusable(false);
+                openMessage(false, true, "", false);
+                if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
+                    AndroidUtils.showThemedSnackbar("Cooldown finished, you can request a captcha", Snackbar.LENGTH_LONG);
                 }
             }
-            openMessage(false, true, "", false);
         }
     };
 
@@ -445,6 +458,12 @@ public class ReplyLayout extends LoadView implements
     private void cancelPendingRunnables() {
         removeCallbacks(closeMessageRunnable);
         cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+        showingCooldownMessage = false;
+        if (message != null) {
+            message.setOnClickListener(null);
+            message.setClickable(false);
+            message.setFocusable(false);
+        }
         if (submitSkipPassRunnable != null) {
             submitHandler.removeCallbacks(submitSkipPassRunnable);
             submitSkipPassRunnable = null;
@@ -710,13 +729,22 @@ public class ReplyLayout extends LoadView implements
             case INPUT:
                 setView(replyInputLayout);
                 setWrap(!presenter.isExpanded());
-                
-                // Show cooldown remaining persistent message while on INPUT page
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
-                if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false) && authenticationLayout instanceof NewCaptchaLayout) {
-                    NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
-                    if (ncl.onCooldownNow()) {
-                        cooldownUpdateHandler.post(cooldownUpdateRunnable);
+                boolean cooling = NewCaptchaLayout.getGlobal4chanCooldownRemaining() > 0;
+                if (authenticationLayout instanceof NewCaptchaLayout ncl) cooling |= ncl.onCooldownNow();
+                if (cooling) {
+                    cooldownUpdateHandler.post(cooldownUpdateRunnable);
+                } else {
+                    if (showingCooldownMessage) {
+                        showingCooldownMessage = false;
+                        message.setOnClickListener(null);
+                        message.setClickable(false);
+                        message.setFocusable(false);
+                        openMessage(false, true, "", false);
+                    } else {
+                        message.setOnClickListener(null);
+                        message.setClickable(false);
+                        message.setFocusable(false);
                     }
                 }
                 break;
@@ -725,16 +753,13 @@ public class ReplyLayout extends LoadView implements
                         || authenticationLayout instanceof LynxchanBypassLayout;
                 setWrap(lynxchan);
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
-                openMessage(false, true, "", false);
-                
-                // If the cooldown just ended before Opening authentication, trigger a reset to reload the fresh captcha
-                if (authenticationLayout instanceof NewCaptchaLayout) {
-                    NewCaptchaLayout ncl = (NewCaptchaLayout) authenticationLayout;
-                    if (!ncl.onCooldownNow() && ncl.isShowingCooldownUI()) {
-                        ncl.reset();
-                    }
+                if (showingCooldownMessage) {
+                    showingCooldownMessage = false;
+                    message.setOnClickListener(null);
+                    message.setClickable(false);
+                    message.setFocusable(false);
                 }
-
+                openMessage(false, true, "", false);
                 if (ChanSettings.toolbarBottom.get() && !lynxchan) {
                     captchaContainer.setPadding(0, 0, 0, dp(56));
                 } else {
@@ -833,6 +858,13 @@ public class ReplyLayout extends LoadView implements
 
     @Override
     public void openMessage(boolean open, boolean animate, String text, boolean autoHide) {
+        if (showingCooldownMessage && open && text != null && !text.startsWith("Cooldown:")) {
+            showingCooldownMessage = false;
+            cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+            message.setOnClickListener(null);
+            message.setClickable(false);
+            message.setFocusable(false);
+        }
         removeCallbacks(closeMessageRunnable);
         message.setText(text);
         message.setVisibility(open ? View.VISIBLE : View.GONE);
