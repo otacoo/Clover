@@ -1,3 +1,20 @@
+### New options & changes
+
+- **New option:** Always show board name (Thread Watcher settings)
+
+Captcha improvements:
+- **Live countdown:** Reply view will now show captcha cooldown and expiry
+- **Bug fixes:**
+  - Per-thread captchas: Requesting a captcha in a thread will no longer show a stale or invalid captcha when entering a different thread
+  - Leaving a thread with a live captcha and returning should now restore the live captcha correctly
+  - Removed certain useless toast notifications
+
+### Bug fixes & others
+
+- Revert swipe while zoomed in to its original working state
+- Code blocks will now show in a new line instead of touching the message text
+- Adjusted placement of the word message counter in the reply view
+
 ## 2026-09-16 – v3.9.1
 
 - **Startup flashbang:** add mitigations by forcing dark/light mode background depending on Android OS theme used
