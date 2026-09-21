@@ -92,11 +92,32 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private volatile boolean cooldownActive;
     /** True when we have already reported a solved captcha to the callback for the current session. */
     private boolean reportedCompletion;
+    private volatile boolean captchaLoading;
+    private volatile long loadingSince;
+    private volatile String pendingRestoreChallenge;
+    private volatile String pendingRestoreAnswers;
+    private static final Map<String, String> savedAnswersByChallenge = new ConcurrentHashMap<>();
+
+    private static String payloadChallenge(String payload) {
+        if (payload == null) return "";
+        try {
+            JSONObject root = new JSONObject(payload);
+            JSONObject inner = root.optJSONObject("twister");
+            return (inner != null ? inner : root).optString("challenge", "");
+        } catch (Exception e) {
+            return "";
+        }
+    }
 
     private static final int NATIVE_PAYLOAD_MAX_RETRIES = 5;
     private static final int NATIVE_PAYLOAD_RETRY_DELAY_MS = 500;
 
-    private static volatile String ticket = "";
+    private static final Map<String, String> tickets = new ConcurrentHashMap<>();
+
+    private String getTicket() {
+        String t = tickets.get(getGlobalKey());
+        return t == null ? "" : t;
+    }
 
     private volatile boolean isDark = !ThemeHelper.theme().isLightTheme;
 
@@ -213,11 +234,16 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     }
 
     // Identifies the global cooldown bucket for the current site or board
-    private String getGlobalKey() {
-        boolean is4chan = (baseUrl != null && baseUrl.contains("4chan.org")) || (site != null && "4chan".equalsIgnoreCase(site.name()));
-        return is4chan ? GLOBAL_4CHAN_KEY : (board + "_" + thread_id);
+    public static String captchaKey(String siteName, String boardCode, int threadNo) {
+        return siteName + "_" + boardCode + "_" + threadNo;
     }
 
+    private String getGlobalKey() {
+        String name = site != null ? site.name() : (baseUrl != null && baseUrl.contains("4chan.org") ? "4chan" : "unknown");
+        return captchaKey(name, board, thread_id);
+    }
+
+    // Returns how many seconds are left on the 4chan post cooldown
     public int getCooldownRemainingSeconds() {
         String key = getGlobalKey();
         Long endTime = globalCooldowns.get(key);
@@ -246,6 +272,42 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return cooldownActive;
     }
 
+    public int getExpiryRemainingSeconds() {
+        Long endTime = globalExpiries.get(getGlobalKey());
+        if (endTime == null) return 0;
+        long diff = endTime - System.currentTimeMillis();
+        if (diff <= 0) return 0;
+        return (int) ((diff + 999) / 1000);
+    }
+
+    public static int getExpiryRemainingForKey(String key) {
+        Long end = globalExpiries.get(key);
+        if (end == null) return 0;
+        long diff = end - System.currentTimeMillis();
+        if (diff <= 0) return 0;
+        return (int) ((diff + 999) / 1000);
+    }
+
+    public static boolean hasLiveChallengeForKey(String key) {
+        String p = globalPayloads.get(key);
+        if (p == null || p.equals("null")) return false;
+        try {
+            JSONObject root = new JSONObject(p);
+            JSONObject o = root.optJSONObject("twister");
+            if (o == null) o = root;
+            if (!o.has("img") && !o.has("tasks")) return false;
+            Long exp = globalExpiries.get(key);
+            return exp == null || exp > System.currentTimeMillis();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean hasLiveChallenge() {
+        return hasLiveChallengeForKey(getGlobalKey());
+    }
+
+    // Restores the last known UI state or reloads the captcha page
     @Override
     public void reset() {
         reportedCompletion = false;
@@ -254,11 +316,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             onCaptchaLoaded();
             return;
         }
+        if (captchaLoading && System.currentTimeMillis() - loadingSince < 30000L) return;
+        captchaLoading = false;
 
         String key = getGlobalKey();
         int displayRemaining = Math.max(getCooldownRemainingSeconds(), getRequestCooldownRemainingSeconds());
 
-        if (displayRemaining > 0) {
+        if (displayRemaining > 0 && !hasLiveChallengeForKey(key)) {
             cooldownActive = true;
             showingActiveCaptcha = true;
             String savedPayload = globalPayloads.get(key);
@@ -280,10 +344,61 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
 
         if (showingActiveCaptcha) {
-            cooldownActive = false;
-            globalCooldowns.remove(key);
-            onCaptchaLoaded();
-            return;
+            Long expTtl = globalExpiries.get(key);
+            if (expTtl == null || expTtl > System.currentTimeMillis()) {
+                cooldownActive = false;
+                globalCooldowns.remove(key);
+                if (expTtl != null) {
+                    int remainTtl = (int) ((expTtl - System.currentTimeMillis() + 999) / 1000);
+                    if (remainTtl > 0) {
+                        final int syncTtl = remainTtl;
+                        AndroidUtils.runOnUiThread(() -> evaluateJavascript("window.__syncExpiry(" + syncTtl + ")", null));
+                        scheduleExpiryNotice(key, remainTtl);
+                    }
+                }
+                onCaptchaLoaded();
+                return;
+            }
+        }
+        String cached = globalPayloads.get(key);
+        if (cached != null && !cached.equals("null")) {
+            if (hasLiveChallengeForKey(key)) {
+                String rebuilt = cached;
+                Long expTtl = globalExpiries.get(key);
+                if (expTtl != null) {
+                    int remainTtl = (int) Math.max(0, (expTtl - System.currentTimeMillis() + 999) / 1000);
+                    try {
+                        JSONObject root = new JSONObject(cached);
+                        JSONObject inner = root.optJSONObject("twister");
+                        JSONObject target = inner != null ? inner : root;
+                        target.put("ttl", remainTtl);
+                        target.remove("expiry");
+                        rebuilt = root.toString();
+                    } catch (Exception ignored) {}
+                    if (remainTtl > 0) scheduleExpiryNotice(key, remainTtl);
+                }
+                String restoredChallenge = payloadChallenge(rebuilt);
+                String savedAnswers = restoredChallenge.isEmpty() ? null : savedAnswersByChallenge.get(restoredChallenge);
+                if (savedAnswers != null) {
+                    pendingRestoreChallenge = restoredChallenge;
+                    pendingRestoreAnswers = savedAnswers;
+                }
+                String html = loadAssetWithCaptchaData(rebuilt);
+                if (html != null) {
+                    lastAppliedPayload = cached;
+                    lastResponseWasAsset = true;
+                    showingActiveCaptcha = true;
+                    cooldownActive = false;
+                    loadDataWithBaseURL("https://sys.4chan.org/", html, "text/html", "UTF-8", "https://sys.4chan.org/");
+                    onCaptchaLoaded();
+                    return;
+                }
+                pendingRestoreChallenge = null;
+                pendingRestoreAnswers = null;
+            } else {
+                globalPayloads.remove(key);
+                globalCooldowns.remove(key);
+            }
         }
         cooldownActive = false;
         showingActiveCaptcha = false;
@@ -322,6 +437,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private void showUnifiedOverlay(String message, boolean isError) {
         showingOverlay = true;
         showingActiveCaptcha = false;
+        captchaLoading = false;
         if (isError) post(() -> maybeToast(message, false));
         String html = loadAssetWithCaptchaData(buildOverlayJson(message, isError));
         if (html != null) {
@@ -336,6 +452,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             if (showingOverlay) return;
             showingActiveCaptcha = false;
             showingOverlay = false;
+            captchaLoading = true;
+            loadingSince = System.currentTimeMillis();
+            pendingRestoreChallenge = null;
+            pendingRestoreAnswers = null;
             reportedCompletion = false;
             nativePayloadRetryAttempts = 0;
             lastAppliedPayload = null;
@@ -347,7 +467,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
             }
 
-            String ticketParam = (includeTicket && !ticket.isEmpty()) ? "&ticket=" + urlEncode(ticket) : "";
+            String currentTicket = getTicket();
+            String ticketParam = (includeTicket && !currentTicket.isEmpty()) ? "&ticket=" + urlEncode(currentTicket) : "";
             String url = "https://sys.4chan.org/captcha?board=" + board + (thread_id > 0 ? "&thread_id=" + thread_id : "") + ticketParam;
             
             if (includeCacheBuster) {
@@ -548,6 +669,10 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 if (payload != null) {
                     persistTicket(payload);
                     trackCooldownFromPayload(payload);
+                    captchaLoading = false;
+                    savedAnswersByChallenge.clear();
+                    pendingRestoreChallenge = null;
+                    pendingRestoreAnswers = null;
                     String assetHtml = loadAssetWithCaptchaData(payload);
                     if (assetHtml != null) {
                         lastResponseWasAsset = true;
@@ -578,6 +703,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     // Parses a JSON payload and updates the UI with cooldown or challenge data
     private void applyPayload(String payload, String sourceUrl) {
         if (TextUtils.isEmpty(payload) || "null".equals(payload)) return;
+        captchaLoading = false;
         
         // Avoid redundant UI reloads if the payload hasn't changed.
         if (payload.equals(lastAppliedPayload)) {
@@ -586,12 +712,20 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         lastAppliedPayload = payload;
 
         persistTicket(payload);
-        globalPayloads.put(getGlobalKey(), payload);
+        savedAnswersByChallenge.clear();
+        pendingRestoreChallenge = null;
+        pendingRestoreAnswers = null;
 
         try {
             JSONObject root = new JSONObject(payload);
             JSONObject obj = root.optJSONObject("twister");
             if (obj == null) obj = root;
+
+            boolean incomingChallenge = obj.has("img") || obj.has("tasks");
+            String lowerCheck = payload.toLowerCase();
+            boolean verifiedSignal = lowerCheck.contains("verified") || lowerCheck.contains("not required");
+            if (!incomingChallenge && !verifiedSignal && hasLiveChallenge()) return;
+            globalPayloads.put(getGlobalKey(), payload);
 
             int pcd = obj.optInt("pcd", -1);
             int cd = obj.optInt("cd", -1);
@@ -643,6 +777,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
+    // Schedules a toast notification for when the current captcha session expires
     private void scheduleExpiryNotice(final String key, int seconds) {
         captchaHandler.postDelayed(() -> {
             Long expiryTime = globalExpiries.get(key);
@@ -853,18 +988,19 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             JSONObject inner = obj.optJSONObject("twister");
             String t = (inner != null ? inner : obj).optString("ticket", "");
             if (!t.isEmpty()) {
-                ticket = t;
+                tickets.put(getGlobalKey(), t);
                 AndroidUtils.runOnUiThread(() -> evaluateJavascript("localStorage.setItem('4chan-tc-ticket','" + t.replace("'", "\\'") + "')", null));
             }
         } catch (Exception ignored) {}
     }
 
+    // Begins background tracking of a new post cooldown timer
     private void startCooldownTracking(int seconds) {
         globalCooldowns.put(getGlobalKey(), System.currentTimeMillis() + (seconds * 1000L));
     }
 
-    public static int getGlobal4chanCooldownRemaining() {
-        Long end = globalCooldowns.get(GLOBAL_4CHAN_KEY);
+    public static int getCooldownRemainingForKey(String key) {
+        Long end = globalCooldowns.get(key);
         if (end == null) return 0;
         long diff = end - System.currentTimeMillis();
         if (diff <= 0) return 0;
@@ -877,11 +1013,19 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             JSONObject root = new JSONObject(payload);
             JSONObject obj = root.optJSONObject("twister");
             if (obj == null) obj = root;
+            String key = getGlobalKey();
+            boolean incomingChallenge = obj.has("img") || obj.has("tasks");
+            if (!incomingChallenge && hasLiveChallengeForKey(key)) return;
+            if (incomingChallenge) globalPayloads.put(key, payload);
             int pcd = obj.optInt("pcd", 0);
             int cd = obj.optInt("cd", 0);
+            int ttl = obj.optInt("ttl", obj.optInt("expiry", -1));
+            if (ttl > 0) {
+                globalExpiries.put(key, System.currentTimeMillis() + (ttl * 1000L));
+                scheduleExpiryNotice(key, ttl);
+            }
             int seconds = Math.max(pcd, cd);
             if (seconds > 0) {
-                String key = getGlobalKey();
                 globalCooldowns.put(key, System.currentTimeMillis() + (seconds * 1000L));
                 globalPayloads.put(key, payload);
                 cooldownActive = true;
@@ -918,10 +1062,11 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     // Clears only in-memory state and localStorage so 4chan can re-run fingerprinting (mcl.js / Cloudflare). Does NOT delete any cookies.
     private void refreshFingerprintSession() {
-        ticket = "";
-        globalPayloads.clear();
-        globalCooldowns.clear();
-        globalExpiries.clear();
+        String key = getGlobalKey();
+        tickets.remove(key);
+        globalPayloads.remove(key);
+        globalCooldowns.remove(key);
+        globalExpiries.remove(key);
         AndroidUtils.runOnUiThread(() -> {
             showingOverlay = false;
             evaluateJavascript("localStorage.clear(); sessionStorage.clear();", null);
@@ -930,7 +1075,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
     private void clearFingerprintCookies() {
         // Clear stale ticket immediately
-        ticket = "";
+        tickets.clear();
 
         // Drop all in-memory captcha state so nothing stale bleeds into the fresh session.
         globalPayloads.clear();
@@ -988,6 +1133,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
     }
 
+    // Show a toast if user has enabled captcha toasts or when it is forced.
     private void maybeToast(final String msg, boolean force) {
         if (force || AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
             AndroidUtils.runOnUiThread(() -> AndroidUtils.showThemedSnackbar(msg, Snackbar.LENGTH_LONG));
@@ -1020,12 +1166,29 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private void onCaptchaLoaded() {
         requestFocus();
         AndroidUtils.hideKeyboard(this);
+        if (pendingRestoreChallenge != null && pendingRestoreAnswers != null) {
+            final String ch = pendingRestoreChallenge.replace("\\", "\\\\").replace("'", "\\'");
+            final String ans = pendingRestoreAnswers;
+            pendingRestoreChallenge = null;
+            pendingRestoreAnswers = null;
+            AndroidUtils.runOnUiThread(() -> {
+                try {
+                    evaluateJavascript("if(window.__restoreCaptchaAnswers){window.__restoreCaptchaAnswers('" + ch + "','" + ans + "')}", null);
+                } catch (Exception ignored) {}
+            });
+        }
     }
 
     // Finalizes the solve and notifies the reply layout
     private void onCaptchaEntered(String challenge, String response) {
         globalCooldowns.remove(getGlobalKey());
+        globalExpiries.remove(getGlobalKey());
+        globalPayloads.remove(getGlobalKey());
+        if (challenge != null) savedAnswersByChallenge.remove(challenge);
+        pendingRestoreChallenge = null;
+        pendingRestoreAnswers = null;
         cooldownActive = false;
+        captchaLoading = false;
         if (reportedCompletion) return;
         reportedCompletion = true;
         showingActiveCaptcha = false;
@@ -1109,6 +1272,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
         @JavascriptInterface
         public void onRequestCaptcha() {
+            captchaLoading = true;
+            loadingSince = System.currentTimeMillis();
             AndroidUtils.runOnUiThread(() -> {
                 showingOverlay = false;  // allow hardReset to proceed past the guard
                 NewCaptchaLayout.this.hardReset(false, true);
@@ -1121,6 +1286,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         }
 
         @JavascriptInterface
+        public void onAnswersChanged(String challenge, String answersCsv) {
+            if (challenge != null && !challenge.isEmpty()) {
+                savedAnswersByChallenge.put(challenge, answersCsv == null ? "" : answersCsv);
+            }
+        }
+
+        @JavascriptInterface
         public void onCaptchaPayloadReady(String p) {
             try {
                 String decoded = URLDecoder.decode(p, StandardCharsets.UTF_8.name());
@@ -1130,7 +1302,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
 
         @JavascriptInterface
         public void saveTicket(String t) {
-            ticket = t;
+            tickets.put(NewCaptchaLayout.this.getGlobalKey(), t);
         }
 
         @JavascriptInterface

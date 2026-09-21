@@ -184,18 +184,35 @@ public class ReplyLayout extends LoadView implements
 
     private final Handler cooldownUpdateHandler = new Handler(Looper.getMainLooper());
     private boolean showingCooldownMessage = false;
+    private boolean showingExpiry = false;
+    private String currentCaptchaKey = null;
     private final Runnable cooldownUpdateRunnable = new Runnable() {
         @Override
         public void run() {
-            int displaySeconds = NewCaptchaLayout.getGlobal4chanCooldownRemaining();
+            int cooldown = currentCaptchaKey == null ? 0 : NewCaptchaLayout.getCooldownRemainingForKey(currentCaptchaKey);
+            int expiry = currentCaptchaKey == null ? 0 : NewCaptchaLayout.getExpiryRemainingForKey(currentCaptchaKey);
+            boolean live = currentCaptchaKey != null && NewCaptchaLayout.hasLiveChallengeForKey(currentCaptchaKey);
             if (authenticationLayout instanceof NewCaptchaLayout ncl) {
-                int seconds = ncl.getCooldownRemainingSeconds();
-                int requestSeconds = ncl.getRequestCooldownRemainingSeconds();
-                displaySeconds = Math.max(displaySeconds, Math.max(seconds, requestSeconds));
+                cooldown = Math.max(cooldown, Math.max(ncl.getCooldownRemainingSeconds(), ncl.getRequestCooldownRemainingSeconds()));
+                expiry = Math.max(expiry, ncl.getExpiryRemainingSeconds());
+                live |= ncl.hasLiveChallenge();
             }
-            if (displaySeconds > 0) {
+            if (live && expiry > 0) {
                 showingCooldownMessage = true;
-                openMessage(true, true, "Cooldown: " + displaySeconds + "s — tap to view", false);
+                showingExpiry = true;
+                openMessage(true, true, "Expires: " + expiry + "s — tap to view", false);
+                message.setTextColor(expiry < 30 ? 0xFFF44336 : getAttrColor(getContext(), R.attr.text_color_primary));
+                message.setClickable(true);
+                message.setFocusable(true);
+                message.setOnClickListener(v -> presenter.switchPage(ReplyPresenter.Page.AUTHENTICATION, true));
+                cooldownUpdateHandler.postDelayed(this, 1000);
+                return;
+            }
+            if (cooldown > 0) {
+                showingCooldownMessage = true;
+                showingExpiry = false;
+                openMessage(true, true, "Cooldown: " + cooldown + "s — tap to view", false);
+                message.setTextColor(getAttrColor(getContext(), R.attr.text_color_primary));
                 message.setClickable(true);
                 message.setFocusable(true);
                 message.setOnClickListener(v -> presenter.switchPage(ReplyPresenter.Page.AUTHENTICATION, true));
@@ -203,13 +220,15 @@ public class ReplyLayout extends LoadView implements
                 return;
             }
             if (showingCooldownMessage) {
+                boolean wasExpiry = showingExpiry;
                 showingCooldownMessage = false;
+                showingExpiry = false;
                 message.setOnClickListener(null);
                 message.setClickable(false);
                 message.setFocusable(false);
                 openMessage(false, true, "", false);
                 if (AndroidUtils.getPreferences().getBoolean("preference_4chan_cooldown_toast", false)) {
-                    AndroidUtils.showThemedSnackbar("Cooldown finished, you can request a captcha", Snackbar.LENGTH_LONG);
+                    AndroidUtils.showThemedSnackbar(wasExpiry ? "Captcha expired, request a new one" : "Cooldown finished, you can request a captcha", Snackbar.LENGTH_LONG);
                 }
             }
         }
@@ -441,10 +460,12 @@ public class ReplyLayout extends LoadView implements
     }
 
     public void bindLoadable(Loadable loadable) {
+        currentCaptchaKey = NewCaptchaLayout.captchaKey(loadable.site.name(), loadable.boardCode, loadable.no);
         presenter.bindLoadable(loadable);
     }
 
     public void cleanup() {
+        currentCaptchaKey = null;
         presenter.unbindLoadable();
         cancelPendingRunnables();
     }
@@ -459,6 +480,7 @@ public class ReplyLayout extends LoadView implements
         removeCallbacks(closeMessageRunnable);
         cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
         showingCooldownMessage = false;
+        showingExpiry = false;
         if (message != null) {
             message.setOnClickListener(null);
             message.setClickable(false);
@@ -704,6 +726,7 @@ public class ReplyLayout extends LoadView implements
 
         AndroidUtils.hideKeyboard(this);
 
+        currentCaptchaKey = NewCaptchaLayout.captchaKey(loadable.site.name(), loadable.boardCode, loadable.no);
         authenticationLayout.initialize(loadable, callback);
         authenticationLayout.reset();
     }
@@ -730,13 +753,17 @@ public class ReplyLayout extends LoadView implements
                 setView(replyInputLayout);
                 setWrap(!presenter.isExpanded());
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
-                boolean cooling = NewCaptchaLayout.getGlobal4chanCooldownRemaining() > 0;
-                if (authenticationLayout instanceof NewCaptchaLayout ncl) cooling |= ncl.onCooldownNow();
+                boolean cooling = currentCaptchaKey != null
+                        && (NewCaptchaLayout.getCooldownRemainingForKey(currentCaptchaKey) > 0
+                        || NewCaptchaLayout.getExpiryRemainingForKey(currentCaptchaKey) > 0);
+                if (authenticationLayout instanceof NewCaptchaLayout ncl)
+                    cooling |= ncl.onCooldownNow() || ncl.getExpiryRemainingSeconds() > 0;
                 if (cooling) {
                     cooldownUpdateHandler.post(cooldownUpdateRunnable);
                 } else {
                     if (showingCooldownMessage) {
                         showingCooldownMessage = false;
+                        showingExpiry = false;
                         message.setOnClickListener(null);
                         message.setClickable(false);
                         message.setFocusable(false);
@@ -755,6 +782,7 @@ public class ReplyLayout extends LoadView implements
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
                 if (showingCooldownMessage) {
                     showingCooldownMessage = false;
+                    showingExpiry = false;
                     message.setOnClickListener(null);
                     message.setClickable(false);
                     message.setFocusable(false);
@@ -858,12 +886,16 @@ public class ReplyLayout extends LoadView implements
 
     @Override
     public void openMessage(boolean open, boolean animate, String text, boolean autoHide) {
-        if (showingCooldownMessage && open && text != null && !text.startsWith("Cooldown:")) {
-            showingCooldownMessage = false;
-            cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
-            message.setOnClickListener(null);
-            message.setClickable(false);
-            message.setFocusable(false);
+        if (open && text != null && !text.startsWith("Cooldown:") && !text.startsWith("Expires:")) {
+            if (showingCooldownMessage) {
+                showingCooldownMessage = false;
+                showingExpiry = false;
+                cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
+                message.setOnClickListener(null);
+                message.setClickable(false);
+                message.setFocusable(false);
+            }
+            message.setTextColor(0xFFF44336);
         }
         removeCallbacks(closeMessageRunnable);
         message.setText(text);

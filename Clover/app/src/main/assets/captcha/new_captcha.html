@@ -973,6 +973,7 @@ function buildNativeTasksUI(data) {
                 sliderTrack.style.transform = 'translateX(-' + (idx * 100) + '%)';
                 answers[currentIndex] = idx;
                 document.getElementById('t-native-next').disabled = false;
+                reportCaptchaAnswers(answers.join(','));
             };
             // Sync slider value with answer if it exists
             if (answers[currentIndex] !== undefined) {
@@ -1011,6 +1012,7 @@ function buildNativeTasksUI(data) {
                     for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
                     div.classList.add('selected');
                     document.getElementById('t-native-next').disabled = false;
+                    reportCaptchaAnswers(answers.join(','));
                     if (autoSkipChallenge && currentIndex < total - 1) {
                         setTimeout(advanceChallenge, 150);
                     }
@@ -1055,6 +1057,18 @@ function buildNativeTasksUI(data) {
 
     document.getElementById('t-native-next').onclick = advanceChallenge;
 
+    window.__restoreCaptchaAnswers = function(ch, csv) {
+        try {
+            if (currentChallengeValue() !== ch) return;
+            var parts = (csv || '').split(',');
+            for (var i = 0; i < total && i < parts.length; i++) {
+                if (parts[i] !== '') answers[i] = parseInt(parts[i], 10);
+            }
+            currentIndex = 0;
+            renderChallenge();
+        } catch (e) {}
+    };
+
     renderChallenge();
     CaptchaCallback.onCaptchaLoaded();
 }
@@ -1070,6 +1084,7 @@ function buildSingleViewTasksUI(data) {
     var tasks = data.tasks;
     var total = tasks.length;
     var answers = new Array(total).fill(undefined);
+    var renderers = [];
 
     startExpiryTimer(data.ttl);
 
@@ -1175,6 +1190,7 @@ function buildSingleViewTasksUI(data) {
                     for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
                     choiceDiv.classList.add('selected');
                     updateSubmitButtonStatus();
+                    reportCaptchaAnswers(answers.join(','));
                     if (autoSkipChallenge) {
                         var tasks = container.querySelectorAll('.t-single-task');
                         if (taskIdx + 1 < tasks.length) {
@@ -1229,6 +1245,7 @@ function buildSingleViewTasksUI(data) {
                 track.style.transform = 'translateX(-' + (idx * 100) + '%)';
                 answers[taskIdx] = idx;
                 updateSubmitButtonStatus();
+                reportCaptchaAnswers(answers.join(','));
             };
             sWrap.appendChild(sInput);
             contentWrap.appendChild(sWrap);
@@ -1242,6 +1259,7 @@ function buildSingleViewTasksUI(data) {
         };
 
         renderChoices();
+        renderers.push(renderChoices);
         taskDiv.appendChild(contentWrap);
         container.appendChild(taskDiv);
     });
@@ -1252,6 +1270,17 @@ function buildSingleViewTasksUI(data) {
     }
 
     document.getElementById('t-native-submit').disabled = true;
+    window.__restoreCaptchaAnswers = function(ch, csv) {
+        try {
+            if (currentChallengeValue() !== ch) return;
+            var parts = (csv || '').split(',');
+            for (var i = 0; i < total && i < parts.length; i++) {
+                if (parts[i] !== '') answers[i] = parseInt(parts[i], 10);
+            }
+            for (var j = 0; j < renderers.length; j++) renderers[j]();
+            updateSubmitButtonStatus();
+        } catch (e) {}
+    };
     document.getElementById('t-native-submit').onclick = function() {
         var allAnswered = answers.every(function(a) { return a !== undefined; });
         if (!allAnswered) return;
@@ -1275,6 +1304,23 @@ function requestCaptcha() {
     if (cooldownInterval) clearInterval(cooldownInterval);
     CaptchaCallback.onRequestCaptcha();
 }
+
+function currentChallengeValue() {
+    var el = document.getElementById('t-challenge');
+    return el ? el.value : '';
+}
+
+function reportCaptchaAnswers(csv) {
+    try {
+        if (typeof CaptchaCallback !== 'undefined' && typeof CaptchaCallback.onAnswersChanged === 'function') {
+            CaptchaCallback.onAnswersChanged(currentChallengeValue(), csv || '');
+        }
+    } catch (e) {}
+}
+
+window.__restoreCaptchaAnswers = null;
+
+window.__syncExpiry = function(s) { try { startExpiryTimer(s); } catch (e) {} };
 
 window.globalOnCaptchaEntered = function() {
     if (expiryInterval) clearInterval(expiryInterval);
