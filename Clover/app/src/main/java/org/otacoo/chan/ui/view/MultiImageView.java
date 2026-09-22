@@ -1449,12 +1449,15 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             public void onReady() {
                 if (!hasContent || mode == forMode) {
                     callback.showProgress(MultiImageView.this, false);
-                    onModeLoaded(Mode.BIGIMAGE, image);
+                    onModeLoaded(forMode, image);
+                } else {
+                    removeView(image);
                 }
             }
 
             @Override
             public void onError(boolean wasInitial) {
+                removeView(image);
                 onBigImageError(wasInitial);
             }
         });
