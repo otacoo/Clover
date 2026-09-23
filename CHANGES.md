@@ -1,3 +1,9 @@
+## 2026-09-23 – v3.9.3
+
+- Fixed an issue with certain GIF files where the low quality thumb wasn't removed and the full image appeared behind the thumb
+
+## 2026-09-21 – v3.9.2
+
 ### New options & changes
 
 - **New option:** Always show board name (Thread Watcher settings)
