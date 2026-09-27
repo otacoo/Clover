@@ -1,3 +1,22 @@
+## 2026-09-27 – v3.10.0
+
+### New options & changes
+
+**8chan:** 
+- Posting should be more reliable: solving the captcha no longer always fails with "wrong answer"
+- Bypass handling got sturdier
+
+**Filter:**
+- **New option:** Filter by MD5
+- **New feature:** Added menu entries for Filter
+  - Filter right from within a thread or catalog
+  - Filter images by MD5, Name or Unique ID
+  - Image viewer got a *Copy hash* menu option
+
+### Bug fixes & others
+
+- **8chan:** Fix an issue where the app could get rate-limited on app launch by firing too many requests: bookmarked threads start refreshing a little after launch instead of all at once
+
 ## 2026-09-23 – v3.9.3
 
 - Fixed an issue with certain GIF files where the low quality thumb wasn't removed and the full image appeared behind the thumb
