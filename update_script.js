@@ -9,8 +9,9 @@
  *
  * versionCode format:  XXYYZZ  (no zero-padding of major)
  *   e.g. v3.0.22 → 30022,  v3.1.5 → 30105,  v10.2.3 → 100203
- * 
- * Set "npm config set git-tag-version false" if you don't want to git commit.
+ *
+ * The repo .npmrc sets git-tag-version=false so `npm version` only bumps
+ * files and never commits or tags; releases are committed separately.
  */
 
 const fs   = require('fs');
