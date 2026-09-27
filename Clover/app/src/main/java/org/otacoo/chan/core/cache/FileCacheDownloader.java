@@ -221,6 +221,17 @@ public class FileCacheDownloader implements Runnable {
                     });
                     return;
                 }
+            } catch (RuntimeException e) {
+                log("runtime exception, failing download", e);
+                post(() -> {
+                    purgeOutput();
+                    for (FileCacheListener callback : listeners) {
+                        callback.onFail(false);
+                        callback.onEnd();
+                    }
+                    callback.downloaderFinished(this);
+                });
+                return;
             } finally {
                 IOUtils.closeQuietly(sourceCloseable);
                 IOUtils.closeQuietly(sinkCloseable);
@@ -242,6 +253,13 @@ public class FileCacheDownloader implements Runnable {
                 Thread.sleep(2000L);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
+                post(() -> {
+                    for (FileCacheListener callback : listeners) {
+                        callback.onCancel();
+                        callback.onEnd();
+                    }
+                    callback.downloaderFinished(this);
+                });
                 return;
             }
         }

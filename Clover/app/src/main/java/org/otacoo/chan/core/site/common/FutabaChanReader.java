@@ -257,6 +257,7 @@ public class FutabaChanReader implements ChanReader {
                     String rawUrl = displayName.substring(valStart, end);
                     try {
                         String decoded = java.net.URLDecoder.decode(rawUrl, "UTF-8");
+                        if (!decoded.contains("://")) decoded = "https://" + decoded;
                         String lower = decoded.toLowerCase();
                         int q = lower.indexOf('?'), f = lower.indexOf('#');
                         String pathOnly = lower.substring(0, q > 0 ? q : f > 0 ? f : lower.length());
@@ -386,7 +387,10 @@ public class FutabaChanReader implements ChanReader {
                 int end = displayName.indexOf(']');
                 if (end > 0) {
                     String rawUrl = displayName.substring(7, end);
-                    try { soundUrl = java.net.URLDecoder.decode(rawUrl, "UTF-8"); } catch (Exception ignored) {}
+                    try {
+                        soundUrl = java.net.URLDecoder.decode(rawUrl, "UTF-8");
+                        if (soundUrl != null && !soundUrl.contains("://")) soundUrl = "https://" + soundUrl;
+                    } catch (Exception ignored) {}
                     displayName = displayName.substring(end + 1);
                 }
             }
