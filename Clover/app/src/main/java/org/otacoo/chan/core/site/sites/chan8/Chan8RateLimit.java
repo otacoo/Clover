@@ -22,7 +22,7 @@ import java.util.concurrent.Semaphore;
 /** Shared rate-limiter and domain-failover helper for 8chan.moe / 8chan.st. */
 public final class Chan8RateLimit {
 
-    private static final int MAX_CONCURRENT = 8;
+    private static final int MAX_CONCURRENT = 3;
     private static final Semaphore SEMAPHORE = new Semaphore(MAX_CONCURRENT, true);
 
     /** Primary domain, always the default on a fresh start. */

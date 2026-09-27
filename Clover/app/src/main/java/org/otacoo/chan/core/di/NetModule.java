@@ -37,6 +37,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.otacoo.chan.core.net.AppCookieJar;
 import org.otacoo.chan.core.site.sites.chan8.Chan8PowInterceptor;
+import org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit;
 
 public class NetModule {
     private static final long FILE_CACHE_DISK_SIZE = 50 * 1024 * 1024;
@@ -215,50 +216,63 @@ public class NetModule {
                     @Override
                     public Response intercept(@NonNull Interceptor.Chain chain) throws IOException {
                         Request req = chain.request();
-
-                        // For 8chan: replace OkHttp's cookie header with raw values from the shared CookieStore.
-                        // This preserves HttpOnly cookies and avoids OkHttp's quoting/encoding differences.
-                        if (req.url().host().contains("8chan")) {
+                        boolean gated = req.url().host().contains("8chan");
+                        boolean permit = false;
+                        if (gated) {
                             try {
-                                String manualCookie = buildRawCookieHeader(req.url());
-                                if (manualCookie != null && !manualCookie.isEmpty()) {
-                                    req = req.newBuilder().header("Cookie", manualCookie).build();
-                                }
-                                String reqPath = req.url().encodedPath();
-                                if (reqPath.contains("captcha.js") || reqPath.contains("replyThread")
-                                        || reqPath.contains("newThread") || reqPath.contains("Bypass")) {
-                                    StringBuilder names = new StringBuilder();
-                                    boolean hasCaptchaId = false;
-                                    if (manualCookie != null) {
-                                        for (String part : manualCookie.split(";\\s*")) {
-                                            int eq = part.indexOf('=');
-                                            String n = eq > 0 ? part.substring(0, eq) : part;
-                                            if (names.length() > 0) names.append(',');
-                                            names.append(n);
-                                            if ("captchaid".equals(n)) hasCaptchaId = true;
-                                        }
-                                    }
-                                    Logger.i("NetModule", "8chan " + req.method() + " " + reqPath
-                                            + " cookies=[" + names + "] captchaid=" + hasCaptchaId);
-                                }
-                            } catch (Exception ignored) {}
-
-                            // inject Referer for CDN requests that lack one
-                            if (req.header("Referer") == null) {
-                                String referer = req.url().scheme() + "://" + req.url().host() + "/";
-                                req = req.newBuilder().header("Referer", referer).build();
-                            }
-
-                            // use image Accept header for media requests
-                            String reqPath = req.url().encodedPath();
-                            if (reqPath.startsWith("/.media/") || reqPath.startsWith("/.static/")) {
-                                req = req.newBuilder()
-                                        .header("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
-                                        .build();
+                                Chan8RateLimit.acquire();
+                                permit = true;
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
                             }
                         }
+                        try {
+                            // For 8chan: replace OkHttp's cookie header with raw values from the shared CookieStore.
+                            // This preserves HttpOnly cookies and avoids OkHttp's quoting/encoding differences.
+                            if (gated) {
+                                try {
+                                    String manualCookie = buildRawCookieHeader(req.url());
+                                    if (manualCookie != null && !manualCookie.isEmpty()) {
+                                        req = req.newBuilder().header("Cookie", manualCookie).build();
+                                    }
+                                    String reqPath = req.url().encodedPath();
+                                    if (reqPath.contains("captcha.js") || reqPath.contains("replyThread")
+                                            || reqPath.contains("newThread") || reqPath.contains("Bypass")) {
+                                        StringBuilder names = new StringBuilder();
+                                        boolean hasCaptchaId = false;
+                                        if (manualCookie != null) {
+                                            for (String part : manualCookie.split(";\\s*")) {
+                                                int eq = part.indexOf('=');
+                                                String n = eq > 0 ? part.substring(0, eq) : part;
+                                                if (names.length() > 0) names.append(',');
+                                                names.append(n);
+                                                if ("captchaid".equals(n)) hasCaptchaId = true;
+                                            }
+                                        }
+                                        Logger.i("NetModule", "8chan " + req.method() + " " + req.url().host() + req.url().encodedPath()
+                                                + " cookies=[" + names + "] captchaid=" + hasCaptchaId);
+                                    }
+                                } catch (Exception ignored) {}
 
-                        return chain.proceed(req);
+                                // inject Referer for CDN requests that lack one
+                                if (req.header("Referer") == null) {
+                                    String referer = req.url().scheme() + "://" + req.url().host() + "/";
+                                    req = req.newBuilder().header("Referer", referer).build();
+                                }
+
+                                // use image Accept header for media requests
+                                String mediaPath = req.url().encodedPath();
+                                if (mediaPath.startsWith("/.media/") || mediaPath.startsWith("/.static/")) {
+                                    req = req.newBuilder()
+                                            .header("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+                                            .build();
+                                }
+                            }
+
+                            return chain.proceed(req);
+                        } finally {
+                            if (permit) Chan8RateLimit.release();
+                        }
                     }
                 });
 
