@@ -115,7 +115,7 @@ public class WatchManager {
     public static final int DEFAULT_BACKGROUND_INTERVAL = 15 * 60 * 1000;
 
     private static final long FOREGROUND_INTERVAL = 15 * 1000;
-    private static final long FOREGROUND_INITIAL_DELAY = 1000;
+    private static final long FOREGROUND_INITIAL_DELAY = 10 * 1000;
     // Safety net: when a foreground pin load stalls, continue with the next pin.
     private static final long FOREGROUND_UPDATE_STALL_TIMEOUT = 30 * 1000L;
     private static final int MESSAGE_UPDATE = 1;
