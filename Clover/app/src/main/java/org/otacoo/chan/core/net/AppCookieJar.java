@@ -32,6 +32,17 @@ public class AppCookieJar implements CookieJar {
             java.net.URI uri = url.uri();
             for (Cookie cookie : cookies) {
                 if ("inbound".equals(cookie.name())) continue;
+                if (cookie.persistent() && cookie.expiresAt() <= System.currentTimeMillis()) {
+                    for (java.net.HttpCookie stale
+                            : new java.util.ArrayList<>(cookieManager.getCookieStore().get(uri))) {
+                        if (cookie.name().equals(stale.getName())) {
+                            try {
+                                cookieManager.getCookieStore().remove(uri, stale);
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    continue;
+                }
                 java.net.HttpCookie httpCookie = new java.net.HttpCookie(cookie.name(), cookie.value());
                 httpCookie.setDomain(cookie.domain());
                 httpCookie.setPath(cookie.path());
