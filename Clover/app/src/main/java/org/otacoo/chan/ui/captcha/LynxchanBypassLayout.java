@@ -384,18 +384,6 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
             }
             Logger.i(TAG, "POW solution=" + solution + ", submitting to validateBypass...");
 
-            // Add the pending bypass cookie to java.net so OkHttp includes it automatically.
-            try {
-                java.net.CookieManager cm = org.otacoo.chan.core.di.NetModule.getSharedCookieManager();
-                if (cm != null) {
-                    java.net.URI uri = new java.net.URI(baseUrl);
-                    java.net.HttpCookie hc = new java.net.HttpCookie("bypass", bypassCookieValue);
-                    hc.setDomain(uri.getHost());
-                    hc.setPath("/");
-                    cm.getCookieStore().add(uri, hc);
-                }
-            } catch (Exception ignored) {}
-
             RequestBody powBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("code", Integer.toString(solution))
