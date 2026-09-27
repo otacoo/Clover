@@ -1,3 +1,12 @@
+## 2026-09-27 – v3.10.2
+
+- Revert initial delay on app start to fetch bookmark posts: the delay will only apply for *8chan* to avoid rate-limiting
+
+**Sound posts:**
+- Fix sounds not playing
+- Add a circle indicator over the play button while the file is downloading
+
+
 ## 2026-09-27 – v3.10.1
 
 - **Filter:** Correctly target 8chan (Lynxchan) and vichan (Sushi/Lain) sites for image filtering
