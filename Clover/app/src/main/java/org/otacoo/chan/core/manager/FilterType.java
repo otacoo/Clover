@@ -27,7 +27,8 @@ public enum FilterType {
     ID(0x8, true),
     SUBJECT(0x10, true),
     FILENAME(0x20, true),
-    COUNTRY(0x40, false);
+    COUNTRY(0x40, false),
+    MD5(0x80, false);
 
     public final int flag;
     public final boolean isRegex;

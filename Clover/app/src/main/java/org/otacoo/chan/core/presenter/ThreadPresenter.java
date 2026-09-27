@@ -29,6 +29,8 @@ import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.database.DatabaseSavedReplyManager;
 import org.otacoo.chan.core.exception.ChanLoaderException;
 import org.otacoo.chan.core.manager.WatchManager;
+import org.otacoo.chan.core.manager.FilterType;
+import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostHttpIcon;
@@ -89,10 +91,13 @@ public class ThreadPresenter implements
     private static final int POST_OPTION_HIGHLIGHT_TRIPCODE = 11;
     private static final int POST_OPTION_HIDE = 12;
     private static final int POST_OPTION_OPEN_BROWSER = 13;
-    private static final int POST_OPTION_FILTER_TRIPCODE = 14;
     private static final int POST_OPTION_EXTRA = 15;
     private static final int POST_OPTION_UNSAVE = 16;
     private static final int POST_OPTION_MARK_ID = 17;
+    private static final int POST_OPTION_FILTER_MENU = 19;
+    private static final int POST_OPTION_FILTER_ID = 21;
+    private static final int POST_OPTION_FILTER_NAME = 22;
+    private static final int POST_OPTION_FILTER_IMAGE_MD5 = 23;
 
     private ThreadPresenterCallback threadPresenterCallback;
     private WatchManager watchManager;
@@ -840,9 +845,20 @@ public class ThreadPresenter implements
 
             if (!TextUtils.isEmpty(post.tripcode)) {
                 menu.add(new FloatingMenuItem(POST_OPTION_HIGHLIGHT_TRIPCODE, R.string.post_highlight_tripcode));
-                menu.add(new FloatingMenuItem(POST_OPTION_FILTER_TRIPCODE, R.string.post_filter_tripcode));
             }
         }
+
+        List<FloatingMenuItem> filterMenu = new ArrayList<>();
+        if (!TextUtils.isEmpty(post.id)) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_ID, R.string.post_filter_id));
+        }
+        if (!TextUtils.isEmpty(post.name)) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_NAME, R.string.post_filter_name));
+        }
+        if (firstImageMd5(post) != null) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_IMAGE_MD5, R.string.post_filter_image_md5));
+        }
+        menu.add(new FloatingMenuItem(POST_OPTION_FILTER_MENU, R.string.post_filter));
 
         boolean isSaved = databaseManager.getDatabaseSavedReplyManager().isSaved(post.board, post.no);
         if (loadable.site.feature(Site.Feature.POST_DELETE) && isSaved) {
@@ -867,7 +883,21 @@ public class ThreadPresenter implements
         extraMenu.add(new FloatingMenuItem(isSaved ? POST_OPTION_UNSAVE : POST_OPTION_SAVE,
                 isSaved ? R.string.unmark_as_my_post : R.string.mark_as_my_post));
 
-        return POST_OPTION_EXTRA;
+        Map<Object, List<FloatingMenuItem>> subMenus = new HashMap<>();
+        subMenus.put(POST_OPTION_EXTRA, extraMenu);
+        subMenus.put(POST_OPTION_FILTER_MENU, filterMenu);
+        return subMenus;
+    }
+
+    private static String firstImageMd5(Post post) {
+        if (post.images != null) {
+            for (PostImage image : post.images) {
+                if (image.fileHash != null && !image.fileHash.isEmpty()) {
+                    return image.fileHash;
+                }
+            }
+        }
+        return null;
     }
 
     public void onPostOptionClicked(Post post, Object id) {
@@ -903,9 +933,32 @@ public class ThreadPresenter implements
             case POST_OPTION_HIGHLIGHT_TRIPCODE:
                 threadPresenterCallback.highlightPostTripcode(post.tripcode);
                 break;
-            case POST_OPTION_FILTER_TRIPCODE:
-                threadPresenterCallback.filterPostTripcode(post.tripcode);
+            case POST_OPTION_FILTER_MENU:
                 break;
+            case POST_OPTION_FILTER_ID: {
+                Filter filter = new Filter();
+                filter.type = FilterType.ID.flag;
+                filter.pattern = post.id;
+                threadPresenterCallback.filterPostWithFilter(filter);
+                break;
+            }
+            case POST_OPTION_FILTER_NAME: {
+                Filter filter = new Filter();
+                filter.type = FilterType.NAME.flag;
+                filter.pattern = post.name;
+                threadPresenterCallback.filterPostWithFilter(filter);
+                break;
+            }
+            case POST_OPTION_FILTER_IMAGE_MD5: {
+                String md5 = firstImageMd5(post);
+                if (md5 != null) {
+                    Filter filter = new Filter();
+                    filter.type = FilterType.MD5.flag;
+                    filter.pattern = md5;
+                    threadPresenterCallback.filterPostWithFilter(filter);
+                }
+                break;
+            }
             case POST_OPTION_DELETE:
                 requestDeletePost(post);
                 break;
@@ -1289,7 +1342,7 @@ public class ThreadPresenter implements
 
         void highlightPostTripcode(String tripcode);
 
-        void filterPostTripcode(String tripcode);
+        void filterPostWithFilter(Filter filter);
 
         void selectPost(int post);
 

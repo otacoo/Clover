@@ -216,6 +216,14 @@ public class FilterEngine {
             }
         }
 
+        if (post.images != null && (filter.type & FilterType.MD5.flag) != 0) {
+            for (PostImage image : post.images) {
+                if (image.fileHash != null && matches(filter, FilterType.MD5.isRegex, image.fileHash, false)) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

@@ -109,6 +109,7 @@
     <string name="action_pin">Закладка</string>
     <string name="action_open_browser">Открыть в браузере</string>
     <string name="action_copy_url">Копировать URL</string>
+    <string name="action_copy_hash">Скопировать хеш</string>
     <string name="action_share">Поделиться</string>
     <string name="action_download_album">Скачать альбом</string>
     <string name="action_transparency_toggle">Переключить прозрачность</string>
@@ -309,6 +310,7 @@
     <string name="filter_subject">Тема</string>
     <string name="filter_filename">Имя файла</string>
     <string name="filter_country">Название страны</string>
+    <string name="filter_md5">MD5</string>
     <string name="filter_precedence_hint">"Фильтры вверху имеют приоритет.\nПровести влево по
         фильтру для удаления."</string>
     <string name="filter_add_button">Добавить фильтр</string>
@@ -342,8 +344,13 @@
     <string name="post_mark_my_id">Отметить как мой ID</string>
     <string name="post_highlight_tripcode">Выделить трипкод</string>
     <string name="post_filter_tripcode">Фильтровать трипкод</string>
+    <string name="post_filter">Фильтровать</string>
+    <string name="post_filter_id">Уникальный ID</string>
+    <string name="post_filter_name">Имя</string>
+    <string name="post_filter_image_md5">Изображение (MD5)</string>
     <string name="post_text_copied">Текст скопирован в буфер обмена</string>
     <string name="url_text_copied">URL изображения скопирован в буфер обмена</string>
+    <string name="hash_copied">Хеш изображения скопирован в буфер обмена</string>
     <string name="post_quote">Цитировать</string>
     <string name="post_web_search">Веб-поиск</string>
     <string name="post_quote_text">Цитировать текст</string>

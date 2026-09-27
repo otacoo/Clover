@@ -28,7 +28,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
-import org.otacoo.chan.core.manager.FilterType;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.orm.Filter;
@@ -322,17 +321,13 @@ public abstract class ThreadController extends Controller implements
     }
 
     @Override
-    public void openFilterForTripcode(String tripcode) {
+    public void openFilterDialog(Filter filter) {
         FiltersController filtersController = new FiltersController(context);
         if (doubleNavigationController != null) {
             doubleNavigationController.pushController(filtersController);
         } else {
             navigationController.pushController(filtersController);
         }
-        // TODO cleanup
-        Filter filter = new Filter();
-        filter.type = FilterType.TRIPCODE.flag;
-        filter.pattern = tripcode;
         filtersController.showFilterDialog(filter);
     }
 

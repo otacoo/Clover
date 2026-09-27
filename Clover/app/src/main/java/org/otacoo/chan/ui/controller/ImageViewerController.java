@@ -169,6 +169,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         NavigationItem.MenuOverflowBuilder overflowBuilder = menuBuilder.withOverflow();
         overflowBuilder.withSubItem(R.string.action_open_browser, this::openBrowserClicked);
         overflowBuilder.withSubItem(R.string.action_copy_url, this::clipboardURL);
+        overflowBuilder.withSubItem(R.string.action_copy_hash, this::clipboardHash);
         overflowBuilder.withSubItem(R.string.action_share, this::shareClicked);
         overflowBuilder.withSubItem(R.string.action_search_image, this::searchClicked);
         overflowBuilder.withSubItem(R.string.action_download_album, this::downloadAlbumClicked);
@@ -282,6 +283,17 @@ public class ImageViewerController extends Controller implements ImageViewerPres
             ClipData clip = ClipData.newPlainText("File URL", postImage.imageUrl.toString());
             clipboard.setPrimaryClip(clip);
             AndroidUtils.showThemedSnackbar(view, R.string.url_text_copied, Snackbar.LENGTH_SHORT);
+        }
+    }
+
+    private void clipboardHash(ToolbarMenuSubItem item) {
+        PostImage postImage = presenter.getCurrentPostImage();
+        if (postImage == null || postImage.fileHash == null || postImage.fileHash.isEmpty()) return;
+        ClipboardManager clipboard = (ClipboardManager) AndroidUtils.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            ClipData clip = ClipData.newPlainText("File hash", postImage.fileHash);
+            clipboard.setPrimaryClip(clip);
+            AndroidUtils.showThemedSnackbar(view, R.string.hash_copied, Snackbar.LENGTH_SHORT);
         }
     }
 

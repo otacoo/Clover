@@ -54,8 +54,8 @@ import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.PostLinkable;
-import org.otacoo.chan.core.model.orm.Loadable;
-import org.otacoo.chan.core.model.orm.ThreadHide;
+import org.otacoo.chan.core.model.orm.Filter;
+import org.otacoo.chan.core.model.orm.Loadable;import org.otacoo.chan.core.model.orm.ThreadHide;
 import org.otacoo.chan.core.presenter.ThreadPresenter;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.settings.ChanSettings;
@@ -710,8 +710,8 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     @Override
-    public void filterPostTripcode(String tripcode) {
-        callback.openFilterForTripcode(tripcode);
+    public void filterPostWithFilter(Filter filter) {
+        callback.openFilterDialog(filter);
     }
 
     @Override
@@ -1153,6 +1153,6 @@ public class ThreadLayout extends CoordinatorLayout implements
 
         void presentArchiveUnlock(String domain, Runnable onUnlocked, Runnable onCancelled);
 
-        void openFilterForTripcode(String tripcode);
+        void openFilterDialog(Filter filter);
     }
 }

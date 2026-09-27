@@ -96,6 +96,7 @@ public class FiltersController extends Controller implements
             case SUBJECT -> getString(R.string.filter_subject);
             case FILENAME -> getString(R.string.filter_filename);
             case COUNTRY -> getString(R.string.filter_country);
+            case MD5 -> getString(R.string.filter_md5);
         };
     }
 

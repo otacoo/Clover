@@ -36,6 +36,7 @@ public class PostImage {
     public final int imageHeight;
     public final boolean spoiler;
     public final long size;
+    public final String fileHash;
 
     public final String soundUrl;
 
@@ -54,6 +55,7 @@ public class PostImage {
         this.imageHeight = builder.imageHeight;
         this.spoiler = builder.spoiler;
         this.size = builder.size;
+        this.fileHash = builder.md5;
         this.soundUrl = builder.soundUrl;
 
         switch (extension) {

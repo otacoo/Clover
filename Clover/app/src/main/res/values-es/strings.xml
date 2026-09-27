@@ -92,6 +92,7 @@
     <string name="action_pin">Favorito</string>
     <string name="action_open_browser">Abrir en el navegador</string>
     <string name="action_copy_url">Copiar URL</string>
+    <string name="action_copy_hash">Copiar hash</string>
     <string name="action_share">Compartir</string>
     <string name="action_download_album">Descargar álbum</string>
     <string name="action_transparency_toggle">Alternar opacidad</string>
@@ -291,6 +292,7 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="filter_subject">Asunto</string>
     <string name="filter_filename">Nombre de archivo</string>
     <string name="filter_country">Nombre de país</string>
+    <string name="filter_md5">MD5</string>
     <string name="filter_precedence_hint">"Los filtros de arriba tienen prioridad.\nDesliza a la
         izquierda para eliminar un filtro."</string>
     <string name="filter_add_button">Añadir filtro</string>
@@ -324,8 +326,13 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="post_mark_my_id">Marcar como mi ID</string>
     <string name="post_highlight_tripcode">Resaltar tripcode</string>
     <string name="post_filter_tripcode">Filtrar tripcode</string>
+    <string name="post_filter">Filtrar</string>
+    <string name="post_filter_id">ID única</string>
+    <string name="post_filter_name">Nombre</string>
+    <string name="post_filter_image_md5">Imagen (MD5)</string>
     <string name="post_text_copied">Texto copiado al portapapeles</string>
     <string name="url_text_copied">URL de imagen copiada al portapapeles</string>
+    <string name="hash_copied">Hash de imagen copiado al portapapeles</string>
     <string name="post_quote">Citar</string>
     <string name="post_web_search">Búsqueda web</string>
     <string name="post_quote_text">Citar texto</string>

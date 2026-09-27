@@ -106,6 +106,7 @@ Re-enable this permission in the app settings if you permanently disabled it."</
     <string name="action_pin">Bookmark</string>
     <string name="action_open_browser">Open in a browser</string>
     <string name="action_copy_url">Copy URL</string>
+    <string name="action_copy_hash">Copy hash</string>
     <string name="action_share">Share</string>
     <string name="action_album_columns">Column count</string>
     <string name="action_download_album">Download album</string>
@@ -312,6 +313,7 @@ If any other filters are enabled for it, it will not work.
     <string name="filter_subject">Subject</string>
     <string name="filter_filename">Filename</string>
     <string name="filter_country">Country name</string>
+    <string name="filter_md5">MD5</string>
     <string name="filter_precedence_hint">"Filters at the top take precedence.\nSwipe left on a filter to delete."</string>
     <string name="filter_add_button">Add filter</string>
     <string name="filter_enable_all">Enable all</string>
@@ -346,8 +348,13 @@ If any other filters are enabled for it, it will not work.
     <string name="post_mark_my_id">Mark as my ID</string>
     <string name="post_highlight_tripcode">Highlight tripcode</string>
     <string name="post_filter_tripcode">Filter tripcode</string>
+    <string name="post_filter">Filter</string>
+    <string name="post_filter_id">Unique ID</string>
+    <string name="post_filter_name">Name</string>
+    <string name="post_filter_image_md5">Image (MD5)</string>
     <string name="post_text_copied">Text copied to clipboard</string>
     <string name="url_text_copied">Image URL copied to clipboard</string>
+    <string name="hash_copied">Image hash copied to clipboard</string>
     <string name="image_copied">Image copied to clipboard</string>
     <string name="filename_copied">Filename copied to clipboard</string>
     <string name="post_quote">Quote</string>

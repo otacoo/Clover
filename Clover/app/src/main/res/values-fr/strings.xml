@@ -92,6 +92,7 @@
     <string name="action_pin">Signet</string>
     <string name="action_open_browser">Ouvrir dans le navigateur</string>
     <string name="action_copy_url">Copier l\'URL</string>
+    <string name="action_copy_hash">Copier le hash</string>
     <string name="action_share">Partager</string>
     <string name="action_download_album">Télécharger l\'album</string>
     <string name="action_transparency_toggle">Basculer l\'opacité</string>
@@ -295,6 +296,7 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="filter_subject">Sujet</string>
     <string name="filter_filename">Nom de fichier</string>
     <string name="filter_country">Nom du pays</string>
+    <string name="filter_md5">MD5</string>
     <string name="filter_precedence_hint">"Les filtres en haut ont la priorité.\nFaire glisser vers
         la gauche pour supprimer un filtre."</string>
     <string name="filter_add_button">Ajouter un filtre</string>
@@ -328,8 +330,13 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="post_mark_my_id">Marquer comme mon ID</string>
     <string name="post_highlight_tripcode">Surligner le tripcode</string>
     <string name="post_filter_tripcode">Filtrer le tripcode</string>
+    <string name="post_filter">Filtrer</string>
+    <string name="post_filter_id">ID unique</string>
+    <string name="post_filter_name">Nom</string>
+    <string name="post_filter_image_md5">Image (MD5)</string>
     <string name="post_text_copied">Texte copié dans le presse-papiers</string>
     <string name="url_text_copied">URL de l\'image copiée dans le presse-papiers</string>
+    <string name="hash_copied">Hash de l\'image copié dans le presse-papiers</string>
     <string name="post_quote">Citer</string>
     <string name="post_web_search">Recherche web</string>
     <string name="post_quote_text">Citer le texte</string>

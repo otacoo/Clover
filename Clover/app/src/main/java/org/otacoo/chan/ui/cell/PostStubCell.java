@@ -42,6 +42,7 @@ import org.otacoo.chan.ui.view.ThumbnailView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class PostStubCell extends RelativeLayout implements PostCellInterface, View.OnClickListener {
     private static final int TITLE_MAX_LENGTH = 100;
@@ -105,8 +106,14 @@ public class PostStubCell extends RelativeLayout implements PostCellInterface, V
         FloatingMenu menu = new FloatingMenu(getContext(), anchor, items);
         menu.setCallback(new FloatingMenu.FloatingMenuCallback() {
             @Override
+            @SuppressWarnings("unchecked")
             public void onFloatingMenuItemClicked(FloatingMenu menu, FloatingMenuItem item) {
-                if (item.getId() == extraOption) {
+                if (extraOption instanceof Map) {
+                    Object subMenu = ((Map<?, ?>) extraOption).get(item.getId());
+                    if (subMenu instanceof List) {
+                        showOptions(anchor, (List<FloatingMenuItem>) subMenu, null, null);
+                    }
+                } else if (item.getId() == extraOption) {
                     showOptions(anchor, extraItems, null, null);
                 }
 

@@ -92,6 +92,7 @@
     <string name="action_pin">Lesezeichen</string>
     <string name="action_open_browser">Im Browser öffnen</string>
     <string name="action_copy_url">URL kopieren</string>
+    <string name="action_copy_hash">Hash kopieren</string>
     <string name="action_share">Teilen</string>
     <string name="action_download_album">Album herunterladen</string>
     <string name="action_transparency_toggle">Transparenz umschalten</string>
@@ -292,6 +293,7 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="filter_subject">Betreff</string>
     <string name="filter_filename">Dateiname</string>
     <string name="filter_country">Ländername</string>
+    <string name="filter_md5">MD5</string>
     <string name="filter_precedence_hint">"Filter oben haben Vorrang.\nNach links wischen, um einen
         Filter zu löschen."</string>
     <string name="filter_add_button">Filter hinzufügen</string>
@@ -325,8 +327,13 @@ Wenn andere Filter dafür aktiviert sind, funktioniert es nicht.
     <string name="post_mark_my_id">Als meine ID markieren</string>
     <string name="post_highlight_tripcode">Tripcode hervorheben</string>
     <string name="post_filter_tripcode">Tripcode filtern</string>
+    <string name="post_filter">Filtern</string>
+    <string name="post_filter_id">Eindeutige ID</string>
+    <string name="post_filter_name">Name</string>
+    <string name="post_filter_image_md5">Bild (MD5)</string>
     <string name="post_text_copied">Text in Zwischenablage kopiert</string>
     <string name="url_text_copied">Bild-URL in Zwischenablage kopiert</string>
+    <string name="hash_copied">Bild-Hash in Zwischenablage kopiert</string>
     <string name="post_quote">Zitieren</string>
     <string name="post_web_search">Websuche</string>
     <string name="post_quote_text">Text zitieren</string>
