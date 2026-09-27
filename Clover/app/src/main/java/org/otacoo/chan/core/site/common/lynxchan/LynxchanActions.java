@@ -177,6 +177,9 @@ public class LynxchanActions extends CommonSite.CommonActions {
             call.parameter("captchaAnswer", reply.captchaResponse);
             call.parameter("captcha", reply.captchaResponse); // legacy fallback
         }
+        Logger.i(TAG, "setupPost: captchaId=" + (isEmpty(reply.captchaChallenge) ? "none" : reply.captchaChallenge)
+                + " answer=" + reply.captchaResponse
+                + " answerLen=" + (reply.captchaResponse == null ? 0 : reply.captchaResponse.length()));
     }
 
     @Override

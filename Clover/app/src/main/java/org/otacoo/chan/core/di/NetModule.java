@@ -224,6 +224,23 @@ public class NetModule {
                                 if (manualCookie != null && !manualCookie.isEmpty()) {
                                     req = req.newBuilder().header("Cookie", manualCookie).build();
                                 }
+                                String reqPath = req.url().encodedPath();
+                                if (reqPath.contains("captcha.js") || reqPath.contains("replyThread")
+                                        || reqPath.contains("newThread") || reqPath.contains("Bypass")) {
+                                    StringBuilder names = new StringBuilder();
+                                    boolean hasCaptchaId = false;
+                                    if (manualCookie != null) {
+                                        for (String part : manualCookie.split(";\\s*")) {
+                                            int eq = part.indexOf('=');
+                                            String n = eq > 0 ? part.substring(0, eq) : part;
+                                            if (names.length() > 0) names.append(',');
+                                            names.append(n);
+                                            if ("captchaid".equals(n)) hasCaptchaId = true;
+                                        }
+                                    }
+                                    Logger.i("NetModule", "8chan " + req.method() + " " + reqPath
+                                            + " cookies=[" + names + "] captchaid=" + hasCaptchaId);
+                                }
                             } catch (Exception ignored) {}
 
                             // inject Referer for CDN requests that lack one

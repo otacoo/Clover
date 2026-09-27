@@ -27,6 +27,7 @@ import org.otacoo.chan.utils.Logger;
 
 import javax.inject.Inject;
 
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -58,6 +59,8 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
 
     private String currentCaptchaId;
     private boolean wasSubmitted;
+    private volatile Call currentCaptchaCall;
+    private volatile int captchaGeneration = 0;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public LynxchanCaptchaLayout(Context context) {
@@ -119,6 +122,15 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
         }
         wasSubmitted = false;
 
+        boolean hadInflight = currentCaptchaCall != null;
+        if (currentCaptchaCall != null) {
+            try {
+                currentCaptchaCall.cancel();
+            } catch (Exception ignored) {}
+            currentCaptchaCall = null;
+        }
+        final int generation = ++captchaGeneration;
+
         currentCaptchaId = null;
         captchaInput.setText("");
         captchaImage.setImageBitmap(null);
@@ -136,7 +148,14 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
         String url = baseUrl + "captcha.js"
                 + (boardCode.isEmpty() ? "" : "?boardUri=" + boardCode);
 
-        new Thread(() -> fetchCaptcha(url)).start();
+        currentCaptchaCall = okHttpClient.newCall(new Request.Builder()
+                .url(url)
+                .header("Accept", "image/jpeg,image/*,*/*")
+                .header("Cache-Control", "no-cache")
+                .build());
+        final Call captchaCall = currentCaptchaCall;
+        Logger.i(TAG, "hardReset: generation=" + generation + " cancelledPrevious=" + hadInflight + " url=" + url);
+        new Thread(() -> fetchCaptcha(captchaCall, generation, url)).start();
     }
 
     private void clearCaptchaIdCookie() {
@@ -148,7 +167,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                 for (java.net.URI uri : new java.util.ArrayList<>(store.getURIs())) {
                     if (uri.getHost() != null && uri.getHost().contains("8chan")) {
                         for (java.net.HttpCookie c : new java.util.ArrayList<>(store.get(uri))) {
-                            if ("captchaid".equals(c.getName())) {
+                            if ("captchaid".equals(c.getName()) || "captchaexpiration".equals(c.getName())) {
                                 store.remove(uri, c);
                             }
                         }
@@ -163,33 +182,42 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                 android.webkit.CookieManager wvcm = android.webkit.CookieManager.getInstance();
                 for (String d : new String[]{"https://8chan.moe/", "https://8chan.st/"}) {
                     wvcm.setCookie(d, "captchaid=; Max-Age=0; Path=/");
+                    wvcm.setCookie(d, "captchaexpiration=; Max-Age=0; Path=/");
                 }
                 wvcm.flush();
             } catch (Exception ignored) {}
         });
     }
 
-    private void fetchCaptcha(String url) {
+    private void fetchCaptcha(Call captchaCall, int generation, String url) {
         try {
+            if (generation != captchaGeneration) return;
+            Logger.i(TAG, "fetchCaptcha: start generation=" + generation + " url=" + url);
+
             // 8chan returns a raw JPEG image. The captcha ID is
             // delivered via a Set-Cookie: captchaid=... response header.
-            Request req = new Request.Builder()
-                    .url(url)
-                    .header("Accept", "image/jpeg,image/*,*/*")
-                    .header("Cache-Control", "no-cache")
-                    .build();
-
-            try (Response resp = okHttpClient.newCall(req).execute()) {
+            try (Response resp = captchaCall.execute()) {
+                Logger.i(TAG, "fetchCaptcha: HTTP " + resp.code() + " generation=" + generation);
+                StringBuilder scNames = new StringBuilder();
+                for (String sc : resp.headers("Set-Cookie")) {
+                    int eq = sc.indexOf('=');
+                    if (scNames.length() > 0) scNames.append(',');
+                    scNames.append(eq > 0 ? sc.substring(0, eq) : sc);
+                }
+                Logger.i(TAG, "fetchCaptcha: Set-Cookie names=[" + scNames + "] generation=" + generation);
                 if (!resp.isSuccessful()) {
+                    if (generation != captchaGeneration) return;
                     showError("Captcha fetch failed: HTTP " + resp.code());
                     return;
                 }
 
                 // Extract captchaId from the Set-Cookie response header.
                 String captchaId = null;
+                String idSource = null;
                 for (String setCookie : resp.headers("Set-Cookie")) {
                     if (setCookie.startsWith("captchaid=")) {
                         captchaId = setCookie.substring("captchaid=".length()).split(";")[0].trim();
+                        idSource = "header";
                         break;
                     }
                 }
@@ -204,6 +232,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                             for (java.net.HttpCookie hc : list) {
                                 if ("captchaid".equals(hc.getName()) && !hc.getValue().isEmpty()) {
                                     captchaId = hc.getValue();
+                                    idSource = "jar";
                                     break;
                                 }
                             }
@@ -219,6 +248,7 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                             for (String part : rawCookies.split(";\\s*")) {
                                 if (part.startsWith("captchaid=")) {
                                     captchaId = part.substring("captchaid=".length()).trim();
+                                    idSource = "webview";
                                     break;
                                 }
                             }
@@ -227,22 +257,33 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                 }
 
                 if (captchaId == null) {
+                    if (generation != captchaGeneration) return;
                     showError("No captcha ID in server response.");
                     return;
                 }
+                Logger.i(TAG, "fetchCaptcha: idSource=" + idSource + " generation=" + generation);
 
                 // Read the raw image bytes and decode as Bitmap.
                 byte[] imgBytes = resp.body().bytes();
                 Logger.i(TAG, "captcha image: " + imgBytes.length + " bytes, id=" + captchaId);
                 Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
                 if (bmp == null) {
+                    if (generation != captchaGeneration) return;
                     showError("Could not decode captcha image.");
+                    return;
+                }
+                if (generation != captchaGeneration) {
+                    bmp.recycle();
                     return;
                 }
 
                 final String finalId = captchaId;
                 final Bitmap finalBmp = bmp;
                 mainHandler.post(() -> {
+                    if (generation != captchaGeneration) {
+                        finalBmp.recycle();
+                        return;
+                    }
                     currentCaptchaId = finalId;
                     captchaImage.setImageBitmap(finalBmp);
                     setStatus("Type the characters shown above. \nReload or tap the captcha image to fetch a new challenge.");
@@ -252,12 +293,16 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                 });
             }
         } catch (Exception e) {
+            if (generation != captchaGeneration) return;
             Logger.e(TAG, "fetchCaptcha error", e);
             showError("Captcha error: " + e.getMessage());
+        } finally {
+            if (currentCaptchaCall == captchaCall) currentCaptchaCall = null;
         }
     }
 
     private void submit() {
+        if (wasSubmitted) return;
         String answer = captchaInput.getText().toString().trim();
         if (answer.isEmpty()) {
             setStatus("Please enter the captcha text");
@@ -269,6 +314,8 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
         }
         AndroidUtils.hideKeyboard(captchaInput);
         wasSubmitted = true;
+        submitButton.setEnabled(false);
+        Logger.i(TAG, "submit: id=" + currentCaptchaId + " answer=" + answer + " answerLen=" + answer.length());
         callback.onAuthenticationComplete(this, currentCaptchaId, answer);
     }
 
@@ -288,9 +335,8 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
 
     @Override
     public boolean requireResetAfterComplete() {
-        // Force a fresh captcha after each submission so the next attempt
-        // doesn't reuse a one-time token.
-        return true;
+        // A fresh captcha is fetched on the next reset() instead.
+        return false;
     }
 
     @Override
