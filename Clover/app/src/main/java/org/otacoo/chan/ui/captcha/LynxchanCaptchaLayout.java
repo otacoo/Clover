@@ -269,6 +269,9 @@ public class LynxchanCaptchaLayout extends LinearLayout implements Authenticatio
                 Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
                 if (bmp == null) {
                     if (generation != captchaGeneration) return;
+                    int previewLen = Math.min(imgBytes.length, 64);
+                    Logger.i(TAG, "fetchCaptcha: decode failed contentType=" + resp.header("Content-Type")
+                            + " preview=" + new String(imgBytes, 0, previewLen, java.nio.charset.StandardCharsets.UTF_8));
                     showError("Could not decode captcha image.");
                     return;
                 }
