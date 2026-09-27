@@ -389,6 +389,13 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
     }
 
     @Override
+    public void onSoundLoading(MultiImageView multiImageView, boolean loading) {
+        if (multiImageView.getPostImage() == getCurrentPostImage()) {
+            callback.setSoundLoading(loading);
+        }
+    }
+
+    @Override
     public void onVideoMuteClicked(MultiImageView multiImageView, boolean muted) {
         this.muted = muted;
         callback.showVolumeMenuItem(true, muted);
@@ -500,6 +507,8 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
         void onVideoError(MultiImageView multiImageView);
 
         void showVolumeMenuItem(boolean show, boolean muted);
+
+        void setSoundLoading(boolean loading);
 
         boolean isImmersive();
 

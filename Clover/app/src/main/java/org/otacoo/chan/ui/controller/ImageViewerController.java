@@ -53,6 +53,7 @@ import android.view.animation.PathInterpolator;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
@@ -133,6 +134,7 @@ public class ImageViewerController extends Controller implements ImageViewerPres
     private ToolbarMenu toolbarMenu;
     private ToolbarMenuItem goPostMenuItem;
     private View goPostBadge;
+    private ProgressBar soundLoadingSpinner;
 
     private boolean isInImmersiveMode = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -549,6 +551,40 @@ public class ImageViewerController extends Controller implements ImageViewerPres
         volumeMenuItem.setVisible(show);
         volumeMenuItem.setImage(
                 muted ? R.drawable.ic_volume_off_white_24dp : R.drawable.ic_volume_up_white_24dp);
+    }
+
+    @Override
+    public void setSoundLoading(boolean loading) {
+        if (soundLoadingSpinner == null) {
+            ToolbarMenuItem volumeMenuItem = navigation.findItem(VOLUME_ID);
+            View imageView = volumeMenuItem != null ? volumeMenuItem.getView() : null;
+            if (imageView == null || !(imageView.getParent() instanceof ViewGroup)) return;
+
+            ViewGroup parent = (ViewGroup) imageView.getParent();
+            int index = parent.indexOfChild(imageView);
+
+            parent.removeView(imageView);
+
+            FrameLayout wrapper = new FrameLayout(context);
+            ViewGroup.LayoutParams vglp = imageView.getLayoutParams();
+            LinearLayout.LayoutParams wrapperLp = new LinearLayout.LayoutParams(vglp.width, vglp.height);
+            parent.addView(wrapper, index, wrapperLp);
+
+            FrameLayout.LayoutParams imageLp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            wrapper.addView(imageView, imageLp);
+
+            int spinnerSize = dp(24);
+            ProgressBar spinner = new ProgressBar(context);
+            spinner.setIndeterminate(true);
+            FrameLayout.LayoutParams spinnerLp = new FrameLayout.LayoutParams(spinnerSize, spinnerSize, Gravity.CENTER);
+            spinner.setLayoutParams(spinnerLp);
+            spinner.setVisibility(View.GONE);
+            wrapper.addView(spinner);
+            soundLoadingSpinner = spinner;
+        }
+        soundLoadingSpinner.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     private void showImageSearchOptions(String boardCode) {
