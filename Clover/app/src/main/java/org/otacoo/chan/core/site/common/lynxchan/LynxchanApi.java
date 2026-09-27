@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -131,6 +133,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
         String standalonePath = null;
         String standaloneThumb = null;
         String standaloneMime  = null;
+        String standaloneMd5 = null;
         String pendingFlag     = null;
         String pendingFlagCode = null;
         String pendingFlagName = null;
@@ -145,6 +148,8 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 standaloneThumb = reader.nextString();
             } else if (key.equals("mime") && reader.peek() == JsonToken.STRING) {
                 standaloneMime = reader.nextString();
+            } else if (key.equals("md5") && reader.peek() == JsonToken.STRING) {
+                standaloneMd5 = reader.nextString();
             } else if (key.equals("flag") && reader.peek() == JsonToken.STRING) {
                 pendingFlag = reader.nextString();
             } else if (key.equals("flagCode") && reader.peek() == JsonToken.STRING) {
@@ -258,12 +263,16 @@ public class LynxchanApi extends CommonSite.CommonApi {
 
             Map<String, String> args = SiteEndpoints.makeArgument("path", cleanImagePath, "thumb", cleanThumbPath);
 
+            String standaloneHash = hashFromPath(imagePath);
+            if (standaloneHash == null || standaloneHash.isEmpty()) standaloneHash = standaloneMd5;
+
             PostImage.Builder imageBuilder = new PostImage.Builder()
                 .thumbnailUrl(queue.getLoadable().getSite().endpoints().thumbnailUrl(builder, false, args))
                 .imageUrl(queue.getLoadable().getSite().endpoints().imageUrl(builder, args))
                 .extension(ext)
                 .filename(filename)
-                .originalName(filename);
+                .originalName(filename)
+                .md5(standaloneHash);
 
             List<PostImage> list = new ArrayList<>();
             list.add(imageBuilder.build());
@@ -425,11 +434,21 @@ public class LynxchanApi extends CommonSite.CommonApi {
         }
     }
 
+    private static final Pattern HASH_IN_PATH = Pattern.compile("[0-9a-fA-F]{64}");
+
+    private static String hashFromPath(String path) {
+        if (path == null) return null;
+        Matcher m = HASH_IN_PATH.matcher(path);
+        if (m.find()) return m.group().toLowerCase(Locale.US);
+        return null;
+    }
+
     private PostImage readPostImage(JsonReader reader, Post.Builder builder, SiteEndpoints endpoints) throws Exception {
         String path = null;
         String thumb = null;
         String originalName = null;
         String mime = null;
+        String md5 = null;
         long size = 0;
         int width = 0;
         int height = 0;
@@ -486,6 +505,13 @@ public class LynxchanApi extends CommonSite.CommonApi {
                         reader.skipValue();
                     }
                     break;
+                case "md5":
+                    if (reader.peek() != JsonToken.NULL) {
+                        md5 = reader.nextString();
+                    } else {
+                        reader.skipValue();
+                    }
+                    break;
                 default:
                     reader.skipValue();
                     break;
@@ -494,6 +520,9 @@ public class LynxchanApi extends CommonSite.CommonApi {
         reader.endObject();
 
         if (path == null) return null;
+
+        String fileHash = hashFromPath(path);
+        if (fileHash == null || fileHash.isEmpty()) fileHash = md5;
 
         boolean isSpoiler = thumb != null &&
                 (thumb.equals("/spoiler.png") || thumb.endsWith("custom.spoiler"));
@@ -559,6 +588,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 .imageHeight(height)
                 .spoiler(isSpoiler)
                 .size(size)
+                .md5(fileHash)
                 .build();
     }
 

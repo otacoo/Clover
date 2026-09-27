@@ -87,6 +87,7 @@ public class VichanApi extends CommonSite.CommonApi {
         long fileSize = 0;
         boolean fileSpoiler = false;
         String fileName = null;
+        String fileMd5 = null;
 
         List<PostImage> files = new ArrayList<>();
 
@@ -129,6 +130,9 @@ public class VichanApi extends CommonSite.CommonApi {
                     break;
                 case "fsize":
                     fileSize = reader.nextLong();
+                    break;
+                case "md5":
+                    fileMd5 = reader.nextString();
                     break;
                 case "filename":
                     fileName = reader.nextString();
@@ -215,6 +219,7 @@ public class VichanApi extends CommonSite.CommonApi {
                     .imageHeight(fileHeight)
                     .spoiler(fileSpoiler)
                     .size(fileSize)
+                    .md5(fileMd5)
                     .build();
             // Insert it at the beginning.
             files.add(0, image);
@@ -276,6 +281,7 @@ public class VichanApi extends CommonSite.CommonApi {
         int fileHeight = 0;
         boolean fileSpoiler = false;
         String fileName = null;
+        String fileMd5 = null;
 
         while (reader.hasNext()) {
             switch (reader.nextName()) {
@@ -300,6 +306,9 @@ public class VichanApi extends CommonSite.CommonApi {
                 case "filename":
                     fileName = reader.nextString();
                     break;
+                case "md5":
+                    fileMd5 = reader.nextString();
+                    break;
                 default:
                     reader.skipValue();
                     break;
@@ -322,6 +331,7 @@ public class VichanApi extends CommonSite.CommonApi {
                     .imageHeight(fileHeight)
                     .spoiler(fileSpoiler)
                     .size(fileSize)
+                    .md5(fileMd5)
                     .build();
         }
         return null;
