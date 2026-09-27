@@ -1,3 +1,7 @@
+## 2026-09-27 – v3.10.1
+
+- **Filter:** Correctly target 8chan (Lynxchan) and vichan (Sushi/Lain) sites for image filtering
+
 ## 2026-09-27 – v3.10.0
 
 ### New options & changes
