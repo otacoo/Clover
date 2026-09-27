@@ -132,7 +132,7 @@ public class Chan8PowInterceptor implements Interceptor {
         // dispatcher thread (a sleep here would stall all app requests).
         // The snackbar informs the user; they can retry manually.
         if (resp.code() == 429 && req.url().host().contains("8chan")) {
-            Logger.w(TAG, "429 rate-limited; failing fast");
+            Logger.w(TAG, "429 rate-limited " + req.method() + " " + req.url().host() + req.url().encodedPath() + "; failing fast");
             Chan8PowNotifier.showRateLimit();
             resp.close();
             return new okhttp3.Response.Builder()
