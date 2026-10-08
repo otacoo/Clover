@@ -507,6 +507,8 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_watch_enable_background_description">Watch bookmarks when Clover is placed in the background</string>
     <string name="setting_watch_background_timeout">Background update interval</string>
     <string name="setting_watch_background_timeout_description">The interval between updates when placed in the background</string>
+    <string name="setting_chan8_fetch_gap">8chan fetch gap</string>
+    <string name="setting_chan8_fetch_gap_description">Minimum wait between 8chan bookmark updates, higher is gentler on rate limits</string>
     <string name="setting_watch_notify_mode">Notify about</string>
     <string-array name="setting_watch_notify_modes">
         <item>All posts</item>

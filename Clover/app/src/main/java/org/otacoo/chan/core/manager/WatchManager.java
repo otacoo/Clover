@@ -129,7 +129,9 @@ public class WatchManager {
 
     // 8chan rate-limits bookmark polling, so 8chan pins refresh one at a
     // time with at least this gap between fetches. Other sites are untouched.
-    private static final long CHAN8_FETCH_GAP_MS = 10 * 1000;
+    private long chan8FetchGapMs() {
+        return Math.max(1, Math.min(10, ChanSettings.chan8FetchGap.get())) * 1000L;
+    }
     private long lastChan8FetchTime = 0;
     private int pendingBackgroundChan8Updates = 0;
 
@@ -138,7 +140,7 @@ public class WatchManager {
     }
 
     private boolean chan8FetchGapElapsed() {
-        return SystemClock.elapsedRealtime() - lastChan8FetchTime >= CHAN8_FETCH_GAP_MS;
+        return SystemClock.elapsedRealtime() - lastChan8FetchTime >= chan8FetchGapMs();
     }
 
     private static final Comparator<Pin> SORT_PINS = new Comparator<Pin>() {
@@ -703,11 +705,11 @@ public class WatchManager {
                 }
             }
 
-            // Stagger 8chan pins 10s apart so the host never sees a burst.
+            // Stagger 8chan pins so the host never sees a burst.
             pendingBackgroundChan8Updates = chan8Pins.size();
             for (int i = 0; i < chan8Pins.size(); i++) {
                 final Pin pin = chan8Pins.get(i);
-                handler.postDelayed(() -> startStaggeredBackgroundUpdate(pin), i * CHAN8_FETCH_GAP_MS);
+                handler.postDelayed(() -> startStaggeredBackgroundUpdate(pin), i * chan8FetchGapMs());
             }
 
             if (!waitingForPinWatchersForBackgroundUpdate.isEmpty() || pendingBackgroundChan8Updates > 0) {

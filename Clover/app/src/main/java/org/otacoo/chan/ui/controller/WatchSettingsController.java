@@ -25,7 +25,10 @@ import android.os.Build;
 import android.provider.Settings;
 
 import org.otacoo.chan.R;
+import org.otacoo.chan.core.manager.BoardManager;
+import org.otacoo.chan.core.repository.BoardRepository;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.core.site.sites.chan8.Chan8;
 import org.otacoo.chan.ui.notification.ThreadWatchNotifications;
 import org.otacoo.chan.ui.settings.BooleanSettingView;
 import org.otacoo.chan.ui.settings.LinkSettingView;
@@ -34,6 +37,9 @@ import org.otacoo.chan.ui.settings.SettingView;
 import org.otacoo.chan.ui.settings.SettingsController;
 import org.otacoo.chan.ui.settings.SettingsGroup;
 import org.otacoo.chan.utils.AndroidUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class WatchSettingsController extends SettingsController {
     private SettingView watchEnabledView;
@@ -141,6 +147,23 @@ public class WatchSettingsController extends SettingsController {
             }
         });
 
+        if (has8chanBoards()) {
+            List<ListSettingView.Item<?>> gapItems = new ArrayList<>();
+            for (int seconds = 1; seconds <= 10; seconds++) {
+                String name = seconds + (seconds == 1 ? " second" : " seconds");
+                if (seconds == 8) {
+                    name += " (recommended)";
+                }
+                gapItems.add(new ListSettingView.Item<>(name, seconds));
+            }
+            threadWatcher.add(new ListSettingView<>(this, ChanSettings.chan8FetchGap, R.string.setting_chan8_fetch_gap, gapItems) {
+                @Override
+                public String getBottomDescription() {
+                    return getString(R.string.setting_chan8_fetch_gap_description) + "\n\n" + items.get(selected).name;
+                }
+            });
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             injector().instance(ThreadWatchNotifications.class).ensureChannels();
 
@@ -170,5 +193,16 @@ public class WatchSettingsController extends SettingsController {
                 R.string.setting_always_show_board_name, 0));
 
         groups.add(threads);
+    }
+
+    private boolean has8chanBoards() {
+        BoardManager boardManager = injector().instance(BoardManager.class);
+        if (boardManager == null) return false;
+        for (BoardRepository.SiteBoards siteBoards : boardManager.getSavedBoardsObservable().get()) {
+            if (siteBoards.site instanceof Chan8 && !siteBoards.boards.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -267,6 +267,7 @@ public class ChanSettings {
     public static final BooleanSetting watchEnabled;
     public static final BooleanSetting watchCountdown;
     public static final BooleanSetting highlightOpenThread;
+    public static final IntegerSetting chan8FetchGap;
     public static final BooleanSetting watchBackground;
     public static final IntegerSetting watchBackgroundInterval;
     public static final StringSetting watchNotifyMode;
@@ -451,6 +452,7 @@ public class ChanSettings {
         watchBackground.addCallback((setting, value) ->
                 EventBus.getDefault().post(new SettingChanged<>(watchBackground)));
         watchBackgroundInterval = new IntegerSetting(p, "preference_watch_background_interval", WatchManager.DEFAULT_BACKGROUND_INTERVAL);
+        chan8FetchGap = new IntegerSetting(p, "preference_chan8_fetch_gap", 8);
         watchNotifyMode = new StringSetting(p, "preference_watch_notify_mode", "all");
         watchSound = new StringSetting(p, "preference_watch_sound", "quotes");
         watchPeek = new BooleanSetting(p, "preference_watch_peek", true);
