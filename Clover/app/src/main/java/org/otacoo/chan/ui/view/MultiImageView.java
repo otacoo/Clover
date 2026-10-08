@@ -43,10 +43,12 @@ import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.graphics.drawable.GradientDrawable;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -175,6 +177,20 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private int currentOrientation = 0;
     private float rotationDeltaAccumulator = 0f;
 
+    private TextView zoomOverlay;
+    private final ScaleGestureDetector videoScaleDetector;
+    private float videoScale = 1f;
+    private float videoTransX = 0f;
+    private float videoTransY = 0f;
+    private float lastTouchX = 0f;
+    private float lastTouchY = 0f;
+    private boolean videoScaling = false;
+    private final Runnable hideZoomOverlayTask = () -> {
+        if (zoomOverlay != null) {
+            zoomOverlay.setVisibility(View.GONE);
+        }
+    };
+
     public MultiImageView(Context context) {
         this(context, null);
     }
@@ -235,6 +251,61 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         playView.setVisibility(View.GONE);
         playView.setImageResource(R.drawable.ic_play_circle_outline_white_48dp);
         addView(playView, new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+
+        zoomOverlay = new TextView(getContext());
+        zoomOverlay.setVisibility(View.GONE);
+        zoomOverlay.setTextColor(Color.WHITE);
+        zoomOverlay.setTextSize(13);
+        zoomOverlay.setGravity(Gravity.CENTER);
+        zoomOverlay.setSingleLine(true);
+        int padH = AndroidUtils.dp(10);
+        int padV = AndroidUtils.dp(6);
+        zoomOverlay.setPadding(padH, padV, padH, padV);
+        GradientDrawable zoomBg = new GradientDrawable();
+        zoomBg.setShape(GradientDrawable.RECTANGLE);
+        zoomBg.setCornerRadius(AndroidUtils.dp(12));
+        zoomBg.setColor(0xCC000000);
+        zoomOverlay.setBackground(zoomBg);
+        FrameLayout.LayoutParams zoomLp = new FrameLayout.LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        zoomLp.bottomMargin = AndroidUtils.dp(64);
+        addView(zoomOverlay, zoomLp);
+
+        videoScaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
+                if (mode != Mode.MOVIE && mode != Mode.OTHER) return false;
+                if (exoPlayerView == null || fallbackWebView != null) return false;
+                if (!ChanSettings.videoZoom.get()) return false;
+                videoScaling = true;
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                float factor = detector.getScaleFactor();
+                videoScale = Math.max(1f, Math.min(videoScale * factor, 5f));
+                if (videoScale <= 1.01f) {
+                    videoTransX = 0f;
+                    videoTransY = 0f;
+                } else {
+                    clampVideoTranslation();
+                }
+                applyVideoTransform();
+                showZoomOverlay(Math.round(videoScale * 100));
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
+                videoScaling = false;
+                scheduleZoomOverlayHide();
+            }
+        });
     }
 
     public void bindPostImage(PostImage postImage, Callback callback) {
@@ -313,7 +384,64 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         if (scaleImageView != null) {
             return scaleImageView.getScale() > scaleImageView.getMinScale() + 0.01f;
         }
-        return false;
+        return videoScale > 1.01f;
+    }
+
+    public boolean isVideoZoomed() {
+        return videoScale > 1.01f;
+    }
+
+    private void showZoomOverlay(int percent) {
+        if (!ChanSettings.showZoomLevel.get()) return;
+        if (zoomOverlay == null) return;
+        handler.removeCallbacks(hideZoomOverlayTask);
+        zoomOverlay.setText(percent + "%");
+        zoomOverlay.setVisibility(View.VISIBLE);
+        zoomOverlay.bringToFront();
+    }
+
+    private void hideZoomOverlay() {
+        if (zoomOverlay == null) return;
+        handler.removeCallbacks(hideZoomOverlayTask);
+        zoomOverlay.setVisibility(View.GONE);
+    }
+
+    private void scheduleZoomOverlayHide() {
+        if (zoomOverlay == null) return;
+        handler.removeCallbacks(hideZoomOverlayTask);
+        handler.postDelayed(hideZoomOverlayTask, 500);
+    }
+
+    private void applyVideoTransform() {
+        if (exoPlayerView == null) return;
+        exoPlayerView.setPivotX(exoPlayerView.getWidth() / 2f);
+        exoPlayerView.setPivotY(exoPlayerView.getHeight() / 2f);
+        exoPlayerView.setScaleX(videoScale);
+        exoPlayerView.setScaleY(videoScale);
+        exoPlayerView.setTranslationX(videoTransX);
+        exoPlayerView.setTranslationY(videoTransY);
+    }
+
+    private void clampVideoTranslation() {
+        if (exoPlayerView == null || exoPlayerView.getWidth() == 0 || exoPlayerView.getHeight() == 0) return;
+        float maxX = exoPlayerView.getWidth() * (videoScale - 1f) / 2f;
+        float maxY = exoPlayerView.getHeight() * (videoScale - 1f) / 2f;
+        videoTransX = Math.max(-maxX, Math.min(videoTransX, maxX));
+        videoTransY = Math.max(-maxY, Math.min(videoTransY, maxY));
+    }
+
+    private void resetVideoZoom() {
+        videoScale = 1f;
+        videoTransX = 0f;
+        videoTransY = 0f;
+        videoScaling = false;
+        if (exoPlayerView != null) {
+            exoPlayerView.setScaleX(1f);
+            exoPlayerView.setScaleY(1f);
+            exoPlayerView.setTranslationX(0f);
+            exoPlayerView.setTranslationY(0f);
+        }
+        hideZoomOverlay();
     }
 
     public GifImageView findGifImageView() {
@@ -451,6 +579,47 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             rotationDeltaAccumulator = 0f;
         }
 
+        boolean videoPresent = (mode == Mode.MOVIE || mode == Mode.OTHER)
+                && exoPlayerView != null && fallbackWebView == null;
+        boolean videoZoomable = videoPresent && ChanSettings.videoZoom.get();
+        if (videoZoomable && videoScaleDetector != null) {
+            videoScaleDetector.onTouchEvent(ev);
+        }
+
+        int action = ev.getActionMasked();
+        if (videoPresent) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastTouchX = ev.getX();
+                lastTouchY = ev.getY();
+            } else if (videoZoomable && action == MotionEvent.ACTION_MOVE
+                    && ev.getPointerCount() == 1 && !videoScaling && isVideoZoomed()) {
+                float dx = ev.getX() - lastTouchX;
+                float dy = ev.getY() - lastTouchY;
+                lastTouchX = ev.getX();
+                lastTouchY = ev.getY();
+                videoTransX += dx;
+                videoTransY += dy;
+                clampVideoTranslation();
+                applyVideoTransform();
+                if (getParent() != null && !ChanSettings.swipeWhileZoomedIn.get()) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                scheduleZoomOverlayHide();
+            } else if (action == MotionEvent.ACTION_POINTER_UP && ev.getPointerCount() == 2) {
+                scheduleZoomOverlayHide();
+            }
+            if (isVideoZoomed() && getParent() != null && !ChanSettings.swipeWhileZoomedIn.get()) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+            }
+        } else {
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                scheduleZoomOverlayHide();
+            } else if (action == MotionEvent.ACTION_POINTER_UP && ev.getPointerCount() == 2) {
+                scheduleZoomOverlayHide();
+            }
+        }
+
         if (!isZoomed()) {
             if (gestureDetector.onTouchEvent(ev)) {
                 ev.setAction(MotionEvent.ACTION_CANCEL);
@@ -485,6 +654,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     }
 
     private boolean handleDoubleTapAction() {
+        if (isVideoZoomed() && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
+            resetVideoZoom();
+            return true;
+        }
+
         if (ChanSettings.doubleTapPlayPause.get() && exoPlayer != null
                 && (mode == Mode.MOVIE || mode == Mode.OTHER)) {
             if (exoPlayer.isPlaying()) {
@@ -892,6 +1066,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         playerRoot = root;
         vp9FallbackStage = 0;
         videoError = false;
+        videoScale = 1f;
+        videoTransX = 0f;
+        videoTransY = 0f;
+        videoScaling = false;
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(root, 0, lp);
 
@@ -1321,6 +1499,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         handler.removeCallbacks(updateTimeTask);
         handler.removeCallbacks(hideControllerTask);
         hideVideoStartupOverlay();
+        videoScale = 1f;
+        videoTransX = 0f;
+        videoTransY = 0f;
+        videoScaling = false;
+        hideZoomOverlay();
         if (exoPlayer != null) {
             exoPlayer.release();
             exoPlayer = null;
@@ -1469,6 +1652,20 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         final CustomScaleImageView image = new CustomScaleImageView(getContext());
         image.setImage(com.davemorrissey.labs.subscaleview.ImageSource.uri(file.getAbsolutePath()).tiling(tiling));
         image.setOnClickListener(MultiImageView.this);
+        image.setOnStateChangedListener(new com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.DefaultOnStateChangedListener() {
+            @Override
+            public void onScaleChanged(float newScale, int origin) {
+                if (!ChanSettings.showZoomLevel.get()) return;
+                float minScale = image.getMinScale();
+                if (minScale <= 0 || newScale <= 0) return;
+                // 100% = fit to screen (as opened); zoom in reads above, e.g. 2x = 200%
+                showZoomOverlay(Math.round(newScale / minScale * 100));
+                if (origin != com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.ORIGIN_TOUCH) {
+                    handler.removeCallbacks(hideZoomOverlayTask);
+                    handler.postDelayed(hideZoomOverlayTask, 1300);
+                }
+            }
+        });
         addView(image, 0, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         image.setCallback(new CustomScaleImageView.Callback() {
             @Override
@@ -1538,6 +1735,8 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         handler.removeCallbacks(deferredTapTask);
         handler.removeCallbacks(hideControllerTask);
         handler.removeCallbacks(updateTimeTask);
+        handler.removeCallbacks(hideZoomOverlayTask);
+        hideZoomOverlay();
         hasContent = false;
         videoError = false;
 
@@ -1595,7 +1794,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             boolean alreadyAttached = false;
             for (int i = getChildCount() - 1; i >= 0; i--) {
                 View child = getChildAt(i);
-                if (child != playView) {
+                if (child != playView && child != zoomOverlay) {
                     if (child != view) {
                         removeViewAt(i);
                     } else {
