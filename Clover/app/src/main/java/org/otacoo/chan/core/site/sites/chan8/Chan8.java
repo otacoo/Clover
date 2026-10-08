@@ -319,13 +319,16 @@ public class Chan8 extends CommonSite {
                 public void onHttpFail(HttpCall httpCall, Exception e) {
                     // HttpCall wraps process() errors, so check the whole chain.
                     if (isNonJsonError(e) && !isRetry) {
-                        // Schedule a single retry for when the user completes verification,
-                        // then prompt them to do so.
+                        // Interstitial page: retry automatically after the next
+                        // solve, no user nag yet, usually self-heals.
                         Logger.w(TAG, "boards: HTML page, scheduling retry on next verification");
                         Chan8PowNotifier.scheduleRetryOnNextSolve(
                                 () -> boardsWithRetry(boardsListener, true));
-                        Chan8PowNotifier.onPowFailed();
                     } else {
+                        if (isNonJsonError(e)) {
+                            // Retry also failed: manual verification needed.
+                            Chan8PowNotifier.onPowFailed();
+                        }
                         Logger.e(TAG, "boards: fetch failed", e);
                         boardsListener.onBoardsFailed(
                                 "Could not load board list. Please complete the 8chan security check (Verification), then try again.");
