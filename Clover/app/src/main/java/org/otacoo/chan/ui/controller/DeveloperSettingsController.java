@@ -37,6 +37,7 @@ import com.google.android.material.snackbar.Snackbar;
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.database.DatabaseManager;
+import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
@@ -109,6 +110,22 @@ public class DeveloperSettingsController extends Controller {
         clearCookiesButton.setText("Clear WebView cookies");
         wrapper.addView(clearCookiesButton);
 
+        Button halloweenButton = new Button(context);
+        halloweenButton.setOnClickListener(v -> {
+            ChanSettings.forceHalloweenTheme.set(!ChanSettings.forceHalloweenTheme.get());
+            halloweenButton.setText(halloweenButtonText());
+        });
+        halloweenButton.setText(halloweenButtonText());
+        wrapper.addView(halloweenButton);
+
+        Button christmasButton = new Button(context);
+        christmasButton.setOnClickListener(v -> {
+            ChanSettings.forceChristmasTheme.set(!ChanSettings.forceChristmasTheme.get());
+            christmasButton.setText(christmasButtonText());
+        });
+        christmasButton.setText(christmasButtonText());
+        wrapper.addView(christmasButton);
+
         summaryText = new TextView(context);
         summaryText.setPadding(0, dp(25), 0, 0);
         wrapper.addView(summaryText);
@@ -155,6 +172,14 @@ public class DeveloperSettingsController extends Controller {
         scrollView.addView(wrapper);
         view = scrollView;
         view.setBackgroundColor(getAttrColor(context, R.attr.backcolor));
+    }
+
+    private static String halloweenButtonText() {
+        return "Force Halloween theme: " + (ChanSettings.forceHalloweenTheme.get() ? "ON" : "OFF");
+    }
+
+    private static String christmasButtonText() {
+        return "Force Christmas theme: " + (ChanSettings.forceChristmasTheme.get() ? "ON" : "OFF");
     }
 
     private void setDbSummary() {

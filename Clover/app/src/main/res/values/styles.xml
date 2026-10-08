@@ -571,6 +571,82 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <item name="divider_split_color">#ffa29e9a</item>
     </style>
 
+    <style name="Chan.Theme.PumpkinSpice" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#ff7f11</item>
+        <item name="colorAccent">#aeea00</item>
+        <item name="loading_bar_color">#ff7f11</item>
+
+        <item name="backcolor">#160d1d</item>
+        <item name="backcolor_secondary">#241429</item>
+
+        <item name="android:textColor">#f5e6d0</item>
+        <item name="text_color_primary">#f5e6d0</item>
+        <item name="text_color_secondary">#c9a86a</item>
+        <item name="text_color_hint">#7a6a8a</item>
+        <item name="text_color_reveal_spoiler">#241429</item>
+
+        <item name="post_name_color">#aeea00</item>
+        <item name="post_subject_color">#ff9e40</item>
+        <item name="post_details_color">#8d7b9e</item>
+        <item name="post_quote_color">#9dff57</item>
+        <item name="post_highlight_quote_color">#ff5252</item>
+        <item name="post_inline_quote_color">#ffd740</item>
+        <item name="post_link_color">#ffab40</item>
+        <item name="post_spoiler_color">#5e4b6e</item>
+        <item name="post_capcode_color">#ff1744</item>
+        <item name="post_last_seen_color">#ff1744</item>
+
+        <item name="post_id_background_light">#667f1100</item>
+        <item name="post_id_background_dark">#667f1100</item>
+        <item name="post_saved_reply_color">#2e1a38</item>
+        <item name="post_highlighted_color">#2e1a38</item>
+        <item name="post_selected_color">#2e1a38</item>
+
+        <item name="divider_color">#3a2a44</item>
+        <item name="divider_split_color">#3a2a44</item>
+
+        <item name="dropdown_dark_color">#667f1100</item>
+        <item name="dropdown_dark_pressed_color">#667f1100</item>
+    </style>
+
+    <style name="Chan.Theme.JingleBells" parent="Chan.Theme.Dark">
+        <item name="colorPrimary">#c62828</item>
+        <item name="colorAccent">#ffc107</item>
+        <item name="loading_bar_color">#ffc107</item>
+
+        <item name="backcolor">#0b1a2e</item>
+        <item name="backcolor_secondary">#13253f</item>
+
+        <item name="android:textColor">#eef4fb</item>
+        <item name="text_color_primary">#eef4fb</item>
+        <item name="text_color_secondary">#9fb6cc</item>
+        <item name="text_color_hint">#63798f</item>
+        <item name="text_color_reveal_spoiler">#13253f</item>
+
+        <item name="post_name_color">#ffd54f</item>
+        <item name="post_subject_color">#ef5350</item>
+        <item name="post_details_color">#63798f</item>
+        <item name="post_quote_color">#7fd693</item>
+        <item name="post_highlight_quote_color">#ff5252</item>
+        <item name="post_inline_quote_color">#ffe082</item>
+        <item name="post_link_color">#4fc3f7</item>
+        <item name="post_spoiler_color">#3a5068</item>
+        <item name="post_capcode_color">#ff1744</item>
+        <item name="post_last_seen_color">#ff1744</item>
+
+        <item name="post_id_background_light">#66ffc107</item>
+        <item name="post_id_background_dark">#66ffc107</item>
+        <item name="post_saved_reply_color">#1b3252</item>
+        <item name="post_highlighted_color">#1b3252</item>
+        <item name="post_selected_color">#1b3252</item>
+
+        <item name="divider_color">#243b55</item>
+        <item name="divider_split_color">#243b55</item>
+
+        <item name="dropdown_dark_color">#66ffc107</item>
+        <item name="dropdown_dark_pressed_color">#66ffc107</item>
+    </style>
+
     <!-- For FloatingMenu -->
     <style name="ToolbarDropDownListViewStyle" parent="Widget.AppCompat.ListView.DropDown">
         <item name="android:background">#ffffffff</item>

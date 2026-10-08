@@ -30,12 +30,16 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
@@ -66,15 +70,18 @@ import org.otacoo.chan.ui.adapter.PostsFilter;
 import org.otacoo.chan.ui.helper.ImageOptionsHelper;
 import org.otacoo.chan.ui.helper.PostPopupHelper;
 import org.otacoo.chan.ui.helper.RefreshUIMessage;
+import org.otacoo.chan.ui.theme.SeasonalThemes;
 import org.otacoo.chan.ui.toolbar.Toolbar;
 import org.otacoo.chan.ui.view.HidingFloatingActionButton;
 import org.otacoo.chan.ui.view.LoadView;
+import org.otacoo.chan.ui.view.SnowView;
 import org.otacoo.chan.ui.view.ThumbnailView;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import de.greenrobot.event.EventBus;
 
 import java.util.List;
+import java.util.Random;
 
 import javax.inject.Inject;
 
@@ -145,6 +152,21 @@ public class ThreadLayout extends CoordinatorLayout implements
     private static final int NEW_POSTS_DISMISS_DELAY_MS = 3500;
     private final Runnable dismissNewPostsRunnable = () -> showNewPostsNotification(false, -1);
 
+    // Holiday hauntings, only with their seasonal theme applied
+    private final Handler ghostHandler = new Handler(Looper.getMainLooper());
+    private final Random ghostRandom = new Random();
+    private View flyingGhost;
+    private View snowView;
+    private final Runnable ghostFlybyRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (isAttachedToWindow()) {
+                flyGhostBy();
+            }
+            scheduleNextGhostFlyby();
+        }
+    };
+
     private final Runnable hideTopBottomRunnable = () -> showTopBottomButtons(false, false);
     private Runnable updateTopBottomDirectionRunnable = null;
     private Boolean scheduledScrollingUp = null;
@@ -206,6 +228,17 @@ public class ThreadLayout extends CoordinatorLayout implements
         } else {
             replyButton.setOnClickListener(this);
             theme().applyFabColor(replyButton);
+        }
+
+        if (isHalloweenTheme()) {
+            scheduleNextGhostFlyby();
+        }
+
+        if (isChristmasTheme()) {
+            snowView = new SnowView(getContext());
+            addView(snowView, new CoordinatorLayout.LayoutParams(
+                    CoordinatorLayout.LayoutParams.MATCH_PARENT,
+                    CoordinatorLayout.LayoutParams.MATCH_PARENT));
         }
 
         // Setup Top/Bottom FABs
@@ -960,8 +993,7 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     private void showReplyButton(final boolean show) {
-        if (show != showingReplyButton && replyButtonEnabled) {
-            showingReplyButton = show;
+        if (show != showingReplyButton && replyButtonEnabled) {            showingReplyButton = show;
 
             replyButton.animate()
                     .setInterpolator(new DecelerateInterpolator(2f))
@@ -994,6 +1026,117 @@ public class ThreadLayout extends CoordinatorLayout implements
                         }
                     })
                     .start();
+        }
+    }
+
+    private static boolean isHalloweenTheme() {
+        return SeasonalThemes.HALLOWEEN.equals(theme().name);
+    }
+
+    private static boolean isChristmasTheme() {
+        return SeasonalThemes.CHRISTMAS.equals(theme().name);
+    }
+
+    private void scheduleNextGhostFlyby() {
+        ghostHandler.removeCallbacks(ghostFlybyRunnable);
+        // Rare haunting: every 1-3 minutes
+        ghostHandler.postDelayed(ghostFlybyRunnable,
+                60_000 + ghostRandom.nextInt(120_000));
+    }
+
+    private void flyGhostBy() {
+        if (!isHalloweenTheme() || getWidth() == 0 || getHeight() == 0) return;
+
+        final TextView ghost = new TextView(getContext());
+        ghost.setText(new String(Character.toChars(0x1F47B)));
+        ghost.setTextSize(TypedValue.COMPLEX_UNIT_SP, 120);
+        ghost.setAlpha(0.12f);
+        ghost.setClickable(false);
+        ghost.setFocusable(false);
+        ghost.setVisibility(View.INVISIBLE);
+        addView(ghost, new CoordinatorLayout.LayoutParams(
+                CoordinatorLayout.LayoutParams.WRAP_CONTENT,
+                CoordinatorLayout.LayoutParams.WRAP_CONTENT));
+        flyingGhost = ghost;
+
+        ghost.post(() -> {
+            if (!ghost.isAttachedToWindow()) return;
+            int w = getWidth();
+            int h = getHeight();
+            int gw = ghost.getWidth();
+            int gh = ghost.getHeight();
+            float sx;
+            float sy;
+            float ex;
+            float ey;
+            switch (ghostRandom.nextInt(6)) {
+                case 0: // left to right
+                    sx = -gw;
+                    sy = ghostRandom.nextInt(Math.max(h - gh, 1));
+                    ex = w;
+                    ey = sy;
+                    break;
+                case 1: // right to left
+                    sx = w;
+                    sy = ghostRandom.nextInt(Math.max(h - gh, 1));
+                    ex = -gw;
+                    ey = sy;
+                    break;
+                case 2: // top to bottom
+                    sx = ghostRandom.nextInt(Math.max(w - gw, 1));
+                    sy = -gh;
+                    ex = sx;
+                    ey = h;
+                    break;
+                case 3: // bottom to top
+                    sx = ghostRandom.nextInt(Math.max(w - gw, 1));
+                    sy = h;
+                    ex = sx;
+                    ey = -gh;
+                    break;
+                case 4: // diagonal top-left to bottom-right
+                    sx = -gw;
+                    sy = -gh;
+                    ex = w;
+                    ey = h;
+                    break;
+                default: // diagonal top-right to bottom-left
+                    sx = w;
+                    sy = -gh;
+                    ex = -gw;
+                    ey = h;
+                    break;
+            }
+            ghost.setTranslationX(sx);
+            ghost.setTranslationY(sy);
+            ghost.setVisibility(View.VISIBLE);
+            ghost.animate()
+                    .translationX(ex)
+                    .translationY(ey)
+                    .setDuration(4500 + ghostRandom.nextInt(2000))
+                    .setInterpolator(new LinearInterpolator())
+                    .withEndAction(() -> {
+                        removeView(ghost);
+                        if (flyingGhost == ghost) {
+                            flyingGhost = null;
+                        }
+                    })
+                    .start();
+        });
+    }
+
+    @Override
+    public void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        ghostHandler.removeCallbacks(ghostFlybyRunnable);
+        if (flyingGhost != null) {
+            flyingGhost.animate().cancel();
+            removeView(flyingGhost);
+            flyingGhost = null;
+        }
+        if (snowView != null) {
+            removeView(snowView);
+            snowView = null;
         }
     }
 

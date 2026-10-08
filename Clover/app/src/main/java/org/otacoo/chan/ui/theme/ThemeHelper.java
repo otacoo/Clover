@@ -76,6 +76,8 @@ public class ThemeHelper {
         themes.add(new Theme("Sapporo", "sapporo", R.style.Chan_Theme_Sapporo, PrimaryColor.GREY));
         themes.add(new DarkTheme("Zenburned", "zenburned", R.style.Chan_Theme_Zenburned, PrimaryColor.GREY));
         themes.add(new Theme("Tranquil", "tranquil", R.style.Chan_Theme_Tranquil, PrimaryColor.BLUE_GREY));
+        themes.add(new DarkTheme("Pumpkin Spice", "pumpkin_spice", R.style.Chan_Theme_PumpkinSpice, PrimaryColor.ORANGE));
+        themes.add(new DarkTheme("Jingle Bells", "jingle_bells", R.style.Chan_Theme_JingleBells, PrimaryColor.RED));
 
         loadCustomThemes();
 
@@ -298,7 +300,13 @@ public class ThemeHelper {
     }
 
     public List<Theme> getThemes() {
-        return themes;
+        List<Theme> visible = new ArrayList<>();
+        for (Theme t : themes) {
+            if (SeasonalThemes.isAvailable(t.name)) {
+                visible.add(t);
+            }
+        }
+        return visible;
     }
 
     @SuppressWarnings("deprecation")

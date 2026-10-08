@@ -295,6 +295,8 @@ public class ChanSettings {
 
     public static final BooleanSetting reencodeHintShown;
     public static final BooleanSetting setupSitesBoardsHintShown;
+    public static final BooleanSetting forceHalloweenTheme;
+    public static final BooleanSetting forceChristmasTheme;
 
     public enum SwipeGesture implements OptionSettingItem {
         NONE("none"),
@@ -479,6 +481,8 @@ public class ChanSettings {
         pinnedSearches = new StringSetting(p, "preference_pinned_searches", "[]");
         reencodeHintShown = new BooleanSetting(p, "preference_reencode_hint_already_shown", false);
         setupSitesBoardsHintShown = new BooleanSetting(p, "setup_sites_boards_hint_already_shown", false);
+        forceHalloweenTheme = new BooleanSetting(p, "preference_force_halloween_theme", false);
+        forceChristmasTheme = new BooleanSetting(p, "preference_force_christmas_theme", false);
 
         fetchYoutubeTitles = new BooleanSetting(p, "preference_fetch_youtube_titles", false);
         swipeWhileZoomedIn = new BooleanSetting(p, "preference_swipe_zoomed", false);
