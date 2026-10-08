@@ -306,7 +306,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
                 } else {
                     if (callback.isImmersive()) {
                         callback.showSystemUI(true);
-                    } else {
+                    } else if (ChanSettings.tapToClose.get()) {
                         onExit();
                     }
                 }
@@ -326,7 +326,7 @@ public class ImageViewerPresenter implements MultiImageView.Callback, ViewPager.
                 } else {
                     if (callback.isImmersive()) {
                         callback.showSystemUI(true);
-                    } else {
+                    } else if (ChanSettings.tapToClose.get()) {
                         onExit();
                     }
                 }
