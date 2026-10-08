@@ -337,10 +337,13 @@ public class ChanSettings {
 
     public static final BooleanSetting fetchYoutubeTitles;
     public static final BooleanSetting swipeWhileZoomedIn;
+    public static final BooleanSetting tapToClose;
     public static final OptionsSetting<SwipeGesture> swipeToClose;
     public static final OptionsSetting<SwipeGesture> swipeToSave;
     public static final BooleanSetting doubleTapPlayPause;
     public static final BooleanSetting fingerRotate;
+    public static final BooleanSetting showZoomLevel;
+    public static final BooleanSetting videoZoom;
 
     public static final StringSetting customUserAgent;
     public static final StringSetting customCFClearanceCommand;
@@ -479,10 +482,13 @@ public class ChanSettings {
 
         fetchYoutubeTitles = new BooleanSetting(p, "preference_fetch_youtube_titles", false);
         swipeWhileZoomedIn = new BooleanSetting(p, "preference_swipe_zoomed", false);
+        tapToClose = new BooleanSetting(p, "preference_tap_to_close", true);
         swipeToClose = new OptionsSetting<>(p, "preference_swipe_to_close", SwipeGesture.class, SwipeGesture.NONE);
         swipeToSave = new OptionsSetting<>(p, "preference_swipe_to_save", SwipeGesture.class, SwipeGesture.NONE);
         doubleTapPlayPause = new BooleanSetting(p, "preference_double_tap_play_pause", false);
         fingerRotate = new BooleanSetting(p, "preference_finger_rotate", false);
+        showZoomLevel = new BooleanSetting(p, "preference_show_zoom_level", false);
+        videoZoom = new BooleanSetting(p, "preference_video_zoom", true);
 
         customUserAgent = new StringSetting(p, "custom_user_agent", "");
         customCFClearanceCommand = new StringSetting(p, "custom_cfclearance_command", "");
