@@ -50,6 +50,8 @@ import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
 import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.exception.ChanLoaderException;
+import org.otacoo.chan.core.manager.FilterEngine;
+import org.otacoo.chan.core.manager.FilterType;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
@@ -63,11 +65,14 @@ import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.ui.adapter.PostsFilter;
 import org.otacoo.chan.ui.helper.ImageOptionsHelper;
 import org.otacoo.chan.ui.helper.PostPopupHelper;
+import org.otacoo.chan.ui.helper.RefreshUIMessage;
 import org.otacoo.chan.ui.toolbar.Toolbar;
 import org.otacoo.chan.ui.view.HidingFloatingActionButton;
 import org.otacoo.chan.ui.view.LoadView;
 import org.otacoo.chan.ui.view.ThumbnailView;
 import org.otacoo.chan.utils.AndroidUtils;
+
+import de.greenrobot.event.EventBus;
 
 import java.util.List;
 
@@ -99,6 +104,9 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Inject
     DatabaseManager databaseManager;
+
+    @Inject
+    FilterEngine filterEngine;
 
     @Inject
     ThreadPresenter presenter;
@@ -820,6 +828,28 @@ public class ThreadLayout extends CoordinatorLayout implements
             presenter.refreshUI();
         });
         
+        AndroidUtils.applyThemedStyle(snackbar, this);
+        snackbar.show();
+    }
+
+    @Override
+    public void hidePostsById(Post post) {
+        final Filter filter = new Filter();
+        filter.enabled = true;
+        filter.type = FilterType.ID.flag;
+        filter.pattern = post.id;
+        filter.allBoards = true;
+        filter.boards = "";
+        filter.action = FilterEngine.FilterAction.HIDE.id;
+        filterEngine.createOrUpdateFilter(filter);
+        EventBus.getDefault().post(new RefreshUIMessage("hideid"));
+
+        Snackbar snackbar = Snackbar.make(this, R.string.post_hidden_id, Snackbar.LENGTH_LONG);
+        snackbar.setAction(R.string.undo, v -> {
+            filterEngine.deleteFilter(filter);
+            EventBus.getDefault().post(new RefreshUIMessage("hideid"));
+        });
+
         AndroidUtils.applyThemedStyle(snackbar, this);
         snackbar.show();
     }

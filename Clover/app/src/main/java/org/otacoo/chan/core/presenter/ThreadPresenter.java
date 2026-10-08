@@ -98,6 +98,9 @@ public class ThreadPresenter implements
     private static final int POST_OPTION_FILTER_ID = 21;
     private static final int POST_OPTION_FILTER_NAME = 22;
     private static final int POST_OPTION_FILTER_IMAGE_MD5 = 23;
+    private static final int POST_OPTION_HIDE_MENU = 24;
+    private static final int POST_OPTION_HIDE_POST = 25;
+    private static final int POST_OPTION_HIDE_ID = 26;
 
     private ThreadPresenterCallback threadPresenterCallback;
     private WatchManager watchManager;
@@ -830,7 +833,11 @@ public class ThreadPresenter implements
         }
 
         if (!loadable.isThreadMode() || !post.isOP) {
-            menu.add(new FloatingMenuItem(POST_OPTION_HIDE, R.string.post_hide));
+            if (TextUtils.isEmpty(post.id)) {
+                menu.add(new FloatingMenuItem(POST_OPTION_HIDE, R.string.post_hide));
+            } else {
+                menu.add(new FloatingMenuItem(POST_OPTION_HIDE_MENU, R.string.post_hide));
+            }
         }
 
         if (loadable.getSite().feature(Site.Feature.POST_REPORT)) {
@@ -886,6 +893,12 @@ public class ThreadPresenter implements
         Map<Object, List<FloatingMenuItem>> subMenus = new HashMap<>();
         subMenus.put(POST_OPTION_EXTRA, extraMenu);
         subMenus.put(POST_OPTION_FILTER_MENU, filterMenu);
+        if (!TextUtils.isEmpty(post.id) && (!loadable.isThreadMode() || !post.isOP)) {
+            List<FloatingMenuItem> hideMenu = new ArrayList<>();
+            hideMenu.add(new FloatingMenuItem(POST_OPTION_HIDE_POST, R.string.post_hide_post));
+            hideMenu.add(new FloatingMenuItem(POST_OPTION_HIDE_ID, R.string.post_hide_id));
+            subMenus.put(POST_OPTION_HIDE_MENU, hideMenu);
+        }
         return subMenus;
     }
 
@@ -991,6 +1004,15 @@ public class ThreadPresenter implements
             }
             case POST_OPTION_HIDE:
                 threadPresenterCallback.hidePost(post);
+                break;
+            case POST_OPTION_HIDE_MENU:
+                break;
+            case POST_OPTION_HIDE_POST:
+                threadPresenterCallback.hidePost(post);
+                break;
+            case POST_OPTION_HIDE_ID:
+                threadPresenterCallback.hidePostsById(post);
+                break;
         }
     }
 
@@ -1361,6 +1383,8 @@ public class ThreadPresenter implements
         void hideDeleting(String message);
 
         void hidePost(Post post);
+
+        void hidePostsById(Post post);
 
         void showNewPostsNotification(boolean show, int more);
 

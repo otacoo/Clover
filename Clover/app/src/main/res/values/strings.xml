@@ -367,7 +367,10 @@ If any other filters are enabled for it, it will not work.
     <string name="post_copy_text">Copy text</string>
     <string name="post_report">Report</string>
     <string name="post_hide">Hide</string>
+    <string name="post_hide_post">Hide this post</string>
+    <string name="post_hide_id">Hide this ID</string>
     <string name="post_hidden">Post hidden</string>
+    <string name="post_hidden_id">Posts by this ID hidden</string>
     <string name="thread_hidden">Thread hidden</string>
     <string name="post_delete">Delete</string>
     <string name="post_more">More…</string>
