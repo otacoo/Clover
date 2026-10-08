@@ -88,11 +88,27 @@ public abstract class HttpCall implements Callback {
         }
 
         if (exception != null) {
-            Logger.e(TAG, "onResponse", exception);
+            if (isHtmlInterstitial(exception)) {
+                // JSON endpoint served an HTML interstitial (POW/TOS page);
+                // the site handler retries after verification, no stack needed.
+                Logger.w(TAG, "onResponse: HTML page instead of JSON");
+            } else {
+                Logger.e(TAG, "onResponse", exception);
+            }
             callFail(exception);
         } else {
             callSuccess();
         }
+    }
+
+    private static boolean isHtmlInterstitial(Throwable e) {
+        while (e != null) {
+            if (e.getMessage() != null && e.getMessage().contains("non-JSON response")) {
+                return true;
+            }
+            e = e.getCause();
+        }
+        return false;
     }
 
     @Override

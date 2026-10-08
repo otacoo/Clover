@@ -285,7 +285,7 @@ public class Chan8 extends CommonSite {
                 public void process(Response response, String result) throws IOException {
                     String trimmed = result.trim();
                     if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
-                        Logger.w(TAG, "boards: non-JSON response (HTML/POW page), isRetry=" + isRetry);
+                        Logger.w(TAG, "boards: non-JSON response (HTTP " + response.code() + ", HTML/POW page), isRetry=" + isRetry);
                         throw new IOException("non-JSON response");
                     }
                     try {
@@ -317,12 +317,11 @@ public class Chan8 extends CommonSite {
 
                 @Override
                 public void onHttpFail(HttpCall httpCall, Exception e) {
-                    boolean isHtmlError = e.getMessage() != null
-                            && e.getMessage().contains("non-JSON response");
-                    if (isHtmlError && !isRetry) {
+                    // HttpCall wraps process() errors, so check the whole chain.
+                    if (isNonJsonError(e) && !isRetry) {
                         // Schedule a single retry for when the user completes verification,
                         // then prompt them to do so.
-                        Logger.w(TAG, "boards: scheduling retry on next verification");
+                        Logger.w(TAG, "boards: HTML page, scheduling retry on next verification");
                         Chan8PowNotifier.scheduleRetryOnNextSolve(
                                 () -> boardsWithRetry(boardsListener, true));
                         Chan8PowNotifier.onPowFailed();
@@ -333,6 +332,17 @@ public class Chan8 extends CommonSite {
                     }
                 }
             });
+        }
+
+        // HttpCall wraps process() errors, so walk the chain for our marker.
+        private static boolean isNonJsonError(Throwable e) {
+            while (e != null) {
+                if (e.getMessage() != null && e.getMessage().contains("non-JSON response")) {
+                    return true;
+                }
+                e = e.getCause();
+            }
+            return false;
         }
 
         @Override
