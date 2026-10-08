@@ -31,6 +31,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -49,6 +50,7 @@ import org.otacoo.chan.core.pool.ChanLoaderFactory;
 import org.otacoo.chan.core.receiver.WatchUpdateReceiver;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.core.site.loader.ChanThreadLoader;
+import org.otacoo.chan.core.site.sites.chan8.Chan8;
 import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.ui.notification.ThreadWatchNotifications;
 import org.otacoo.chan.ui.view.ThumbnailView;
@@ -124,6 +126,20 @@ public class WatchManager {
     private static final String WAKELOCK_TAG = getAppContext().getPackageName() + ":watch_manager_update_lock";
     private static final long WAKELOCK_MAX_TIME = 60 * 1000;
     private static final long BACKGROUND_UPDATE_MIN_DELAY = 90 * 1000;
+
+    // 8chan rate-limits bookmark polling, so 8chan pins refresh one at a
+    // time with at least this gap between fetches. Other sites are untouched.
+    private static final long CHAN8_FETCH_GAP_MS = 10 * 1000;
+    private long lastChan8FetchTime = 0;
+    private int pendingBackgroundChan8Updates = 0;
+
+    private static boolean isChan8Pin(Pin pin) {
+        return pin != null && pin.loadable != null && pin.loadable.site instanceof Chan8;
+    }
+
+    private boolean chan8FetchGapElapsed() {
+        return SystemClock.elapsedRealtime() - lastChan8FetchTime >= CHAN8_FETCH_GAP_MS;
+    }
 
     private static final Comparator<Pin> SORT_PINS = new Comparator<Pin>() {
         @Override
@@ -672,8 +688,14 @@ public class WatchManager {
             // Background updates fire synchronously so the wakelock tracks all completions.
             waitingForPinWatchersForBackgroundUpdate = new HashSet<>();
 
+            List<Pin> chan8Pins = new ArrayList<>();
             for (int i = 0; i < watchingPins.size(); i++) {
                 Pin pin = watchingPins.get(i);
+                if (isChan8Pin(pin)) {
+                    // 8chan pins are staggered below instead of bursting.
+                    chan8Pins.add(pin);
+                    continue;
+                }
                 PinWatcher pinWatcher = getPinWatcher(pin);
                 if (pinWatcher != null && pinWatcher.update(true)) {
                     postPinChanged(pin);
@@ -681,7 +703,14 @@ public class WatchManager {
                 }
             }
 
-            if (!waitingForPinWatchersForBackgroundUpdate.isEmpty()) {
+            // Stagger 8chan pins 10s apart so the host never sees a burst.
+            pendingBackgroundChan8Updates = chan8Pins.size();
+            for (int i = 0; i < chan8Pins.size(); i++) {
+                final Pin pin = chan8Pins.get(i);
+                handler.postDelayed(() -> startStaggeredBackgroundUpdate(pin), i * CHAN8_FETCH_GAP_MS);
+            }
+
+            if (!waitingForPinWatchersForBackgroundUpdate.isEmpty() || pendingBackgroundChan8Updates > 0) {
                 Logger.i(TAG, "Acquiring wakelock for pin watcher updates");
                 manageLock(true);
             }
@@ -695,6 +724,8 @@ public class WatchManager {
 
     // Loads watching pins one at a time: the next pin only starts once the
     // previous load completes (success or error), keeping peak memory low.
+    // 8chan pins additionally wait for the fetch gap so rapid polling
+    // never rate-limits the host; skipped pins are retried on a later pass.
     private void startForegroundUpdates(List<Pin> watchingPins) {
         if (foregroundUpdateWaiting) return;
 
@@ -702,7 +733,11 @@ public class WatchManager {
             Pin pin = watchingPins.get(foregroundUpdateIndex);
             foregroundUpdateIndex++;
             PinWatcher pinWatcher = getPinWatcher(pin);
-            if (pinWatcher != null && pinWatcher.update(false)) {
+            if (pinWatcher == null) continue;
+            if (isChan8Pin(pin) && !chan8FetchGapElapsed()) {
+                continue;
+            }
+            if (pinWatcher.update(false)) {
                 // A request started: wait for pinWatcherUpdated() before
                 // continuing with the next pin.
                 foregroundUpdateWaiting = true;
@@ -715,6 +750,30 @@ public class WatchManager {
             }
         }
         foregroundUpdateIndex = 0;
+    }
+
+    private void startStaggeredBackgroundUpdate(Pin pin) {
+        if (pendingBackgroundChan8Updates > 0) {
+            pendingBackgroundChan8Updates--;
+        }
+        PinWatcher pinWatcher = getPinWatcher(pin);
+        if (pinWatcher != null && waitingForPinWatchersForBackgroundUpdate != null
+                && pinWatcher.update(true)) {
+            postPinChanged(pin);
+            waitingForPinWatchersForBackgroundUpdate.add(pinWatcher);
+        } else {
+            releaseBackgroundLockIfDone();
+        }
+    }
+
+    private void releaseBackgroundLockIfDone() {
+        if (waitingForPinWatchersForBackgroundUpdate != null
+                && waitingForPinWatchersForBackgroundUpdate.isEmpty()
+                && pendingBackgroundChan8Updates == 0) {
+            Logger.i(TAG, "All watchers updated, removing wakelock");
+            waitingForPinWatchersForBackgroundUpdate = null;
+            manageLock(false);
+        }
     }
 
     private final Runnable foregroundUpdateStallRunnable = new Runnable() {
@@ -741,12 +800,7 @@ public class WatchManager {
 
         if (waitingForPinWatchersForBackgroundUpdate != null) {
             waitingForPinWatchersForBackgroundUpdate.remove(pinWatcher);
-
-            if (waitingForPinWatchersForBackgroundUpdate.isEmpty()) {
-                Logger.i(TAG, "All watchers updated, removing wakelock");
-                waitingForPinWatchersForBackgroundUpdate = null;
-                manageLock(false);
-            }
+            releaseBackgroundLockIfDone();
         }
     }
 
@@ -944,15 +998,20 @@ public class WatchManager {
             if (!pin.isError && pin.watching) {
                 loadThumbnailBitmapIfNeeded();
 
+                boolean started;
                 if (fromBackground) {
                     // Always load regardless of timer, since the time left is not accurate for 15min+ intervals
                     chanLoader.clearTimer();
                     chanLoader.requestMoreData();
-                    return true;
+                    started = true;
                 } else {
                     // true if a load was started
-                    return chanLoader.loadMoreIfTime();
+                    started = chanLoader.loadMoreIfTime();
                 }
+                if (started && isChan8Pin(pin)) {
+                    lastChan8FetchTime = SystemClock.elapsedRealtime();
+                }
+                return started;
             } else {
                 return false;
             }
