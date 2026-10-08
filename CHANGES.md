@@ -1,3 +1,32 @@
+## 2026-10-08 – v3.11.0
+
+### New Menu: Gestures
+
+Media menu was getting crowded so there's a new **Gestures** top menu.
+
+- **New option:** Pinch to zoom videos
+- **New option:** Show zoom level
+  - Shows an overlay with the zoom level, hides automatically after ~0.8s
+- **New option:** Tap to close
+  - You can now disable tap to close
+
+### 8chan
+
+- Fix a background issue with 8chan board fetching on app start, and a toast nagging about POWBlock failing
+- **New option:** 8chan fetch gap (Thread Watcher) 
+  - Adds a *8 sec* (default) stagger delay for 8chan bookmark fetching
+  - This option only shows up if at least one 8chan board has been added
+  - Reason: rate-limiting is too easy to trigger with many bookmarked threads
+  - Practical effect: if say 20× 8chan bookmarks exist, they will now take ~160s per full pass instead of bursting all at once, foreground and background
+  - Drawer pull to refresh still works instantly
+  - Opening a thread will still fetch new posts instantly
+
+### Filters
+
+- **New option:** Hide this ID
+  - Added a sub-menu to the post *Hide* option
+  - Hiding an ID will now also add it to the *Filters* list automatically
+
 ## 2026-09-27 – v3.10.2
 
 - Revert initial delay on app start to fetch bookmark posts: the delay will only apply for *8chan* to avoid rate-limiting
