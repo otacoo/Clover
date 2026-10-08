@@ -1,5 +1,7 @@
 package org.otacoo.chan.core.site.sites.chan8;
 
+import android.os.Process;
+
 import java.security.MessageDigest;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -34,6 +36,8 @@ public class Chan8ProofOfWork {
             for (int i = 0; i < cores; i++) {
                 final int start = i;
                 exec.submit(() -> {
+                    // Hashing loop: yield CPU to the UI, same result, less jank.
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                     try {
                         MessageDigest digest = MessageDigest.getInstance(algorithm == 512 ? "SHA-512" : "SHA-256");
                         long n = start;
