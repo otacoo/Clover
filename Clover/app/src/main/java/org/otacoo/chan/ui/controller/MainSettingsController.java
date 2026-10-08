@@ -172,6 +172,11 @@ public class MainSettingsController extends SettingsController implements Settin
                             new MediaSettingsController(context))));
 
             general.add(new LinkSettingView(this,
+                    R.string.settings_gestures, R.string.settings_gestures_description,
+                    v -> navigationController.pushController(
+                            new GesturesSettingsController(context))));
+
+            general.add(new LinkSettingView(this,
                     R.string.settings_behavior, R.string.settings_behavior_description,
                     v -> navigationController.pushController(
                             new MiscSettingsController(context))));
