@@ -47,7 +47,7 @@ public class BoardsMenuPresenter implements SimpleObservable.SimpleObserver<Void
         allBoards = boardManager.getAllBoardsObservable();
     }
 
-    public void create(Callback callback, Board selectedBoard) {
+    public void create(Callback callback) {
         this.callback = callback;
 
         this.allBoards.addObserver(this);
@@ -56,7 +56,8 @@ public class BoardsMenuPresenter implements SimpleObservable.SimpleObserver<Void
 
         updateWithFilter();
 
-        callback.scrollToPosition(items.findBoardPosition(selectedBoard));
+        // Always open at the start of the list.
+        callback.scrollToPosition(0);
     }
 
     public void destroy() {
@@ -124,22 +125,6 @@ public class BoardsMenuPresenter implements SimpleObservable.SimpleObserver<Void
 
         public int getCount() {
             return items.size();
-        }
-
-        public int findBoardPosition(Board board) {
-            if (board == null) return 0;
-
-            int position = 0;
-            for (Item item : items) {
-
-                if (item.board != null && item.board.siteCodeEquals(board)) {
-                    return position;
-                }
-
-                position++;
-            }
-
-            return 0;
         }
 
         public Item getAtPosition(int position) {

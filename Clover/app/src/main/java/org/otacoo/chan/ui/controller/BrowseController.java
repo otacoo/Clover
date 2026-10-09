@@ -214,8 +214,7 @@ public class BrowseController extends ThreadController implements
     private void setupMiddleNavigation() {
         navigation.setMiddleMenu(anchor -> {
             BrowseBoardsFloatingMenu boardsFloatingMenu = new BrowseBoardsFloatingMenu(context);
-            boardsFloatingMenu.show(view, anchor, BrowseController.this,
-                    presenter.currentBoard());
+            boardsFloatingMenu.show(view, anchor, BrowseController.this);
         });
     }
 

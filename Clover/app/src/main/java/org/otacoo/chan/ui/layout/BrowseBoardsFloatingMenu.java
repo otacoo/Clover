@@ -113,8 +113,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         setFocusable(true);
     }
 
-    public void show(ViewGroup baseView, View anchor, ClickCallback clickCallback,
-                     Board selectedBoard) {
+    public void show(ViewGroup baseView, View anchor, ClickCallback clickCallback) {
         this.anchor = anchor;
         this.clickCallback = clickCallback;
 
@@ -139,7 +138,7 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
         animateIn();
 
-        presenter.create(this, selectedBoard);
+        presenter.create(this);
         items = presenter.items();
         items.addObserver(this);
     }
