@@ -708,14 +708,18 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 text += ", " + getResources().getQuantityString(R.plurals.image, post.getImagesCount(), post.getImagesCount());
             }
 
-            boolean showIcon = ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
-                    || ChanSettings.replyAnchor.get() == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
+            ChanSettings.ReplyAnchorMode anchorMode = ChanSettings.replyAnchor.get();
+            boolean showIcon = anchorMode == ChanSettings.ReplyAnchorMode.LEFT_ICON
+                    || anchorMode == ChanSettings.ReplyAnchorMode.RIGHT_ICON
+                    || anchorMode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
+                    || anchorMode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
+            CharSequence anchorText = showIcon ? applyReplyAnchorIcon(text) : text;
             if (replyAnchorBgApplied) {
-                replies.setText(showIcon ? applyReplyAnchorIcon(text) : text);
+                replies.setText(anchorText);
                 // Pill-shaped anchor: tighter vertical padding than a plain anchor.
                 replies.setPadding(replies.getPaddingLeft(), dp(2), replies.getPaddingRight(), dp(2));
             } else {
-                replies.setText(text);
+                replies.setText(anchorText);
                 replies.setPadding(replies.getPaddingLeft(), paddingPx, replies.getPaddingRight(), replies.getPaddingBottom());
             }
             comment.setPadding(comment.getPaddingLeft(), comment.getPaddingTop(), comment.getPaddingRight(), 0);
@@ -1012,13 +1016,12 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private void applyReplyAnchorSide() {
         ChanSettings.ReplyAnchorMode mode = ChanSettings.replyAnchor.get();
         boolean anchorRight = mode == ChanSettings.ReplyAnchorMode.RIGHT
+                || mode == ChanSettings.ReplyAnchorMode.RIGHT_ICON
                 || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL
                 || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
         boolean bgAndIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_PILL
                 || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL
                 || mode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
-                || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
-        boolean showIcon = mode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON
                 || mode == ChanSettings.ReplyAnchorMode.RIGHT_PILL_ICON;
 
         RelativeLayout.LayoutParams repliesRp = (RelativeLayout.LayoutParams) replies.getLayoutParams();

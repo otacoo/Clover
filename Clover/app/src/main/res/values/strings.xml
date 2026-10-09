@@ -646,7 +646,9 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_always_show_reply_tags">Always show formatting tags</string>
     <string name="setting_reply_anchor_position">Reply anchor style</string>
     <string name="setting_reply_anchor_left">Left (default)</string>
+    <string name="setting_reply_anchor_left_icon">Left (icon)</string>
     <string name="setting_reply_anchor_right">Right</string>
+    <string name="setting_reply_anchor_right_icon">Right (icon)</string>
     <string name="setting_reply_anchor_left_pill">Left (pill)</string>
     <string name="setting_reply_anchor_right_pill">Right (pill)</string>
     <string name="setting_reply_anchor_left_bg">Left (pill + icon)</string>

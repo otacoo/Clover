@@ -250,7 +250,11 @@ public class AppearanceSettingsController extends SettingsController {
         positions.add(new ListSettingView.Item<>(
                 getString(R.string.setting_reply_anchor_left), ChanSettings.ReplyAnchorMode.LEFT));
         positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_left_icon), ChanSettings.ReplyAnchorMode.LEFT_ICON));
+        positions.add(new ListSettingView.Item<>(
                 getString(R.string.setting_reply_anchor_right), ChanSettings.ReplyAnchorMode.RIGHT));
+        positions.add(new ListSettingView.Item<>(
+                getString(R.string.setting_reply_anchor_right_icon), ChanSettings.ReplyAnchorMode.RIGHT_ICON));
         positions.add(new ListSettingView.Item<>(
                 getString(R.string.setting_reply_anchor_left_pill), ChanSettings.ReplyAnchorMode.LEFT_PILL));
         positions.add(new ListSettingView.Item<>(
