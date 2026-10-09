@@ -467,6 +467,13 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             int thumbSize = ChanSettings.thumbnailScale.get() * getResources()
                     .getDimensionPixelSize(R.dimen.cell_post_thumbnail_size) / 100;
             repliesLp.leftMargin = paddingPx + thumbSize;
+            // A pill anchor hangs left of its text, so with a thumbnail its
+            // background edge needs the text indentation added as well.
+            ChanSettings.ReplyAnchorMode mode = ChanSettings.replyAnchor.get();
+            if (mode == ChanSettings.ReplyAnchorMode.LEFT_PILL
+                    || mode == ChanSettings.ReplyAnchorMode.LEFT_PILL_ICON) {
+                repliesLp.leftMargin += paddingPx;
+            }
         }
         replies.setLayoutParams(repliesLp);
 
