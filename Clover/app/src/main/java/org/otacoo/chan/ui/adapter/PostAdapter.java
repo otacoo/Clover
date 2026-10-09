@@ -138,6 +138,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     // stub): posts mutate in place, so DiffUtil can't compare a post to itself.
     private Loadable boundLoadable;
     private final Map<Integer, int[]> boundPostState = new HashMap<>();
+    private ChanSettings.ReplyAnchorMode boundReplyAnchorMode;
 
     private void updateBoundState(Post post) {
         int[] state = new int[5];
@@ -223,6 +224,12 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             boundLoadable = thread.loadable;
         }
 
+        // The reply anchor style is global; a change needs a full rebind.
+        ChanSettings.ReplyAnchorMode replyAnchorMode = ChanSettings.replyAnchor.get();
+        boolean replyAnchorModeChanged = boundReplyAnchorMode != null
+                && boundReplyAnchorMode != replyAnchorMode;
+        boundReplyAnchorMode = replyAnchorMode;
+
         sourceList.clear();
         sourceList.addAll(thread.posts);
 
@@ -249,6 +256,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         displayList.clear();
         displayList.addAll(newList);
         lastSeenIndicatorPosition = newLastSeen;
+
+        if (replyAnchorModeChanged) {
+            notifyDataSetChanged();
+            return;
+        }
 
         // Fast path: nothing changed, skip DiffUtil and dispatch entirely.
         boolean allSnapshotsMatch = true;

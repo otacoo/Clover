@@ -128,6 +128,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     private int boundPostRepliesSize;
     private boolean boundPostSavedReply;
     private int boundPostFilterColor;
+    private ChanSettings.ReplyAnchorMode boundReplyAnchorMode;
 
     private final OnClickListener selfClicked = new OnClickListener() {
         @Override
@@ -332,7 +333,8 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                 this.boundPostDeleted == post.deleted.get() &&
                 this.boundPostRepliesSize == repliesSize &&
                 this.boundPostSavedReply == post.isSavedReply &&
-                this.boundPostFilterColor == post.filterHighlightedColor) {
+                this.boundPostFilterColor == post.filterHighlightedColor &&
+                this.boundReplyAnchorMode == ChanSettings.replyAnchor.get()) {
             return;
         }
 
@@ -360,6 +362,7 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             this.boundPostRepliesSize = repliesSize;
             this.boundPostSavedReply = post.isSavedReply;
             this.boundPostFilterColor = post.filterHighlightedColor;
+            this.boundReplyAnchorMode = ChanSettings.replyAnchor.get();
         }
 
         bindPost(theme, post);
@@ -1064,7 +1067,9 @@ public class PostCell extends LinearLayout implements PostCellInterface {
         bg.setCornerRadius(dp(2));
         bg.setColor(AndroidUtils.getAttrColor(getContext(), R.attr.backcolor_secondary));
         replies.setBackground(bg);
-        replies.setPadding(dp(3), dp(2), dp(3), dp(2));
+        // Keep the horizontal padding from applyFontSettings, so the pill width
+        // doesn't depend on how many times this holder has been bound.
+        replies.setPadding(replies.getPaddingLeft(), dp(2), replies.getPaddingRight(), dp(2));
         replies.setTextColor(theme.textPrimary);
     }
 
