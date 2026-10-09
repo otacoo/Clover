@@ -185,6 +185,8 @@ public class ThreadPresenter implements
             chanLoader = null;
             loadable = null;
             historyAdded = false;
+            // An in-flight archive fetch for the previous thread no longer applies.
+            archiveLoading = false;
 
             threadPresenterCallback.showNewPostsNotification(false, -1);
         }
@@ -444,32 +446,35 @@ public class ThreadPresenter implements
     public void loadFromArchive() {
         if (chanLoader == null || loadable == null || archiveLoading) return;
         if (!archiveFetchSupported()) return;
+        final ChanThreadLoader fetchLoader = chanLoader;
+        final Loadable fetchLoadable = loadable;
         archiveLoading = true;
         threadPresenterCallback.showLoading();
-        Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
+        Chan4ArchiveFetcher.fetchThreadPosts(fetchLoadable, new Chan4ArchiveFetcher.Callback() {
             @Override
             public void onSuccess(List<Post> posts) {
+                // Ignore a result that arrives after switching to another thread.
+                if (chanLoader != fetchLoader) return;
                 archiveLoading = false;
-                if (chanLoader == null || loadable == null) return;
-                if (loadable.title == null || loadable.title.isEmpty()) {
-                    loadable.title = PostHelper.getTitle(posts.get(0), loadable);
+                if (fetchLoadable.title == null || fetchLoadable.title.isEmpty()) {
+                    fetchLoadable.title = PostHelper.getTitle(posts.get(0), fetchLoadable);
                 }
-                ChanThread archivedThread = new ChanThread(loadable, new ArrayList<>(posts));
+                ChanThread archivedThread = new ChanThread(fetchLoadable, new ArrayList<>(posts));
                 // The loader normally sets op in processResponse; do it here
                 // or addHistory() NPEs on a null op.
                 Post op = posts.get(0);
                 archivedThread.op = op;
                 archivedThread.closed = op.isClosed();
                 archivedThread.archived = op.isArchived();
-                chanLoader.setArchivedThread(archivedThread);
+                fetchLoader.setArchivedThread(archivedThread);
                 AndroidUtils.showThemedSnackbar(
                         getString(R.string.thread_archive_restored), Snackbar.LENGTH_LONG);
             }
 
             @Override
             public void onFailure(String message) {
+                if (chanLoader != fetchLoader) return;
                 archiveLoading = false;
-                if (chanLoader == null || loadable == null) return;
                 threadPresenterCallback.showArchiveError(message);
             }
         }, unlockPresenter);
@@ -520,13 +525,15 @@ public class ThreadPresenter implements
         ChanThread thread = chanLoader.getThread();
         if (thread == null || loadable.isCatalogMode()) return;
         if (!archiveFetchSupported()) return;
+        final ChanThreadLoader fetchLoader = chanLoader;
         archiveLoading = true;
         Chan4ArchiveFetcher.fetchThreadPosts(loadable, new Chan4ArchiveFetcher.Callback() {
             @Override
             public void onSuccess(List<Post> posts) {
+                // Ignore a result that arrives after switching to another thread.
+                if (chanLoader != fetchLoader) return;
                 archiveLoading = false;
-                if (chanLoader == null || loadable == null) return;
-                ChanThread current = chanLoader.getThread();
+                ChanThread current = fetchLoader.getThread();
                 if (current == null) return;
 
                 Map<Integer, Post> currentByNo = new HashMap<>();
@@ -610,8 +617,8 @@ public class ThreadPresenter implements
 
             @Override
             public void onFailure(String message) {
+                if (chanLoader != fetchLoader) return;
                 archiveLoading = false;
-                if (chanLoader == null || loadable == null) return;
                 AndroidUtils.showThemedSnackbar(message, Snackbar.LENGTH_LONG);
             }
         }, unlockPresenter);
