@@ -322,6 +322,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 if (oldPost != newPost) {
                     // Different post instances: compare the visible fields that
                     // the cells render.
+                    if (oldPost.getReplies() != newPost.getReplies()) return false;
+                    if (oldPost.getImagesCount() != newPost.getImagesCount()) return false;
                     int oldReplies = 0;
                     synchronized(oldPost.repliesFrom) { oldReplies = oldPost.repliesFrom.size(); }
                     int newReplies = 0;
