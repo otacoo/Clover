@@ -249,7 +249,8 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
         recyclerView.getLocationInWindow(recyclerViewPos);
         anchorPos[0] += dp(OFFSET_X_DP);
         if (ChanSettings.toolbarBottom.get()) {
-            anchorPos[1] -= recyclerView.getHeight() + dp(OFFSET_Y_DP);
+            // Anchored to the anchor's bottom edge so the list overlaps the toolbar.
+            anchorPos[1] += anchor.getHeight() - recyclerView.getHeight() - dp(OFFSET_Y_DP);
         } else {
             anchorPos[1] += dp(OFFSET_Y_DP);
         }
