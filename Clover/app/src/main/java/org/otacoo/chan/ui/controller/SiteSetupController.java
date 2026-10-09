@@ -266,6 +266,28 @@ public class SiteSetupController extends SettingsController implements SiteSetup
             );
             verification.add(passCookieLink);
 
+            LinkSettingView signinLink = new LinkSettingView(
+                    this,
+                    context.getString(R.string.setup_site_4chan_signin),
+                    context.getString(R.string.setup_site_4chan_signin_description),
+                    v -> navigationController.pushController(new Chan4SigninController(context, chan4site))
+            );
+            verification.add(signinLink);
+
+            LinkSettingView banPageLink = new LinkSettingView(
+                    this,
+                    context.getString(R.string.setup_site_4chan_ban_page),
+                    context.getString(R.string.setup_site_4chan_ban_page_description),
+                    v -> {
+                        // Pass the site so the page receives the same cookies as posting.
+                        WebViewController banController = new WebViewController(
+                                context, "https://www.4chan.org/banned",
+                                context.getString(R.string.setup_site_4chan_ban_page), site);
+                        navigationController.pushController(banController);
+                    }
+            );
+            verification.add(banPageLink);
+
             groups.add(verification);
         }
     }

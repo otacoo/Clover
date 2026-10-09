@@ -19,11 +19,9 @@ package org.otacoo.chan.core.site.sites.chan4;
 
 import android.util.JsonReader;
 
-import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.Site;
-import org.otacoo.chan.utils.AndroidUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,11 +69,6 @@ public class Chan4BoardsRequest extends JsonReaderRequest<List<Board>> {
             }
         }
         reader.endObject();
-
-        Board banStatus = Board.fromSiteNameCode(site, AndroidUtils.getString(R.string.board_ban_status), "ban");
-        banStatus.description = AndroidUtils.getString(R.string.board_ban_status_description);
-        banStatus.workSafe = true;
-        list.add(0, banStatus);
 
         return list;
     }

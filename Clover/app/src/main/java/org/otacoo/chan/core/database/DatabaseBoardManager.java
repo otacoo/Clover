@@ -123,7 +123,10 @@ public class DatabaseBoardManager {
 
             List<Board> toDelete = new ArrayList<>();
             for (Board dbBoard : allFromDb) {
-                if (!newCodes.contains(dbBoard.code) && !dbBoard.saved) {
+                // The 4chan /ban/ board is now a Site settings entry; drop the
+                // legacy saved board for existing installs.
+                boolean legacyBanBoard = "ban".equals(dbBoard.code) && "4chan".equals(site.name());
+                if (legacyBanBoard || (!newCodes.contains(dbBoard.code) && !dbBoard.saved)) {
                     toDelete.add(dbBoard);
                 }
             }
