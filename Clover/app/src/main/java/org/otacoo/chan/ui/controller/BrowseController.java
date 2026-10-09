@@ -357,8 +357,8 @@ public class BrowseController extends ThreadController implements
     }
 
     @Override
-    public void openWebPage(String url, String title) {
-        WebViewController webViewController = new WebViewController(context, url, title);
+    public void openWebPage(String url, String title, Site site) {
+        WebViewController webViewController = new WebViewController(context, url, title, site);
         if (doubleNavigationController != null) {
             doubleNavigationController.pushController(webViewController);
         } else {

@@ -124,7 +124,7 @@ public class BrowsePresenter implements SimpleObservable.SimpleObserver<Void> {
 
     private void loadBoard(Board board) {
         if ("ban".equals(board.code)) {
-            callback.openWebPage("https://www.4chan.org/banned", board.name);
+            callback.openWebPage("https://www.4chan.org/banned", board.name, board.site);
             return;
         }
 
@@ -140,6 +140,6 @@ public class BrowsePresenter implements SimpleObservable.SimpleObserver<Void> {
 
         void showArchiveOption(boolean show);
 
-        void openWebPage(String url, String title);
+        void openWebPage(String url, String title, Site site);
     }
 }

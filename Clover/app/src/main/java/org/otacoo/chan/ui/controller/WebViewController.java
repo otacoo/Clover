@@ -20,18 +20,29 @@ package org.otacoo.chan.ui.controller;
 import android.annotation.SuppressLint;
 import android.content.Context;
 
+import androidx.annotation.Nullable;
+
 import org.otacoo.chan.controller.Controller;
+import org.otacoo.chan.core.site.Site;
+import org.otacoo.chan.core.site.SiteRequestModifier;
 import org.otacoo.chan.ui.view.AuthWebView;
 
 public class WebViewController extends Controller {
     private AuthWebView webView;
     private final String url;
     private final String title;
+    @Nullable
+    private final Site site;
 
     public WebViewController(Context context, String url, String title) {
+        this(context, url, title, null);
+    }
+
+    public WebViewController(Context context, String url, String title, @Nullable Site site) {
         super(context);
         this.url = url;
         this.title = title;
+        this.site = site;
     }
 
     @Override
@@ -48,6 +59,17 @@ public class WebViewController extends Controller {
         if (!alive) return;
 
         webView = new AuthWebView(context);
+
+        // Push the site's saved cookies into the WebView before loading, so
+        // pages that identify you (e.g. 4chan /banned) see the same identity
+        // the app uses for posting.
+        if (site != null) {
+            SiteRequestModifier modifier = site.requestModifier();
+            if (modifier != null) {
+                modifier.modifyWebView(webView);
+            }
+        }
+
         webView.loadUrl(url);
 
         view = webView;

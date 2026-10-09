@@ -322,10 +322,11 @@ public class Chan4CookieStore {
         if (isPassAuthenticated()) {
             String id = getPassIdValue();
             if (!id.isEmpty()) {
-                cm.setCookie("https://sys.4chan.org/", "pass_enabled=1;");
-                cm.setCookie("https://sys.4chan.org/", "pass_id=" + id + ";");
-                cm.setCookie("https://boards.4chan.org/", "pass_enabled=1;");
-                cm.setCookie("https://boards.4chan.org/", "pass_id=" + id + ";");
+                // Cover every 4chan domain, including www where the ban page lives.
+                for (String domain : PASS_DOMAINS) {
+                    cm.setCookie(domain, "pass_enabled=1;");
+                    cm.setCookie(domain, "pass_id=" + id + ";");
+                }
             } else {
                 expirePassSessionCookies(cm);
             }
