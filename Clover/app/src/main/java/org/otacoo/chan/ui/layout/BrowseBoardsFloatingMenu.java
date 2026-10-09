@@ -31,6 +31,7 @@ import android.os.Build;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -472,6 +473,11 @@ public class BrowseBoardsFloatingMenu extends FrameLayout implements BoardsMenuP
 
         public void bind(Site site) {
             this.site = site;
+
+            // Inverted list: the divider belongs below the site header, not above it.
+            FrameLayout.LayoutParams dividerParams = (FrameLayout.LayoutParams) divider.getLayoutParams();
+            dividerParams.gravity = ChanSettings.toolbarBottom.get() ? Gravity.BOTTOM : Gravity.TOP;
+            divider.setLayoutParams(dividerParams);
 
             divider.setVisibility(getBindingAdapterPosition() == 0 ? View.GONE : View.VISIBLE);
 
