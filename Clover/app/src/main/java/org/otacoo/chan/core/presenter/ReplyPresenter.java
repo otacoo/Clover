@@ -458,7 +458,8 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
             switchPage(Page.INPUT, false);
             closeAll();
-            highlightQuotes();
+            // The draft is cleared below; drop the quote highlight on the thread.
+            callback.highlightPostNo(-1);
             String name = draft.name;
             String flag = draft.flag;
             draft = new Reply();
