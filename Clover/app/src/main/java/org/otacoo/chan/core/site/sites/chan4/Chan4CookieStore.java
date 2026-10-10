@@ -26,6 +26,7 @@ import org.otacoo.chan.core.settings.SettingProvider;
 import org.otacoo.chan.core.settings.SharedPreferencesSettingProvider;
 import org.otacoo.chan.core.settings.StringSetting;
 import org.otacoo.chan.utils.AndroidUtils;
+import org.otacoo.chan.utils.Logger;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -45,6 +46,8 @@ import java.util.Map;
  * not touched by this file.
  */
 public class Chan4CookieStore {
+
+    private static final String TAG = "Chan4CookieStore";
 
     private static final String[] PASS_DOMAINS = {
             "https://4chan.org/", "https://www.4chan.org/", "https://boards.4chan.org/", "https://sys.4chan.org/",
@@ -260,6 +263,10 @@ public class Chan4CookieStore {
             parts.put("pass_enabled", "1");
         }
 
+        if (Logger.debugEnabled()) {
+            Logger.d(TAG, "getCookieHeader " + url + " cookies=[" + describeParts(parts) + "]");
+        }
+
         return joinCookieParts(parts);
     }
 
@@ -316,6 +323,19 @@ public class Chan4CookieStore {
         return sb.toString();
     }
 
+    // Cookie names for logging; the 4chan_pass value's length only, never its value.
+    private static String describeParts(Map<String, String> parts) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : parts.entrySet()) {
+            if (sb.length() > 0) sb.append(',');
+            sb.append(entry.getKey());
+            if ("4chan_pass".equals(entry.getKey())) {
+                sb.append("(len=").append(entry.getValue().length()).append(')');
+            }
+        }
+        return sb.toString();
+    }
+
     // Injects 4chan pass cookies from SharedPrefs into the given WebView so that 4chan's captcha
     // and report pages receive the correct pass identity for this device.
     public void syncToWebView(WebView webView) {
@@ -364,6 +384,15 @@ public class Chan4CookieStore {
                 String freshId = val.substring("pass_id=".length());
                 if (!freshId.isEmpty() && !freshId.equals("0")) {
                     AndroidUtils.getPreferences().edit().putString(PASS_ID_KEY, freshId).apply();
+                }
+            }
+            if (val.startsWith("4chan_pass=")) {
+                String freshPass = val.substring("4chan_pass=".length()).trim();
+                if (!freshPass.isEmpty()) {
+                    // 4chan re-issues the email-verification token over time;
+                    // keep the per-connection archive a current copy so restores
+                    // do not bring back an outdated value.
+                    setChanPass(freshPass);
                 }
             }
             if (jar != null) {
