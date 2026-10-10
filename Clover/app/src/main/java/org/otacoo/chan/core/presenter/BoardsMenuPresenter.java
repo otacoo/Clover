@@ -100,6 +100,16 @@ public class BoardsMenuPresenter implements SimpleObservable.SimpleObserver<Void
                 Site site = siteAndBoards.site;
                 List<Board> boards = siteAndBoards.boards;
 
+                // Only show boards for sites that have at least one board added.
+                boolean hasAddedBoard = false;
+                for (Board board : boards) {
+                    if (board.saved) {
+                        hasAddedBoard = true;
+                        break;
+                    }
+                }
+                if (!hasAddedBoard) continue;
+
                 List<Item> subItems = new ArrayList<>();
                 if (filter == null || filter.length() == 0) {
                     for (Board board : boards) {
