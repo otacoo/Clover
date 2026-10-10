@@ -639,7 +639,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             }
             
             //Override cookies with Clover's aggregated version (ensures cross-subdomain consistency)
-            String aggregatedCookies = get4chanCookieHeader();
+            String aggregatedCookies = get4chanCookieHeader(url);
             if (aggregatedCookies != null) {
                 builder.header("Cookie", aggregatedCookies);
             }
@@ -1044,8 +1044,17 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         return c != null && c.contains("_tcm");
     }
 
-    // Aggregates cookies from all 4chan subdomains for background requests
-    private String get4chanCookieHeader() {
+    // Aggregates cookies for the background captcha request.
+    // Uses the canonical 4chan cookie store first so the captcha request
+    // carries the same pass identity as the post that follows.
+    private String get4chanCookieHeader(String url) {
+        if (site instanceof Chan4) {
+            String header = ((Chan4) site).getCookieStore().getCookieHeader(url);
+            if (header != null && !header.isEmpty()) {
+                return header;
+            }
+        }
+
         CookieManager cm = CookieManager.getInstance();
         Set<String> set = new LinkedHashSet<>();
         for (String b : new String[]{"https://sys.4chan.org", "https://boards.4chan.org", "https://sys.4channel.org", "https://boards.4channel.org"}) {
