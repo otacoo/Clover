@@ -18,7 +18,6 @@
  */
 package org.otacoo.chan.core.site.sites.chan4;
 
-import android.text.TextUtils;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 
@@ -29,10 +28,9 @@ import org.otacoo.chan.core.settings.StringSetting;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * This is the single source of truth for 4chan pass cookies.
@@ -239,71 +237,83 @@ public class Chan4CookieStore {
         }
     }
 
-    // Builds the full cookie: header value for OkHttp requests to 4chan.
-    // Session cookies are read from the WebView store pass identity is appended
-    // directly from SharedPrefs so it is present even after a WebView cookie clear.
+    // Builds the full cookie header value for OkHttp requests to 4chan.
+    // Session cookies come from the WebView store; the pass identity is applied
+    // last so exactly one value per cookie name is sent. The live 4chan_pass is
+    // authoritative: 4chan re-issues it over time while keeping it valid.
     public String getCookieHeader(String url) {
-        Set<String> parts = new LinkedHashSet<>();
-        CookieManager cm = CookieManager.getInstance();
+        Map<String, String> parts = collectCookieParts(url);
 
-        // Session cookies for the exact request URL first
-        String requestCookies = cm.getCookie(url);
-        if (requestCookies != null && !requestCookies.isEmpty()) {
-            parts.addAll(Arrays.asList(requestCookies.split(";\\s*")));
-        }
-        // Aggregate across known 4chan domains
-        for (String domain : SESSION_DOMAINS) {
-            String cookies = cm.getCookie(domain);
-            if (cookies != null && !cookies.isEmpty()) {
-                parts.addAll(Arrays.asList(cookies.split(";\\s*")));
-            }
-        }
-
-        // Pass identity always from SharedPrefs
-        if (isPassAuthenticated()) {
-            String id = getPassIdValue();
-            if (!id.isEmpty()) {
-                parts.add("pass_id=" + id);
-                parts.add("pass_enabled=1");
-            }
-            // Prefer the token archived for the current connection, falling
-            // back to the live store when no per-network token is known.
+        // The WebView value is authoritative (4chan keeps re-issuing it); the
+        // per-network archive only fills a gap, e.g. after an import where the
+        // WebView store has no token yet.
+        if (!parts.containsKey("4chan_pass")) {
             String pass = Chan4NetworkProfiles.getPassForCurrentNetwork();
-            if (pass.isEmpty()) {
-                pass = getChanPass();
-            }
             if (!pass.isEmpty()) {
-                parts.add("4chan_pass=" + pass);
+                parts.put("4chan_pass", pass);
             }
         }
 
-        return parts.isEmpty() ? null : TextUtils.join("; ", parts);
+        String id = getPassIdValue();
+        if (!id.isEmpty()) {
+            parts.put("pass_id", id);
+            parts.put("pass_enabled", "1");
+        }
+
+        return joinCookieParts(parts);
     }
 
-    // Like getCookieHeader but strips pass_id and pass_enabled cookies.
+    // Like getCookieHeader but strips the paid pass (pass_id/pass_enabled).
     // Used when the user wants to skip their 4chan pass for a single post.
     public String getCookieHeaderWithoutPass(String url) {
-        Set<String> parts = new LinkedHashSet<>();
-        CookieManager cm = CookieManager.getInstance();
+        Map<String, String> parts = collectCookieParts(url);
 
-        String requestCookies = cm.getCookie(url);
-        if (requestCookies != null && !requestCookies.isEmpty()) {
-            parts.addAll(Arrays.asList(requestCookies.split(";\\s*")));
-        }
-        for (String domain : SESSION_DOMAINS) {
-            String cookies = cm.getCookie(domain);
-            if (cookies != null && !cookies.isEmpty()) {
-                parts.addAll(Arrays.asList(cookies.split(";\\s*")));
+        if (!parts.containsKey("4chan_pass")) {
+            String pass = Chan4NetworkProfiles.getPassForCurrentNetwork();
+            if (!pass.isEmpty()) {
+                parts.put("4chan_pass", pass);
             }
         }
 
-        parts.removeIf(c -> {
-            String trimmed = c.trim();
-            return trimmed.startsWith("pass_id=")
-                    || trimmed.startsWith("pass_enabled=");
-        });
+        parts.remove("pass_id");
+        parts.remove("pass_enabled");
 
-        return parts.isEmpty() ? null : TextUtils.join("; ", parts);
+        return joinCookieParts(parts);
+    }
+
+    // Cookie name -> value, one entry per name. The exact request URL is
+    // aggregated first so its cookies win over copies from other 4chan hosts.
+    private Map<String, String> collectCookieParts(String url) {
+        Map<String, String> parts = new LinkedHashMap<>();
+        CookieManager cm = CookieManager.getInstance();
+
+        addCookieParts(parts, cm.getCookie(url));
+        for (String domain : SESSION_DOMAINS) {
+            addCookieParts(parts, cm.getCookie(domain));
+        }
+
+        return parts;
+    }
+
+    private static void addCookieParts(Map<String, String> parts, String cookies) {
+        if (cookies == null || cookies.isEmpty()) return;
+        for (String part : cookies.split(";\\s*")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) continue;
+            // Keep the first occurrence: the exact request URL is aggregated
+            // first, so its cookies win over copies from other 4chan hosts.
+            parts.putIfAbsent(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
+        }
+    }
+
+    private static String joinCookieParts(Map<String, String> parts) {
+        if (parts.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : parts.entrySet()) {
+            if (sb.length() > 0) sb.append("; ");
+            sb.append(entry.getKey()).append('=').append(entry.getValue());
+        }
+        return sb.toString();
     }
 
     // Injects 4chan pass cookies from SharedPrefs into the given WebView so that 4chan's captcha
@@ -311,11 +321,11 @@ public class Chan4CookieStore {
     public void syncToWebView(WebView webView) {
         CookieManager cm = CookieManager.getInstance();
 
-        // Make the WebView carry the token archived for the current
-        // connection, so captcha sessions match the token the post will be
-        // sent with.
+        // Restore the archived token only when the WebView has none (reinstall,
+        // import, cleared cookies). The WebView is the store 4chan keeps up to
+        // date itself, so a live token must never be overwritten by an older copy.
         String archivedPass = Chan4NetworkProfiles.getPassForCurrentNetwork();
-        if (!archivedPass.isEmpty() && !archivedPass.equals(getChanPass())) {
+        if (getChanPass().isEmpty() && !archivedPass.isEmpty()) {
             setChanPass(archivedPass);
         }
 
