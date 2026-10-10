@@ -208,15 +208,6 @@ public class Chan4CookieStore {
                     + "; Secure"
                     + "; HttpOnly";
             for (String domain : PASS_DOMAINS) cm.setCookie(domain, cookie);
-            if (jar != null) {
-                for (String domain : SESSION_DOMAINS) {
-                    try {
-                        for (java.net.HttpCookie hc : java.net.HttpCookie.parse(cookie)) {
-                            jar.getCookieStore().add(new java.net.URI(domain), hc);
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
         }
         cm.flush();
     }
@@ -241,21 +232,11 @@ public class Chan4CookieStore {
     }
 
     // Builds the full cookie header value for OkHttp requests to 4chan.
-    // Session cookies come from the WebView store; the pass identity is applied
-    // last so exactly one value per cookie name is sent. The live 4chan_pass is
-    // authoritative: 4chan re-issues it over time while keeping it valid.
+    // The WebView CookieManager is the single source of truth: 4chan itself
+    // keeps the 4chan_pass cookie there up to date. The paid pass is the only
+    // identity the app appends, exactly once per cookie name.
     public String getCookieHeader(String url) {
         Map<String, String> parts = collectCookieParts(url);
-
-        // The WebView value is authoritative (4chan keeps re-issuing it); the
-        // per-network archive only fills a gap, e.g. after an import where the
-        // WebView store has no token yet.
-        if (!parts.containsKey("4chan_pass")) {
-            String pass = Chan4NetworkProfiles.getPassForCurrentNetwork();
-            if (!pass.isEmpty()) {
-                parts.put("4chan_pass", pass);
-            }
-        }
 
         String id = getPassIdValue();
         if (!id.isEmpty()) {
@@ -274,13 +255,6 @@ public class Chan4CookieStore {
     // Used when the user wants to skip their 4chan pass for a single post.
     public String getCookieHeaderWithoutPass(String url) {
         Map<String, String> parts = collectCookieParts(url);
-
-        if (!parts.containsKey("4chan_pass")) {
-            String pass = Chan4NetworkProfiles.getPassForCurrentNetwork();
-            if (!pass.isEmpty()) {
-                parts.put("4chan_pass", pass);
-            }
-        }
 
         parts.remove("pass_id");
         parts.remove("pass_enabled");
