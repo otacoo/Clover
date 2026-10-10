@@ -53,6 +53,10 @@ public class EmailVerificationController extends Controller {
     private String[] requiredCookies;
     private boolean isFinished = false;
     private Site site;
+    /** 4chan_pass value observed before verification started, for change detection. */
+    private String initialChanPass = "";
+    private int chanPassCheckAttempts;
+    private static final int CHAN_PASS_CHECK_MAX_ATTEMPTS = 10;
 
     public EmailVerificationController(Context context) {
         this(context, "https://sys.4chan.org/signin");
@@ -137,6 +141,11 @@ public class EmailVerificationController extends Controller {
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         if (!alive) return;
+        // Remember the token before anything is cleared: a changed value after
+        // the flow means 4chan issued the newly verified one.
+        if (site instanceof Chan4 chan4) {
+            initialChanPass = chan4.getCookieStore().getChanPass();
+        }
         clearSiteCookies();
         AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
     }
@@ -241,11 +250,9 @@ public class EmailVerificationController extends Controller {
 
                 if (is8chan) {
                     checkCookies();
-                } else if (url != null && url.contains("sys.4chan.org/signin") && url.contains("action=verify")) {
-                    String pageTitle = view.getTitle();
-                    if (pageTitle != null && (pageTitle.contains("Verified") || pageTitle.contains("Success"))) {
-                        completeVerification();
-                    }
+                } else if (site instanceof Chan4 && url != null && url.contains("sys.4chan.org/signin")) {
+                    chanPassCheckAttempts = 0;
+                    checkChan4PassCaptured();
                 }
             }
         });
@@ -291,7 +298,30 @@ public class EmailVerificationController extends Controller {
         });
     }
 
+    // The verification page title is not a reliable success signal, so the
+    // 4chan_pass cookie is polled instead: a new non-empty value means 4chan
+    // issued the verified token.
+    private void checkChan4PassCaptured() {
+        if (isFinished || !alive || !(site instanceof Chan4 chan4)) return;
+
+        String current = chan4.getCookieStore().getChanPass();
+        if (!current.isEmpty() && !current.equals(initialChanPass)) {
+            Logger.i(TAG, "checkChan4PassCaptured: new 4chan_pass captured");
+            completeVerification(current);
+            return;
+        }
+
+        if (chanPassCheckAttempts < CHAN_PASS_CHECK_MAX_ATTEMPTS) {
+            chanPassCheckAttempts++;
+            webView.postDelayed(this::checkChan4PassCaptured, 1000);
+        }
+    }
+
     private void completeVerification() {
+        completeVerification(null);
+    }
+
+    private void completeVerification(String capturedPass) {
         if (isFinished) return;
         isFinished = true;
 
@@ -303,20 +333,14 @@ public class EmailVerificationController extends Controller {
             NetModule.syncCookiesToJar(initialUrl);
         }
 
-        // Extract the newly acquired 4chan_pass cookie and save it to the 4chan cookie store.
+        // Save the newly acquired 4chan_pass (email verification token).
         if (site instanceof Chan4 chan4) {
-            String sysCookies = CookieManager.getInstance().getCookie("https://sys.4chan.org");
-            if (sysCookies != null) {
-                for (String part : sysCookies.split(";\\s*")) {
-                    String trimmed = part.trim();
-                    if (trimmed.startsWith("4chan_pass=")) {
-                        String value = trimmed.substring("4chan_pass=".length());
-                        if (!value.isEmpty()) {
-                            chan4.getCookieStore().setChanPass(value);
-                        }
-                        break;
-                    }
-                }
+            String pass = capturedPass;
+            if (pass == null || pass.isEmpty()) {
+                pass = extractChanPass(CookieManager.getInstance().getCookie("https://sys.4chan.org"));
+            }
+            if (!pass.isEmpty()) {
+                chan4.getCookieStore().setChanPass(pass);
             }
         }
 
@@ -328,6 +352,17 @@ public class EmailVerificationController extends Controller {
         } else if (presentedByController != null) {
             stopPresenting();
         }
+    }
+
+    private static String extractChanPass(String sysCookies) {
+        if (sysCookies == null) return "";
+        for (String part : sysCookies.split(";\\s*")) {
+            String trimmed = part.trim();
+            if (trimmed.startsWith("4chan_pass=")) {
+                return trimmed.substring("4chan_pass=".length());
+            }
+        }
+        return "";
     }
 
     @Override
