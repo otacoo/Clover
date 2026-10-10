@@ -61,7 +61,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -638,10 +637,13 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
                 builder.header(entry.getKey(), entry.getValue());
             }
             
-            //Override cookies with Clover's aggregated version (ensures cross-subdomain consistency)
-            String aggregatedCookies = get4chanCookieHeader(url);
-            if (aggregatedCookies != null) {
-                builder.header("Cookie", aggregatedCookies);
+            // Override cookies with the canonical 4chan cookie header so the
+            // captcha request carries the same identity as the post.
+            if (site instanceof Chan4) {
+                String cookies = ((Chan4) site).getCookieStore().getCookieHeader(url);
+                if (cookies != null && !cookies.isEmpty()) {
+                    builder.header("Cookie", cookies);
+                }
             }
             
             // Ensure Referer is set if missing
@@ -1042,31 +1044,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private boolean hasFingerprintCookies() {
         String c = CookieManager.getInstance().getCookie("https://sys.4chan.org");
         return c != null && c.contains("_tcm");
-    }
-
-    // Aggregates cookies for the background captcha request.
-    // Uses the canonical 4chan cookie store first so the captcha request
-    // carries the same pass identity as the post that follows.
-    private String get4chanCookieHeader(String url) {
-        if (site instanceof Chan4) {
-            String header = ((Chan4) site).getCookieStore().getCookieHeader(url);
-            if (header != null && !header.isEmpty()) {
-                return header;
-            }
-        }
-
-        CookieManager cm = CookieManager.getInstance();
-        Set<String> set = new LinkedHashSet<>();
-        for (String b : new String[]{"https://sys.4chan.org", "https://boards.4chan.org", "https://sys.4channel.org", "https://boards.4channel.org"}) {
-            String c = cm.getCookie(b);
-            if (c != null) {
-                for (String part : c.split(";\\s*")) {
-                    if (!part.isEmpty()) set.add(part);
-                }
-            }
-        }
-        String result = set.isEmpty() ? null : TextUtils.join("; ", set);
-        return result;
     }
 
     // Clears only in-memory state and localStorage so 4chan can re-run fingerprinting (mcl.js / Cloudflare). Does NOT delete any cookies.
