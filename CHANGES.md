@@ -2,7 +2,7 @@
 
 >[!NOTE]
 >I have fixed a few bugs with email verification as well as how the 4chan_pass cookie gets sent and detected.\
->If you were having trouble before with range bans/cooldowns it should now work correctly `if` you do the `email verification process again`.\
+>If you were having trouble before with range bans/cooldowns it should now work correctly **if** you do the **email verification process again**.\
 >You can now also use the Signin page to check if you're correctly signed in with your 4chan email cookie.
 
 ### New options & changes
@@ -15,7 +15,7 @@
   - *Signin* opens 4chan's signin page with your saved cookies, so you can check if the device is verified
   - *Ban page* opens 4chan's ban/warning status page
 - The `/ban/` entry was removed from the board list, use the *Ban page* setting instead
-- `/ban/` should now correctly match your ban/banned status (issue #41 by @Kontaminator)
+- `/ban/` should now correctly match your banned/warned status (issue #41 by @Kontaminator)
 - Email verification now works reliably: the verified cookie is stored and used for captchas and posting, no longer gets replaced with an older copy, and survives restarts
   - Fixes bogus 60s cooldowns and "please verify your e-mail" errors for verified users
 
