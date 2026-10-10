@@ -1,3 +1,46 @@
+## 2026-10-10 – v3.12.0
+
+>[!NOTE]
+>I have fixed a few bugs with email verification as well as how the 4chan_pass cookie gets sent and detected.\
+>If you were having trouble before with range bans/cooldowns it should now work correctly `if` you do the `email verification process again`.\
+>You can now also use the Signin page to check if you're correctly signed in with your 4chan email cookie.
+
+### New options & changes
+
+**Reply anchor style:**
+- **New option:** *Left (icon)* and *Right (icon)* styles
+
+**4chan:**
+- **New option:** *Signin* and *Ban page* under Sites > 4chan > Verification
+  - *Signin* opens 4chan's signin page with your saved cookies, so you can check if the device is verified
+  - *Ban page* opens 4chan's ban/warning status page
+- The `/ban/` entry was removed from the board list, use the *Ban page* setting instead
+- `/ban/` should now correctly match your ban/banned status (issue #41 by @Kontaminator)
+- Email verification now works reliably: the verified cookie is stored and used for captchas and posting, no longer gets replaced with an older copy, and survives restarts
+  - Fixes bogus 60s cooldowns and "please verify your e-mail" errors for verified users
+
+### Bug fixes & others
+
+Read more in issue #42 by @tetra65
+
+**Board list:**
+- Opening the board list now starts at the top instead of jumping to the currently open board
+- With the bottom toolbar, the board list now overlaps the toolbar like the top toolbar does, and the last board is no longer hidden behind it
+- With the bottom toolbar, the site separator now appears below the site header instead of above it
+
+**Threads & posting:**
+- Posting a reply now clears the highlighted quote
+- Refreshing a board now updates thread reply/image counts (they used to stay at the value from when the thread was last opened)
+- Fetching deleted posts from the archive no longer mixes up posts or shows wrong counts if you switch threads while it's running
+
+**Reply anchor style:**
+- Changing the style now applies to a thread that is already open (no scroll needed)
+- Anchor pills no longer change width on some posts after scrolling
+- Left-side pill anchors now line up with the post text when the post has an image
+
+
+*Something spooky is coming... 😱*
+
 ## 2026-10-08 – v3.11.0
 
 ### New Menu: Gestures
