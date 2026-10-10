@@ -396,6 +396,22 @@ public class WatchManager {
             onBackgroundWatchingChanged(ChanSettings.watchBackground.get());
         } else if (settingChanged.setting() == ChanSettings.watchEnabled) {
             onWatchEnabledChanged(ChanSettings.watchEnabled.get());
+        } else if (settingChanged.setting() == ChanSettings.watchRemoveWhen404
+                && ChanSettings.watchRemoveWhen404.get()) {
+            // Clean up bookmarks that already hit a 404 before the option was on.
+            handler.post(this::removeErrorPins);
+        }
+    }
+
+    private void removeErrorPins() {
+        List<Pin> toRemove = new ArrayList<>();
+        for (int i = 0; i < pins.size(); i++) {
+            if (pins.get(i).isError) {
+                toRemove.add(pins.get(i));
+            }
+        }
+        for (int i = 0; i < toRemove.size(); i++) {
+            deletePin(toRemove.get(i));
         }
     }
 
@@ -1029,6 +1045,12 @@ public class WatchManager {
             }
 
             pinWatcherUpdated(this);
+
+            if (error.isNotFound() && ChanSettings.watchRemoveWhen404.get()) {
+                // Posted: the loader is still iterating its listeners, removing the
+                // watcher right now would modify the list mid-iteration.
+                handler.post(() -> deletePin(pin));
+            }
         }
 
         @Override

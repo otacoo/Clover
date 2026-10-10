@@ -274,6 +274,7 @@ public class ChanSettings {
     public static final StringSetting watchSound;
     public static final BooleanSetting watchPeek;
     public static final StringSetting watchLed;
+    public static final BooleanSetting watchRemoveWhen404;
 
     public static final BooleanSetting historyEnabled;
 
@@ -459,6 +460,9 @@ public class ChanSettings {
         watchSound = new StringSetting(p, "preference_watch_sound", "quotes");
         watchPeek = new BooleanSetting(p, "preference_watch_peek", true);
         watchLed = new StringSetting(p, "preference_watch_led", "ffffffff");
+        watchRemoveWhen404 = new BooleanSetting(p, "preference_watch_remove_when_404", false);
+        watchRemoveWhen404.addCallback((setting, value) ->
+                EventBus.getDefault().post(new SettingChanged<>(watchRemoveWhen404)));
 
         historyEnabled = new BooleanSetting(p, "preference_history_enabled", true);
 

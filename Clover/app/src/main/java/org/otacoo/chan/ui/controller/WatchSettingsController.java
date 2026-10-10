@@ -192,6 +192,9 @@ public class WatchSettingsController extends SettingsController {
         threads.add(new BooleanSettingView(this, ChanSettings.alwaysShowBoardName,
                 R.string.setting_always_show_board_name, 0));
 
+        threads.add(new BooleanSettingView(this, ChanSettings.watchRemoveWhen404,
+                R.string.setting_watch_remove_when_404, 0));
+
         groups.add(threads);
     }
 
