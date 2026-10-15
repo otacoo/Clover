@@ -1,3 +1,17 @@
+## 2026-10-15 – v3.13.0
+
+### New options & changes
+
+**Thread watcher:**
+- **New option:** *Remove when 404* (Thread watcher settings > Threads)
+  - Removes bookmarked threads from the drawer when they 404 or get deleted
+  - Turning it on also cleans up bookmarks that already 404'd
+
+### Bug fixes & others
+
+**Board list:**
+- Searching the board list now only shows boards for sites that have at least one board added
+
 ## 2026-10-10 – v3.12.0
 
 >[!NOTE]
