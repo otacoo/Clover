@@ -58,7 +58,6 @@ import org.otacoo.chan.utils.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,7 +75,6 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
 
     private static final String TAG = "ReplyPresenter";
     private static final Pattern QUOTE_PATTERN = Pattern.compile(">>\\d+");
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private ReplyPresenterCallback callback;
 
@@ -615,8 +613,28 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
     }
 
     public void onCommentTextChanged(CharSequence text) {
-        int length = text.toString().getBytes(UTF_8).length;
+        int length = utf8Length(text);
         callback.updateCommentCount(length, board.maxCommentChars, length > board.maxCommentChars);
+    }
+
+    // The length of the text in bytes, counted without copying it.
+    private static int utf8Length(CharSequence text) {
+        int length = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c < 0x80) {
+                length += 1;
+            } else if (c < 0x800) {
+                length += 2;
+            } else if (Character.isHighSurrogate(c) && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                length += 4;
+                i++;
+            } else {
+                length += 3;
+            }
+        }
+        return length;
     }
 
     public void onSelectionChanged() {
