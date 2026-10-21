@@ -56,6 +56,21 @@ public class Chan8 extends CommonSite {
     private static final java.util.regex.Pattern TOS_PATTERN =
             java.util.regex.Pattern.compile("\\bTOS\\w*=");
 
+    // The proof of work is refreshed in the background, so that browsing does
+    // not have to stop for it when the session has to be renewed.
+    private static final long POW_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+
+    private final android.os.Handler powRefreshHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable powRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            refreshPowInBackground();
+            powRefreshHandler.postDelayed(this, POW_REFRESH_INTERVAL_MS);
+        }
+    };
+
     public enum PreferredDomain implements OptionSettingItem {
         AUTO("auto"),
         MOE("moe"),
@@ -134,8 +149,76 @@ public class Chan8 extends CommonSite {
         Logger.d("Chan8", "Restored POW session cookies from persistent settings");
     }
 
-    private void applyDomainPreference(PreferredDomain pref) {
-        switch (pref) {
+    @Override
+    public void postInitialize() {
+        super.postInitialize();
+        powRefreshHandler.postDelayed(powRefreshRunnable, POW_REFRESH_INTERVAL_MS);
+    }
+
+    /**
+     * Asks the site for something small in the background. When the session
+     * needs a new proof of work, the interceptor solves it there and then, so
+     * the user does not run into it while browsing.
+     */
+    private void refreshPowInBackground() {
+        if (!hasPowSession()) return;
+
+        HttpUrl url;
+        try {
+            url = ((LynxchanEndpoints) endpoints()).root()
+                    .newBuilder().addPathSegment("index.json").build();
+        } catch (Exception e) {
+            return;
+        }
+
+        HttpCall call = new HttpCall(this) {
+            @Override
+            public void setup(Request.Builder requestBuilder,
+                    ProgressRequestBody.ProgressRequestListener progressListener) {
+                // A background request must not show anything to the user.
+                requestBuilder.header(Chan8PowInterceptor.SILENT_POW_HEADER, "1");
+            }
+
+            @Override
+            public void process(Response response, String result) {}
+        };
+        call.url(url.toString());
+        getHttpCallManager().makeHttpCall(call, new HttpCall.HttpCallback<HttpCall>() {
+            @Override
+            public void onHttpSuccess(HttpCall httpCall) {}
+
+            @Override
+            public void onHttpFail(HttpCall httpCall, Exception e) {
+                Logger.d("Chan8", "pow refresh failed: " + e.getMessage());
+            }
+        });
+    }
+
+    /** True when the site has a proof of work session. */
+    private boolean hasPowSession() {
+        java.net.CookieManager cm = org.otacoo.chan.core.di.NetModule.getSharedCookieManager();
+        if (cm == null) return false;
+        boolean token = false;
+        boolean id = false;
+        boolean tos = false;
+        try {
+            java.net.URI uri = new java.net.URI("https://" + Chan8RateLimit.getActiveDomain() + "/");
+            for (java.net.HttpCookie cookie : cm.getCookieStore().get(uri)) {
+                String name = cookie.getName();
+                if ("POW_TOKEN".equals(name)) {
+                    token = true;
+                } else if ("POW_ID".equals(name)) {
+                    id = true;
+                } else if (name.startsWith("TOS")) {
+                    tos = true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return token && id && tos;
+    }
+
+    private void applyDomainPreference(PreferredDomain pref) {        switch (pref) {
             case MOE: Chan8RateLimit.setForcedDomain(Chan8RateLimit.PRIMARY_DOMAIN); break;
             case ST:  Chan8RateLimit.setForcedDomain(Chan8RateLimit.SECONDARY_DOMAIN); break;
             default:  Chan8RateLimit.setForcedDomain(null); break;
