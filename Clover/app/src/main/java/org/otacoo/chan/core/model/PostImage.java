@@ -18,6 +18,7 @@
 package org.otacoo.chan.core.model;
 
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.utils.AndroidUtils;
 
 import okhttp3.HttpUrl;
 
@@ -43,6 +44,15 @@ public class PostImage {
     public final Type type;
 
     public volatile int replyCount = 0;
+
+    private String readableSize;
+
+    public String getReadableSize() {
+        if (readableSize == null) {
+            readableSize = AndroidUtils.getReadableFileSize(size);
+        }
+        return readableSize;
+    }
 
     private PostImage(Builder builder) {
         this.originalName = builder.originalName;

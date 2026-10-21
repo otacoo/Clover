@@ -413,7 +413,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
                 hasPatternType = true;
             }
         }
-        return hasPatternType && filterEngine.matches(filter, true, text, true);
+        return hasPatternType && filterEngine.matches(filter, true, text, false);
     }
 
     public interface FilterLayoutCallback {
