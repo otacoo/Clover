@@ -313,7 +313,7 @@ public abstract class CommonSite extends SiteBase {
                     }
                     Loadable l = Loadable.forThread(site, b, Integer.parseInt(thread.group(3)));
 
-                    if (isEmpty(url.fragment())) {
+                    if (!isEmpty(url.fragment())) {
                         l.markedNo = Integer.parseInt(url.fragment());
                     }
 
