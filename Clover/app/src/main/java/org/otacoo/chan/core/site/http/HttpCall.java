@@ -74,13 +74,18 @@ public abstract class HttpCall implements Callback {
     @Override
     public void onResponse(Call call, Response response) {
         ResponseBody body = response.body();
+        boolean htmlPage = false;
         try {
             if (body != null) {
                 String responseString = body.string();
                 if (response.isSuccessful()) {
                     process(response, responseString);
                 } else {
-                    exception = new IOException("HTTP " + response.code() + errorBody(responseString));
+                    htmlPage = isHtmlBody(responseString);
+                    // A challenge page (POW, TOS, Cloudflare) is an expected
+                    // answer, only the status is of interest for the log.
+                    exception = new IOException("HTTP " + response.code()
+                            + (htmlPage ? "" : errorBody(responseString)));
                 }
             } else {
                 exception = new IOException("No body. HTTP " + response.code());
@@ -92,10 +97,11 @@ public abstract class HttpCall implements Callback {
         }
 
         if (exception != null) {
-            if (isHtmlInterstitial(exception)) {
-                // JSON endpoint served an HTML interstitial (POW/TOS page);
-                // the site handler retries after verification, no stack needed.
-                Logger.w(TAG, "onResponse: HTML page instead of JSON");
+            if (htmlPage || isHtmlInterstitial(exception)) {
+                // The endpoint served an HTML interstitial (POW/TOS/challenge
+                // page); the site handler deals with it, no stack needed.
+                Logger.w(TAG, "onResponse: HTML page instead of the expected content, HTTP "
+                        + response.code());
             } else {
                 Logger.e(TAG, "onResponse", exception);
             }
@@ -103,6 +109,11 @@ public abstract class HttpCall implements Callback {
         } else {
             callSuccess();
         }
+    }
+
+    private static boolean isHtmlBody(String body) {
+        if (body == null) return false;
+        return body.trim().startsWith("<");
     }
 
     private static String errorBody(String body) {
