@@ -79,20 +79,20 @@ class PostParseCallable implements Callable<Post> {
         int filterSize = filters.size();
         for (int i = 0; i < filterSize; i++) {
             Filter filter = filters.get(i);
+            if (filter.onlyOnOP && !post.op) {
+                continue;
+            }
             if (filterEngine.matches(filter, post)) {
-                if (filter.onlyOnOP && !post.op) {
-                    continue;
-                }
                 FilterEngine.FilterAction action = FilterEngine.FilterAction.forId(filter.action);
                 switch (action) {
                     case COLOR:
-                        post.filter(filter.color, false, false);
+                        post.filterColor(filter.color);
                         break;
                     case HIDE:
-                        post.filter(0, true, false);
+                        post.filterStub(true);
                         break;
                     case REMOVE:
-                        post.filter(0, false, true);
+                        post.filterRemove(true);
                         break;
                     case WATCH:
                         if (isCatalogMode) {
@@ -101,7 +101,7 @@ class PostParseCallable implements Callable<Post> {
                         break;
                     case PIN:
                         if (isCatalogMode) {
-                            post.filter(filter.color, false, false);
+                            post.filterColor(filter.color);
                             post.filterPin(true);
                         }
                         break;

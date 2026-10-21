@@ -422,9 +422,17 @@ public class Post {
             return this;
         }
 
-        public Builder filter(int highlightedColor, boolean stub, boolean remove) {
+        public Builder filterColor(int highlightedColor) {
             filterHighlightedColor = highlightedColor;
+            return this;
+        }
+
+        public Builder filterStub(boolean stub) {
             filterStub = stub;
+            return this;
+        }
+
+        public Builder filterRemove(boolean remove) {
             filterRemove = remove;
             return this;
         }
