@@ -22,6 +22,10 @@ public class Chan8PowInterceptor implements Interceptor {
 private static final Pattern POW_TOKEN_PATTERN =
         Pattern.compile("<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>", Pattern.CASE_INSENSITIVE);
     private static final int TIMEOUT = 30000;
+    // 8chan refuses proof of work submissions for a while when too many of
+    // them are sent, the app has to stop sending them then.
+    private static final long SUBMISSION_BACKOFF_MS = 5 * 60 * 1000;
+    private static volatile long submissionsBlockedUntil = 0;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
     private static volatile okhttp3.OkHttpClient nonRedirectClient = null;
 
@@ -247,9 +251,20 @@ private static final Pattern POW_TOKEN_PATTERN =
                 is200HtmlPow = true;
             }
 
-            // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
-            // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
-            String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
+        // 8chan refuses further proof of work submissions for a while when too
+        // many of them are sent. Remember that and stop trying, otherwise every
+        // request would submit another one and keep the limit alive.
+        if (System.currentTimeMillis() < submissionsBlockedUntil) {
+            Logger.w(TAG, "POW submissions are refused by 8chan, not trying again");
+            if (!silentPow) {
+                Chan8PowNotifier.showRateLimit();
+            }
+            return resp;
+        }
+
+        // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
+        // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
+        String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
 
             // useCaptchaJsSubmit: true when the challenge came from /captcha.js rather than
             // being embedded in the original response body (affects the submit URL).
@@ -357,6 +372,27 @@ private static final Pattern POW_TOKEN_PATTERN =
                         .body(okhttp3.ResponseBody.create(
                                 okhttp3.MediaType.parse("text/plain; charset=utf-8"),
                                 "Rate limited"))
+                        .build();
+            }
+
+            if (submitCode != 200 && submitCode != 302 && submitCode != 303) {
+                // The solution was refused. 8chan answers with 400 when the
+                // submissions are refused, so stop sending them for a while.
+                Logger.w(TAG, "POW submit refused with " + submitCode + ", backing off for "
+                        + (SUBMISSION_BACKOFF_MS / 1000) + "s");
+                submissionsBlockedUntil = System.currentTimeMillis() + SUBMISSION_BACKOFF_MS;
+                submitResp.close();
+                if (!silentPow) {
+                    Chan8PowNotifier.showRateLimit();
+                }
+                return new okhttp3.Response.Builder()
+                        .request(req)
+                        .protocol(okhttp3.Protocol.HTTP_1_1)
+                        .code(submitCode)
+                        .message("Proof of work refused")
+                        .body(okhttp3.ResponseBody.create(
+                                okhttp3.MediaType.parse("text/plain; charset=utf-8"),
+                                "Proof of work refused"))
                         .build();
             }
 

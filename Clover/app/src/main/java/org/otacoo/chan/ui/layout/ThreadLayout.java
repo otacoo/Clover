@@ -139,6 +139,8 @@ public class ThreadLayout extends CoordinatorLayout implements
     private Visible visible;
     private AlertDialog deletingDialog;
     private boolean refreshedFromSwipe;
+    /** True when the site verification was opened for this load, so that it is not opened again. */
+    private boolean verificationOpened;
     private boolean replyButtonEnabled;
     private boolean topBottomButtonEnabled;
     private boolean replyLayoutOpen;
@@ -518,9 +520,21 @@ public class ThreadLayout extends CoordinatorLayout implements
             errorMessage = error.getMessage();
         }
 
+        // 8chan asks for a proof of work, which the site solves in a browser.
+        // Open the verification screen for it instead of asking the user to
+        // do it by hand, the thread is loaded again when it is done.
+        Loadable loadable = presenter.getLoadable();
+        if (verificationRequired && !verificationOpened && loadable != null
+                && loadable.getSite() instanceof org.otacoo.chan.core.site.sites.chan8.Chan8) {
+            verificationOpened = true;
+            callback.openSiteAuthentication(loadable.getSite(),
+                    loadable.getSite().resolvable().desktopUrl(loadable, null), "8chan Verification");
+            return;
+        }
+
         boolean canFetchArchive = error.isNotFound()
-                && presenter.getLoadable() != null
-                && presenter.getLoadable().getSite() instanceof org.otacoo.chan.core.site.sites.chan4.Chan4;
+                && loadable != null
+                && loadable.getSite() instanceof org.otacoo.chan.core.site.sites.chan4.Chan4;
 
         if (visible == Visible.THREAD) {
             threadListLayout.showError(errorMessage);
@@ -555,6 +569,8 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void showLoading() {
+        // A new load may need the site verification again.
+        verificationOpened = false;
         switchVisible(Visible.LOADING);
     }
 

@@ -111,7 +111,19 @@ public class EmailVerificationController extends Controller {
                 FrameLayout.LayoutParams.MATCH_PARENT));
         view = container;
 
+        if (isPowSite()) {
+            // 8chan solves the proof of work in the page itself, the app only
+            // has to wait for it.
+            AndroidUtils.showThemedSnackbar(container,
+                    "Solving 8chan proof of work, please wait\u2026", Snackbar.LENGTH_INDEFINITE);
+        }
+
         AuthWebView.runOnWebViewThread(this::setupWebView);
+    }
+
+    private boolean isPowSite() {
+        return initialUrl != null
+                && (initialUrl.contains("8chan.moe") || initialUrl.contains("8chan.st"));
     }
 
     private void showUrlInputDialog() {
