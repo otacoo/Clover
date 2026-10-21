@@ -97,7 +97,7 @@ public class Chan8PowInterceptor implements Interceptor {
             // Network-level failure (DNS, refused connection, timeout).
             // If this is an unforced 8chan request, switch to the fallback domain and retry once.
             String host = req.url().host();
-            if (host.contains("8chan") && req.header(POW_BYPASS_HEADER) == null
+            if (Chan8RateLimit.is8chanHost(host) && req.header(POW_BYPASS_HEADER) == null
                     && org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.getForcedDomain() == null) {
                 org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.notifyDomainUnreachable(host);
                 String newDomain = org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.getActiveDomain();
@@ -114,7 +114,7 @@ public class Chan8PowInterceptor implements Interceptor {
 
         // Network-level failure (HTTP 5xx server errors).
         // If this is an unforced 8chan request, switch to the fallback domain and retry once.
-        if (resp.code() >= 500 && req.url().host().contains("8chan") && req.header(POW_BYPASS_HEADER) == null
+        if (resp.code() >= 500 && Chan8RateLimit.is8chanHost(req.url().host()) && req.header(POW_BYPASS_HEADER) == null
                 && org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.getForcedDomain() == null) {
             String host = req.url().host();
             org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.notifyDomainUnreachable(host);
@@ -131,7 +131,7 @@ public class Chan8PowInterceptor implements Interceptor {
         // Handle 429 rate-limit: fail fast instead of sleeping on the shared
         // dispatcher thread (a sleep here would stall all app requests).
         // The snackbar informs the user; they can retry manually.
-        if (resp.code() == 429 && req.url().host().contains("8chan")) {
+        if (resp.code() == 429 && Chan8RateLimit.is8chanHost(req.url().host())) {
             Logger.w(TAG, "429 rate-limited " + req.method() + " " + req.url().host() + req.url().encodedPath() + "; failing fast");
             Chan8PowNotifier.showRateLimit();
             resp.close();
@@ -146,7 +146,7 @@ public class Chan8PowInterceptor implements Interceptor {
                     .build();
         }
 
-        if (!req.url().host().contains("8chan") || req.header(POW_BYPASS_HEADER) != null) {
+        if (!Chan8RateLimit.is8chanHost(req.url().host()) || req.header(POW_BYPASS_HEADER) != null) {
             return resp;
         }
 

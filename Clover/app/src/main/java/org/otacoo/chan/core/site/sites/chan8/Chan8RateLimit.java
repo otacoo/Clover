@@ -19,6 +19,8 @@ package org.otacoo.chan.core.site.sites.chan8;
 
 import java.util.concurrent.Semaphore;
 
+import okhttp3.HttpUrl;
+
 /** Shared rate-limiter and domain-failover helper for 8chan.moe / 8chan.st. */
 public final class Chan8RateLimit {
 
@@ -43,8 +45,16 @@ public final class Chan8RateLimit {
 
     private Chan8RateLimit() {}
 
+    public static boolean is8chanHost(String host) {
+        if (host == null) return false;
+        String h = host.toLowerCase();
+        return h.equals(PRIMARY_DOMAIN) || h.endsWith("." + PRIMARY_DOMAIN)
+                || h.equals(SECONDARY_DOMAIN) || h.endsWith("." + SECONDARY_DOMAIN);
+    }
+
     public static boolean is8chan(String url) {
-        return url.contains("8chan.moe") || url.contains("8chan.st");
+        HttpUrl httpUrl = HttpUrl.parse(url);
+        return httpUrl != null && is8chanHost(httpUrl.host());
     }
 
     public static boolean isMedia(String url) {

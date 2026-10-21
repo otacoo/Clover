@@ -398,7 +398,7 @@ public class LynxchanActions extends CommonSite.CommonActions {
         
         // Collect cookies from the root URL and known 8chan mirrors
         String[] urls = {root.toString()};
-        if (host.contains("8chan")) {
+        if (org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.is8chanHost(host)) {
             urls = new String[]{
                 "https://8chan.moe/",
                 "https://8chan.st/"

@@ -4,6 +4,8 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
 
+import org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,7 +114,7 @@ public class AppCookieJar implements CookieJar {
             if (is4chan) return new ArrayList<>();
             List<Cookie> result = cookiesFromStore(uri, url);
             // 4chan.org cookies are owned entirely by Chan4CookieStore; never sync them here.
-            if (result.isEmpty() && url.host().contains("8chan")) {
+            if (result.isEmpty() && Chan8RateLimit.is8chanHost(url.host())) {
                 org.otacoo.chan.core.di.NetModule.syncCookiesToJar(url.toString());
                 result = cookiesFromStore(uri, url);
             }
@@ -128,14 +130,28 @@ public class AppCookieJar implements CookieJar {
         List<java.net.HttpCookie> stored = cookieManager.getCookieStore().get(uri);
         for (java.net.HttpCookie hc : stored) {
             if ("inbound".equals(hc.getName())) continue;
+            String domain = hc.getDomain();
+            if (domain != null && !domainMatches(url.host(), domain)) continue;
             Cookie.Builder b = new Cookie.Builder()
                     .name(hc.getName())
                     .value(hc.getValue())
-                    .domain(hc.getDomain() != null ? hc.getDomain() : url.host())
+                    .domain(domain != null ? domain : url.host())
                     .path(hc.getPath() != null ? hc.getPath() : "/");
+            if (hc.getSecure()) b.secure();
+            if (hc.isHttpOnly()) b.httpOnly();
             if (hc.getMaxAge() > 0) b.expiresAt(System.currentTimeMillis() + hc.getMaxAge() * 1000);
             result.add(b.build());
         }
         return result;
+    }
+
+    // java.net matches cookie domains without a dot boundary, so a cookie of
+    // "8chan.moe" would also be sent to "not8chan.moe".
+    public static boolean domainMatches(String host, String domain) {
+        if (domain == null || domain.isEmpty()) return true;
+        String d = domain.startsWith(".") ? domain.substring(1) : domain;
+        String h = host.toLowerCase();
+        String lower = d.toLowerCase();
+        return h.equals(lower) || h.endsWith("." + lower);
     }
 }

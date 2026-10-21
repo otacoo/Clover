@@ -127,7 +127,8 @@ public class NetModule {
             StringBuilder sb = new StringBuilder();
             for (HttpCookie hc : cookies) {
                 if ("inbound".equals(hc.getName())) continue;
-                if (sb.length() > 0) sb.append("; ");
+                String domain = hc.getDomain();
+                if (domain != null && !AppCookieJar.domainMatches(url.host(), domain)) continue;                if (sb.length() > 0) sb.append("; ");
                 sb.append(hc.getName()).append("=").append(hc.getValue());
             }
             return sb.length() > 0 ? sb.toString() : null;
@@ -216,7 +217,7 @@ public class NetModule {
                     @Override
                     public Response intercept(@NonNull Interceptor.Chain chain) throws IOException {
                         Request req = chain.request();
-                        boolean gated = req.url().host().contains("8chan");
+                        boolean gated = Chan8RateLimit.is8chanHost(req.url().host());
                         boolean permit = false;
                         if (gated) {
                             try {

@@ -135,7 +135,7 @@ public class LynxchanBypassLayout extends LinearLayout implements Authentication
             try {
                 java.net.CookieStore store = jcm.getCookieStore();
                 for (java.net.URI uri : new java.util.ArrayList<>(store.getURIs())) {
-                    if (uri.getHost() != null && uri.getHost().contains("8chan")) {
+                    if (org.otacoo.chan.core.site.sites.chan8.Chan8RateLimit.is8chanHost(uri.getHost())) {
                         for (java.net.HttpCookie c : new java.util.ArrayList<>(store.get(uri))) {
                             if ("captchaid".equals(c.getName())) {
                                 store.remove(uri, c);
