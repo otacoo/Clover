@@ -24,8 +24,9 @@ import androidx.annotation.NonNull;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.IOUtils;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
@@ -35,9 +36,9 @@ import okhttp3.Response;
 
 public abstract class JsonReaderRequest<T> implements Callback {
     private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final int CHALLENGE_SNIFF_SIZE = 1024;
     private static final java.util.regex.Pattern TITLE_PATTERN =
             java.util.regex.Pattern.compile("<title>(.*?)</title>", java.util.regex.Pattern.CASE_INSENSITIVE);
-
     protected final RequestListener<T> listener;
 
     public JsonReaderRequest(RequestListener<T> listener) {
@@ -74,11 +75,16 @@ public abstract class JsonReaderRequest<T> implements Callback {
             return;
         }
 
-        byte[] data = response.body().bytes();
+        // The body is streamed instead of being copied into a byte array, a big
+        // thread is over a megabyte of json.
+        BufferedInputStream in = new BufferedInputStream(response.body().byteStream());
+        in.mark(CHALLENGE_SNIFF_SIZE * 2);
 
         // Handle common anti-bot/verification challenges
-        if (data.length > 5) {
-            String snippet = new String(data, 0, Math.min(data.length, 1024));
+        byte[] head = new byte[CHALLENGE_SNIFF_SIZE];
+        int headLength = readAtMost(in, head);
+        if (headLength > 5) {
+            String snippet = new String(head, 0, headLength);
             String trimSnippet = snippet.trim();
             if (trimSnippet.startsWith("<") || trimSnippet.contains("<html") || trimSnippet.contains("<!DOCTYPE")) {
                 String errorMsg;
@@ -101,8 +107,8 @@ public abstract class JsonReaderRequest<T> implements Callback {
             }
         }
 
-        ByteArrayInputStream baos = new ByteArrayInputStream(data);
-        JsonReader reader = new JsonReader(new InputStreamReader(baos, UTF8));
+        in.reset();
+        JsonReader reader = new JsonReader(new InputStreamReader(in, UTF8));
 
         try {
             T read = readJson(reader);
@@ -112,6 +118,20 @@ public abstract class JsonReaderRequest<T> implements Callback {
         } finally {
             IOUtils.closeQuietly(reader);
         }
+    }
+
+    private static int readAtMost(InputStream in, byte[] buffer) {
+        int total = 0;
+        try {
+            while (total < buffer.length) {
+                int read = in.read(buffer, total, buffer.length - total);
+                if (read == -1) break;
+                total += read;
+            }
+        } catch (IOException e) {
+            // the parse below reports the error
+        }
+        return total;
     }
 
     public abstract T readJson(JsonReader reader) throws Exception;
