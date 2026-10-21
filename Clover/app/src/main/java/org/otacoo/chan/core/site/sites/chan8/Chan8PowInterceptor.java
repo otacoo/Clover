@@ -421,7 +421,13 @@ private static final Pattern POW_TOKEN_PATTERN =
     private static String fetchPowChallenge(okhttp3.HttpUrl originUrl) {
         try {
             String base = originUrl.scheme() + "://" + originUrl.host();
-            Request r = new Request.Builder().url(base + "/captcha.js").build();
+            // The bypass header keeps this request out of the POW handling of
+            // the interceptor: it is made by the interceptor itself, which is
+            // already solving the POW and holds the lock for it.
+            Request r = new Request.Builder().url(base + "/captcha.js")
+                    .header(POW_BYPASS_HEADER, "1")
+                    .header(SILENT_POW_HEADER, "1")
+                    .build();
             Response cr = getNonRedirectClient().newCall(r).execute();
             String powH = cr.header("X-PoWBlock-Status");
             String body = cr.body() != null ? cr.body().string() : "";
