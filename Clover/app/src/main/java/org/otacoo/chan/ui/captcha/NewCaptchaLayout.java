@@ -111,6 +111,23 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
     private static final int NATIVE_PAYLOAD_MAX_RETRIES = 5;
     private static final int NATIVE_PAYLOAD_RETRY_DELAY_MS = 500;
 
+    // The domains the captcha session lives on and the cookies that belong to
+    // the fingerprinting of the connection, not to the 4chan account.
+    private static final String[] PASS_DOMAINS = {
+            "https://4chan.org/", "https://www.4chan.org/", "https://boards.4chan.org/", "https://sys.4chan.org/",
+            "https://4channel.org/", "https://www.4channel.org/", "https://boards.4channel.org/", "https://sys.4channel.org/"
+    };
+
+    private static final String[] FINGERPRINT_COOKIES = {
+            "cf_clearance", "_tcm", "__cf_bm"
+    };
+
+    private static boolean is4chanHost(String host) {
+        String h = host.toLowerCase();
+        return h.equals("4chan.org") || h.endsWith(".4chan.org")
+                || h.equals("4channel.org") || h.endsWith(".4channel.org");
+    }
+
     private static final Map<String, String> tickets = new ConcurrentHashMap<>();
 
     private String getTicket() {
@@ -568,7 +585,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
                 String host = request.getUrl().getHost();
-                if (host != null && (host.contains("4chan.org") || host.contains("cloudflare"))) {
+                if (host != null && (is4chanHost(host) || host.contains("cloudflare"))) {
                     return false;
                 }
                 AndroidUtils.openLink(url);
@@ -991,9 +1008,18 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             String t = (inner != null ? inner : obj).optString("ticket", "");
             if (!t.isEmpty()) {
                 tickets.put(getGlobalKey(), t);
-                AndroidUtils.runOnUiThread(() -> evaluateJavascript("localStorage.setItem('4chan-tc-ticket','" + t.replace("'", "\\'") + "')", null));
+                AndroidUtils.runOnUiThread(() -> evaluateJavascript(
+                        "localStorage.setItem('4chan-tc-ticket','" + jsEscape(t) + "')", null));
             }
         } catch (Exception ignored) {}
+    }
+
+    private static String jsEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 
     // Begins background tracking of a new post cooldown timer
@@ -1072,30 +1098,14 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             showingOverlay = false;  // allow hardReset to proceed past the guard
             CookieManager cm = CookieManager.getInstance();
 
-            // Preserve pass cookies so the user's authenticated session survives the reset.
-            // 4chan_pass must never be wiped by a captcha session reset.
-            String[] passPreserveDomains = {
-                    "https://sys.4chan.org", "https://boards.4chan.org",
-                    "https://sys.4channel.org", "https://boards.4channel.org"
-            };
-            java.util.List<String[]> savedPassCookies = new java.util.ArrayList<>();
-            for (String domain : passPreserveDomains) {
-                String existing = cm.getCookie(domain);
-                if (existing == null) continue;
-                for (String part : existing.split(";\\s*")) {
-                    String name = part.contains("=") ? part.substring(0, part.indexOf('=')).trim() : part.trim();
-                    if ("4chan_pass".equals(name)) {
-                        savedPassCookies.add(new String[]{domain, part.trim()});
-                    }
+            // Only the fingerprint cookies are expired. The pass cookies
+            // (pass_id, pass_enabled, 4chan_pass) must survive the reset,
+            // removing all cookies logged the user out of their 4chan Pass.
+            for (String domain : PASS_DOMAINS) {
+                for (String name : FINGERPRINT_COOKIES) {
+                    cm.setCookie(domain, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/");
                 }
             }
-
-            cm.removeAllCookies(success -> {
-                for (String[] entry : savedPassCookies) {
-                    cm.setCookie(entry[0], entry[1]);
-                }
-                cm.flush();
-            });
             cm.flush();
 
             evaluateJavascript("localStorage.clear(); sessionStorage.clear();", null);
@@ -1153,7 +1163,7 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         requestFocus();
         AndroidUtils.hideKeyboard(this);
         if (pendingRestoreChallenge != null && pendingRestoreAnswers != null) {
-            final String ch = pendingRestoreChallenge.replace("\\", "\\\\").replace("'", "\\'");
+            final String ch = jsEscape(pendingRestoreChallenge);
             final String ans = pendingRestoreAnswers;
             pendingRestoreChallenge = null;
             pendingRestoreAnswers = null;

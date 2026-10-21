@@ -779,12 +779,16 @@ function parseCountdown(val) {
 }
 
 var SIGNIN_LINK = 'https://sys.4chan.org/signin';
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 function cooldownMessage(pcdMsg) {
     if (!pcdMsg || typeof pcdMsg !== 'string') return 'Please wait a while before making a post or verify your email here.';
-    if (pcdMsg.toLowerCase().indexOf('verify your email') >= 0) {
-        return pcdMsg.replace(/\bverify your email here\.?/gi, '<a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>');
+    var safe = escapeHtml(pcdMsg);
+    if (safe.toLowerCase().indexOf('verify your email') >= 0) {
+        return safe.replace(/\bverify your email here\.?/gi, '<a href="' + SIGNIN_LINK + '" target="_blank">verify your email here.</a>');
     }
-    return pcdMsg + ' <a href="' + SIGNIN_LINK + '" target="_blank">Verify your email here.</a>';
+    return safe + ' <a href="' + SIGNIN_LINK + '" target="_blank">Verify your email here.</a>';
 }
 
 var cooldownInterval = null;
