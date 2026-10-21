@@ -414,7 +414,9 @@ public class AndroidUtils {
         }
         long value = absB;
         CharacterIterator ci = new StringCharacterIterator("KMGTPE");
-        for (int i = 40; i >= 0 && absB > 0xfffccccccccccccL >> i; i -= 10) {
+        // The threshold has to be all ones, so that the unit changes exactly
+        // at 1024^2, 1024^3 and so on.
+        for (int i = 40; i >= 0 && absB > 0xfffffffffffffffL >> i; i -= 10) {
             value >>= 10;
             ci.next();
         }

@@ -29,6 +29,7 @@ import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.orm.Board;
 import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.ui.helper.BoardHelper;
+import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
@@ -219,6 +220,32 @@ public class FilterEngine {
         if (post.images != null && (filter.type & FilterType.MD5.flag) != 0) {
             for (PostImage image : post.images) {
                 if (image.fileHash != null && matches(filter, FilterType.MD5.isRegex, image.fileHash, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (post.images != null && (filter.type & FilterType.DIMENSIONS.flag) != 0) {
+            for (PostImage image : post.images) {
+                if (image.imageWidth <= 0 || image.imageHeight <= 0) continue;
+                // The dimensions as "widthxheight", e.g. "1920x1080".
+                String dimensions = image.imageWidth + "x" + image.imageHeight;
+                if (matches(filter, FilterType.DIMENSIONS.isRegex, dimensions, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (post.images != null && (filter.type & FilterType.FILESIZE.flag) != 0) {
+            for (PostImage image : post.images) {
+                if (image.size <= 0) continue;
+                // The raw byte count and the readable size are both matched, so
+                // that patterns like "516657" and "504.5 KiB" both work.
+                if (matches(filter, FilterType.FILESIZE.isRegex, String.valueOf(image.size), false)) {
+                    return true;
+                }
+                if (matches(filter, FilterType.FILESIZE.isRegex,
+                        AndroidUtils.getReadableFileSize(image.size), false)) {
                     return true;
                 }
             }
