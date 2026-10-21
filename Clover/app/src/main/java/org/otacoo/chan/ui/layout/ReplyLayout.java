@@ -529,6 +529,11 @@ public class ReplyLayout extends LoadView implements
             presenter.onSubmitClicked();
         } else if (v == previewHolder) {
             AndroidUtils.hideKeyboard(this);
+            if (!currentAttachments.isEmpty()) {
+                // The re-encoder works on the file of the draft, with more
+                // than one attachment it has to be picked first.
+                presenter.onImageAttachmentClicked(0);
+            }
             callback.showImageReencodingWindow();
         } else if (v == captchaHardReset) {
             if (authenticationLayout != null) {
