@@ -259,6 +259,12 @@
     <br>
     3. 正規表現。例：<tt>/^>implying/</tt>。
 </p>
+<h4>画像サイズとファイルサイズの場合：</h4>
+<p>
+    これらのフィルターはパターンベースで、postのファイルに対して適用されます。<br>
+    画像サイズは<tt>幅x高さ</tt>の形式、たとえば<tt>1920x1080</tt>で一致します。<br>
+    ファイルサイズはバイト数、たとえば<tt>516657</tt>と、表示形式、たとえば<tt>504.5 KiB</tt>の両方で一致します。
+</p>
 <h4>postをウォッチするアクションについて：</h4>
 <p>このオプションはフィルターに一致した場合にthreadをウォッチ（またはピン留め）します。
 カタログが更新されるときに動作し、コメント種別のフィルターにのみ*機能します。
@@ -274,6 +280,8 @@
     <string name="filter_filename">ファイル名</string>
     <string name="filter_country">国名</string>
     <string name="filter_md5">MD5</string>
+    <string name="filter_dimensions">画像サイズ</string>
+    <string name="filter_filesize">ファイルサイズ</string>
     <string name="filter_precedence_hint">"上のフィルターが優先されます。\nフィルターを左にスワイプして削除。"</string>
     <string name="filter_add_button">フィルターを追加</string>
     <string name="filter_enable_all">すべて有効化</string>
@@ -309,6 +317,8 @@
     <string name="post_filter_id">固有ID</string>
     <string name="post_filter_name">名前</string>
     <string name="post_filter_image_md5">画像 (MD5)</string>
+    <string name="post_filter_dimensions">画像サイズ</string>
+    <string name="post_filter_filesize">ファイルサイズ</string>
     <string name="post_text_copied">テキストをクリップボードにコピーしました</string>
     <string name="url_text_copied">画像URLをクリップボードにコピーしました</string>
     <string name="hash_copied">画像ハッシュをコピーしました</string>

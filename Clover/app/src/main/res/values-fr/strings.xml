@@ -282,6 +282,12 @@ Si le modèle correspond, le post peut être masqué, mis en surbrillance ou sur
     <br>
     3. Expressions régulières. Par exemple <tt>/^>implying/</tt>.
 </p>
+<h4>Pour les dimensions d\'image et la taille des fichiers :</h4>
+<p>
+    Ces filtres sont basés sur des modèles et s\'appliquent au fichier d\'un post.<br>
+    Les dimensions sont comparées sous la forme <tt>largeurxhauteur</tt>, par exemple <tt>1920x1080</tt>.<br>
+    La taille du fichier est comparée à la taille en octets, par exemple <tt>516657</tt>, et à la taille lisible, par exemple <tt>504.5 KiB</tt>.
+</p>
 <h4>Pour l\'action Surveiller le post :</h4>
 <p>Cette option surveille (ou épingle) un thread s\'il correspond au filtre.
 Se déclenche lors de l\'actualisation du catalogue et *fonctionne uniquement* pour les filtres de type Commentaire.
@@ -297,6 +303,8 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="filter_filename">Nom de fichier</string>
     <string name="filter_country">Nom du pays</string>
     <string name="filter_md5">MD5</string>
+    <string name="filter_dimensions">Dimensions</string>
+    <string name="filter_filesize">Taille du fichier</string>
     <string name="filter_precedence_hint">"Les filtres en haut ont la priorité.\nFaire glisser vers
         la gauche pour supprimer un filtre."</string>
     <string name="filter_add_button">Ajouter un filtre</string>
@@ -334,6 +342,8 @@ Si d\'autres filtres sont activés pour lui, cela ne fonctionnera pas.
     <string name="post_filter_id">ID unique</string>
     <string name="post_filter_name">Nom</string>
     <string name="post_filter_image_md5">Image (MD5)</string>
+    <string name="post_filter_dimensions">Dimensions</string>
+    <string name="post_filter_filesize">Taille du fichier</string>
     <string name="post_text_copied">Texte copié dans le presse-papiers</string>
     <string name="url_text_copied">URL de l\'image copiée dans le presse-papiers</string>
     <string name="hash_copied">Hash de l\'image copié dans le presse-papiers</string>

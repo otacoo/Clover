@@ -276,6 +276,12 @@ Se o padrão corresponder, o post pode ser ocultado, destacado ou vigiado.<br>
     <br>
     3. Expressões regulares. Por exemplo, <tt>/^>implying/</tt>.
 </p>
+<h4>Para as dimensões da imagem e o tamanho do arquivo:</h4>
+<p>
+    Esses filtros são baseados em padrões e são aplicados ao arquivo de um post.<br>
+    As dimensões são comparadas como <tt>larguraxaltura</tt>, por exemplo <tt>1920x1080</tt>.<br>
+    O tamanho do arquivo é comparado com o tamanho em bytes, por exemplo <tt>516657</tt>, e com o tamanho legível, por exemplo <tt>504.5 KiB</tt>.
+</p>
 <h4>Para a ação Vigiar post:</h4>
 <p>Esta opção vigia (ou fixa) um thread se ele corresponder ao filtro.
 É acionada quando o catálogo é atualizado e *apenas* funciona para filtros do tipo Comentário.
@@ -291,6 +297,8 @@ Se outros filtros estiverem ativados para ele, não funcionará.
     <string name="filter_filename">Nome do arquivo</string>
     <string name="filter_country">Nome do país</string>
     <string name="filter_md5">MD5</string>
+    <string name="filter_dimensions">Dimensões</string>
+    <string name="filter_filesize">Tamanho do arquivo</string>
     <string name="filter_precedence_hint">"Filtros no topo têm prioridade.\nDeslize para a esquerda
         em um filtro para excluí-lo."</string>
     <string name="filter_add_button">Adicionar filtro</string>
@@ -328,6 +336,8 @@ Se outros filtros estiverem ativados para ele, não funcionará.
     <string name="post_filter_id">ID única</string>
     <string name="post_filter_name">Nome</string>
     <string name="post_filter_image_md5">Imagem (MD5)</string>
+    <string name="post_filter_dimensions">Dimensões</string>
+    <string name="post_filter_filesize">Tamanho do arquivo</string>
     <string name="post_text_copied">Texto copiado para a área de transferência</string>
     <string name="url_text_copied">URL da imagem copiada para a área de transferência</string>
     <string name="hash_copied">Hash da imagem copiado para a área de transferência</string>

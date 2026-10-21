@@ -302,6 +302,12 @@ If the pattern matches then the post can be hidden, highlighted or watched.<br>
     <br>
     3. Regular expressions. <tt>/^>implying/</tt> for example.
 </p>
+<h4>For image dimensions and file sizes:</h4>
+<p>
+    These filters are pattern based and are matched against the file of a post.<br>
+    The dimensions are matched as <tt>widthxheight</tt>, for example <tt>1920x1080</tt>.<br>
+    The file size is matched against the size in bytes, for example <tt>516657</tt>, and against the readable size, for example <tt>504.5 KiB</tt>.
+</p>
 <h4>For Watch post action:</h4>
 <p>This option will watch (pin) a thread if it matches the filter.
 Triggers when the catalog refreshes and *only* works for Comment and Subject types of filters.
@@ -318,6 +324,8 @@ If any other filters are enabled for it, it will not work.
     <string name="filter_filename">Filename</string>
     <string name="filter_country">Country name</string>
     <string name="filter_md5">MD5</string>
+    <string name="filter_dimensions">Dimensions</string>
+    <string name="filter_filesize">File size</string>
     <string name="filter_precedence_hint">"Filters at the top take precedence.\nSwipe left on a filter to delete."</string>
     <string name="filter_add_button">Add filter</string>
     <string name="filter_enable_all">Enable all</string>
@@ -356,6 +364,8 @@ If any other filters are enabled for it, it will not work.
     <string name="post_filter_id">Unique ID</string>
     <string name="post_filter_name">Name</string>
     <string name="post_filter_image_md5">Image (MD5)</string>
+    <string name="post_filter_dimensions">Dimensions</string>
+    <string name="post_filter_filesize">File size</string>
     <string name="post_text_copied">Text copied to clipboard</string>
     <string name="url_text_copied">Image URL copied to clipboard</string>
     <string name="hash_copied">Image hash copied to clipboard</string>

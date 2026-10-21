@@ -101,6 +101,8 @@ public class ThreadPresenter implements
     private static final int POST_OPTION_HIDE_MENU = 24;
     private static final int POST_OPTION_HIDE_POST = 25;
     private static final int POST_OPTION_HIDE_ID = 26;
+    private static final int POST_OPTION_FILTER_IMAGE_DIMENSIONS = 27;
+    private static final int POST_OPTION_FILTER_IMAGE_FILESIZE = 28;
 
     private ThreadPresenterCallback threadPresenterCallback;
     private WatchManager watchManager;
@@ -872,6 +874,12 @@ public class ThreadPresenter implements
         if (firstImageMd5(post) != null) {
             filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_IMAGE_MD5, R.string.post_filter_image_md5));
         }
+        if (firstImageDimensions(post) != null) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_IMAGE_DIMENSIONS, R.string.post_filter_dimensions));
+        }
+        if (firstImageSize(post) != null) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_IMAGE_FILESIZE, R.string.post_filter_filesize));
+        }
         menu.add(new FloatingMenuItem(POST_OPTION_FILTER_MENU, R.string.post_filter));
 
         boolean isSaved = databaseManager.getDatabaseSavedReplyManager().isSaved(post.board, post.no);
@@ -914,6 +922,28 @@ public class ThreadPresenter implements
             for (PostImage image : post.images) {
                 if (image.fileHash != null && !image.fileHash.isEmpty()) {
                     return image.fileHash;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String firstImageDimensions(Post post) {
+        if (post.images != null) {
+            for (PostImage image : post.images) {
+                if (image.imageWidth > 0 && image.imageHeight > 0) {
+                    return image.imageWidth + "x" + image.imageHeight;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String firstImageSize(Post post) {
+        if (post.images != null) {
+            for (PostImage image : post.images) {
+                if (image.size > 0) {
+                    return AndroidUtils.getReadableFileSize(image.size);
                 }
             }
         }
@@ -975,6 +1005,27 @@ public class ThreadPresenter implements
                     Filter filter = new Filter();
                     filter.type = FilterType.MD5.flag;
                     filter.pattern = md5;
+                    threadPresenterCallback.filterPostWithFilter(filter);
+                }
+                break;
+            }
+            case POST_OPTION_FILTER_IMAGE_DIMENSIONS: {
+                String dimensions = firstImageDimensions(post);
+                if (dimensions != null) {
+                    Filter filter = new Filter();
+                    filter.type = FilterType.DIMENSIONS.flag;
+                    // Wrapped in slashes so that the pattern is a regex and can be edited.
+                    filter.pattern = '/' + dimensions + '/';
+                    threadPresenterCallback.filterPostWithFilter(filter);
+                }
+                break;
+            }
+            case POST_OPTION_FILTER_IMAGE_FILESIZE: {
+                String size = firstImageSize(post);
+                if (size != null) {
+                    Filter filter = new Filter();
+                    filter.type = FilterType.FILESIZE.flag;
+                    filter.pattern = '/' + size + '/';
                     threadPresenterCallback.filterPostWithFilter(filter);
                 }
                 break;

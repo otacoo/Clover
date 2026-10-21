@@ -278,6 +278,12 @@ Si el patrón coincide, el post puede ocultarse, resaltarse o vigilarse.<br>
     <br>
     3. Expresiones regulares. El patrón <tt>/^>implying/</tt> por ejemplo.
 </p>
+<h4>Para las dimensiones de imagen y el tamaño de archivo:</h4>
+<p>
+    Estos filtros están basados en patrones y se aplican al archivo de un post.<br>
+    Las dimensiones se comparan como <tt>anchoxalto</tt>, por ejemplo <tt>1920x1080</tt>.<br>
+    El tamaño de archivo se compara con el tamaño en bytes, por ejemplo <tt>516657</tt>, y con el tamaño legible, por ejemplo <tt>504.5 KiB</tt>.
+</p>
 <h4>Para la acción Vigilar post:</h4>
 <p>Esta opción vigila (o fija) un thread si coincide con el filtro.
 Se activa cuando se actualiza el catálogo y *solo funciona* para filtros de tipo Comentario.
@@ -293,6 +299,8 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="filter_filename">Nombre de archivo</string>
     <string name="filter_country">Nombre de país</string>
     <string name="filter_md5">MD5</string>
+    <string name="filter_dimensions">Dimensiones</string>
+    <string name="filter_filesize">Tamaño del archivo</string>
     <string name="filter_precedence_hint">"Los filtros de arriba tienen prioridad.\nDesliza a la
         izquierda para eliminar un filtro."</string>
     <string name="filter_add_button">Añadir filtro</string>
@@ -330,6 +338,8 @@ Si hay otros filtros habilitados para él, no funcionará.
     <string name="post_filter_id">ID única</string>
     <string name="post_filter_name">Nombre</string>
     <string name="post_filter_image_md5">Imagen (MD5)</string>
+    <string name="post_filter_dimensions">Dimensiones</string>
+    <string name="post_filter_filesize">Tamaño del archivo</string>
     <string name="post_text_copied">Texto copiado al portapapeles</string>
     <string name="url_text_copied">URL de imagen copiada al portapapeles</string>
     <string name="hash_copied">Hash de imagen copiado al portapapeles</string>
