@@ -111,13 +111,6 @@ public class EmailVerificationController extends Controller {
                 FrameLayout.LayoutParams.MATCH_PARENT));
         view = container;
 
-        if (isPowSite()) {
-            // 8chan solves the proof of work in the page itself, the app only
-            // has to wait for it.
-            AndroidUtils.showThemedSnackbar(container,
-                    "Solving 8chan proof of work, please wait\u2026", Snackbar.LENGTH_INDEFINITE);
-        }
-
         AuthWebView.runOnWebViewThread(this::setupWebView);
     }
 
@@ -158,8 +151,39 @@ public class EmailVerificationController extends Controller {
         if (site instanceof Chan4 chan4) {
             initialChanPass = chan4.getCookieStore().getChanPass();
         }
-        clearSiteCookies();
+        if (isPowSite()) {
+            // 8chan accepts the terms of service with a cookie that stays
+            // valid, so the session is kept. Clearing it would ask the user
+            // for the terms again on every verification.
+            pushSessionCookiesToWebView();
+        } else {
+            clearSiteCookies();
+        }
         AuthWebView.runOnWebViewThread(this::createAndLoadWebView);
+    }
+
+    // Copies the session cookies of the app (the proof of work and the terms
+    // of service) into the WebView, so that the site does not ask for them
+    // again.
+    private void pushSessionCookiesToWebView() {
+        java.net.CookieManager jar = NetModule.getSharedCookieManager();
+        if (jar == null) return;
+        CookieManager cm = CookieManager.getInstance();
+        for (String domain : new String[]{"8chan.moe", "8chan.st"}) {
+            try {
+                java.net.URI uri = new java.net.URI("https://" + domain + "/");
+                for (java.net.HttpCookie cookie : jar.getCookieStore().get(uri)) {
+                    String name = cookie.getName();
+                    if (!"POW_TOKEN".equals(name) && !"POW_ID".equals(name) && !name.startsWith("TOS")) {
+                        continue;
+                    }
+                    cm.setCookie("https://" + domain + "/",
+                            name + "=" + cookie.getValue() + "; Path=/");
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        cm.flush();
     }
 
     // Clear cookies for the site being verified before creating the WebView so it gets a clean session.
