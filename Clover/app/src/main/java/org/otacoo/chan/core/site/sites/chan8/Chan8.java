@@ -61,7 +61,6 @@ public class Chan8 extends CommonSite {
     // stays good for a long time, but 8chan can end it at any moment, for
     // example when the address of the connection changes.
     private static final long POW_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-
     private final android.os.Handler powRefreshHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
 
@@ -164,6 +163,10 @@ public class Chan8 extends CommonSite {
      */
     private void refreshPowInBackground() {
         if (!hasPowSession()) return;
+        // Only while the site is being looked at. The session is bound to the
+        // address of the connection, so it goes stale when the connection
+        // changes, which only happens while the site is in use.
+        if (!Chan8PowInterceptor.isUsedRecently()) return;
 
         HttpUrl url;
         try {
@@ -179,6 +182,9 @@ public class Chan8 extends CommonSite {
                     ProgressRequestBody.ProgressRequestListener progressListener) {
                 // A background request must not show anything to the user.
                 requestBuilder.header(Chan8PowInterceptor.SILENT_POW_HEADER, "1");
+                // This request is not a use of the site, it only asks whether
+                // the session is still good.
+                requestBuilder.header(Chan8PowInterceptor.POW_PROBE_HEADER, "1");
             }
 
             @Override
