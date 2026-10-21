@@ -54,7 +54,7 @@ public class ProgressRequestBody extends RequestBody {
     public void writeTo(BufferedSink sink) throws IOException {
         BufferedSink bufferedSink;
 
-        progressSink = new ProgressSink(sink);
+        progressSink = new ProgressSink(sink, contentLength());
         bufferedSink = Okio.buffer(progressSink);
 
         delegate.writeTo(bufferedSink);
@@ -64,9 +64,11 @@ public class ProgressRequestBody extends RequestBody {
     protected final class ProgressSink extends ForwardingSink {
         private long bytesWritten = 0;
         private int lastPercent = 0;
+        private final long contentLength;
 
-        public ProgressSink(Sink delegate) {
+        public ProgressSink(Sink delegate, long contentLength) {
             super(delegate);
+            this.contentLength = contentLength;
         }
 
         @Override
@@ -79,8 +81,9 @@ public class ProgressRequestBody extends RequestBody {
             }
 
             bytesWritten += byteCount;
-            int percent = (int) (maxPercent * bytesWritten / contentLength());
-            
+            if (contentLength <= 0) return;
+            int percent = (int) (maxPercent * bytesWritten / contentLength);
+
             if (percent - lastPercent >= percentStep) {
                 lastPercent = percent;
                 listener.onRequestProgress(percent);

@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import org.otacoo.chan.core.di.UserAgentProvider;
 import org.otacoo.chan.core.site.Site;
 import org.otacoo.chan.core.site.SiteRequestModifier;
+import org.otacoo.chan.utils.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -58,25 +59,30 @@ public class HttpCallManager {
     ) {
         httpCall.setCallback(callback);
 
-        Request.Builder requestBuilder = new Request.Builder();
+        try {
+            Request.Builder requestBuilder = new Request.Builder();
 
-        if (httpCall.getUrl() != null) {
-            requestBuilder.url(httpCall.getUrl());
-        }
-
-        Site site = httpCall.site;
-        httpCall.setup(requestBuilder, progressListener);
-
-        if (site != null) {
-            final SiteRequestModifier siteRequestModifier = site.requestModifier();
-            if (siteRequestModifier != null) {
-                siteRequestModifier.modifyHttpCall(httpCall, requestBuilder);
+            if (httpCall.getUrl() != null) {
+                requestBuilder.url(httpCall.getUrl());
             }
+
+            Site site = httpCall.site;
+            httpCall.setup(requestBuilder, progressListener);
+
+            if (site != null) {
+                final SiteRequestModifier siteRequestModifier = site.requestModifier();
+                if (siteRequestModifier != null) {
+                    siteRequestModifier.modifyHttpCall(httpCall, requestBuilder);
+                }
+            }
+
+            // User-Agent is now handled by ChanInterceptor in OkHttpClient
+            Request request = requestBuilder.build();
+
+            client.newCall(request).enqueue(httpCall);
+        } catch (Exception e) {
+            Logger.e("HttpCallManager", "makeHttpCall failed", e);
+            httpCall.callFail(e);
         }
-
-        // User-Agent is now handled by ChanInterceptor in OkHttpClient
-        Request request = requestBuilder.build();
-
-        client.newCall(request).enqueue(httpCall);
     }
 }

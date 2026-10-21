@@ -31,11 +31,9 @@ import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.loader.ChanLoaderRequestParams;
 import org.otacoo.chan.core.site.loader.ChanLoaderResponse;
-import org.otacoo.chan.ui.helper.PostHelper;
 import org.otacoo.chan.utils.Logger;
 import org.otacoo.chan.utils.Time;
 
-import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -312,17 +310,6 @@ public class ChanReaderRequest extends JsonReaderRequest<ChanLoaderResponse> {
 
             if (LOG_TIMING) {
                 Time.endTiming("Map replies", mapReplies);
-            }
-        }
-
-        // Set title on all posts on the background thread (avoids per-post work on main thread).
-        if (!allPosts.isEmpty()) {
-            if (TextUtils.isEmpty(loadable.title)) {
-                loadable.setTitle(PostHelper.getTitle(allPosts.get(0), loadable));
-            }
-            String title = loadable.title;
-            for (int i = 0; i < allPosts.size(); i++) {
-                allPosts.get(i).setTitle(title);
             }
         }
 

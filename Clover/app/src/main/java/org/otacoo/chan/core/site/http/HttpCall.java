@@ -138,7 +138,7 @@ public abstract class HttpCall implements Callback {
     }
 
     @SuppressWarnings("unchecked")
-    private void callFail(final Exception e) {
+    void callFail(final Exception e) {
         handler.post(() -> callback.onHttpFail(HttpCall.this, e));
     }
 

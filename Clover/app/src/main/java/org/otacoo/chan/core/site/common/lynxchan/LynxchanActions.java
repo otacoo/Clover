@@ -112,7 +112,7 @@ public class LynxchanActions extends CommonSite.CommonActions {
             @Override
             public void onHttpFail(HttpCall httpCall, Exception e) {
                 Logger.e(TAG, "boards: onHttpFail", e);
-                boardsListener.onBoardsReceived(new Boards(new ArrayList<>()));
+                boardsListener.onBoardsFailed(e.getMessage() != null ? e.getMessage() : e.toString());
             }
         });
     }
