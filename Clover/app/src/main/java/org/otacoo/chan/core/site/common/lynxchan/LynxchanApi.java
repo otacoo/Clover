@@ -11,25 +11,21 @@ import org.otacoo.chan.core.site.SiteEndpoints;
 import org.otacoo.chan.core.site.common.CommonSite;
 import org.otacoo.chan.core.site.parser.ChanReaderProcessingQueue;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Objects;
-import java.util.TimeZone;
 
 import okhttp3.HttpUrl;
 
 public class LynxchanApi extends CommonSite.CommonApi {
-    private static final SimpleDateFormat ISO_8601;
-
-    static {
-        ISO_8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-        ISO_8601.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
+    private static final DateTimeFormatter ISO_8601 =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
     public LynxchanApi(CommonSite commonSite) {
         super(commonSite);
@@ -359,7 +355,8 @@ public class LynxchanApi extends CommonSite.CommonApi {
                         builder.setUnixTimestampSeconds(reader.nextLong());
                     } else if (reader.peek() == JsonToken.STRING) {
                         String dateStr = reader.nextString();
-                        builder.setUnixTimestampSeconds(Objects.requireNonNull(ISO_8601.parse(dateStr)).getTime() / 1000L);
+                        builder.setUnixTimestampSeconds(
+                                LocalDateTime.parse(dateStr, ISO_8601).toEpochSecond(ZoneOffset.UTC));
                     } else {
                         reader.skipValue();
                     }
