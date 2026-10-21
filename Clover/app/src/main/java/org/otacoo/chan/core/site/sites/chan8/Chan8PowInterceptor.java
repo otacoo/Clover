@@ -198,10 +198,6 @@ private static final Pattern POW_TOKEN_PATTERN =
             break;
         }
 
-        // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
-        // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
-        String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
-
         // Synchronize POW bypass so only one thread computes/submits the solution
         java.util.concurrent.CountDownLatch localLatch;
         boolean acquired;
@@ -220,7 +216,7 @@ private static final Pattern POW_TOKEN_PATTERN =
             if (!acquired) {
                 if (is403Pow || is200HtmlPow) resp.close(); // abandon; wait for solver thread
                 // If this is a non-silent (user-visible) request, show the snackbar now — the
-                // solver thread may be processing a silent pre-warm request and won't show it.
+                // solver thread may be processing a silent request and won't show it.
                 if (req.header(SILENT_POW_HEADER) == null) {
                     Chan8PowNotifier.onPowStarted();
                 }
@@ -233,8 +229,23 @@ private static final Pattern POW_TOKEN_PATTERN =
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
-                return chain.proceed(req);
+                // The solver is done, ask again. The answer is the page with the
+                // challenge when the solver could not do its job, then this thread
+                // solves it itself.
+                Response retryResp = chain.proceed(req);
+                if (!isChallenge(retryResp)) {
+                    return retryResp;
+                }
+                resp = retryResp;
+                acquired = true;
+                localLatch = null;
+                xBlockRequired = true;
+                is200HtmlPow = true;
             }
+
+            // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
+            // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
+            String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
 
             // useCaptchaJsSubmit: true when the challenge came from /captcha.js rather than
             // being embedded in the original response body (affects the submit URL).
@@ -309,9 +320,9 @@ private static final Pattern POW_TOKEN_PATTERN =
             String submitPath = useCaptchaJsSubmit ? "/captcha.js" : req.url().encodedPath();
             String queryParams;
             if (html != null && html.contains("powblock=") && html.contains("pbchal=")) {
-                queryParams = "?powblock=" + solution + "&pbchal=" + urlEncode(token);
+                queryParams = "?powblock=" + solution + "&pbchal=" + token;
             } else {
-                queryParams = "?pow=" + solution + "&t=" + urlEncode(token);
+                queryParams = "?pow=" + solution + "&t=" + token;
             }
             String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams;
 
@@ -402,20 +413,27 @@ private static final Pattern POW_TOKEN_PATTERN =
         } finally {
             // Release waiting threads
             synchronized (Chan8PowInterceptor.class) {
-                if (acquired && _latch != null) {
-                    _latch.countDown();
+                if (localLatch != null && _latch == localLatch) {
+                    localLatch.countDown();
                     _latch = null;
                 }
             }
         }
     }
 
-    private static String urlEncode(String value) {
-        try {
-            return java.net.URLEncoder.encode(value, "UTF-8");
-        } catch (Exception e) {
-            return value;
+    /** True when the response is the page of a proof of work challenge. */
+    private static boolean isChallenge(Response response) throws java.io.IOException {
+        String powStatus = response.header("X-PoWBlock-Status");
+        if (powStatus == null) powStatus = response.header("X-PoW-Status");
+        if (powStatus != null && powStatus.equalsIgnoreCase("required")) return true;
+        if (response.code() == 403) {
+            String preview = response.peekBody(256).string();
+            if (preview.contains("Proof of Work required") || preview.contains("403 PB")) return true;
         }
+        if (response.code() == 200) {
+            return response.peekBody(16).string().trim().startsWith("<");
+        }
+        return false;
     }
 
     /**

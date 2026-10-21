@@ -236,48 +236,16 @@ public class Chan8 extends CommonSite {
 
     private static class Chan8Actions extends LynxchanActions {
         private static final String TAG = "Chan8Actions";
-        private static volatile boolean powPreWarmFired = false;
 
         Chan8Actions(CommonSite site) {
             super(site);
         }
 
-        /**
-         * Solves the proof of work in the background, so that the first
-         * request to the site does not have to wait for it. Without it the
-         * board list and every thread load would run into the challenge page.
-         */
-        private void triggerPowPreWarm() {
-            if (powPreWarmFired) return;
-            powPreWarmFired = true;
-            HttpUrl captchaUrl = ((LynxchanEndpoints) site.endpoints()).root()
-                    .newBuilder().addPathSegment("captcha.js").build();
-            HttpCall warmCall = new HttpCall(site) {
-                @Override
-                public void setup(Request.Builder requestBuilder,
-                        ProgressRequestBody.ProgressRequestListener progressListener) {
-                    // A background request must not show anything to the user.
-                    requestBuilder.header(Chan8PowInterceptor.SILENT_POW_HEADER, "1");
-                }
-
-                @Override
-                public void process(Response response, String result) {}
-            };
-            warmCall.url(captchaUrl.toString());
-            site.getHttpCallManager().makeHttpCall(warmCall, new HttpCall.HttpCallback<HttpCall>() {
-                @Override
-                public void onHttpSuccess(HttpCall httpCall) {}
-
-                @Override
-                public void onHttpFail(HttpCall httpCall, Exception e) {
-                    Logger.d(TAG, "pow pre-warm failed: " + e.getMessage());
-                }
-            });
-        }
-
         @Override
         public void boards(BoardsListener boardsListener) {
-            triggerPowPreWarm();
+            // The board list is the first request to the site, it gets the
+            // proof of work solved. Doing it here means the user does not have
+            // to wait for it when they open a thread later.
             boardsWithRetry(boardsListener, false);
         }
 
