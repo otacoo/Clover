@@ -288,6 +288,8 @@ private static final Pattern POW_TOKEN_PATTERN =
 
             String token = NetModule.firstMatch(html, POW_TOKEN_PATTERN);
             Integer difficulty = NetModule.extractPowDifficulty(html);
+            Logger.i(TAG, "POW challenge: token=" + (token != null) + " difficulty=" + difficulty
+                    + " algorithm=" + NetModule.extractPowAlgorithm(html));
 
             if (token == null || difficulty == null) {
                 Logger.w(TAG, "POW required but challenge parse failed; user must Login via WebView");
@@ -327,10 +329,6 @@ private static final Pattern POW_TOKEN_PATTERN =
             String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams;
 
             if (!is200HtmlPow) resp.close(); // already closed for 200 HTML inside the block above
-   
-            // Clear stale POW cookies (e.g. from a restored backup) before submitting the
-            // solution, so the server starts a clean session from the new tokens.
-            clearPowCookieStore(req.url().host());
 
             Request submitReq = req.newBuilder()
                     .url(submitUrl)
@@ -341,7 +339,8 @@ private static final Pattern POW_TOKEN_PATTERN =
 
             Response submitResp = getNonRedirectClient().newCall(submitReq).execute();
             int submitCode = submitResp.code();
-            // Logger.w(TAG, "POW submit response: code=" + submitCode);
+            Logger.i(TAG, "POW submit: code=" + submitCode + " url=" + submitUrl
+                    + " set-cookie=" + submitResp.headers("Set-Cookie"));
             // If we get rate-limited on the POW submission, abandon and return the original 403/required response.
             if (submitCode == 429) {
                 submitResp.close();
