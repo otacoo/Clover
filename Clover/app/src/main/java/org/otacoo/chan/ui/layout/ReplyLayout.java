@@ -127,6 +127,8 @@ public class ReplyLayout extends LoadView implements
     private AuthenticationLayoutInterface authenticationLayout;
     private boolean openingName;
     private boolean expanded = false;
+    private ValueAnimator expandAnimator;
+    private final Map<String, Bitmap> attachmentBitmaps = new java.util.HashMap<>();
 
     private boolean blockSelectionChange = false;
 
@@ -945,24 +947,29 @@ public class ReplyLayout extends LoadView implements
     public void setExpanded(boolean expanded) {
         boolean wasExpanded = this.expanded;
         this.expanded = expanded;
-        
+
         setWrap(!expanded);
 
         comment.setMaxLines(expanded ? 500 : 6);
 
-        // Refresh multi-file attachments display when expanding/collapsing
+        // The attachment views are built for the current state, so they have to
+        // be rebuilt. The images are not decoded again.
         if (!currentAttachments.isEmpty()) {
             openFileAttachments(currentAttachments, currentAttachments.size(), currentAttachmentMaxCount);
         }
 
-        ValueAnimator animator = ValueAnimator.ofFloat(
+        // A running animation would fight the new one over the rotation.
+        if (expandAnimator != null) {
+            expandAnimator.cancel();
+        }
+        expandAnimator = ValueAnimator.ofFloat(
                 getExpandArrowRotation(wasExpanded),
                 getExpandArrowRotation(expanded));
-        animator.setInterpolator(new DecelerateInterpolator(2f));
-        animator.setDuration(400);
-        animator.addUpdateListener(animation ->
+        expandAnimator.setInterpolator(new DecelerateInterpolator(2f));
+        expandAnimator.setDuration(400);
+        expandAnimator.addUpdateListener(animation ->
                 moreDropdown.setRotation((float) animation.getAnimatedValue()));
-        animator.start();
+        expandAnimator.start();
     }
 
     public boolean isExpanded() {
@@ -1126,220 +1133,23 @@ public class ReplyLayout extends LoadView implements
     public void openFileAttachments(List<Reply.FileAttachment> attachments, int currentCount, int maxCount) {
         currentAttachments = new ArrayList<>(attachments);
         currentAttachmentMaxCount = maxCount;
+        pruneAttachmentBitmaps(attachments);
 
         if (attachments.isEmpty()) {
             theme().imageDrawable.apply(attach);
         } else {
             theme().clearDrawable.apply(attach);
         }
-        
+
         if (!attachments.isEmpty()) {
             // Hide the global filename field for multi-file mode
             fileName.setVisibility(View.GONE);
-            
+
             // Clear previous previews - remove all child views
             previewHolder.removeAllViews();
-            
-            // Get content container early; bail out (leaving previous previews) if
-            // the layout structure ever changes instead of crashing.
-            if (!(replyInputLayout instanceof ScrollView)) return;
-            View scrollChild = ((ScrollView) replyInputLayout).getChildAt(0);
-            if (!(scrollChild instanceof LinearLayout)) return;
-            View innerChild = ((LinearLayout) scrollChild).getChildAt(0);
-            if (!(innerChild instanceof LinearLayout)) return;
-            LinearLayout contentContainer = (LinearLayout) innerChild;
-            
-            // AGGRESSIVE removal: remove from both possible parents to ensure clean state
-            // Check previewScroll
-            if (previewScroll.getChildCount() > 0) {
-                for (int i = previewScroll.getChildCount() - 1; i >= 0; i--) {
-                    if (previewScroll.getChildAt(i) == previewHolder) {
-                        previewScroll.removeViewAt(i);
-                        break;
-                    }
-                }
-            }
-            
-            // Check contentContainer
-            if (contentContainer.getChildCount() > 0) {
-                for (int i = contentContainer.getChildCount() - 1; i >= 0; i--) {
-                    if (contentContainer.getChildAt(i) == previewHolder) {
-                        contentContainer.removeViewAt(i);
-                        break;
-                    }
-                }
-            }
-            
-            // Set orientation based on expanded state
-            int orientation = expanded ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL;
-            previewHolder.setOrientation(orientation);
-            
-            // Update previewHolder width and height based on expanded state
-            ViewGroup.LayoutParams holderParams = previewHolder.getLayoutParams();
-            if (holderParams != null) {
-                holderParams.width = expanded ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT;
-                holderParams.height = expanded ? ViewGroup.LayoutParams.WRAP_CONTENT : dp(100);
-                previewHolder.setLayoutParams(holderParams);
-            }
-            
-            // Adjust scroll view based on expanded state
-            if (expanded) {
-                previewScroll.setVisibility(View.GONE);
-            } else {
-                previewScroll.setVisibility(View.VISIBLE);
-            }
-            
-            // Hide spacers in multi-file mode
-            previewSpacerLeft.setVisibility(View.GONE);
-            previewSpacerRight.setVisibility(View.GONE);
-            
-            if (expanded) {
-                // Add it before the comment_counter or after spoiler
-                int index = contentContainer.indexOfChild(spoiler);
-                contentContainer.addView(previewHolder, index >= 0 ? index + 1 : contentContainer.getChildCount());
-            } else {
-                // In collapsed mode, add to previewScroll
-                previewScroll.addView(previewHolder);
-            }
+            applyAttachmentLayout(attachments);
+            createAttachmentViews(attachments);
 
-            if (expanded) {
-                // Expanded mode: show images vertically with full controls
-                for (int i = 0; i < attachments.size(); i++) {
-                    final Reply.FileAttachment attachment = attachments.get(i);
-                    final int index = i;
-                    
-                    // Create vertical container for each file
-                    LinearLayout fileContainer = new LinearLayout(getContext());
-                    fileContainer.setOrientation(LinearLayout.VERTICAL);
-                    LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
-                    containerParams.setMarginStart(dp(8));
-                    containerParams.setMarginEnd(dp(8));
-                    containerParams.topMargin = dp(8);
-                    containerParams.bottomMargin = dp(8);
-                    fileContainer.setLayoutParams(containerParams);
-                    
-                    // Image view
-                    final ImageView imageView = new ImageView(getContext());
-                    imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                    LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            dp(200)
-                    );
-                    imageView.setLayoutParams(imageParams);
-                    
-                    // Add click listener to show reencode options
-                    imageView.setOnClickListener(v -> {
-                        AndroidUtils.hideKeyboard(ReplyLayout.this);
-                        presenter.onImageAttachmentClicked(index);
-                        callback.showImageReencodingWindow();
-                    });
-                    
-                    // Decode and display image - create separate closure for each iteration
-                    decodeImageAsync(attachment.file, dp(400), dp(300), (file, bitmap) -> {
-                        if (bitmap != null) {
-                            imageView.setImageBitmap(bitmap);
-                        }
-                    });
-                    
-                    fileContainer.addView(imageView);
-                    
-                    // Filename Edit - show under every image
-                    EditText filenameEdit = new EditText(getContext());
-                    String displayName = (attachment.fileName != null && !attachment.fileName.isEmpty()) ? 
-                            attachment.fileName : attachment.file.getName();
-                    filenameEdit.setText(displayName);
-                    filenameEdit.setHint(R.string.reply_file_name);
-                    filenameEdit.setTextSize(14);
-                    filenameEdit.setPadding(dp(4), dp(8), dp(4), dp(8));
-                    filenameEdit.addTextChangedListener(new TextWatcher() {
-                        @Override
-                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                        @Override
-                        public void onTextChanged(CharSequence s, int start, int before, int count) {}
-                        @Override
-                        public void afterTextChanged(Editable s) {
-                            presenter.setFileAttachmentFileName(index, s.toString());
-                        }
-                    });
-                    fileContainer.addView(filenameEdit);
-                    
-                    // Control buttons
-                    LinearLayout buttonsContainer = new LinearLayout(getContext());
-                    buttonsContainer.setOrientation(LinearLayout.HORIZONTAL);
-                    LinearLayout.LayoutParams buttonsParams = new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
-                    buttonsContainer.setLayoutParams(buttonsParams);
-                    
-                    CheckBox spoilerCheckbox = new CheckBox(getContext());
-                    spoilerCheckbox.setText("Spoiler");
-                    spoilerCheckbox.setChecked(attachment.spoiler);
-                    spoilerCheckbox.setOnCheckedChangeListener((buttonView, isChecked) ->
-                        presenter.setFileAttachmentSpoiler(index, isChecked)
-                    );
-                    LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
-                    checkboxParams.weight = 1;
-                    buttonsContainer.addView(spoilerCheckbox, checkboxParams);
-                    
-                    Button removeButton = new Button(getContext(), null, android.R.attr.buttonBarButtonStyle);
-                    removeButton.setLayoutParams(new LinearLayout.LayoutParams(dp(50), dp(50)));
-                    removeButton.setText("✕");
-                    removeButton.setTextSize(18);
-                    removeButton.setAllCaps(false);
-                    removeButton.setPadding(0, 0, 0, 0);
-                    removeButton.setOnClickListener(v -> presenter.removeFileAttachment(index));
-                    buttonsContainer.addView(removeButton);
-                    
-                    fileContainer.addView(buttonsContainer);
-                    
-                    previewHolder.addView(fileContainer);
-                }
-            } else {
-                // Collapsed mode: show thumbnails horizontally
-                int thumbnailSize = dp(100);
-                
-                for (int i = 0; i < attachments.size(); i++) {
-                    final Reply.FileAttachment attachment = attachments.get(i);
-                    final int index = i;
-                    
-                    // Image thumbnail
-                    final ImageView imageView = new ImageView(getContext());
-                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
-                            thumbnailSize,
-                            thumbnailSize
-                    );
-                    imageParams.setMarginStart(dp(2));
-                    imageParams.setMarginEnd(dp(2));
-                    imageView.setLayoutParams(imageParams);
-                    
-                    // Add click listener for reencode
-                    imageView.setOnClickListener(v -> {
-                        AndroidUtils.hideKeyboard(ReplyLayout.this);
-                        presenter.onImageAttachmentClicked(index);
-                        callback.showImageReencodingWindow();
-                    });
-                    
-                    // Decode and display thumbnail - separate closure for each iteration
-                    decodeImageAsync(attachment.file, thumbnailSize, thumbnailSize, (file, bitmap) -> {
-                        if (bitmap != null) {
-                            imageView.setImageBitmap(bitmap);
-                        }
-                    });
-                    
-                    previewHolder.addView(imageView);
-                }
-            }
-            
-            if (!expanded) previewScroll.setVisibility(View.VISIBLE);
-            previewHolder.setVisibility(View.VISIBLE);
             previewMessage.setText(currentCount + "/" + maxCount);
             previewMessage.setVisibility(View.VISIBLE);
             showReencodeImageHint();
@@ -1348,7 +1158,7 @@ public class ReplyLayout extends LoadView implements
             // Get content container
             LinearLayout contentContainer = (LinearLayout)((ScrollView)replyInputLayout).getChildAt(0);
             contentContainer = (LinearLayout)contentContainer.getChildAt(0);
-            
+
             // AGGRESSIVE removal: remove from both possible parents
             if (previewScroll.getChildCount() > 0) {
                 for (int i = previewScroll.getChildCount() - 1; i >= 0; i--) {
@@ -1358,7 +1168,7 @@ public class ReplyLayout extends LoadView implements
                     }
                 }
             }
-            
+
             if (contentContainer.getChildCount() > 0) {
                 for (int i = contentContainer.getChildCount() - 1; i >= 0; i--) {
                     if (contentContainer.getChildAt(i) == previewHolder) {
@@ -1367,14 +1177,242 @@ public class ReplyLayout extends LoadView implements
                     }
                 }
             }
-            
+
             previewHolder.removeAllViews();
             previewScroll.setVisibility(View.GONE);
             previewHolder.setVisibility(View.GONE);
             previewMessage.setVisibility(View.GONE);
-            
+
             fileName.setText("");
             fileName.setVisibility(View.GONE);
+        }
+    }
+
+    // Drops the bitmaps of the attachments that are not there anymore.
+    private void pruneAttachmentBitmaps(List<Reply.FileAttachment> attachments) {
+        if (attachmentBitmaps.isEmpty()) return;
+        java.util.Iterator<String> it = attachmentBitmaps.keySet().iterator();
+        while (it.hasNext()) {
+            String key = it.next();
+            String path = key.substring(0, key.lastIndexOf('|'));
+            boolean stillUsed = false;
+            for (Reply.FileAttachment attachment : attachments) {
+                if (attachment.file != null && attachment.file.getAbsolutePath().equals(path)) {
+                    stillUsed = true;
+                    break;
+                }
+            }
+            if (!stillUsed) {
+                it.remove();
+            }
+        }
+    }
+
+
+    // Places the attachments, the views are not touched.
+    private void applyAttachmentLayout(List<Reply.FileAttachment> attachments) {
+        // Get content container early; bail out (leaving previous previews) if
+        // the layout structure ever changes instead of crashing.
+        if (!(replyInputLayout instanceof ScrollView)) return;
+        View scrollChild = ((ScrollView) replyInputLayout).getChildAt(0);
+        if (!(scrollChild instanceof LinearLayout)) return;
+        View innerChild = ((LinearLayout) scrollChild).getChildAt(0);
+        if (!(innerChild instanceof LinearLayout)) return;
+        LinearLayout contentContainer = (LinearLayout) innerChild;
+
+        // AGGRESSIVE removal: remove from both possible parents to ensure clean state
+        // Check previewScroll
+        if (previewScroll.getChildCount() > 0) {
+            for (int i = previewScroll.getChildCount() - 1; i >= 0; i--) {
+                if (previewScroll.getChildAt(i) == previewHolder) {
+                    previewScroll.removeViewAt(i);
+                    break;
+                }
+            }
+        }
+
+        // Check contentContainer
+        if (contentContainer.getChildCount() > 0) {
+            for (int i = contentContainer.getChildCount() - 1; i >= 0; i--) {
+                if (contentContainer.getChildAt(i) == previewHolder) {
+                    contentContainer.removeViewAt(i);
+                    break;
+                }
+            }
+        }
+
+        // Set orientation based on expanded state
+        int orientation = expanded ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL;
+        previewHolder.setOrientation(orientation);
+
+        // Update previewHolder width and height based on expanded state
+        ViewGroup.LayoutParams holderParams = previewHolder.getLayoutParams();
+        if (holderParams != null) {
+            holderParams.width = expanded ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT;
+            holderParams.height = expanded ? ViewGroup.LayoutParams.WRAP_CONTENT : dp(100);
+            previewHolder.setLayoutParams(holderParams);
+        }
+
+        // Adjust scroll view based on expanded state
+        if (expanded) {
+            previewScroll.setVisibility(View.GONE);
+        } else {
+            previewScroll.setVisibility(View.VISIBLE);
+        }
+
+        previewHolder.setVisibility(View.VISIBLE);
+
+        // Hide spacers in multi-file mode
+        previewSpacerLeft.setVisibility(View.GONE);
+        previewSpacerRight.setVisibility(View.GONE);
+
+        if (expanded) {
+            // Add it before the comment_counter or after spoiler
+            int index = contentContainer.indexOfChild(spoiler);
+            contentContainer.addView(previewHolder, index >= 0 ? index + 1 : contentContainer.getChildCount());
+        } else {
+            // In collapsed mode, add to previewScroll
+            previewScroll.addView(previewHolder);
+        }
+    }
+
+
+    // Creates the views of the attachments, the images are decoded again.
+    private void createAttachmentViews(List<Reply.FileAttachment> attachments) {
+        if (expanded) {
+            // Expanded mode: show images vertically with full controls
+            for (int i = 0; i < attachments.size(); i++) {
+                final Reply.FileAttachment attachment = attachments.get(i);
+                final int index = i;
+                
+                // Create vertical container for each file
+                LinearLayout fileContainer = new LinearLayout(getContext());
+                fileContainer.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                containerParams.setMarginStart(dp(8));
+                containerParams.setMarginEnd(dp(8));
+                containerParams.topMargin = dp(8);
+                containerParams.bottomMargin = dp(8);
+                fileContainer.setLayoutParams(containerParams);
+                
+                // Image view
+                final ImageView imageView = new ImageView(getContext());
+                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        dp(200)
+                );
+                imageView.setLayoutParams(imageParams);
+                
+                // Add click listener to show reencode options
+                imageView.setOnClickListener(v -> {
+                    AndroidUtils.hideKeyboard(ReplyLayout.this);
+                    presenter.onImageAttachmentClicked(index);
+                    callback.showImageReencodingWindow();
+                });
+                
+                // Decode and display image - create separate closure for each iteration
+                decodeImageAsync(attachment.file, dp(400), dp(300), (file, bitmap) -> {
+                    if (bitmap != null) {
+                        imageView.setImageBitmap(bitmap);
+                    }
+                });
+                
+                fileContainer.addView(imageView);
+                
+                // Filename Edit - show under every image
+                EditText filenameEdit = new EditText(getContext());
+                String displayName = (attachment.fileName != null && !attachment.fileName.isEmpty()) ? 
+                        attachment.fileName : attachment.file.getName();
+                filenameEdit.setText(displayName);
+                filenameEdit.setHint(R.string.reply_file_name);
+                filenameEdit.setTextSize(14);
+                filenameEdit.setPadding(dp(4), dp(8), dp(4), dp(8));
+                filenameEdit.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        presenter.setFileAttachmentFileName(index, s.toString());
+                    }
+                });
+                fileContainer.addView(filenameEdit);
+                
+                // Control buttons
+                LinearLayout buttonsContainer = new LinearLayout(getContext());
+                buttonsContainer.setOrientation(LinearLayout.HORIZONTAL);
+                LinearLayout.LayoutParams buttonsParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                buttonsContainer.setLayoutParams(buttonsParams);
+                
+                CheckBox spoilerCheckbox = new CheckBox(getContext());
+                spoilerCheckbox.setText("Spoiler");
+                spoilerCheckbox.setChecked(attachment.spoiler);
+                spoilerCheckbox.setOnCheckedChangeListener((buttonView, isChecked) ->
+                    presenter.setFileAttachmentSpoiler(index, isChecked)
+                );
+                LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                checkboxParams.weight = 1;
+                buttonsContainer.addView(spoilerCheckbox, checkboxParams);
+                
+                Button removeButton = new Button(getContext(), null, android.R.attr.buttonBarButtonStyle);
+                removeButton.setLayoutParams(new LinearLayout.LayoutParams(dp(50), dp(50)));
+                removeButton.setText("✕");
+                removeButton.setTextSize(18);
+                removeButton.setAllCaps(false);
+                removeButton.setPadding(0, 0, 0, 0);
+                removeButton.setOnClickListener(v -> presenter.removeFileAttachment(index));
+                buttonsContainer.addView(removeButton);
+                
+                fileContainer.addView(buttonsContainer);
+                
+                previewHolder.addView(fileContainer);
+            }
+        } else {
+            // Collapsed mode: show thumbnails horizontally
+            int thumbnailSize = dp(100);
+            
+            for (int i = 0; i < attachments.size(); i++) {
+                final Reply.FileAttachment attachment = attachments.get(i);
+                final int index = i;
+                
+                // Image thumbnail
+                final ImageView imageView = new ImageView(getContext());
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                        thumbnailSize,
+                        thumbnailSize
+                );
+                imageParams.setMarginStart(dp(2));
+                imageParams.setMarginEnd(dp(2));
+                imageView.setLayoutParams(imageParams);
+                
+                // Add click listener for reencode
+                imageView.setOnClickListener(v -> {
+                    AndroidUtils.hideKeyboard(ReplyLayout.this);
+                    presenter.onImageAttachmentClicked(index);
+                    callback.showImageReencodingWindow();
+                });
+                
+                // Decode and display thumbnail - separate closure for each iteration
+                decodeImageAsync(attachment.file, thumbnailSize, thumbnailSize, (file, bitmap) -> {
+                    if (bitmap != null) {
+                        imageView.setImageBitmap(bitmap);
+                    }
+                });
+                
+                previewHolder.addView(imageView);
+            }
         }
     }
     
@@ -1384,7 +1422,20 @@ public class ReplyLayout extends LoadView implements
      */
     private void decodeImageAsync(File file, int reqWidth, int reqHeight,
                                   ImageDecoder.ImageDecoderCallback callback) {
-        ImageDecoder.decodeFileOnBackgroundThread(file, reqWidth, reqHeight, callback);
+        // The attachment views are rebuilt when the reply is expanded, the
+        // bitmaps are kept so that the images are not decoded again.
+        String key = file.getAbsolutePath() + "|" + reqWidth + "x" + reqHeight;
+        Bitmap cached = attachmentBitmaps.get(key);
+        if (cached != null) {
+            callback.onImageBitmap(file, cached);
+            return;
+        }
+        ImageDecoder.decodeFileOnBackgroundThread(file, reqWidth, reqHeight, (f, bitmap) -> {
+            if (bitmap != null) {
+                attachmentBitmaps.put(key, bitmap);
+            }
+            callback.onImageBitmap(f, bitmap);
+        });
     }
 
     @Override

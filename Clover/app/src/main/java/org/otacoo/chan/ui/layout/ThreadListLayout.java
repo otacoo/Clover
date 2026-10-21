@@ -88,6 +88,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     private ThreadListLayoutPresenterCallback callback;
     private ThreadListLayoutCallback threadListLayoutCallback;
     private boolean replyOpen;
+    private int replyHeight;
     private ChanSettings.PostViewMode postViewMode;
     private int spanCount = 2;
     private int background;
@@ -160,6 +161,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         recyclerView.setAdapter(postAdapter);
         recyclerView.addOnScrollListener(scrollListener);
         reply.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            replyHeight = bottom - top;
             if (replyOpen && bottom - top != oldBottom - oldTop) {
                 post(() -> {
                     if (!replyOpen) return;
@@ -407,13 +409,23 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
             applyReplyLayoutMode();
 
-            reply.animate().cancel();
+            // The listener of a running animation would still hide the reply
+            // view, so it is removed before the animation is cancelled.
+            reply.animate().setListener(null).cancel();
 
-            reply.measure(
-                    MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
-            );
-            int height = reply.getMeasuredHeight();
+            // The height of the reply is only measured when it is opened, the
+            // cached one is enough to slide it out again.
+            int height;
+            if (open) {
+                reply.measure(
+                        MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+                );
+                height = reply.getMeasuredHeight();
+                replyHeight = height;
+            } else {
+                height = replyHeight;
+            }
 
             final ViewPropertyAnimator viewPropertyAnimator = reply.animate();
             viewPropertyAnimator.setListener(null);
@@ -422,7 +434,10 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             viewPropertyAnimator.withLayer();
 
             boolean bottomReply = ChanSettings.bottomReply.get();
-            float hiddenTranslation = bottomReply ? height : -height;
+            // The reply view can be taller than the screen, sliding it by its
+            // full height would look like it jumps in.
+            int distance = Math.min(height, getHeight());
+            float hiddenTranslation = bottomReply ? distance : -distance;
 
             if (open) {
                 reply.setVisibility(View.VISIBLE);
