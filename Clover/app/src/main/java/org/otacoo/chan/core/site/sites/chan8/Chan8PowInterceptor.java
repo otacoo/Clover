@@ -19,6 +19,9 @@ public class Chan8PowInterceptor implements Interceptor {
     private static final String TAG = "Chan8PowInterceptor";
     public static final String SILENT_POW_HEADER = "X-Clover-Silent-PoW";
     private static final String POW_BYPASS_HEADER = "X-Clover-8chan-Bypass";
+    // Marks the request that asks the site whether the session is still good.
+    // It is not a use of the site, so it does not count as one.
+    public static final String POW_PROBE_HEADER = "X-Clover-PoW-Probe";
 private static final Pattern POW_TOKEN_PATTERN =
         Pattern.compile("<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>", Pattern.CASE_INSENSITIVE);
     private static final int TIMEOUT = 30000;
@@ -35,6 +38,12 @@ private static final Pattern POW_TOKEN_PATTERN =
     private static final int SUBMIT_ATTEMPTS = 2;
     private static volatile long submissionsBlockedUntil = 0;
     private static volatile boolean backoffReported = false;
+    // When the site was last asked for something, so that the proof of work
+    // is only renewed while the site is in use.
+    private static volatile long lastUseTime = 0;
+    // The site counts as in use for this long after it was last asked for
+    // something.
+    private static final long USE_WINDOW_MS = 10 * 60 * 1000;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
     private static volatile okhttp3.OkHttpClient nonRedirectClient = null;
 
@@ -108,6 +117,13 @@ private static final Pattern POW_TOKEN_PATTERN =
         // A request that is made in the background (the board list) must not
         // show anything to the user.
         boolean silentPow = req.header(SILENT_POW_HEADER) != null;
+        // The site is being used now. The probe that asks whether the session
+        // is still good does not count, it would keep the site alive for ever.
+        if (Chan8RateLimit.is8chanHost(req.url().host())
+                && req.header(POW_BYPASS_HEADER) == null
+                && req.header(POW_PROBE_HEADER) == null) {
+            lastUseTime = System.currentTimeMillis();
+        }
 
         Response resp;
         boolean clearedPowCookies = false;
@@ -238,7 +254,10 @@ private static final Pattern POW_TOKEN_PATTERN =
 
         try {
             if (!acquired) {
-                if (is403Pow || is200HtmlPow) resp.close(); // abandon; wait for solver thread
+                // The response is not used, the request is made again below.
+                // It has to be closed, OkHttp does not allow a second
+                // request while the previous response is still open.
+                resp.close();
                 // If this is a non-silent (user-visible) request, show the snackbar now — the
                 // solver thread may be processing a silent request and won't show it.
                 if (req.header(SILENT_POW_HEADER) == null) {
@@ -520,9 +539,18 @@ private static final Pattern POW_TOKEN_PATTERN =
         }
     }
 
+    /**
+     * True when the site was used recently enough that it is worth renewing
+     * the proof of work in the background. The session is bound to the
+     * address of the connection, so it only goes stale when the site is
+     * actually being looked at.
+     */
+    public static boolean isUsedRecently() {
+        return System.currentTimeMillis() - lastUseTime < USE_WINDOW_MS;
+    }
+
     /** True when the response is the page of a proof of work challenge. */
-    private static boolean isChallenge(Response response) throws java.io.IOException {
-        String powStatus = response.header("X-PoWBlock-Status");
+    private static boolean isChallenge(Response response) throws java.io.IOException {        String powStatus = response.header("X-PoWBlock-Status");
         if (powStatus == null) powStatus = response.header("X-PoW-Status");
         if (powStatus != null && powStatus.equalsIgnoreCase("required")) return true;
         if (response.code() == 403) {
