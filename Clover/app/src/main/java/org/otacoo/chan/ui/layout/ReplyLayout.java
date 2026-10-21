@@ -74,6 +74,7 @@ import org.otacoo.chan.ui.captcha.CaptchaLayout;
 import org.otacoo.chan.ui.captcha.GenericWebViewAuthenticationLayout;
 import org.otacoo.chan.ui.captcha.LynxchanBypassLayout;
 import org.otacoo.chan.ui.captcha.LynxchanCaptchaLayout;
+import org.otacoo.chan.ui.captcha.CaptchaSession;
 import org.otacoo.chan.ui.captcha.NewCaptchaLayout;
 import org.otacoo.chan.ui.drawable.DropdownArrowDrawable;
 import org.otacoo.chan.ui.helper.HintPopup;
@@ -189,9 +190,9 @@ public class ReplyLayout extends LoadView implements
     private final Runnable cooldownUpdateRunnable = new Runnable() {
         @Override
         public void run() {
-            int cooldown = currentCaptchaKey == null ? 0 : NewCaptchaLayout.getCooldownRemainingForKey(currentCaptchaKey);
-            int expiry = currentCaptchaKey == null ? 0 : NewCaptchaLayout.getExpiryRemainingForKey(currentCaptchaKey);
-            boolean live = currentCaptchaKey != null && NewCaptchaLayout.hasLiveChallengeForKey(currentCaptchaKey);
+            int cooldown = currentCaptchaKey == null ? 0 : CaptchaSession.cooldownRemaining(currentCaptchaKey);
+            int expiry = currentCaptchaKey == null ? 0 : CaptchaSession.expiryRemaining(currentCaptchaKey);
+            boolean live = currentCaptchaKey != null && CaptchaSession.hasLiveChallenge(currentCaptchaKey);
             if (authenticationLayout instanceof NewCaptchaLayout ncl) {
                 cooldown = Math.max(cooldown, Math.max(ncl.getCooldownRemainingSeconds(), ncl.getRequestCooldownRemainingSeconds()));
                 expiry = Math.max(expiry, ncl.getExpiryRemainingSeconds());
@@ -460,7 +461,7 @@ public class ReplyLayout extends LoadView implements
     }
 
     public void bindLoadable(Loadable loadable) {
-        currentCaptchaKey = NewCaptchaLayout.captchaKey(loadable.site.name(), loadable.boardCode, loadable.no);
+        currentCaptchaKey = CaptchaSession.key(loadable.site.name(), loadable.boardCode, loadable.no);
         presenter.bindLoadable(loadable);
     }
 
@@ -726,7 +727,7 @@ public class ReplyLayout extends LoadView implements
 
         AndroidUtils.hideKeyboard(this);
 
-        currentCaptchaKey = NewCaptchaLayout.captchaKey(loadable.site.name(), loadable.boardCode, loadable.no);
+        currentCaptchaKey = CaptchaSession.key(loadable.site.name(), loadable.boardCode, loadable.no);
         authenticationLayout.initialize(loadable, callback);
         authenticationLayout.reset();
     }
@@ -754,8 +755,8 @@ public class ReplyLayout extends LoadView implements
                 setWrap(!presenter.isExpanded());
                 cooldownUpdateHandler.removeCallbacks(cooldownUpdateRunnable);
                 boolean cooling = currentCaptchaKey != null
-                        && (NewCaptchaLayout.getCooldownRemainingForKey(currentCaptchaKey) > 0
-                        || NewCaptchaLayout.getExpiryRemainingForKey(currentCaptchaKey) > 0);
+                        && (CaptchaSession.cooldownRemaining(currentCaptchaKey) > 0
+                        || CaptchaSession.expiryRemaining(currentCaptchaKey) > 0);
                 if (authenticationLayout instanceof NewCaptchaLayout ncl)
                     cooling |= ncl.onCooldownNow() || ncl.getExpiryRemainingSeconds() > 0;
                 if (cooling) {
