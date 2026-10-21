@@ -9,6 +9,7 @@ import okhttp3.Response;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.core.di.NetModule;
+import org.otacoo.chan.core.net.BackgroundRequest;
 import org.otacoo.chan.utils.Logger;
 
 import java.util.List;
@@ -114,9 +115,10 @@ private static final Pattern POW_TOKEN_PATTERN =
     @SuppressWarnings("deprecation")
     public Response intercept(Chain chain) throws java.io.IOException {
         Request req = chain.request();
-        // A request that is made in the background (the board list) must not
-        // show anything to the user.
-        boolean silentPow = req.header(SILENT_POW_HEADER) != null;
+        // A request that is made in the background (the board list, the
+        // automatic refreshing of a thread) must not show anything to the user.
+        boolean silentPow = req.header(SILENT_POW_HEADER) != null
+                || req.tag(BackgroundRequest.class) != null;
         // The site is being used now. The probe that asks whether the session
         // is still good does not count, it would keep the site alive for ever.
         if (Chan8RateLimit.is8chanHost(req.url().host())
@@ -252,6 +254,10 @@ private static final Pattern POW_TOKEN_PATTERN =
             }
         }
 
+        // True when this request told the user that the proof of work is being
+        // solved. It is undone when the request is done.
+        boolean announced = false;
+
         try {
             if (!acquired) {
                 // The response is not used, the request is made again below.
@@ -260,8 +266,9 @@ private static final Pattern POW_TOKEN_PATTERN =
                 resp.close();
                 // If this is a non-silent (user-visible) request, show the snackbar now — the
                 // solver thread may be processing a silent request and won't show it.
-                if (req.header(SILENT_POW_HEADER) == null) {
+                if (!silentPow) {
                     Chan8PowNotifier.onPowStarted();
+                    announced = true;
                 }
                 // Wait for the thread that is performing POW to finish, with a bound
                 // so a stuck solver can never park this dispatcher thread forever.
@@ -360,7 +367,10 @@ private static final Pattern POW_TOKEN_PATTERN =
                 return resp;
             }
 
-            if (!silentPow) Chan8PowNotifier.onPowStarted();
+            if (!silentPow && !announced) {
+                Chan8PowNotifier.onPowStarted();
+                announced = true;
+            }
 
             int algorithm = NetModule.extractPowAlgorithm(html);
             long t0 = System.currentTimeMillis();
@@ -529,6 +539,11 @@ private static final Pattern POW_TOKEN_PATTERN =
             Request retryReq = req.newBuilder().removeHeader("Cookie").header(POW_BYPASS_HEADER, "1").build();
             return chain.proceed(retryReq);
         } finally {
+            if (announced) {
+                // This request is done, the message about the proof of work is
+                // no longer needed.
+                Chan8PowNotifier.onPowFinished();
+            }
             // Release waiting threads
             synchronized (Chan8PowInterceptor.class) {
                 if (localLatch != null && _latch == localLatch) {

@@ -23,6 +23,7 @@ import org.otacoo.chan.core.exception.ChanLoaderException;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.orm.Loadable;
+import org.otacoo.chan.core.net.BackgroundRequest;
 import org.otacoo.chan.core.net.JsonReaderRequest;
 import org.otacoo.chan.core.site.parser.ChanReader;
 import org.otacoo.chan.core.site.parser.ChanReaderRequest;
@@ -162,7 +163,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
         currentTimeout = -1;
         thread = null;
 
-        request = getData();
+        request = getData(false);
     }
 
     /**
@@ -175,7 +176,7 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
         clearPendingRunnable();
 
         if (loadable.isThreadMode() && !archiveLoaded && request == null) {
-            request = getData();
+            request = getData(true);
             return true;
         } else {
             return false;
@@ -255,8 +256,8 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
         }
     }
 
-    private ChanLoaderRequest getData() {
-        // Logger.d(TAG, "Requested " + loadable.boardCode + ", " + loadable.no);
+    private ChanLoaderRequest getData(boolean background) {
+        // Logger.d("Requested " + loadable.boardCode + ", " + loadable.no);
 
         List<Post> cached = thread == null ? new ArrayList<Post>() : thread.posts;
 
@@ -264,14 +265,22 @@ public class ChanThreadLoader implements JsonReaderRequest.RequestListener<ChanL
 
         ChanLoaderRequestParams requestParams = new ChanLoaderRequestParams(loadable, chanReader, cached);
         ChanReaderRequest readerRequest = new ChanReaderRequest(requestParams, this);
-        
+
         Request okRequest = new Request.Builder()
                 .url(readerRequest.getUrl())
                 .build();
-        
+
+        if (background) {
+            // The user is not waiting for this, it only refreshes what is on
+            // the screen. It must not interrupt them.
+            okRequest = okRequest.newBuilder()
+                    .tag(BackgroundRequest.class, BackgroundRequest.INSTANCE)
+                    .build();
+        }
+
         Call call = okHttpClient.newCall(okRequest);
         call.enqueue(readerRequest);
-        
+
         request = new ChanLoaderRequest(call);
 
         return request;
