@@ -120,13 +120,21 @@ public class FilterEngine {
         try {
             // Route through the DB thread like every other access; the small
             // filter table makes the blocking wait negligible.
-            List<Filter> filters = databaseManager.runTask(databaseFilterManager.getFilters());
+            List<Filter> filters = databaseManager.runTask(databaseManager.getDatabaseFilterManager().getFilters());
             Collections.sort(filters, (a, b) -> Integer.compare(a.order, b.order));
             return filters;
         } catch (Exception e) {
             Logger.wtf(TAG, "Couldn't get all filters for some reason.");
             return new ArrayList<>();
         }
+    }
+
+    public void getAllFiltersAsync(DatabaseManager.TaskResult<List<Filter>> callback) {
+        databaseManager.runTaskAsync(() -> {
+            List<Filter> filters = databaseManager.getDatabaseFilterManager().getFilters().call();
+            Collections.sort(filters, (a, b) -> Integer.compare(a.order, b.order));
+            return filters;
+        }, callback);
     }
 
     @AnyThread
@@ -208,13 +216,15 @@ public class FilterEngine {
         if (post.images != null && (filter.type & FilterType.FILENAME.flag) != 0) {
             StringBuilder filename = new StringBuilder();
             for (PostImage image : post.images) {
+                if (filename.length() > 0) {
+                    filename.append(", ");
+                }
                 if (image.filename != null) {
                     filename.append(image.filename);
                 }
                 if (image.extension != null && !image.extension.isEmpty()) {
                     filename.append('.').append(image.extension);
                 }
-                filename.append(' ');
             }
             if (filename.length() > 0 && matches(filter, FilterType.FILENAME.isRegex, filename.toString(), false)) {
                 return true;

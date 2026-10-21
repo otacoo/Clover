@@ -48,6 +48,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.controller.Controller;
+import org.otacoo.chan.core.database.DatabaseFilterManager;
 import org.otacoo.chan.core.database.DatabaseManager;
 import org.otacoo.chan.core.manager.FilterEngine;
 import org.otacoo.chan.core.manager.FilterType;
@@ -145,7 +146,6 @@ public class FiltersController extends Controller implements
         itemTouchHelper.attachToRecyclerView(recyclerView);
 
         adapter.load();
-        updateEnableButton();
     }
 
     @Override
@@ -154,18 +154,31 @@ public class FiltersController extends Controller implements
             showFilterDialog(new Filter());
         } else if (v.getId() == R.id.enable_button && !locked) {
             locked = true;
-            List<Filter> enabledFilters = filterEngine.getEnabledFilters();
-            List<Filter> allFilters = filterEngine.getAllFilters();
-            setFilters(allFilters, enabledFilters.isEmpty());
+            filterEngine.getAllFiltersAsync(filters -> {
+                boolean anyEnabled = false;
+                for (Filter filter : filters) {
+                    if (filter.enabled) {
+                        anyEnabled = true;
+                        break;
+                    }
+                }
+                setFilters(filters, !anyEnabled);
+            });
         }
     }
 
     private void updateEnableButton() {
-        List<Filter> enabledFilters = filterEngine.getEnabledFilters();
-        if (enabledFilters.isEmpty()) {
-            enableButton.setText(R.string.filter_enable_all);
-        } else {
+        boolean anyEnabled = false;
+        for (Filter filter : adapter.sourceList) {
+            if (filter.enabled) {
+                anyEnabled = true;
+                break;
+            }
+        }
+        if (anyEnabled) {
             enableButton.setText(R.string.filter_disable_all);
+        } else {
+            enableButton.setText(R.string.filter_enable_all);
         }
     }
 
@@ -334,10 +347,13 @@ public class FiltersController extends Controller implements
         }
 
         private void load() {
-            sourceList.clear();
-            sourceList.addAll(filterEngine.getAllFilters());
+            filterEngine.getAllFiltersAsync(filters -> {
+                sourceList.clear();
+                sourceList.addAll(filters);
 
-            filter();
+                filter();
+                updateEnableButton();
+            });
         }
 
         @SuppressLint("notifyDataSetChanged();SetChanged")
@@ -346,7 +362,7 @@ public class FiltersController extends Controller implements
             if (!TextUtils.isEmpty(searchQuery)) {
                 String query = searchQuery.toLowerCase(Locale.ENGLISH);
                 for (Filter filter : sourceList) {
-                    if (filter.pattern.toLowerCase().contains(query)) {
+                    if (filter.pattern != null && filter.pattern.toLowerCase(Locale.ENGLISH).contains(query)) {
                         displayList.add(filter);
                     }
                 }
@@ -372,12 +388,20 @@ public class FiltersController extends Controller implements
         }
 
         public void saveOrders() {
-            for (int i = 0; i < displayList.size(); i++) {
-                Filter filter = displayList.get(i);
-                filter.order = i;
-                filterEngine.createOrUpdateFilter(filter);
-            }
-            load();
+            List<Filter> filters = new ArrayList<>(displayList);
+            databaseManager.runTaskAsync(() -> {
+                DatabaseFilterManager manager = databaseManager.getDatabaseFilterManager();
+                for (int i = 0; i < filters.size(); i++) {
+                    Filter filter = filters.get(i);
+                    filter.order = i;
+                    if (filter.id == 0) {
+                        manager.createFilter(filter).call();
+                    } else {
+                        manager.updateFilter(filter).call();
+                    }
+                }
+                return null;
+            }, result -> load());
         }
     }
 
