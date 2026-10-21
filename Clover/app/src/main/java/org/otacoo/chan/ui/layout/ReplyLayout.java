@@ -1267,9 +1267,16 @@ public class ReplyLayout extends LoadView implements
         previewSpacerRight.setVisibility(View.GONE);
 
         if (expanded) {
-            // Add it before the comment_counter or after spoiler
-            int index = contentContainer.indexOfChild(spoiler);
-            contentContainer.addView(previewHolder, index >= 0 ? index + 1 : contentContainer.getChildCount());
+            if (ChanSettings.bottomReply.get()) {
+                // The reply is at the bottom of the screen and grows upwards,
+                // so the attachments have to go to the end of the content to
+                // stay visible.
+                contentContainer.addView(previewHolder, contentContainer.getChildCount());
+            } else {
+                // Add it before the comment_counter or after spoiler
+                int index = contentContainer.indexOfChild(spoiler);
+                contentContainer.addView(previewHolder, index >= 0 ? index + 1 : contentContainer.getChildCount());
+            }
         } else {
             // In collapsed mode, add to previewScroll
             previewScroll.addView(previewHolder);

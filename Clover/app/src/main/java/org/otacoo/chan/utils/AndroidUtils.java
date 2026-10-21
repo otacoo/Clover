@@ -581,6 +581,11 @@ public class AndroidUtils {
 
     public static void showThemedSnackbar(View anchor, String message, int duration, int actionRes, View.OnClickListener actionListener) {
         View bestAnchor = anchor;
+        if (bestAnchor != null && !bestAnchor.isAttachedToWindow()) {
+            // A snackbar needs a view that is in a window, the anchor of a
+            // controller that was just presented is not.
+            bestAnchor = null;
+        }
         if (bestAnchor == null) {
             Activity activity = Chan.getInstance().getTopActivity();
             if (activity != null) {
@@ -592,10 +597,17 @@ public class AndroidUtils {
                 }
             }
         }
-        
-        if (bestAnchor == null) return;
-        
-        Snackbar snackbar = Snackbar.make(bestAnchor, message, duration);
+
+        if (bestAnchor == null || !bestAnchor.isAttachedToWindow()) return;
+
+        Snackbar snackbar;
+        try {
+            snackbar = Snackbar.make(bestAnchor, message, duration);
+        } catch (IllegalArgumentException e) {
+            // No parent that can host a snackbar, nothing to show it on.
+            Logger.w("AndroidUtils", "showThemedSnackbar: no parent for the snackbar", e);
+            return;
+        }
         if (actionRes != 0) {
             snackbar.setAction(actionRes, actionListener);
         }
