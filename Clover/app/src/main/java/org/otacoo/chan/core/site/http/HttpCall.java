@@ -77,7 +77,11 @@ public abstract class HttpCall implements Callback {
         try {
             if (body != null) {
                 String responseString = body.string();
-                process(response, responseString);
+                if (response.isSuccessful()) {
+                    process(response, responseString);
+                } else {
+                    exception = new IOException("HTTP " + response.code() + errorBody(responseString));
+                }
             } else {
                 exception = new IOException("No body. HTTP " + response.code());
             }
@@ -99,6 +103,13 @@ public abstract class HttpCall implements Callback {
         } else {
             callSuccess();
         }
+    }
+
+    private static String errorBody(String body) {
+        if (body == null) return "";
+        String trimmed = body.trim().replaceAll("\\s+", " ");
+        if (trimmed.isEmpty()) return "";
+        return ": " + (trimmed.length() > 200 ? trimmed.substring(0, 200) : trimmed);
     }
 
     private static boolean isHtmlInterstitial(Throwable e) {
