@@ -51,7 +51,10 @@ public abstract class JsonReaderRequest<T> implements Callback {
 
     @Override
     public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-        if (call.isCanceled()) return;
+        if (call.isCanceled()) {
+            response.close();
+            return;
+        }
 
         if (!response.isSuccessful()) {
             // HTTP 5xx means the server is down — treat as unreachable for failover.
