@@ -35,6 +35,8 @@ import okhttp3.Response;
 
 public abstract class JsonReaderRequest<T> implements Callback {
     private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final java.util.regex.Pattern TITLE_PATTERN =
+            java.util.regex.Pattern.compile("<title>(.*?)</title>", java.util.regex.Pattern.CASE_INSENSITIVE);
 
     protected final RequestListener<T> listener;
 
@@ -88,7 +90,7 @@ public abstract class JsonReaderRequest<T> implements Callback {
                     errorMsg = "Cloudflare verification required. Please 'Login' to this site to solve it.";
                 } else {
                     String pageTitle = "";
-                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("<title>(.*?)</title>", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(snippet);
+                    java.util.regex.Matcher m = TITLE_PATTERN.matcher(snippet);
                     if (m.find()) {
                         pageTitle = " (Title: " + m.group(1).trim() + ")";
                     }

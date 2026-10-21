@@ -145,9 +145,25 @@ public class NetModule {
         return buildRawCookieHeader(httpUrl);
     }
 
-    public static String firstMatch(String text, String regex) {
-        if (text == null || regex == null) return null;
-        Matcher m = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(text);
+    private static final Pattern[] POW_DIFFICULTY_PATTERNS = new Pattern[] {
+            // POWBlock v1.6: <pre id=d style=display:none>17</pre>
+            Pattern.compile("<pre\\s+id\\s*=\\s*['\"]?d['\"]?[^>]*>(\\d+)</pre>", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("['\"]d['\"]\\s*[:=]\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("bits\\s*[=:]\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("difficulty\\s*[=:]\\s*(\\d+)", Pattern.CASE_INSENSITIVE)
+    };
+
+    private static final Pattern[] POW_ALGORITHM_PATTERNS = new Pattern[] {
+            // POWBlock: <pre id=a style=display:none>512</pre>
+            Pattern.compile("<pre\\s+id\\s*=\\s*['\"]?a['\"]?[^>]*>(\\d+)</pre>", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("['\"]a['\"]\\s*[:=]\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("algorithm\\s*[=:]\\s*(\\d+)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("alg\\s*[=:]\\s*(\\d+)", Pattern.CASE_INSENSITIVE)
+    };
+
+    public static String firstMatch(String text, Pattern pattern) {
+        if (text == null || pattern == null) return null;
+        Matcher m = pattern.matcher(text);
         if (!m.find()) return null;
         String v = m.groupCount() >= 1 ? m.group(1) : null;
         return v != null ? v.trim() : null;
@@ -155,14 +171,7 @@ public class NetModule {
 
     public static Integer extractPowDifficulty(String html) {
         if (html == null) return null;
-        String[] patterns = new String[] {
-                // POWBlock v1.6: <pre id=d style=display:none>17</pre>
-                "<pre\\s+id\\s*=\\s*['\"]?d['\"]?[^>]*>(\\d+)</pre>",
-                "['\"]d['\"]\\s*[:=]\\s*(\\d+)",
-                "bits\\s*[=:]\\s*(\\d+)",
-                "difficulty\\s*[=:]\\s*(\\d+)"
-        };
-        for (String pattern : patterns) {
+        for (Pattern pattern : POW_DIFFICULTY_PATTERNS) {
             String value = firstMatch(html, pattern);
             if (value != null) {
                 try {
@@ -177,14 +186,7 @@ public class NetModule {
     // Returns 256 or 512 depending on the algorithm specified in the POWBlock challenge HTML.
     public static int extractPowAlgorithm(String html) {
         if (html == null) return 256;
-        String[] patterns = new String[] {
-                // POWBlock: <pre id=a style=display:none>512</pre>
-                "<pre\\s+id\\s*=\\s*['\"]?a['\"]?[^>]*>(\\d+)</pre>",
-                "['\"]a['\"]\\s*[:=]\\s*(\\d+)",
-                "algorithm\\s*[=:]\\s*(\\d+)",
-                "alg\\s*[=:]\\s*(\\d+)"
-        };
-        for (String pattern : patterns) {
+        for (Pattern pattern : POW_ALGORITHM_PATTERNS) {
             String value = firstMatch(html, pattern);
             if (value != null) {
                 if ("512".equals(value.trim())) return 512;

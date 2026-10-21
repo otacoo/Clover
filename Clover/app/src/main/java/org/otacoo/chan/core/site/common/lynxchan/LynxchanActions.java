@@ -28,6 +28,8 @@ import android.webkit.CookieManager;
 import org.otacoo.chan.utils.Logger;
 
 public class LynxchanActions extends CommonSite.CommonActions {
+    private static final java.util.regex.Pattern TOS_PATTERN =
+            java.util.regex.Pattern.compile("\\bTOS\\w*=");
     private static final String TAG = "LynxchanActions";
     private boolean lastPostWasBypassable = false;
 
@@ -449,7 +451,7 @@ public class LynxchanActions extends CommonSite.CommonActions {
         if (cookies.isEmpty()) return false;
 
         // Match any TOS cookie (e.g., TOS, TOS20250418) and POW_TOKEN
-        boolean hasTOS = java.util.regex.Pattern.compile("\\bTOS\\w*=").matcher(cookies).find();
+        boolean hasTOS = TOS_PATTERN.matcher(cookies).find();
         return hasTOS && cookies.contains("POW_TOKEN");
     }
 }

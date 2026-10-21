@@ -13,11 +13,14 @@ import org.otacoo.chan.utils.Logger;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class Chan8PowInterceptor implements Interceptor {
     private static final String TAG = "Chan8PowInterceptor";
     public static final String SILENT_POW_HEADER = "X-Clover-Silent-PoW";
     private static final String POW_BYPASS_HEADER = "X-Clover-8chan-Bypass";
+private static final Pattern POW_TOKEN_PATTERN =
+        Pattern.compile("<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>", Pattern.CASE_INSENSITIVE);
     private static final int TIMEOUT = 30000;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
     private static volatile okhttp3.OkHttpClient nonRedirectClient = null;
@@ -225,8 +228,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 // The body is a challenge or TOS/interstitial page.
                 // Try to parse a challenge token from it first.  If none is present
                 // (e.g. TOS acceptance page), fetch a fresh challenge via captcha.js.
-                String tokenCheck = NetModule.firstMatch(html,
-                        "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>");
+                String tokenCheck = NetModule.firstMatch(html, POW_TOKEN_PATTERN);
                 resp.close();
                 if (tokenCheck == null) {
                     // Logger.w(TAG, "200 HTML POW: no challenge token in body, fetching from captcha.js");
@@ -241,7 +243,7 @@ public class Chan8PowInterceptor implements Interceptor {
                 }
             }
 
-            String token = NetModule.firstMatch(html, "<pre\\s+id\\s*=\\s*['\"]?c['\"]?[^>]*>([^<]+)</pre>");
+            String token = NetModule.firstMatch(html, POW_TOKEN_PATTERN);
             Integer difficulty = NetModule.extractPowDifficulty(html);
 
             boolean silentPow = req.header(SILENT_POW_HEADER) != null;

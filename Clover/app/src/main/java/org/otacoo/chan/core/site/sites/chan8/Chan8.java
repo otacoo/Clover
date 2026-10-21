@@ -56,6 +56,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class Chan8 extends CommonSite {
+    private static final java.util.regex.Pattern TOS_PATTERN =
+            java.util.regex.Pattern.compile("\\bTOS\\w*=");
 
     public enum PreferredDomain implements OptionSettingItem {
         AUTO("auto"),
@@ -357,7 +359,7 @@ public class Chan8 extends CommonSite {
                 String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
                 if (cookies != null
                         && cookies.contains("POW_TOKEN")
-                        && java.util.regex.Pattern.compile("\\bTOS\\w*=").matcher(cookies).find()) {
+                        && TOS_PATTERN.matcher(cookies).find()) {
                     return null;
                 }
             }

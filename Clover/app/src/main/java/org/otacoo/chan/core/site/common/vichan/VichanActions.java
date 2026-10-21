@@ -43,6 +43,12 @@ import okhttp3.Response;
 public class VichanActions extends CommonSite.CommonActions {
     private static final String TAG = "VichanActions";
 
+    private static final Pattern RES_LOCATION_PATTERN = Pattern.compile("/\\w+/res/(\\d+)\\.html(?:#(\\d+))?");
+    private static final Pattern RES_URL_PATTERN = Pattern.compile("/\\w+/res/(\\d+)\\.html");
+    private static final Pattern RES_PATH_PATTERN = Pattern.compile("/\\w+/res/(\\d+).html");
+    private static final Pattern CAPTCHA_PATTERN = Pattern.compile("\"captcha\": ?true");
+    private static final Pattern ERROR_PATTERN = Pattern.compile("<h1[^>]*>Error</h1>.*?<h2[^>]*>(.*?)</h2>", Pattern.DOTALL);
+
     public VichanActions(CommonSite commonSite) {
         super(commonSite);
     }
@@ -216,7 +222,7 @@ public class VichanActions extends CommonSite.CommonActions {
             //Logger.d(TAG, "handlePost: Detected redirect " + prior.code() + ", Location=" + location);
 
             if (location != null) {
-                Matcher locMatcher = Pattern.compile("/\\w+/res/(\\d+)\\.html(?:#(\\d+))?").matcher(location);
+                Matcher locMatcher = RES_LOCATION_PATTERN.matcher(location);
                 if (locMatcher.find()) {
                     replyResponse.threadNo = Integer.parseInt(locMatcher.group(1));
                     if (locMatcher.group(2) != null) {
@@ -230,7 +236,7 @@ public class VichanActions extends CommonSite.CommonActions {
             // Also try the final URL after redirect
             if (replyResponse.threadNo == 0) {
                 HttpUrl finalUrl = response.request().url();
-                Matcher urlMatcher = Pattern.compile("/\\w+/res/(\\d+)\\.html").matcher(finalUrl.encodedPath());
+                Matcher urlMatcher = RES_URL_PATTERN.matcher(finalUrl.encodedPath());
                 if (urlMatcher.find()) {
                     replyResponse.threadNo = Integer.parseInt(urlMatcher.group(1));
                     String fragment = finalUrl.encodedFragment();
@@ -274,7 +280,7 @@ public class VichanActions extends CommonSite.CommonActions {
         }
 
         // Fallback to HTML parsing if JSON failed or was not returned
-        Matcher auth = Pattern.compile("\"captcha\": ?true").matcher(result);
+        Matcher auth = CAPTCHA_PATTERN.matcher(result);
         Matcher err = errorPattern().matcher(result);
         if (auth.find()) {
             replyResponse.requireAuthentication = true;
@@ -288,7 +294,7 @@ public class VichanActions extends CommonSite.CommonActions {
             String path = url.encodedPath();
             
             // Regex for vichan thread URLs: /board/res/123.html
-            Matcher m = Pattern.compile("/\\w+/res/(\\d+).html").matcher(path);
+            Matcher m = RES_PATH_PATTERN.matcher(path);
             try {
                 if (m.find()) {
                     replyResponse.threadNo = Integer.parseInt(m.group(1));
@@ -338,7 +344,7 @@ public class VichanActions extends CommonSite.CommonActions {
     }
 
     public Pattern errorPattern() {
-        return Pattern.compile("<h1[^>]*>Error</h1>.*?<h2[^>]*>(.*?)</h2>", Pattern.DOTALL);
+        return ERROR_PATTERN;
     }
 
     @Override
