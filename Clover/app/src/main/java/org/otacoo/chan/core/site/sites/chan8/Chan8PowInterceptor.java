@@ -105,6 +105,11 @@ private static final Pattern POW_TOKEN_PATTERN =
         try {
             resp = chain.proceed(req);
         } catch (java.io.IOException ioEx) {
+            // A request the app cancelled (the user left the thread, the
+            // download was stopped) says nothing about the site being down.
+            if (chain.call().isCanceled()) {
+                throw ioEx;
+            }
             // Network-level failure (DNS, refused connection, timeout).
             // If this is an unforced 8chan request, switch to the fallback domain and retry once.
             String host = req.url().host();
