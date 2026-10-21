@@ -1103,7 +1103,16 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             // removing all cookies logged the user out of their 4chan Pass.
             for (String domain : PASS_DOMAINS) {
                 for (String name : FINGERPRINT_COOKIES) {
-                    cm.setCookie(domain, name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/");
+                    String expired = name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+                    cm.setCookie(domain, expired);
+                    String host = android.net.Uri.parse(domain).getHost();
+                    if (host != null) {
+                        if (host.startsWith("www.")) {
+                            host = host.substring(4);
+                        }
+                        cm.setCookie(domain, expired + "; Domain=" + host);
+                        cm.setCookie(domain, expired + "; Domain=." + host);
+                    }
                 }
             }
             cm.flush();
