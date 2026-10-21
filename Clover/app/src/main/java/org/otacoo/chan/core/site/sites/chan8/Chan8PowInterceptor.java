@@ -92,6 +92,9 @@ private static final Pattern POW_TOKEN_PATTERN =
     @SuppressWarnings("deprecation")
     public Response intercept(Chain chain) throws java.io.IOException {
         Request req = chain.request();
+        // A request that is made in the background (the board list) must not
+        // show anything to the user.
+        boolean silentPow = req.header(SILENT_POW_HEADER) != null;
 
         Response resp;
         try {
@@ -136,7 +139,9 @@ private static final Pattern POW_TOKEN_PATTERN =
         // The snackbar informs the user; they can retry manually.
         if (resp.code() == 429 && Chan8RateLimit.is8chanHost(req.url().host())) {
             Logger.w(TAG, "429 rate-limited " + req.method() + " " + req.url().host() + req.url().encodedPath() + "; failing fast");
-            Chan8PowNotifier.showRateLimit();
+            if (!silentPow) {
+                Chan8PowNotifier.showRateLimit();
+            }
             resp.close();
             return new okhttp3.Response.Builder()
                     .request(req)
@@ -224,7 +229,9 @@ private static final Pattern POW_TOKEN_PATTERN =
                 html = fetchPowChallenge(req.url());
                 if (html == null) {
                     Logger.w(TAG, "403 POW: could not retrieve fresh challenge");
-                    Chan8PowNotifier.onPowFailed();
+                    if (!silentPow) {
+                        Chan8PowNotifier.onPowFailed();
+                    }
                     return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 }
                 useCaptchaJsSubmit = true;
@@ -240,7 +247,9 @@ private static final Pattern POW_TOKEN_PATTERN =
                     html = fetchPowChallenge(req.url());
                     if (html == null) {
                         Logger.w(TAG, "200 HTML POW: could not retrieve fresh challenge");
-                        Chan8PowNotifier.onPowFailed();
+                        if (!silentPow) {
+                            Chan8PowNotifier.onPowFailed();
+                        }
                         return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                     }
                     useCaptchaJsSubmit = true;
@@ -250,11 +259,11 @@ private static final Pattern POW_TOKEN_PATTERN =
             String token = NetModule.firstMatch(html, POW_TOKEN_PATTERN);
             Integer difficulty = NetModule.extractPowDifficulty(html);
 
-            boolean silentPow = req.header(SILENT_POW_HEADER) != null;
-
             if (token == null || difficulty == null) {
                 Logger.w(TAG, "POW required but challenge parse failed; user must Login via WebView");
-                Chan8PowNotifier.onPowFailed();
+                if (!silentPow) {
+                    Chan8PowNotifier.onPowFailed();
+                }
                 if (is403Pow || is200HtmlPow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }
@@ -268,7 +277,9 @@ private static final Pattern POW_TOKEN_PATTERN =
             long elapsed = System.currentTimeMillis() - t0;
             if (solution == null) {
                 Logger.w(TAG, "POW solver failed after " + elapsed + "ms");
-                Chan8PowNotifier.onPowFailed();
+                if (!silentPow) {
+                    Chan8PowNotifier.onPowFailed();
+                }
                 if (is403Pow || is200HtmlPow) return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 return resp;
             }

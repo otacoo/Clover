@@ -27,7 +27,6 @@ import org.otacoo.chan.core.model.orm.Loadable;
 
 import org.otacoo.chan.core.site.Boards;
 import org.otacoo.chan.core.site.Site;
-import org.otacoo.chan.core.site.SiteActions;
 import org.otacoo.chan.core.site.SiteIcon;
 import org.otacoo.chan.core.site.SiteSetting;
 import org.otacoo.chan.core.site.common.CommonSite;
@@ -36,8 +35,6 @@ import org.otacoo.chan.core.site.common.lynxchan.LynxchanApi;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanCommentParser;
 import org.otacoo.chan.core.site.common.lynxchan.LynxchanEndpoints;
 import org.otacoo.chan.core.site.http.HttpCall;
-import org.otacoo.chan.core.site.http.LoginRequest;
-import org.otacoo.chan.core.site.http.LoginResponse;
 import org.otacoo.chan.core.site.http.ProgressRequestBody;
 import org.otacoo.chan.core.settings.OptionSettingItem;
 import org.otacoo.chan.core.settings.OptionsSetting;
@@ -239,35 +236,9 @@ public class Chan8 extends CommonSite {
 
     private static class Chan8Actions extends LynxchanActions {
         private static final String TAG = "Chan8Actions";
-        private static volatile boolean powPreWarmFired = false;
 
         Chan8Actions(CommonSite site) {
             super(site);
-        }
-
-        private void triggerPowPreWarm() {
-            if (powPreWarmFired) return;
-            powPreWarmFired = true;
-            HttpUrl captchaUrl = ((LynxchanEndpoints) site.endpoints()).root()
-                    .newBuilder().addPathSegment("captcha.js").build();
-            HttpCall warmCall = new HttpCall(site) {
-                @Override
-                public void setup(Request.Builder requestBuilder,
-                        ProgressRequestBody.ProgressRequestListener progressListener) {}
-
-                @Override
-                public void process(Response response, String result) {}
-            };
-            warmCall.url(captchaUrl.toString());
-            site.getHttpCallManager().makeHttpCall(warmCall, new HttpCall.HttpCallback<HttpCall>() {
-                @Override
-                public void onHttpSuccess(HttpCall httpCall) {}
-
-                @Override
-                public void onHttpFail(HttpCall httpCall, Exception e) {
-                    Logger.d(TAG, "pow pre-warm failed: " + e.getMessage());
-                }
-            });
         }
 
         @Override
@@ -276,11 +247,13 @@ public class Chan8 extends CommonSite {
         }
 
         private void boardsWithRetry(BoardsListener boardsListener, boolean isRetry) {
-            triggerPowPreWarm();
             HttpCall call = new HttpCall(site) {
                 @Override
                 public void setup(Request.Builder requestBuilder,
                         ProgressRequestBody.ProgressRequestListener progressListener) {
+                    // The board list is loaded in the background, the error is
+                    // reported through the listener and must not show a snackbar.
+                    requestBuilder.header(Chan8PowInterceptor.SILENT_POW_HEADER, "1");
                 }
 
                 @Override
@@ -329,7 +302,7 @@ public class Chan8 extends CommonSite {
                     } else {
                         if (isNonJsonError(e)) {
                             // Retry also failed: manual verification needed.
-                            Chan8PowNotifier.onPowFailed();
+                            Logger.e(TAG, "boards: verification needed", e);
                         }
                         Logger.e(TAG, "boards: fetch failed", e);
                         boardsListener.onBoardsFailed(
