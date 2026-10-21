@@ -92,13 +92,15 @@ public class Chan4CookieStore {
     // Returns the chanPass string value directly from CookieManager for external callers (e.g. SiteSetupController). */
     public String getChanPass() {
         CookieManager cm = CookieManager.getInstance();
-        String cookieHeader = cm.getCookie("https://sys.4chan.org");
-        if (cookieHeader == null) return "";
-        for (String part : cookieHeader.split(";\\s*")) {
-            int eq = part.indexOf('=');
-            if (eq < 0) continue;
-            if ("4chan_pass".equals(part.substring(0, eq).trim())) {
-                return part.substring(eq + 1).trim();
+        for (String domain : PASS_DOMAINS) {
+            String cookieHeader = cm.getCookie(domain);
+            if (cookieHeader == null) continue;
+            for (String part : cookieHeader.split(";\\s*")) {
+                int eq = part.indexOf('=');
+                if (eq < 0) continue;
+                if ("4chan_pass".equals(part.substring(0, eq).trim())) {
+                    return part.substring(eq + 1).trim();
+                }
             }
         }
         return "";
@@ -201,13 +203,19 @@ public class Chan4CookieStore {
             // 10 years from now so the cookie doesn't expire in our lifetime
             String expiresDate = new java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", java.util.Locale.US)
                     .format(new java.util.Date(System.currentTimeMillis() + 10L * 365 * 24 * 3600 * 1000));
-            String cookie = "4chan_pass=" + value
-                    + "; expires=" + expiresDate
-                    + "; path=/"
-                    + "; domain=.4chan.org"
-                    + "; Secure"
-                    + "; HttpOnly";
-            for (String domain : PASS_DOMAINS) cm.setCookie(domain, cookie);
+            for (String domain : PASS_DOMAINS) {
+                // The domain has to match the host, the WebView drops the
+                // cookie otherwise.
+                String host = android.net.Uri.parse(domain).getHost();
+                String cookieDomain = (host != null && host.endsWith("4channel.org"))
+                        ? ".4channel.org" : ".4chan.org";
+                cm.setCookie(domain, "4chan_pass=" + value
+                        + "; expires=" + expiresDate
+                        + "; path=/"
+                        + "; domain=" + cookieDomain
+                        + "; Secure"
+                        + "; HttpOnly");
+            }
         }
         cm.flush();
     }
@@ -238,8 +246,11 @@ public class Chan4CookieStore {
     public String getCookieHeader(String url) {
         Map<String, String> parts = collectCookieParts(url);
 
+        // The WebView is the source of truth, so its live pass_id wins. The
+        // stored one is only used when the WebView has none, e.g. before
+        // init() restored it or when the WebView database was cleared.
         String id = getPassIdValue();
-        if (!id.isEmpty()) {
+        if (!id.isEmpty() && !parts.containsKey("pass_id") && !parts.containsKey("pass_enabled")) {
             parts.put("pass_id", id);
             parts.put("pass_enabled", "1");
         }
@@ -315,11 +326,22 @@ public class Chan4CookieStore {
     public void syncToWebView(WebView webView) {
         CookieManager cm = CookieManager.getInstance();
 
+        // Keep the archive in sync with the live token, it is also changed
+        // inside the WebView (sign in, email verification) and the server
+        // rotates it over time.
+        String livePass = getChanPass();
+        if (!livePass.isEmpty()) {
+            String networkKey = Chan4NetworkProfiles.getCurrentNetworkKey();
+            if (!livePass.equals(Chan4NetworkProfiles.getPassForNetwork(networkKey))) {
+                Chan4NetworkProfiles.setPassForNetwork(networkKey, livePass);
+            }
+        }
+
         // Restore the archived token only when the WebView has none (reinstall,
         // import, cleared cookies). The WebView is the store 4chan keeps up to
         // date itself, so a live token must never be overwritten by an older copy.
         String archivedPass = Chan4NetworkProfiles.getPassForCurrentNetwork();
-        if (getChanPass().isEmpty() && !archivedPass.isEmpty()) {
+        if (livePass.isEmpty() && !archivedPass.isEmpty()) {
             setChanPass(archivedPass);
         }
 
