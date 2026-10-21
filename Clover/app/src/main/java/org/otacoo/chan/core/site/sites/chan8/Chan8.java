@@ -57,8 +57,10 @@ public class Chan8 extends CommonSite {
             java.util.regex.Pattern.compile("\\bTOS\\w*=");
 
     // The proof of work is refreshed in the background, so that browsing does
-    // not have to stop for it when the session has to be renewed.
-    private static final long POW_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+    // not have to stop for it when the session has to be renewed. The session
+    // stays good for a long time, but 8chan can end it at any moment, for
+    // example when the address of the connection changes.
+    private static final long POW_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
     private final android.os.Handler powRefreshHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());

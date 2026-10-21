@@ -24,8 +24,17 @@ private static final Pattern POW_TOKEN_PATTERN =
     private static final int TIMEOUT = 30000;
     // 8chan refuses proof of work submissions for a while when too many of
     // them are sent, the app has to stop sending them then.
-    private static final long SUBMISSION_BACKOFF_MS = 5 * 60 * 1000;
+    private static final long SUBMISSION_BACKOFF_MS = 60 * 1000;
+    // 8chan does not accept a solution that is sent too soon after the
+    // challenge was given. The app solves the challenge a lot faster than a
+    // browser does, so the solution is held back a moment before it is sent.
+    private static final long MIN_SOLVE_TIME_MS = 2000;
+    // A refused solution does not use up the challenge, so it can be sent
+    // again a little later.
+    private static final long RETRY_DELAY_MS = 2500;
+    private static final int SUBMIT_ATTEMPTS = 2;
     private static volatile long submissionsBlockedUntil = 0;
+    private static volatile boolean backoffReported = false;
     private static volatile java.util.concurrent.CountDownLatch _latch = null;
     private static volatile okhttp3.OkHttpClient nonRedirectClient = null;
 
@@ -262,13 +271,20 @@ private static final Pattern POW_TOKEN_PATTERN =
         // many of them are sent. Remember that and stop trying, otherwise every
         // request would submit another one and keep the limit alive.
         if (System.currentTimeMillis() < submissionsBlockedUntil) {
-            Logger.w(TAG, "POW submissions are refused by 8chan, not trying again");
+            if (!backoffReported) {
+                backoffReported = true;
+                Logger.w(TAG, "POW submissions are refused by 8chan, not trying again");
+            }
             return resp;
         }
+        backoffReported = false;
 
         // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
         // For 403 and 200-HTML-without-token we fetch it separately inside the acquired block.
         String html = (xBlockRequired || is200HtmlPow) ? resp.peekBody(64 * 1024).string() : null;
+        // When the challenge was received. 8chan measures how long the client
+        // took to solve it, so this is the start of that measurement.
+        long challengeReceivedAt = System.currentTimeMillis();
 
             // useCaptchaJsSubmit: true when the challenge came from /captcha.js rather than
             // being embedded in the original response body (affects the submit URL).
@@ -287,6 +303,7 @@ private static final Pattern POW_TOKEN_PATTERN =
                     }
                     return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                 }
+                challengeReceivedAt = System.currentTimeMillis();
                 useCaptchaJsSubmit = true;
             } else if (is200HtmlPow) {
                 // The body is a challenge or TOS/interstitial page.
@@ -305,6 +322,7 @@ private static final Pattern POW_TOKEN_PATTERN =
                         }
                         return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
                     }
+                    challengeReceivedAt = System.currentTimeMillis();
                     useCaptchaJsSubmit = true;
                 }
             }
@@ -360,10 +378,50 @@ private static final Pattern POW_TOKEN_PATTERN =
                     .header(POW_BYPASS_HEADER, "1")
                     .build();
 
-            Response submitResp = getNonRedirectClient().newCall(submitReq).execute();
-            int submitCode = submitResp.code();
-            Logger.i(TAG, "POW submit: code=" + submitCode + " url=" + submitUrl
-                    + " set-cookie=" + submitResp.headers("Set-Cookie"));
+            Response submitResp = null;
+            int submitCode = 0;
+            // 8chan refuses a solution that is sent too soon after the
+            // challenge was given. The app solves the challenge much faster
+            // than a browser does, so the solution is held back a moment
+            // before it is sent. A refused solution does not use up the
+            // challenge, so it is sent again a little later.
+            for (int attempt = 1; attempt <= SUBMIT_ATTEMPTS; attempt++) {
+                long wait = challengeReceivedAt + MIN_SOLVE_TIME_MS - System.currentTimeMillis();
+                if (wait > 0) {
+                    try {
+                        Thread.sleep(wait);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                if (attempt > 1) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                submitResp = getNonRedirectClient().newCall(submitReq).execute();
+                submitCode = submitResp.code();
+                Logger.i(TAG, "POW submit: code=" + submitCode + " attempt=" + attempt
+                        + " url=" + submitUrl + " set-cookie=" + submitResp.headers("Set-Cookie"));
+                if (submitCode == 200 || submitCode == 302 || submitCode == 303
+                        || submitCode == 429) {
+                    break;
+                }
+                // The solution was refused, the challenge is still good, so
+                // try again after a moment.
+                submitResp.close();
+                submitResp = null;
+                if (attempt < SUBMIT_ATTEMPTS) {
+                    Logger.w(TAG, "POW submit refused with " + submitCode + ", sending it again");
+                }
+            }
+            if (submitResp == null) {
+                submitCode = submitCode == 0 ? 400 : submitCode;
+            }
             // If we get rate-limited on the POW submission, abandon and return the original 403/required response.
             if (submitCode == 429) {
                 submitResp.close();
@@ -380,13 +438,13 @@ private static final Pattern POW_TOKEN_PATTERN =
             }
 
             if (submitCode != 200 && submitCode != 302 && submitCode != 303) {
-                // The solution was refused. 8chan answers with 400 when it does
-                // not like the submission, so stop sending them for a while and
-                // let the app fall back to the browser.
+                // The solution was refused twice. 8chan answers with 400 when
+                // it does not like the submission, so stop sending them for a
+                // while and let the app fall back to the browser.
                 Logger.w(TAG, "POW submit refused with " + submitCode + ", backing off for "
                         + (SUBMISSION_BACKOFF_MS / 1000) + "s");
                 submissionsBlockedUntil = System.currentTimeMillis() + SUBMISSION_BACKOFF_MS;
-                submitResp.close();
+                if (submitResp != null) submitResp.close();
                 return new okhttp3.Response.Builder()
                         .request(req)
                         .protocol(okhttp3.Protocol.HTTP_1_1)
