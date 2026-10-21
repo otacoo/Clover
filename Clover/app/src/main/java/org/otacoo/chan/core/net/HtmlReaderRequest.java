@@ -25,9 +25,12 @@ import org.otacoo.chan.utils.AndroidUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.Response;
 
 public abstract class HtmlReaderRequest<T> implements Callback {
@@ -59,10 +62,11 @@ public abstract class HtmlReaderRequest<T> implements Callback {
 
         try {
             byte[] data = response.body().bytes();
-            String charset = response.body().contentType() != null ? 
-                    response.body().contentType().charset().name() : "UTF-8";
-            
-            Document document = Jsoup.parse(new ByteArrayInputStream(data), charset, call.request().url().toString());
+            MediaType contentType = response.body().contentType();
+            Charset charset = (contentType != null && contentType.charset() != null)
+                    ? contentType.charset() : StandardCharsets.UTF_8;
+
+            Document document = Jsoup.parse(new ByteArrayInputStream(data), charset.name(), call.request().url().toString());
 
             T result = readDocument(document);
 
