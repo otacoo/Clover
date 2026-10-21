@@ -276,6 +276,17 @@
       color: #c9d1d9;
     }
 
+    .summary ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+    }
+
+    .summary li {
+      font-size: 0.78rem;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+
     .footer {
       margin-top: auto;
       padding-top: 24px;
@@ -296,8 +307,8 @@
   <p class="subtitle"><span class="info-icon">i</span><span class="info-sep"></span><span class="subtitle-text">This
       tool converts 4chanX text-based filters into Clover's JSON filter format and then merges with your Clover settings
       backup, leaving both original files intact.<br><br><strong style="color:#56a364">Converted:</strong> general,
-      comment, subject, name, tripcode, unique&nbsp;ID, flag, filename.<br><strong
-        style="color:#e06469">Skipped:</strong> MD5, dimensions, filesize, email, pass, post&nbsp;ID, capcode.</span>
+      comment, subject, name, tripcode, unique&nbsp;ID, flag, filename, image&nbsp;MD5, dimensions, file&nbsp;size.<br><strong
+        style="color:#e06469">Skipped:</strong> email, pass, post&nbsp;ID, capcode.
   </p>
 
   <div class="panels">
@@ -351,7 +362,7 @@
   <div class="summary" id="summary"></div>
 
   <div class="footer">Clover Filter Converter &mdash; runs entirely in the browser. No data is uploaded.<br>This tool
-    was LLM coded by DeepSeek V4 Flash.</div>
+    was LLM coded by DeepSeek V4.1 Flash.</div>
 
   <script>
     (function () {
@@ -415,34 +426,84 @@
 
       // ── 4chanX filter line parser ──────────────────────────────
 
-      // Maps a 4chanX filter category key to the Clover FilterType flag(s).
-      const CATEGORY_TO_TYPE = {
-        general: 0x04 | 0x10,  // COMMENT | SUBJECT = 20
-        comment: 0x04,         // COMMENT = 4
-        subject: 0x10,         // SUBJECT = 16
-        name: 0x02,         // NAME = 2
-        tripcode: 0x01,         // TRIPCODE = 1
-        uniqueID: 0x08,         // ID = 8
-        capcode: null,          // unsupported
-        postID: null,          // unsupported (post number, not poster ID)
-        email: null,          // unsupported
-        flag: 0x40,         // COUNTRY = 64
-        filename: 0x20,         // FILENAME = 32
-        dimensions: null,          // unsupported (image dimensions)
-        filesize: null,          // unsupported (file size)
-        MD5: null,          // unsupported (image hash)
-      };
-
       // FilterType.flag values — also tells us which types use regex vs exact match
       const FLAG = {
         TRIPCODE: 0x01, NAME: 0x02, COMMENT: 0x04, ID: 0x08,
-        SUBJECT: 0x10, FILENAME: 0x20, COUNTRY: 0x40
+        SUBJECT: 0x10, FILENAME: 0x20, COUNTRY: 0x40, MD5: 0x80,
+        DIMENSIONS: 0x100, FILESIZE: 0x200
       };
       // Types that are compiled as regex (isRegex=true in FilterType enum)
-      const REGEX_TYPES = FLAG.COMMENT | FLAG.ID | FLAG.SUBJECT | FLAG.FILENAME;
+      const REGEX_TYPES = FLAG.COMMENT | FLAG.ID | FLAG.SUBJECT | FLAG.FILENAME |
+        FLAG.DIMENSIONS | FLAG.FILESIZE;
+
+      // Maps a 4chanX filter category key to the Clover FilterType flag(s).
+      const CATEGORY_TO_TYPE = {
+        // A general filter applies to these fields when it has no "type" option.
+        general: FLAG.SUBJECT | FLAG.NAME | FLAG.FILENAME | FLAG.COMMENT,
+        comment: FLAG.COMMENT,         // COMMENT = 4
+        subject: FLAG.SUBJECT,         // SUBJECT = 16
+        name: FLAG.NAME,         // NAME = 2
+        tripcode: FLAG.TRIPCODE,         // TRIPCODE = 1
+        uniqueID: FLAG.ID,         // ID = 8
+        capcode: null,          // unsupported
+        postID: null,          // unsupported (post number, not poster ID)
+        email: null,          // unsupported
+        flag: FLAG.COUNTRY,         // COUNTRY = 64
+        filename: FLAG.FILENAME,         // FILENAME = 32
+        dimensions: FLAG.DIMENSIONS,          // image dimensions
+        filesize: FLAG.FILESIZE,          // file size
+        MD5: FLAG.MD5,          // image hash
+      };
+
+      // 4chanX filter type names -> Clover FilterType flags.
+      const TYPE_NAMES = {
+        subject: FLAG.SUBJECT,
+        name: FLAG.NAME,
+        comment: FLAG.COMMENT,
+        filename: FLAG.FILENAME,
+        uniqueid: FLAG.ID,
+        tripcode: FLAG.TRIPCODE,
+        flag: FLAG.COUNTRY,
+        md5: FLAG.MD5,
+        dimensions: FLAG.DIMENSIONS,
+        filesize: FLAG.FILESIZE,
+        capcode: null,
+        pass: null,
+        email: null,
+        dimensions: null,
+        filesize: null,
+      };
 
       // FilterAction enum values
       const ACTION = { HIDE: 0, COLOR: 1, REMOVE: 2, WATCH: 3, PIN: 4 };
+
+      // 0xffff0000, the red Clover uses for highlighted posts.
+      const HIGHLIGHT_COLOR = -65536;
+
+      // Counters and notes of the last conversion, shown in the summary.
+      const stats = {
+        parsed: 0, converted: 0, md5: 0, md5FromHex: 0, dimensions: 0, filesize: 0,
+        filesizeTranslated: 0, skipped: 0, approximated: 0, unsupportedFlags: 0
+      };
+      const notes = new Map();
+
+      function resetStats() {
+        stats.parsed = 0;
+        stats.converted = 0;
+        stats.md5 = 0;
+        stats.md5FromHex = 0;
+        stats.dimensions = 0;
+        stats.filesize = 0;
+        stats.filesizeTranslated = 0;
+        stats.skipped = 0;
+        stats.approximated = 0;
+        stats.unsupportedFlags = 0;
+        notes.clear();
+      }
+
+      function addNote(text) {
+        notes.set(text, (notes.get(text) || 0) + 1);
+      }
 
       // Default site ID for 4chan — auto-detected from existing Clover filters.
       // ORMLite auto_increment starts at 1, so this is the typical value.
@@ -470,86 +531,297 @@
       /**
        * Parse a single 4chanX filter line like:
        *   /bbc/i;boards:b,gif;op:only;
+       * The pattern is matched greedily, the same way 4chanX does it, so that a
+       * slash inside the pattern doesn't end it too early.
        */
       function parseFilterLine(line) {
         line = line.trim();
         if (!line || line.startsWith('#')) return null;
-        const m = line.match(/^\/(.+?)\/([a-z]*)\s*(;.*)?$/);
+        const m = line.match(/^\/(.*)\/([gimsuy]*)\s*(.*)$/);
         if (!m) return null;
-        const pattern = m[1], flags = m[2] || '', optionsStr = m[3] || '';
-        const caseInsensitive = flags.includes('i');
+        const rest = m[3].trim();
+        // Everything after the pattern has to be a list of options.
+        if (rest && !rest.startsWith(';') && !/^[a-z]+:/i.test(rest)) return null;
+        return {
+          pattern: m[1],
+          flags: m[2] || '',
+          options: parseOptions(rest),
+          raw: line,
+        };
+      }
+
+      // Parses a ";key:value;flag;" option list.
+      function parseOptions(str) {
         const options = {};
-        const parts = optionsStr.split(';');
-        for (const part of parts) {
+        if (!str) return options;
+        for (const part of str.split(';')) {
           const trimmed = part.trim();
           if (!trimmed) continue;
           const colonIdx = trimmed.indexOf(':');
           if (colonIdx === -1) {
-            options[trimmed] = true;
+            options[trimmed.toLowerCase()] = true;
           } else {
-            options[trimmed.substring(0, colonIdx).trim()] = trimmed.substring(colonIdx + 1).trim();
+            options[trimmed.substring(0, colonIdx).trim().toLowerCase()] =
+              trimmed.substring(colonIdx + 1).trim();
           }
         }
-        const typeOverride = options.type || null;
-        if (typeOverride === 'filename') {
-          return buildFilter(line, pattern, true, 0x20, options, ACTION.REMOVE);
-        }
-        return { pattern: pattern, caseInsensitive: caseInsensitive, options, raw: line };
+        return options;
       }
 
-      function buildFilter(raw, pattern, caseInsensitive, typeFlags, options, actionWithHighlight) {
-        const hasHighlight = options.highlight === true;
-        const action = hasHighlight ? ACTION.COLOR : actionWithHighlight;
-        const color = hasHighlight ? -65536 : -65536;
-        const onlyOnOP = options.op === 'only' || options.op === 'yes';
-
-        // Format pattern: regex types get /pattern/i, non-regex get plain text
-        const isRegexType = (typeFlags & REGEX_TYPES) !== 0;
-        let cloverPattern;
-        if (isRegexType) {
-          cloverPattern = caseInsensitive ? '/' + pattern + '/i' : '/' + pattern + '/';
-        } else {
-          cloverPattern = pattern;
-        }
-        let boards = null;
-        let allBoards = false;
-        if (options.boards) {
-          const codes = options.boards.split(',').map(s => s.trim()).filter(Boolean);
-          if (codes.length > 0) {
-            boards = codes.map(c => detectedSiteId + ':' + c).join(',');
+      // Maps the "type:" option of a general filter to Clover type flags.
+      // Returns null when one of the types can't be represented in Clover.
+      function mapTypes(value) {
+        let flags = 0;
+        for (const entry of value.split(',')) {
+          const trimmed = entry.trim();
+          if (!trimmed) continue;
+          // "a+b" means the fields are joined into a single text in 4chanX,
+          // Clover has no equivalent, so every field is used on its own.
+          for (const name of trimmed.split('+')) {
+            const type = TYPE_NAMES[name.trim().toLowerCase()];
+            if (!type) return null;
+            flags |= type;
           }
         }
-        if (!boards) allBoards = true;
+        return flags || null;
+      }
+
+      // Builds the Clover board list ("siteId:boardCode,siteId:boardCode").
+      // Returns null when the list can't be represented in Clover.
+      function buildBoards(options) {
+        if (options.boards === undefined) return '';
+        const codes = [];
+        for (const entry of String(options.boards).split(',')) {
+          const trimmed = entry.trim();
+          if (!trimmed) continue;
+          let code = trimmed;
+          const colonIdx = trimmed.lastIndexOf(':');
+          if (colonIdx !== -1) {
+            const site = trimmed.substring(0, colonIdx).trim().toLowerCase();
+            code = trimmed.substring(colonIdx + 1).trim();
+            // Only filters of 4chan itself can be converted.
+            if (site !== '4' && site !== '4chan') {
+              stats.skipped++;
+              addNote('Filters of another site were skipped.');
+              return null;
+            }
+          }
+          // Clover has no wildcard boards.
+          if (!code || code === '*' || code === 'sfw' || code === 'nsfw') {
+            stats.skipped++;
+            addNote('Wildcard board lists (sfw, nsfw, *) were skipped.');
+            return null;
+          }
+          codes.push(detectedSiteId + ':' + code);
+        }
+        return codes.join(',');
+      }
+
+      // Escapes regex special characters.
+      function escapeRegex(text) {
+        return text.replace(/[.*+?^${}()|[\]\\\-]/g, '\\$&');
+      }
+
+      // Drops the anchors of a pattern that is compared as a plain string.
+      function stripAnchors(text) {
+        let out = text;
+        if (out.startsWith('^')) out = out.substring(1);
+        if (out.endsWith('$') && !out.endsWith('\\$')) out = out.substring(0, out.length - 1);
+        return out;
+      }
+
+      // True when the pattern uses regex syntax and can't be used as a plain string.
+      function looksLikeRegex(text) {
+        return /[\\^$*+?()[\]{}|]/.test(stripAnchors(text));
+      }
+
+      // 4chanX regex flags -> Clover pattern flags.
+      // Clover only understands a trailing "i", the other flags are handed over
+      // to Java as inline flags at the start of the pattern.
+      function inlineFlags(flags) {
+        let inline = '';
+        for (const flag of flags || '') {
+          if (flag === 'i') continue;
+          if (flag === 'm' || flag === 's' || flag === 'u') {
+            inline += '(?' + flag + ')';
+          } else {
+            stats.unsupportedFlags++;
+          }
+        }
+        return inline;
+      }
+
+      // Converts a hex MD5 hash into the packed base64 form used by 4chan.
+      function hexToBase64(hex) {
+        const bytes = new Uint8Array(16);
+        for (let i = 0; i < 16; i++) {
+          bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+        }
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+
+      // 4chanX keeps the packed base64 MD5 hash of the 4chan API, which is what
+      // Clover compares against, so the hash is used as it is. Lists that use the
+      // hex form instead are converted to base64 to keep working.
+      function normalizeMd5(value) {
+        const hash = value.trim();
+        if (/^[0-9a-f]{32}$/i.test(hash)) {
+          stats.md5FromHex++;
+          return hexToBase64(hash);
+        }
+        return hash;
+      }
+
+      // 4chanX writes the file size as "505 KB" or "1.25 MB", Clover shows it as
+      // "504.5 KiB" or "1.3 MiB". These are the units Clover uses.
+      const SIZE_UNITS = { KB: 'KiB', MB: 'MiB', GB: 'GiB' };
+
+      // The sizes Clover shows for the files a 4chanX size matches.
+      // 4chanX rounds to whole KB and to hundredths of MB and GB, Clover always
+      // shows one decimal.
+      function cloverSizeValues(value, unit) {
+        const step = unit === 'KB' ? 0.5 : 0.005;
+        const first = Math.round((value - step) * 10) / 10;
+        const last = Math.round((value + step) * 10) / 10;
+        const values = [];
+        for (let v = first; v <= last + 1e-9; v += 0.1) {
+          values.push(Math.round(v * 10) / 10);
+        }
+        return values;
+      }
+
+      // Builds a pattern matching the given sizes, 504.5 to 505.5 becomes
+      // "504\.[5-9]|505\.[0-5]".
+      function sizeValuesPattern(values) {
+        const groups = [];
+        let group = null;
+        for (const value of values) {
+          const integer = Math.floor(value);
+          const decimal = Math.round((value - integer) * 10);
+          if (!group || group.integer !== integer) {
+            group = { integer: integer, decimals: [] };
+            groups.push(group);
+          }
+          group.decimals.push(decimal);
+        }
+        return groups.map((item) => {
+          const decimals = item.decimals;
+          let range;
+          if (decimals.length === 1) {
+            range = String(decimals[0]);
+          } else if (decimals[decimals.length - 1] - decimals[0] === decimals.length - 1) {
+            range = '[' + decimals[0] + '-' + decimals[decimals.length - 1] + ']';
+          } else {
+            range = decimals.join('');
+          }
+          return item.integer + '\\.' + range;
+        }).join('|');
+      }
+
+      // Translates the sizes of a 4chanX pattern into the sizes Clover shows.
+      function translateSizePattern(pattern) {
+        // A size with a number, e.g. "505 KB".
+        let out = pattern.replace(/(\d+(?:\.\d+)?)\s*(KB|MB|GB)\b/g, (match, number, unit) => {
+          const values = cloverSizeValues(parseFloat(number), unit);
+          stats.filesizeTranslated++;
+          return '(?:' + sizeValuesPattern(values) + ' ' + SIZE_UNITS[unit] + ')';
+        });
+        // A unit without a size, e.g. "\d+ KB" or "MB$". Clover writes the
+        // size with a decimal, so that part has to be allowed.
+        out = out.replace(/(\s*)(KB|MB|GB)\b/g, (match, space, unit) =>
+          '(?:\\.\\d+)?' + (space || ' ') + SIZE_UNITS[unit]);
+        return out;
+      }
+
+      // Builds the Clover pattern of a filter.
+      function cloverPattern(flags, parsed) {
+        const source = parsed.pattern;
+
+        if (flags & FLAG.MD5) {
+          // The file hash is compared as an exact string.
+          return normalizeMd5(source);
+        }
+        if (flags & FLAG.ID) {
+          // 4chanX matches unique IDs as exact strings.
+          return '/^' + escapeRegex(source) + '$/';
+        }
+        if (flags & FLAG.FILESIZE) {
+          // The size has to be translated, 4chanX and Clover write it
+          // differently.
+          return '/' + translateSizePattern(source) + '/';
+        }
+        if (flags & (REGEX_TYPES | FLAG.TRIPCODE)) {
+          // Clover only treats a pattern as a regex when it is wrapped in slashes,
+          // a tripcode pattern always is.
+          return '/' + inlineFlags(parsed.flags) + source + '/' +
+            (parsed.flags.includes('i') ? 'i' : '');
+        }
+        // Name and country filters are plain string comparisons in Clover.
+        if (looksLikeRegex(source)) stats.approximated++;
+        return stripAnchors(source);
+      }
+
+      function buildFilter(parsed, typeFlags) {
+        const options = parsed.options;
+        let flags = typeFlags;
+
+        // A general filter can list the fields it applies to.
+        if (options.type !== undefined) {
+          const mapped = mapTypes(String(options.type));
+          if (!mapped) {
+            stats.skipped++;
+            addNote('Filters of an unsupported type were skipped.');
+            return null;
+          }
+          flags = mapped;
+        }
+
+        const boards = buildBoards(options);
+        if (boards === null) return null;
+
+        if (flags & FLAG.FILESIZE) {
+          addNote('File sizes are translated to the format Clover shows, "505 KB" becomes "504.5 KiB".');
+        }
+
+        // Options that Clover has no equivalent for.
+        for (const option of ['exclude', 'file', 'stub', 'notify', 'top']) {
+          if (options[option] !== undefined) {
+            addNote('The "' + option + '" option has no equivalent in Clover and was ignored.');
+          }
+        }
+
+        const highlight = options.highlight !== undefined;
         return {
           enabled: true,
-          type: typeFlags,
-          pattern: pattern,
-          allBoards: allBoards,
-          boards: boards || '',
-          action: action,
-          color: color,
+          type: flags,
+          pattern: cloverPattern(flags, parsed),
+          allBoards: boards === '',
+          boards: boards,
+          action: highlight ? ACTION.COLOR : ACTION.REMOVE,
+          color: HIGHLIGHT_COLOR,
           order: 0,
-          onlyOnOP: onlyOnOP,
+          onlyOnOP: options.op === 'only' || options.op === 'yes',
         };
       }
 
-      function parseCategory(categoryKey, rawText) {
+      function parseCategory(categoryKey, rawText, typeFlags) {
         if (!rawText || typeof rawText !== 'string') return [];
         const filters = [];
         const lines = rawText.split('\n');
         for (const line of lines) {
           const parsed = parseFilterLine(line);
           if (!parsed) continue;
-          // parseFilterLine may return a complete filter (for type overrides)
-          // or an intermediate parse object with .pattern / .options
-          if (parsed.enabled !== undefined) {
-            filters.push(parsed);
-            continue;
-          }
-          const typeFlags = CATEGORY_TO_TYPE[categoryKey] || 0x04;
-          const f = buildFilter(parsed.raw, parsed.pattern, parsed.caseInsensitive,
-            typeFlags, parsed.options, ACTION.REMOVE);
-          filters.push(f);
+          stats.parsed++;
+          const filter = buildFilter(parsed, typeFlags);
+          if (!filter) continue;
+          if (filter.type & FLAG.MD5) stats.md5++;
+          if (filter.type & FLAG.DIMENSIONS) stats.dimensions++;
+          if (filter.type & FLAG.FILESIZE) stats.filesize++;
+          filters.push(filter);
         }
         return filters;
       }
@@ -559,19 +831,14 @@
        */
       function convertFourchanXFilters(fourchanConf) {
         const allFilters = [];
-        const categories = [
-          'general', 'comment', 'subject', 'name', 'tripcode',
-          'uniqueID', 'flag', 'filename'
-        ];
-
-        for (const cat of categories) {
-          if (CATEGORY_TO_TYPE[cat] == null) continue;
-          const raw = fourchanConf[cat];
+        for (const category of Object.keys(CATEGORY_TO_TYPE)) {
+          const typeFlags = CATEGORY_TO_TYPE[category];
+          if (!typeFlags) continue;
+          const raw = fourchanConf[category];
           if (!raw) continue;
-          const parsed = parseCategory(cat, raw);
-          allFilters.push(...parsed);
+          allFilters.push(...parseCategory(category, raw, typeFlags));
         }
-
+        stats.converted = allFilters.length;
         return allFilters;
       }
 
@@ -619,6 +886,8 @@
         const existingFilters = cloverData.filters || [];
         detectedSiteId = detectFourchanSiteId(existingFilters);
 
+        resetStats();
+
         // Convert
         const convertedFilters = convertFourchanXFilters(conf);
 
@@ -630,14 +899,34 @@
         output.filters = merged;
 
         // Show summary
+        const noteLines = [];
+        if (stats.approximated > 0) {
+          noteLines.push(stats.approximated + ' name/country filter(s) use a plain text match, Clover has no regex support for those fields.');
+        }
+        if (stats.unsupportedFlags > 0) {
+          noteLines.push(stats.unsupportedFlags + ' regex flag(s) were dropped, Clover only supports case insensitive matching.');
+        }
+        for (const [text, count] of notes) {
+          noteLines.push(text + (count > 1 ? ' (' + count + ' filters)' : ''));
+        }
+        const notesHtml = noteLines.length
+          ? '<ul>' + noteLines.map((line) => '<li>' + line + '</li>').join('') + '</ul>'
+          : '';
+
         const html = `
       <h3>Conversion Summary</h3>
       <table>
         <tr><th>Detected 4chan site ID</th><td>${detectedSiteId}</td></tr>
-        <tr><th>4chanX filter lines parsed</th><td>${convertedFilters.length}</td></tr>
+        <tr><th>4chanX filter lines parsed</th><td>${stats.parsed}</td></tr>
+        <tr><th>Filters converted</th><td>${convertedFilters.length}</td></tr>
+        <tr><th>Image MD5 filters</th><td>${stats.md5}${stats.md5FromHex ? ' (' + stats.md5FromHex + ' converted from hex)' : ''}</td></tr>
+        <tr><th>Dimension filters</th><td>${stats.dimensions}</td></tr>
+        <tr><th>File size filters</th><td>${stats.filesize}${stats.filesizeTranslated ? ' (' + stats.filesizeTranslated + ' translated)' : ''}</td></tr>
+        <tr><th>Filters skipped</th><td>${stats.skipped}</td></tr>
         <tr><th>Existing Clover filters</th><td>${existingFilters.length}</td></tr>
         <tr><th>Total after merge</th><td>${merged.length}</td></tr>
       </table>
+      ${notesHtml}
     `;
         summary.innerHTML = html;
         summary.classList.add('visible');
