@@ -89,6 +89,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     private FilterLayoutCallback callback;
     private Filter filter;
+    private boolean onlyOnOPValue;
 
     public FilterLayout(Context context) {
         super(context);
@@ -166,6 +167,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     public void setFilter(Filter filter) {
         this.filter = filter;
+        onlyOnOPValue = filter.onlyOnOP;
 
         pattern.setText(filter.pattern);
 
@@ -183,7 +185,8 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
 
     public Filter getFilter() {
         filter.enabled = enabled.isChecked();
-        filter.onlyOnOP = onlyOnOP.isChecked();
+        onlyOnOPValue = onlyOnOP.isChecked();
+        filter.onlyOnOP = onlyOnOPValue;
 
         return filter;
     }
@@ -383,6 +386,8 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
             filter.onlyOnOP = true;
         } else {
             onlyOnOP.setEnabled(true);
+            onlyOnOP.setChecked(onlyOnOPValue);
+            filter.onlyOnOP = onlyOnOPValue;
         }
     }
 
