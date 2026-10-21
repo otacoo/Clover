@@ -31,6 +31,7 @@ public class Chan8ProofOfWork {
         int cores = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         ExecutorService exec = Executors.newFixedThreadPool(cores);
         AtomicLong solution = new AtomicLong(-1);
+        final byte[] tokenBytes = token.getBytes(StandardCharsets.UTF_8);
 
         try {
             for (int i = 0; i < cores; i++) {
@@ -40,11 +41,18 @@ public class Chan8ProofOfWork {
                     Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                     try {
                         MessageDigest digest = MessageDigest.getInstance(algorithm == 512 ? "SHA-512" : "SHA-256");
+                        // One buffer for the token and the counter and one for
+                        // the hash, so that a candidate does not allocate.
+                        byte[] input = new byte[tokenBytes.length + 20];
+                        System.arraycopy(tokenBytes, 0, input, 0, tokenBytes.length);
+                        byte[] hash = new byte[digest.getDigestLength()];
                         long n = start;
                         while (!cancelled && solution.get() == -1) {
+                            int len = tokenBytes.length + writeNumber(input, tokenBytes.length, n);
                             digest.reset();
-                            byte[] hash = digest.digest((token + n).getBytes(StandardCharsets.UTF_8));
-                            int bits = countLeadingZeroBits(hash);
+                            digest.update(input, 0, len);
+                            int hashLength = digest.digest(hash, 0, hash.length);
+                            int bits = countLeadingZeroBits(hash, hashLength);
                             if (bits >= difficulty) {
                                 solution.compareAndSet(-1, n);
                                 break;
@@ -73,10 +81,29 @@ public class Chan8ProofOfWork {
         return v >= 0 ? (int) v : null;
     }
 
-    private static int countLeadingZeroBits(byte[] hash) {
+    // Writes the decimal number into the buffer, the same bytes that
+    // "token + number" would produce.
+    private static int writeNumber(byte[] buffer, int offset, long value) {
+        if (value == 0) {
+            buffer[offset] = '0';
+            return 1;
+        }
+        int digits = 0;
+        for (long v = value; v > 0; v /= 10) {
+            digits++;
+        }
+        long v = value;
+        for (int i = digits - 1; i >= 0; i--) {
+            buffer[offset + i] = (byte) ('0' + (v % 10));
+            v /= 10;
+        }
+        return digits;
+    }
+
+    private static int countLeadingZeroBits(byte[] hash, int length) {
         int bits = 0;
-        for (byte b : hash) {
-            int value = b & 0xFF;
+        for (int i = 0; i < length; i++) {
+            int value = hash[i] & 0xFF;
             for (int bit = 7; bit >= 0; bit--) {
                 if ((value & (1 << bit)) == 0) {
                     bits++;
