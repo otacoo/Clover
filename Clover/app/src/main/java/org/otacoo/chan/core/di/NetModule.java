@@ -110,7 +110,7 @@ public class NetModule {
                 HttpCookie hc = new HttpCookie(name, value);
                 hc.setDomain(host);
                 hc.setPath("/");
-                sharedCookieManager.getCookieStore().add(uri, hc);
+                org.otacoo.chan.core.net.AppCookieJar.replaceCookie(sharedCookieManager.getCookieStore(), uri, hc);
             }
         } catch (Exception e) {
             Logger.w("NetModule", "syncRaw failed", e);

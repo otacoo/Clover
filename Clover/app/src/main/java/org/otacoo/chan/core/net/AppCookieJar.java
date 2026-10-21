@@ -24,6 +24,23 @@ public class AppCookieJar implements CookieJar {
         return cookieManager;
     }
 
+    /**
+     * Stores a cookie and drops the ones with the same name. The store can
+     * hold a cookie per domain, and the server would then get the old value
+     * first when a cookie is sent for a host and its subdomains.
+     */
+    public static void replaceCookie(java.net.CookieStore store, java.net.URI uri, java.net.HttpCookie cookie) {
+        try {
+            for (java.net.HttpCookie old : new ArrayList<>(store.get(uri))) {
+                if (cookie.getName().equals(old.getName())) {
+                    store.remove(uri, old);
+                }
+            }
+            store.add(uri, cookie);
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
         String host = url.host();
@@ -53,7 +70,7 @@ public class AppCookieJar implements CookieJar {
                 if (cookie.expiresAt() > System.currentTimeMillis()) {
                     httpCookie.setMaxAge((cookie.expiresAt() - System.currentTimeMillis()) / 1000);
                 }
-                cookieManager.getCookieStore().add(uri, httpCookie);
+                replaceCookie(cookieManager.getCookieStore(), uri, httpCookie);
             }
             // Mirror to WebView's CookieManager so the Cookie Manager UI stays in sync.
             syncToWebView(url, cookies);

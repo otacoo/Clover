@@ -186,8 +186,10 @@ private static final Pattern POW_TOKEN_PATTERN =
                 String preview = resp.peekBody(16).string().trim();
                 is200HtmlPow = preview.startsWith("<")
                         || (contentType != null && contentType.contains("text/html"));
-                Logger.i(TAG, "POW check: code=" + resp.code() + " type=" + contentType
-                        + " head=" + preview.replace("\n", " "));
+                if (is200HtmlPow) {
+                    Logger.i(TAG, "POW check: code=" + resp.code() + " type=" + contentType
+                            + " head=" + preview.replace("\n", " "));
+                }
             }
             if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
                 return resp;
@@ -256,9 +258,6 @@ private static final Pattern POW_TOKEN_PATTERN =
         // request would submit another one and keep the limit alive.
         if (System.currentTimeMillis() < submissionsBlockedUntil) {
             Logger.w(TAG, "POW submissions are refused by 8chan, not trying again");
-            if (!silentPow) {
-                Chan8PowNotifier.showRateLimit();
-            }
             return resp;
         }
 
@@ -376,15 +375,13 @@ private static final Pattern POW_TOKEN_PATTERN =
             }
 
             if (submitCode != 200 && submitCode != 302 && submitCode != 303) {
-                // The solution was refused. 8chan answers with 400 when the
-                // submissions are refused, so stop sending them for a while.
+                // The solution was refused. 8chan answers with 400 when it does
+                // not like the submission, so stop sending them for a while and
+                // let the app fall back to the browser.
                 Logger.w(TAG, "POW submit refused with " + submitCode + ", backing off for "
                         + (SUBMISSION_BACKOFF_MS / 1000) + "s");
                 submissionsBlockedUntil = System.currentTimeMillis() + SUBMISSION_BACKOFF_MS;
                 submitResp.close();
-                if (!silentPow) {
-                    Chan8PowNotifier.showRateLimit();
-                }
                 return new okhttp3.Response.Builder()
                         .request(req)
                         .protocol(okhttp3.Protocol.HTTP_1_1)
