@@ -290,9 +290,9 @@ private static final Pattern POW_TOKEN_PATTERN =
             String submitPath = useCaptchaJsSubmit ? "/captcha.js" : req.url().encodedPath();
             String queryParams;
             if (html != null && html.contains("powblock=") && html.contains("pbchal=")) {
-                queryParams = "?powblock=" + solution + "&pbchal=" + token;
+                queryParams = "?powblock=" + solution + "&pbchal=" + urlEncode(token);
             } else {
-                queryParams = "?pow=" + solution + "&t=" + token;
+                queryParams = "?pow=" + solution + "&t=" + urlEncode(token);
             }
             String submitUrl = req.url().scheme() + "://" + req.url().host() + submitPath + queryParams;
 
@@ -388,6 +388,14 @@ private static final Pattern POW_TOKEN_PATTERN =
                     _latch = null;
                 }
             }
+        }
+    }
+
+    private static String urlEncode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (Exception e) {
+            return value;
         }
     }
 
