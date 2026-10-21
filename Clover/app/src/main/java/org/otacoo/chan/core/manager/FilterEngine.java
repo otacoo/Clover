@@ -34,9 +34,9 @@ import org.otacoo.chan.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -82,7 +82,7 @@ public class FilterEngine {
 
     private final DatabaseFilterManager databaseFilterManager;
 
-    private final Map<String, Pattern> patternCache = new HashMap<>();
+    private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
     @Inject
     public FilterEngine(DatabaseManager databaseManager, BoardManager boardManager) {
@@ -173,6 +173,10 @@ public class FilterEngine {
 
     @AnyThread
     public boolean matches(Filter filter, Post.Builder post) {
+        if (TextUtils.isEmpty(filter.pattern)) {
+            return false;
+        }
+
         if ((filter.type & FilterType.TRIPCODE.flag) != 0 && matches(filter, filter.pattern.startsWith("/"), post.tripcode, false)) {
             return true;
         }
@@ -201,7 +205,7 @@ public class FilterEngine {
             }
         }
 
-        if (post.images != null) {
+        if (post.images != null && (filter.type & FilterType.FILENAME.flag) != 0) {
             StringBuilder filename = new StringBuilder();
             for (PostImage image : post.images) {
                 if (image.filename != null) {
@@ -212,7 +216,7 @@ public class FilterEngine {
                 }
                 filename.append(' ');
             }
-            if ((filename.length() > 0) && (filter.type & FilterType.FILENAME.flag) != 0 && matches(filter, FilterType.FILENAME.isRegex, filename.toString(), false)) {
+            if (filename.length() > 0 && matches(filter, FilterType.FILENAME.isRegex, filename.toString(), false)) {
                 return true;
             }
         }
@@ -244,8 +248,7 @@ public class FilterEngine {
                 if (matches(filter, FilterType.FILESIZE.isRegex, String.valueOf(image.size), false)) {
                     return true;
                 }
-                if (matches(filter, FilterType.FILESIZE.isRegex,
-                        AndroidUtils.getReadableFileSize(image.size), false)) {
+                if (matches(filter, FilterType.FILESIZE.isRegex, image.getReadableSize(), false)) {
                     return true;
                 }
             }
@@ -259,17 +262,16 @@ public class FilterEngine {
         if (matchRegex) {
             Pattern pattern = null;
             if (!forceCompile) {
-                synchronized (patternCache) {
-                    pattern = patternCache.get(filter.pattern);
-                }
+                pattern = patternCache.get(filter.pattern);
             }
 
             if (pattern == null) {
                 pattern = compile(filter.pattern);
                 if (pattern != null) {
-                    synchronized (patternCache) {
-                        patternCache.put(filter.pattern, pattern);
-                    }
+                    patternCache.put(filter.pattern, pattern);
+                } else {
+                    Logger.e(TAG, "Invalid pattern");
+                    return false;
                 }
             }
 
@@ -281,13 +283,11 @@ public class FilterEngine {
                     Logger.w(TAG, "matcher.find() exception", e);
                     return false;
                 }
-            } else {
-                Logger.e(TAG, "Invalid pattern");
-                return false;
             }
         } else {
             return text.equals(filter.pattern);
         }
+        return false;
     }
 
     private static final Pattern isRegexPattern = Pattern.compile("^/(.*)/(i?)$");
@@ -323,19 +323,18 @@ public class FilterEngine {
             //Don't allow only double quotes (would match everything)
             pattern = rawPattern.length() != 2 ? Pattern.compile(text, Pattern.CASE_INSENSITIVE) : null;
         } else {
-            String[] words = rawPattern.split(" ");
-            String text = "";
-            for (int i = 0, wordsLength = words.length; i < wordsLength; i++) {
-                String word = words[i];
-                // Find a word (bounded by \b), replacing any * with \S*
-                text += "(\\b" + (wildcardPattern.matcher(escapeRegex(word)).replaceAll("\\\\S*")) + "\\b)";
-                // Allow multiple words by joining them with |
-                if (i < words.length - 1) {
-                    text += "|";
+            String[] words = rawPattern.trim().split("\\s+");
+            StringBuilder text = new StringBuilder();
+            for (String word : words) {
+                if (word.isEmpty()) continue;
+                if (text.length() > 0) {
+                    text.append("|");
                 }
+                text.append("(\\b")
+                        .append(wildcardPattern.matcher(escapeRegex(word)).replaceAll("\\\\S*"))
+                        .append("\\b)");
             }
-            //Don't allow only spaces (would match everything after split)
-            pattern = !TextUtils.isEmpty(text) ? Pattern.compile(text.toString(), Pattern.CASE_INSENSITIVE) : null;
+            pattern = text.length() > 0 ? Pattern.compile(text.toString(), Pattern.CASE_INSENSITIVE) : null;
         }
 
         return pattern;
