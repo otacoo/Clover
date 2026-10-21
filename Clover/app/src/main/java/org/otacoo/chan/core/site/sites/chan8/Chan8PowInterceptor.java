@@ -97,6 +97,7 @@ private static final Pattern POW_TOKEN_PATTERN =
         boolean silentPow = req.header(SILENT_POW_HEADER) != null;
 
         Response resp;
+        boolean clearedPowCookies = false;
         try {
             resp = chain.proceed(req);
         } catch (java.io.IOException ioEx) {
@@ -158,25 +159,43 @@ private static final Pattern POW_TOKEN_PATTERN =
             return resp;
         }
 
-        String powStatus = resp.header("X-PoWBlock-Status");
-        if (powStatus == null) powStatus = resp.header("X-PoW-Status");
-        boolean xBlockRequired = powStatus != null && powStatus.equalsIgnoreCase("required");
-        // Also handle Varnish 403 "Proof of Work required" (expired POW_TOKEN)
-        // and the POWBlock 403 page ("403 PB", "Guru Meditation").
-        boolean is403Pow = false;
-        if (!xBlockRequired && resp.code() == 403) {
-            String preview = resp.peekBody(256).string();
-            is403Pow = preview.contains("Proof of Work required") || preview.contains("403 PB");
-        }
-        // Also handle 200 HTML responses where no PoWBlock header was sent: any 8chan JSON
-        // endpoint returning HTML is a POW/TOS interstitial — JSON never starts with '<'.
-        boolean is200HtmlPow = false;
-        if (!xBlockRequired && !is403Pow && resp.code() == 200) {
-            String preview = resp.peekBody(16).string().trim();
-            is200HtmlPow = preview.startsWith("<");
-        }
-        if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
-            return resp;
+        String powStatus;
+        boolean xBlockRequired;
+        boolean is403Pow;
+        boolean is200HtmlPow;
+        while (true) {
+            powStatus = resp.header("X-PoWBlock-Status");
+            if (powStatus == null) powStatus = resp.header("X-PoW-Status");
+            xBlockRequired = powStatus != null && powStatus.equalsIgnoreCase("required");
+            // Also handle Varnish 403 "Proof of Work required" (expired POW_TOKEN)
+            // and the POWBlock 403 page ("403 PB", "Guru Meditation").
+            is403Pow = false;
+            if (!xBlockRequired && resp.code() == 403) {
+                String preview = resp.peekBody(256).string();
+                is403Pow = preview.contains("Proof of Work required") || preview.contains("403 PB");
+            }
+            // Also handle 200 HTML responses where no PoWBlock header was sent: any 8chan JSON
+            // endpoint returning HTML is a POW/TOS interstitial — JSON never starts with '<'.
+            is200HtmlPow = false;
+            if (!xBlockRequired && !is403Pow && resp.code() == 200) {
+                String preview = resp.peekBody(16).string().trim();
+                is200HtmlPow = preview.startsWith("<");
+            }
+            if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
+                return resp;
+            }
+            // A stale POW token makes the site answer with 403 and without a
+            // challenge. Dropping the token and asking again gets a fresh
+            // challenge, which the site sends along with the page.
+            if (is403Pow && !clearedPowCookies) {
+                Logger.w(TAG, "403 POW: dropping the stale token and asking again");
+                resp.close();
+                clearPowCookieStore(req.url().host());
+                clearedPowCookies = true;
+                resp = chain.proceed(req);
+                continue;
+            }
+            break;
         }
 
         // For X-PoWBlock-Status and 200-HTML cases, the challenge may be in the response body.
