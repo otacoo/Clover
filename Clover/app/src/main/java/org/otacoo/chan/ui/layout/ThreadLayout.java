@@ -139,8 +139,10 @@ public class ThreadLayout extends CoordinatorLayout implements
     private Visible visible;
     private AlertDialog deletingDialog;
     private boolean refreshedFromSwipe;
-    /** True when the site verification was opened for this load, so that it is not opened again. */
-    private boolean verificationOpened;
+    /** When the site verification was opened the last time, so that it is not opened again right away. */
+    private long verificationOpenedAt;
+    /** The site verification is not opened again within this time. */
+    private static final long VERIFICATION_COOLDOWN_MS = 5 * 60 * 1000;
     private boolean replyButtonEnabled;
     private boolean topBottomButtonEnabled;
     private boolean replyLayoutOpen;
@@ -524,11 +526,16 @@ public class ThreadLayout extends CoordinatorLayout implements
         // Open the verification screen for it instead of asking the user to
         // do it by hand, the thread is loaded again when it is done.
         Loadable loadable = presenter.getLoadable();
-        if (verificationRequired && !verificationOpened && loadable != null
-                && loadable.getSite() instanceof org.otacoo.chan.core.site.sites.chan8.Chan8) {
-            verificationOpened = true;
+        if (verificationRequired && loadable != null
+                && loadable.getSite() instanceof org.otacoo.chan.core.site.sites.chan8.Chan8
+                && System.currentTimeMillis() - verificationOpenedAt > VERIFICATION_COOLDOWN_MS) {
+            verificationOpenedAt = System.currentTimeMillis();
             callback.openSiteAuthentication(loadable.getSite(),
                     loadable.getSite().resolvable().desktopUrl(loadable, null), "8chan Verification");
+            // The verification is shown over the thread, show the loading
+            // state behind it so that the error screen is not shown when it is
+            // done.
+            showLoading();
             return;
         }
 
@@ -569,8 +576,6 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void showLoading() {
-        // A new load may need the site verification again.
-        verificationOpened = false;
         switchVisible(Visible.LOADING);
     }
 
