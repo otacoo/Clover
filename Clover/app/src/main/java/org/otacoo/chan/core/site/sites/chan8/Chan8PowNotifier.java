@@ -27,6 +27,17 @@ public final class Chan8PowNotifier {
 
     public static void onPowStarted() {
         powInProgress = true;
+        AndroidUtils.runOnUiThread(() -> {
+            View root = rootViewRef.get();
+            if (root == null) return;
+            dismissActive();
+            Snackbar sb = Snackbar.make(root,
+                    "Solving 8chan proof of work, please wait\u2026",
+                    Snackbar.LENGTH_INDEFINITE);
+            AndroidUtils.applyThemedStyle(sb, root);
+            activeSnackbar = sb;
+            sb.show();
+        });
     }
 
     public static void scheduleRetryOnNextSolve(Runnable retry) {
