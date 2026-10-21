@@ -178,8 +178,12 @@ private static final Pattern POW_TOKEN_PATTERN =
             // endpoint returning HTML is a POW/TOS interstitial — JSON never starts with '<'.
             is200HtmlPow = false;
             if (!xBlockRequired && !is403Pow && resp.code() == 200) {
+                String contentType = resp.header("Content-Type");
                 String preview = resp.peekBody(16).string().trim();
-                is200HtmlPow = preview.startsWith("<");
+                is200HtmlPow = preview.startsWith("<")
+                        || (contentType != null && contentType.contains("text/html"));
+                Logger.i(TAG, "POW check: code=" + resp.code() + " type=" + contentType
+                        + " head=" + preview.replace("\n", " "));
             }
             if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
                 return resp;
