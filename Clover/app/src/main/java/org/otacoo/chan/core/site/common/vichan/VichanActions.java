@@ -76,7 +76,10 @@ public class VichanActions extends CommonSite.CommonActions {
         antispam.addDefaultIgnoreFields();
 
         String threadValue = reply.loadable.isThreadMode() ? String.valueOf(reply.loadable.no) : null;
-        String password = generateRandomPassword();
+        String password = reply.password;
+        if (password == null || password.isEmpty()) {
+            password = generateRandomPassword();
+        }
         long antispamFetchStart = System.currentTimeMillis();
         VichanAntispam.PostFormData postFormData = antispam.getPostFormData(
                 reply.comment,
