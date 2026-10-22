@@ -1,3 +1,65 @@
+## 2026-10-21 – v3.14.0
+
+### New options & changes
+
+**Filters:**
+- **New option:** *Dimensions* and *File size* filter types
+  - Filter posts by image size (e.g. 1920x1080) or by file size
+  - Both can be added straight from the post menu, next to *Image (MD5)*
+
+**Filter converter:**
+- The [filter converter tool](https://otacoo.github.io/Clover/tools/filter_converter.html) now converts image MD5, dimensions and file size filters too
+  - MD5 hashes written as hex are converted to the form 4chan uses
+  - File sizes are converted to the way Clover shows them
+
+### Bug fixes & others
+
+**Filters:**
+- A filter with a stray space in the pattern could match every post
+- Two filters matching the same post no longer cancel each other out, so a hidden post stays hidden
+- The filters screen shoul load faster and no longer freeze the app
+
+**8chan:**
+- Clover should now navigate and solve the POWBlock on its own instead of showing an error page (might still happen once or twice)
+- 8chan no longer gets stuck on the verification screen when the saved proof of work is outdated
+- Fixed various issue with POWBlock verification and the Terms of Service cookie
+- You will no longer be bothered about 8chan if you're not currently browsing 8chan
+- POWBlock should continue to be solved silently in the background while browsing
+- 8chan no longer crashes the app when two requests need a proof of work at the same time
+- 8chan no longer switches to its other domain when a request is cancelled
+- The board list no longer hangs for a minute and a half when the site asks for a proof of work
+- The board list now shows an error instead of an empty list if it can't fetch it
+- 8chan posts no longer sometimes show the wrong date
+
+**Sites:**
+- Deleting your own post on Sushichan and Lainchan should now work correctly
+- Opening a thread link of 8chan, Sushichan or Lainchan should now work
+
+**Stability:**
+- Fixed a crash when a site replies without a charset
+
+**Performance:**
+- The app should use a a bit less memory now
+  - While you write a reply
+  - While a thread is loaded
+  - While 8chan solves a proof of work
+- The reply view should be a bit more smooth
+  - The attached images are not decoded again every time the reply is expanded
+  - The reply view is not measured again when it is closed
+
+**Reply view:**
+- Fixed a crash when an image could not be read, for example a video
+- Fixed and issue where the file name and the spoiler checkbox of an attached file would be missing when using the bottom reply
+
+**4chan Pass:**
+- Resetting the captcha session should no longer log you out of your 4chan Pass
+
+**Filter converter tool:**
+- Fix for certain filters using regular expressions not being converted properly
+
+**File size:**
+- The size of a file could be shown with the wrong unit, like "1.0 GiB" for a file just under 1 GB
+
 ## 2026-10-15 – v3.13.0
 
 ### New options & changes
