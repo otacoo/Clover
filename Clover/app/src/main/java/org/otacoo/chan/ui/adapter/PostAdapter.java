@@ -233,6 +233,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         sourceList.clear();
         sourceList.addAll(thread.posts);
 
+        // Number the posts in their thread order (#1 is the OP) for ChanSettings.showPostNumber
+        for (int i = 0, size = sourceList.size(); i < size; i++) {
+            sourceList.get(i).threadPostNumber = i + 1;
+        }
+
         int newLastSeen = -1;
         List<Post> newList;
         if (lastViewed >= 0 && thread.loadable.isThreadMode()) {

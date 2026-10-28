@@ -484,6 +484,14 @@ public class PostCell extends LinearLayout implements PostCellInterface {
             titleBuilder.append("\n");
         }
 
+        // Number the posts in their thread order like #1 #2 #3
+        if (threadMode && post.threadPostNumber >= 0 && ChanSettings.showPostNumber.get()) {
+            SpannableString postNumber = new SpannableString("#" + post.threadPostNumber + " ");
+            postNumber.setSpan(new ForegroundColorSpanHashed(theme.detailsColor), 0, postNumber.length(), 0);
+            postNumber.setSpan(new AbsoluteSizeSpanHashed(detailsSizePx), 0, postNumber.length(), 0);
+            titleBuilder.append(postNumber);
+        }
+
         titleBuilder.append(post.nameTripcodeIdCapcodeSpan);
 
         CharSequence time;

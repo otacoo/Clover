@@ -139,6 +139,10 @@ public class BrowsingSettingsController extends SettingsController {
                     ChanSettings.postFilename,
                     R.string.setting_post_filename, 0)));
 
+            posts.add(new BooleanSettingView(this,
+                    ChanSettings.showPostNumber,
+                    R.string.setting_show_post_number, 0));
+
             groups.add(posts);
         }
 

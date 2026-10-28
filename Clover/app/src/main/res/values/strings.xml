@@ -628,6 +628,7 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_post_full_date">Show the full date on posts</string>
     <string name="setting_post_file_info">Show file info on posts</string>
     <string name="setting_post_filename">Show filename on posts</string>
+    <string name="setting_show_post_number">Show post number</string>
 
     <!-- Browsing -->
     <string name="settings_screen_Browsing">Browsing</string>

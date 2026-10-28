@@ -118,6 +118,12 @@ public class Post {
     private long lastModified;
     private String title = "";
 
+    /**
+     * The position of this post in the thread it was bound to (#1 is the OP),
+     * assigned by PostAdapter.setThread; -1 when unknown.
+     */
+    public int threadPostNumber = -1;
+
     private Post(Builder builder) {
         board = builder.board;
         boardId = builder.board.code;

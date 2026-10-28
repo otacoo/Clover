@@ -52,6 +52,7 @@ import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.presenter.ReplyPresenter;
 import org.otacoo.chan.core.settings.ChanSettings;
+import org.otacoo.chan.core.settings.Setting;
 import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.ui.adapter.PostAdapter;
@@ -95,6 +96,16 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     private boolean searchOpen;
     private int lastPostCount;
     private int threadLastViewed = -1;
+
+    /**
+     * Rebinds the visible posts right away when the show post number option
+     * changes, so the numbers appear and disappear without a thread reload.
+     */
+    private final Setting.SettingCallback<Boolean> showPostNumberCallback = (setting, value) -> {
+        if (postAdapter != null) {
+            postAdapter.notifyDataSetChanged();
+        }
+    };
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -147,6 +158,20 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
         // View setup
         reply.setCallback(this);
         searchStatus.setTypeface(ROBOTO_MEDIUM);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        ChanSettings.showPostNumber.addCallback(showPostNumberCallback);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+
+        ChanSettings.showPostNumber.removeCallback(showPostNumberCallback);
     }
 
     public void setCallbacks(PostAdapter.PostAdapterCallback postAdapterCallback,
