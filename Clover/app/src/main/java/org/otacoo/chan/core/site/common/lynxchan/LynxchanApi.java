@@ -44,6 +44,13 @@ public class LynxchanApi extends CommonSite.CommonApi {
 
         boolean opAdded = false;
 
+        // lynxchan provides no thread stats in the thread JSON; count them while
+        // reading so the status footer can show them like 4chan does. The files
+        // of the OP are left out, like 4chan's images field.
+        int replyCount = 0;
+        int replyImages = 0;
+        int uniquePosters = -1;
+
         reader.beginObject();
         boolean opMarkdownHandled = false;
         while (reader.hasNext()) {
@@ -58,11 +65,19 @@ public class LynxchanApi extends CommonSite.CommonApi {
                 }
                 reader.beginArray();
                 while (reader.hasNext()) {
-                    readPostObject(reader, queue, false);
+                    // Reply; the per-entry object count is the file count.
+                    replyCount++;
+                    replyImages += readPostObject(reader, queue, false);
                 }
                 reader.endArray();
             } else if (key.equals("flagData")) {
                 parseFlagData(reader, queue.getLoadable().board);
+            } else if (key.equals("uniquePosters")) {
+                if (reader.peek() == JsonToken.NUMBER) {
+                    uniquePosters = reader.nextInt();
+                } else {
+                    reader.skipValue();
+                }
             } else if ((key.equals("message") || key.equals("comment")) && opMarkdownHandled) {
                 // "markdown" is the rendered HTML; "message" is raw source — skip raw source
                 // if we already captured the HTML version.
@@ -73,6 +88,14 @@ public class LynxchanApi extends CommonSite.CommonApi {
             }
         }
         reader.endObject();
+
+        // Put the counted stats on the OP; ChanThreadLoader copies them onto the
+        // real OP for the thread after the response finished.
+        opBuilder.replies(replyCount);
+        opBuilder.images(replyImages);
+        if (uniquePosters >= 0) {
+            opBuilder.uniqueIps(uniquePosters);
+        }
 
         if (!opAdded) {
             queue.addForParse(opBuilder);
@@ -113,7 +136,7 @@ public class LynxchanApi extends CommonSite.CommonApi {
         readPostObject(reader, queue, true);
     }
 
-    public void readPostObject(JsonReader reader, ChanReaderProcessingQueue queue, boolean isOp) throws Exception {
+    public int readPostObject(JsonReader reader, ChanReaderProcessingQueue queue, boolean isOp) throws Exception {
         Post.Builder builder = new Post.Builder();
         builder.board(queue.getLoadable().board);
         builder.op(isOp);
@@ -285,7 +308,11 @@ public class LynxchanApi extends CommonSite.CommonApi {
             }
         }
 
+        // The file count is used by loadThread for the thread stats footer.
+        int filesInPost = builder.images != null ? builder.images.size() : 0;
+
         queue.addForParse(builder);
+        return filesInPost;
     }
 
     private void readSinglePostField(JsonReader reader, String key, ChanReaderProcessingQueue queue, Post.Builder builder) throws Exception {

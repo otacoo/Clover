@@ -28,6 +28,12 @@ public class VichanApi extends CommonSite.CommonApi {
     public void loadThread(JsonReader reader, ChanReaderProcessingQueue queue) throws Exception {
         reader.beginObject();
         // Page object
+        //
+        // The vichan thread JSON has no thread stats; count them while reading
+        // so the status footer can show them like 4chan does. The OP is the
+        // first entry and its files are left out, like 4chan's images field.
+        int entries = 0;
+        int replyImages = 0;
         while (reader.hasNext()) {
             String key = reader.nextName();
             if (key.equals("posts")) {
@@ -35,7 +41,11 @@ public class VichanApi extends CommonSite.CommonApi {
                 // Thread array
                 while (reader.hasNext()) {
                     // Thread object
-                    readPostObject(reader, queue);
+                    int filesInPost = readPostObjectCounting(reader, queue);
+                    if (entries > 0) {
+                        replyImages += filesInPost;
+                    }
+                    entries++;
                 }
                 reader.endArray();
             } else {
@@ -43,6 +53,16 @@ public class VichanApi extends CommonSite.CommonApi {
             }
         }
         reader.endObject();
+
+        // Put the counted stats on the OP; ChanThreadLoader copies them onto the
+        // real OP for the thread after the response finished.
+        if (entries > 0) {
+            Post.Builder op = queue.getOp();
+            if (op != null) {
+                op.replies(entries - 1);
+                op.images(replyImages);
+            }
+        }
     }
 
     @Override
@@ -74,6 +94,12 @@ public class VichanApi extends CommonSite.CommonApi {
 
     @Override
     public void readPostObject(JsonReader reader, ChanReaderProcessingQueue queue) throws Exception {
+        // The file count is not needed here; loadThread uses it for the thread
+        // stats footer.
+        readPostObjectCounting(reader, queue);
+    }
+
+    private int readPostObjectCounting(JsonReader reader, ChanReaderProcessingQueue queue) throws Exception {
         Post.Builder builder = new Post.Builder();
         builder.board(queue.getLoadable().board);
 
@@ -244,7 +270,7 @@ public class VichanApi extends CommonSite.CommonApi {
         if (cached != null) {
             // Id is known, use the cached post object.
             queue.addForReuse(cached);
-            return;
+            return cached.images == null ? 0 : cached.images.size();
         }
 
         if (countryCode != null && countryName != null) {
@@ -260,6 +286,7 @@ public class VichanApi extends CommonSite.CommonApi {
         }
 
         queue.addForParse(builder);
+        return files.size();
     }
 
     private PostImage readPostImage(JsonReader reader, Post.Builder builder,
