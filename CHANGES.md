@@ -1,3 +1,11 @@
+## 2026-10-28 – v3.15.0
+
+- **New option:** *Show post number* (Browsing > Posts & replies)
+
+- **New feature:** Thread stats for *8chan*, *Lainchan*, *Sushichan*
+  - Will show the number of replies and images at the bottom of a thread (e.g. `39R / 5I`)
+  - 8chan also shows the number of unique posters (the `P` counter)
+
 ## 2026-10-21 – v3.14.0
 
 ### New options & changes
