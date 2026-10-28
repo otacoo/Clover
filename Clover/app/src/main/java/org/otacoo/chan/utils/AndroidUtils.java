@@ -49,8 +49,10 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
@@ -62,12 +64,14 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityManagerCompat;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.otacoo.chan.Chan;
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.theme.ThemeHelper;
+import org.otacoo.chan.ui.view.HidingFloatingActionButton;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
@@ -739,14 +743,65 @@ public class AndroidUtils {
             @Override
             public void onShown(Snackbar sb) {
                 notifySnackbarShowing(true);
-                sb.getView().post(() -> snackbarHeight = sb.getView().getHeight());
+                sb.getView().post(() -> {
+                    snackbarHeight = sb.getView().getHeight();
+                    // Only lift when the snackbar is actually still up, the
+                    // onShown post can run after a fast onDismissed.
+                    if (isAnySnackbarShowing()) {
+                        liftFloatingActionButtons(sb.getView().getParent(), true);
+                    }
+                });
             }
 
             @Override
             public void onDismissed(Snackbar sb, int event) {
                 notifySnackbarShowing(false);
+                if (!isAnySnackbarShowing()) {
+                    liftFloatingActionButtons(sb.getView().getParent(), false);
+                }
             }
         });
+    }
+
+    /**
+     * Pushes every floating action button above the shown snackbar so snackbars
+     * never have to be handled per view. The thread screen floating buttons
+     * lift themselves from the SnackbarEvent (HidingFloatingActionButton) and
+     * are skipped here.
+     */
+    private static void liftFloatingActionButtons(ViewParent target, boolean lift) {
+        if (!(target instanceof ViewGroup)) {
+            return;
+        }
+        List<FloatingActionButton> fabs = new ArrayList<>();
+        collectFloatingActionButtons((ViewGroup) target, fabs);
+        for (int i = 0; i < fabs.size(); i++) {
+            FloatingActionButton fab = fabs.get(i);
+            if (!fab.isShown()) {
+                continue;
+            }
+            float targetTranslation = lift ? -(snackbarHeight + dp(8)) : 0f;
+            fab.animate()
+                    .translationY(targetTranslation)
+                    .setDuration(200)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        }
+    }
+
+    private static void collectFloatingActionButtons(ViewGroup parent, List<FloatingActionButton> result) {
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            View child = parent.getChildAt(i);
+            if (child instanceof HidingFloatingActionButton) {
+                continue;
+            }
+            if (child instanceof FloatingActionButton) {
+                result.add((FloatingActionButton) child);
+            }
+            if (child instanceof ViewGroup) {
+                collectFloatingActionButtons((ViewGroup) child, result);
+            }
+        }
     }
 
     public static class SnackbarEvent {
