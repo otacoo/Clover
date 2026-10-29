@@ -271,7 +271,7 @@ public class StyleRule {
             }
 
             if (!spansToApply.isEmpty()) {
-                result = applySpan(result, spansToApply);
+                result = applySpan(result, spansToApply, link == PostLinkable.Type.SPOILER);
             }
         }
 
@@ -302,28 +302,39 @@ public class StyleRule {
         return 0;
     }
 
-    private SpannableString applySpan(CharSequence text, List<Object> spans) {
+    private SpannableString applySpan(CharSequence text, List<Object> spans, boolean spoiler) {
         SpannableString result = new SpannableString(text.toString());
-        int l = result.length();
+
+        // Spoilers must mask everything they wrap, so their own spans come last
+        if (spoiler) {
+            copyInnerSpans(text, result);
+        }
 
         for (Object span : spans) {
             if (span != null) {
-                result.setSpan(span, 0, l, 0);
+                result.setSpan(span, 0, result.length(), 0);
             }
         }
 
-        if (text instanceof android.text.Spanned) {
-            android.text.Spanned spanned = (android.text.Spanned) text;
-            Object[] existingSpans = spanned.getSpans(0, l, Object.class);
-            for (Object span : existingSpans) {
-                int start = spanned.getSpanStart(span);
-                int end = spanned.getSpanEnd(span);
-                int flags = spanned.getSpanFlags(span);
-                result.setSpan(span, start, end, flags);
-            }
+        if (!spoiler) {
+            copyInnerSpans(text, result);
         }
 
         return result;
+    }
+
+    private void copyInnerSpans(CharSequence text, SpannableString result) {
+        if (!(text instanceof android.text.Spanned)) {
+            return;
+        }
+
+        android.text.Spanned spanned = (android.text.Spanned) text;
+        for (Object span : spanned.getSpans(0, result.length(), Object.class)) {
+            result.setSpan(span,
+                    spanned.getSpanStart(span),
+                    spanned.getSpanEnd(span),
+                    spanned.getSpanFlags(span));
+        }
     }
 
     public interface Action {

@@ -949,9 +949,11 @@ public class PostCell extends LinearLayout implements PostCellInterface {
                                 } else if (linkable2.type == PostLinkable.Type.SPOILER && linkable2.isSpoilerVisible()) {
                                     //linkable 1 is the link
                                     handlePostLinkableClick(widget, linkable1);
-                                } else {
+                                } else if (linkable1.type != PostLinkable.Type.SPOILER && linkable2.type != PostLinkable.Type.SPOILER) {
                                     //weird case where a double stack of linkables, but isn't spoilered (some 4chan stickied posts)
                                     handlePostLinkableClick(widget, linkable1);
+                                } else {
+                                    //hidden spoiler, the onClick loop below reveals it
                                 }
                             }
 
