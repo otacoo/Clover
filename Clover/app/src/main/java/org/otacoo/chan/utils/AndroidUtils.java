@@ -780,6 +780,11 @@ public class AndroidUtils {
         collectFloatingActionButtons((ViewGroup) target, fabs);
         for (int i = 0; i < fabs.size(); i++) {
             FloatingActionButton fab = fabs.get(i);
+            if (fab.getParent() == target) {
+                // Material's own behavior lifts FABs that sit in the same
+                // CoordinatorLayout as the snackbar; lifting again doubles it
+                continue;
+            }
             if (!fab.isShown()) {
                 continue;
             }
