@@ -701,7 +701,8 @@ public class ThreadPresenter implements
                 }
             }
             if (position >= 0 && position + 1 < posts.size()) {
-                scrollTo(position + 1, true);
+                // Land on the new posts, not on the unread line above them
+                threadPresenterCallback.scrollToTopOf(position + 1);
             } else {
                 scrollToPost(post, true);
             }
