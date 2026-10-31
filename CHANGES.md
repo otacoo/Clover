@@ -1,3 +1,23 @@
+## 2026-10-31 – v3.15.1
+
+- **Fixed:** Catalog thumbnails now start loading just before they come into view
+  - This should fix the issue where blank thumbnails appears briefly when scrolling down
+- Fixed a rare issue where a big image download that stopped halfway through got saved anyway, so the image would show static or refuse to load until the cache rotated the broken file out
+- Greentext inside of spoilers will no longer be revealed (issue #43)
+- Updated a few build dependencies
+
+### Snackbars
+- **Fixed:** The `+` FAB button on the board list screen no longer jumps way too high when the "Board list refreshed" message shows
+- **Fixed:** The *View* button of the new posts snackbar now scrolls to the new posts instead of the unread line
+
+- **Changed:** Snackbars stay on *one line*, long text shortens with `...` instead of wrapping
+- **Changed:** With the FAB buttons enabled, the *new posts* snackbar is now shortened and sits to the left of the FABs
+
+### APNG
+- **Fixed:** APNG images not playing
+- **Fixed:** Double-tapping an APNG to play/pause should work again
+
+
 ## 2026-10-28 – v3.15.0
 
 - **New option:** *Show post number* (Browsing > Posts & replies)
