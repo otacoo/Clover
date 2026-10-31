@@ -962,7 +962,10 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             ImageView view = new ImageView(getContext());
             view.setImageDrawable(drawable);
             view.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            onModeLoaded(Mode.GIF, view);
+            // Mount as the mode that requested the file: APNGs that sites
+            // type as static (extension-less urls) load as BIGIMAGE, and
+            // onModeLoaded drops a view whose mode is not the current one
+            onModeLoaded(fallbackMode, view);
             drawable.start();
         } catch (Exception e) {
             Logger.e(TAG, "APNG decode failed, falling back", e);
