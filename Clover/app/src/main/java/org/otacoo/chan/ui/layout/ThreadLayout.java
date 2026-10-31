@@ -946,6 +946,11 @@ public class ThreadLayout extends CoordinatorLayout implements
         }
         newPostsBarShowing = showing;
 
+        // The bar doesn't cover the FAB buttons, no lift needed
+        if (replyButtonEnabled || topBottomButtonEnabled) {
+            return;
+        }
+
         int lift = getNewPostsBarHeight() + dp(12);
         fabContainer.animate()
                 .translationY(showing ? -lift : 0f)
@@ -1186,8 +1191,16 @@ public class ThreadLayout extends CoordinatorLayout implements
             bottomMargin += threadListLayout.getReplyHeight();
         }
         
-        barLp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
-        
+        // With FAB buttons enabled the bar is shortened and sits clear of
+        // the FABs, so they don't need to be lifted up while it is showing
+        boolean fabEnabled = replyButtonEnabled || topBottomButtonEnabled;
+        barLp.gravity = (fabEnabled ? Gravity.START : Gravity.CENTER_HORIZONTAL) | Gravity.BOTTOM;
+        int rightMargin = fabEnabled ? dp(88) : dp(12);
+        if (barLp.rightMargin != rightMargin) {
+            barLp.rightMargin = rightMargin;
+            newPostsBar.setLayoutParams(barLp);
+        }
+
         if (barLp.bottomMargin != bottomMargin) {
             barLp.bottomMargin = bottomMargin;
             newPostsBar.setLayoutParams(barLp);
