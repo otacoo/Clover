@@ -32,6 +32,7 @@ public abstract class Setting<T> {
     protected final T def;
     private List<SettingCallback<T>> callbacks = new ArrayList<>();
 
+    @SuppressWarnings("this-escape")
     public Setting(SettingProvider settingProvider, String key, T def) {
         this.settingProvider = settingProvider;
         this.key = key;
