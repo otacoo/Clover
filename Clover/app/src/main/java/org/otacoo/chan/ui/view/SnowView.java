@@ -29,7 +29,7 @@ import android.view.View;
 import java.util.Random;
 
 // A few faint snow dots drifting down, shown with the Christmas theme.
-public class SnowView extends View {
+public final class SnowView extends View {
     private static final int FLAKES = 14;
     private static final long FRAME_MS = 50;
 
