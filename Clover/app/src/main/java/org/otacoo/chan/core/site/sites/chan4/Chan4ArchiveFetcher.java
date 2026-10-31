@@ -92,6 +92,8 @@ public class Chan4ArchiveFetcher {
     }
 
     private static class ChallengeException extends IOException {
+        private static final long serialVersionUID = 1L;
+
         ChallengeException(String domain) {
             super("Cloudflare challenge");
         }
