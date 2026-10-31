@@ -23,15 +23,20 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.otacoo.chan.R;
 import org.otacoo.chan.core.model.ChanThread;
 import org.otacoo.chan.core.model.Post;
+import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.settings.ChanSettings;
 import org.otacoo.chan.ui.cell.PostCellInterface;
 import org.otacoo.chan.ui.cell.ThreadStatusCell;
+import org.otacoo.chan.ui.view.PostImageThumbnailView;
+import org.otacoo.chan.ui.view.ThumbnailView;
 import org.otacoo.chan.utils.AndroidUtils;
 
 import java.util.ArrayList;
@@ -63,6 +68,10 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private ChanSettings.PostViewMode postViewMode;
     private boolean compact = false;
+
+    // How far beyond each visible edge thumbnails were already prefetched
+    private int prefetchDownPosition = -1;
+    private int prefetchUpPosition = Integer.MAX_VALUE;
 
     @SuppressWarnings("this-escape")
     public PostAdapter(RecyclerView recyclerView, PostAdapterCallback postAdapterCallback, PostCellInterface.PostCellCallback postCellCallback, ThreadStatusCell.Callback statusCellCallback) {
@@ -217,6 +226,10 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void setThread(ChanThread thread, PostsFilter filter, int lastViewed) {
         bound = true;
         showError(null);
+
+        // Thumbs beyond the viewport are prefetched; new data starts over
+        prefetchDownPosition = -1;
+        prefetchUpPosition = Integer.MAX_VALUE;
 
         // Snapshots are only meaningful for the currently bound thread.
         if (boundLoadable != thread.loadable) {
@@ -484,6 +497,68 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             postPosition++;
         }
         return postPosition;
+    }
+
+    // Starts downloads for the thumbnails just beyond the visible edges into
+    // the shared memory cache, so cells popping up while scrolling already
+    // have their image instead of flashing a gray placeholder
+    public void prefetchThumbnails() {
+        if (displayList.isEmpty()) return;
+
+        if (!(recyclerView.getLayoutManager() instanceof LinearLayoutManager layoutManager)) {
+            return;
+        }
+
+        int first = layoutManager.findFirstVisibleItemPosition();
+        int last = layoutManager.findLastVisibleItemPosition();
+        if (first < 0 || last < 0) return;
+
+        int spanCount;
+        int thumbnailWidth;
+        if (layoutManager instanceof GridLayoutManager gridLayoutManager) {
+            spanCount = gridLayoutManager.getSpanCount();
+            // Card thumbnails roughly span one column
+            thumbnailWidth = Math.max(1, recyclerView.getWidth() / spanCount);
+        } else {
+            spanCount = 1;
+            thumbnailWidth = AndroidUtils.dp(120);
+        }
+        // Two rows ahead for the catalog, three items for the tall list cells
+        int ahead = layoutManager instanceof GridLayoutManager ? spanCount * 2 : 3;
+
+        int downTo = Math.min(getItemCount() - 1, last + ahead);
+        if (downTo > prefetchDownPosition) {
+            for (int position = Math.max(last + 1, prefetchDownPosition + 1); position <= downTo; position++) {
+                prefetchAt(position, thumbnailWidth);
+            }
+            prefetchDownPosition = downTo;
+        }
+
+        int upTo = Math.max(0, first - ahead);
+        if (upTo < prefetchUpPosition) {
+            for (int position = upTo; position <= Math.min(first - 1, prefetchUpPosition - 1); position++) {
+                prefetchAt(position, thumbnailWidth);
+            }
+            prefetchUpPosition = upTo;
+        }
+    }
+
+    private void prefetchAt(int position, int thumbnailWidth) {
+        if (position < 0 || position >= getItemCount()
+                || getItemViewType(position) != TYPE_POST) {
+            return;
+        }
+
+        Post post = displayList.get(getPostPosition(position));
+        PostImage image = post.image();
+        if (image == null || ChanSettings.textOnly.get()) {
+            return;
+        }
+
+        String url = PostImageThumbnailView.getDisplayUrl(image);
+        if (url != null) {
+            ThumbnailView.prefetch(url, thumbnailWidth, thumbnailWidth);
+        }
     }
 
     private boolean showStatusView() {

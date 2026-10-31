@@ -107,6 +107,15 @@ public class ThumbnailView extends View {
         sMemoryCache.put(url, bitmap);
     }
 
+    // Starts a thumbnail download for url into the shared memory cache so it
+    // is already there when a cell binds it.
+    public static void prefetch(String url, int width, int height) {
+        if (TextUtils.isEmpty(url) || sMemoryCache.get(url) != null) return;
+        // A fresh detached view per request: reusing one view would cancel
+        // the previous in-flight download when the next url is set
+        new ThumbnailView(AndroidUtils.getAppContext()).setUrl(url, width, height);
+    }
+
     private Call currentCall;
     private String currentUrl;
     private int currentWidth;

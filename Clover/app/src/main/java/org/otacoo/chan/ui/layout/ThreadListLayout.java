@@ -233,6 +233,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
                 }
             }
 
+            // Keep thumbnail downloads going just outside the viewport
+            postAdapter.prefetchThumbnails();
+
             threadListLayoutCallback.onScrolling(dy);
         }
     }
@@ -369,6 +372,9 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
             public boolean onPreDraw() {
                 recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
                 if (postAdapter.getDisplayList().isEmpty()) return true;
+
+                // Prefetch the thumbnails below the first screen
+                postAdapter.prefetchThumbnails();
 
                 if (scrolledToBottom()) {
                     int bottom = postAdapter.getDisplayList().size() - 1;

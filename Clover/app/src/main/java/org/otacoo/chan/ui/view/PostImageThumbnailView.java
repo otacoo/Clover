@@ -78,22 +78,26 @@ public class PostImageThumbnailView extends ThumbnailView implements View.OnLong
             this.postImage = postImage;
 
             if (postImage != null) {
-                boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
-                        && postImage.imageUrl != null
-                        && postImage.type != PostImage.Type.MOVIE
-                        && postImage.type != PostImage.Type.SWF;
-                String url;
-                if (useFullSize) {
-                    url = postImage.imageUrl.toString();
-                } else {
-                    okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
-                    url = thumbUrl != null ? thumbUrl.toString() : null;
-                }
-                setUrl(url, width, height, cacheOnly);
+                setUrl(getDisplayUrl(postImage), width, height, cacheOnly);
             } else {
                 setUrl(null, width, height, cacheOnly);
             }
         }
+    }
+
+    // The URL a thumbnail view displays for this image: the full image when
+    // the load-full-size setting is on (except movies/flash), otherwise its
+    // site thumbnail.
+    public static String getDisplayUrl(PostImage postImage) {
+        boolean useFullSize = ChanSettings.loadFullSizeThumbnails.get().shouldLoad()
+                && postImage.imageUrl != null
+                && postImage.type != PostImage.Type.MOVIE
+                && postImage.type != PostImage.Type.SWF;
+        if (useFullSize) {
+            return postImage.imageUrl.toString();
+        }
+        okhttp3.HttpUrl thumbUrl = postImage.getThumbnailUrl();
+        return thumbUrl != null ? thumbUrl.toString() : null;
     }
 
     public void setRatio(float ratio) {
