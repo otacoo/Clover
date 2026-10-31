@@ -691,10 +691,11 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
 
             ImageView animatedView = findAnimatedImageView();
             if (animatedView != null && animatedView.getDrawable() instanceof APNGDrawable apng) {
-                if (apng.isRunning()) {
-                    apng.pause();
-                } else {
+                // isRunning() stays true while paused, so pause state decides
+                if (apng.isPaused()) {
                     apng.resume();
+                } else {
+                    apng.pause();
                 }
                 return true;
             }
