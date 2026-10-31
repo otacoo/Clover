@@ -120,6 +120,10 @@ public class ThreadPresenter implements
     private boolean suppressNextNewPostsNotification = false;
     private boolean pendingBackgroundData = false;
 
+    // Post no of the first post of the batch the new posts bar is showing;
+    // the VIEW button jumps to this post instead of guessing from lastViewed
+    private int firstNewPostNo = -1;
+
     private int preSearchIndex = -1;
     private int preSearchTop = 0;
 
@@ -190,6 +194,7 @@ public class ThreadPresenter implements
             // An in-flight archive fetch for the previous thread no longer applies.
             archiveLoading = false;
 
+            firstNewPostNo = -1;
             threadPresenterCallback.showNewPostsNotification(false, -1);
         }
     }
@@ -405,6 +410,12 @@ public class ThreadPresenter implements
                 if (suppressNextNewPostsNotification) {
                     suppressNextNewPostsNotification = false;
                 } else {
+                    // Remember the top of the new batch for the VIEW button;
+                    // keep the earliest when several batches accumulate
+                    int batchFirst = posts.get(posts.size() - more).no;
+                    if (firstNewPostNo < 0 || batchFirst < firstNewPostNo) {
+                        firstNewPostNo = batchFirst;
+                    }
                     threadPresenterCallback.showNewPostsNotification(true, more);
                 }
             }
@@ -674,6 +685,7 @@ public class ThreadPresenter implements
             watchManager.onBottomPostViewed(pin);
         }
 
+        firstNewPostNo = -1;
         threadPresenterCallback.showNewPostsNotification(false, -1);
     }
 
@@ -690,21 +702,28 @@ public class ThreadPresenter implements
     }
 
     public void onNewPostsViewClicked() {
-        Post post = findPostById(loadable.lastViewed);
+        // Jump to the first post of the new batch; fall back to lastViewed if
+        // that post is gone (deleted, filtered out).
+        int anchorNo = firstNewPostNo;
+        firstNewPostNo = -1;
+        Post post = findPostById(anchorNo >= 0 ? anchorNo : loadable.lastViewed);
         if (post != null) {
-            int position = -1;
             List<Post> posts = threadPresenterCallback.getDisplayingPosts();
+            int position = -1;
             for (int i = 0; i < posts.size(); i++) {
                 if (posts.get(i).no == post.no) {
                     position = i;
                     break;
                 }
             }
-            if (position >= 0 && position + 1 < posts.size()) {
-                // Land on the new posts, not on the unread line above them
-                threadPresenterCallback.scrollToTopOf(position + 1);
-            } else {
+            if (position < 0 || position + 1 >= posts.size()) {
+                // Target is (just past) the newest post; reveal it minimally.
+                // Also covers the anchor post not being in the display list.
                 scrollToPost(post, true);
+            } else {
+                // Top-align: the first new post for the bar anchor, or one
+                // below the unread line for the lastViewed fallback
+                threadPresenterCallback.scrollToTopOf(anchorNo >= 0 ? position : position + 1);
             }
         } else {
             scrollTo(-1, true);
@@ -1241,6 +1260,7 @@ public class ThreadPresenter implements
     public void requestNewPostLoad() {
         if (loadable != null && loadable.isThreadMode()) {
             suppressNextNewPostsNotification = true;
+            firstNewPostNo = -1;
             threadPresenterCallback.showNewPostsNotification(false, -1);
             chanLoader.requestMoreDataAndResetTimer();
         }
