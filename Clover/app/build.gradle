@@ -155,7 +155,7 @@ dependencies {
     //noinspection GradleDependency
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'androidx.annotation:annotation:1.10.0'
+    implementation 'androidx.annotation:annotation:1.11.0'
     implementation 'androidx.exifinterface:exifinterface:1.4.2'
     //WebKit only added to fix Proxy option
     //noinspection GradleDependency
@@ -165,7 +165,7 @@ dependencies {
     //noinspection GradleDependency
     implementation 'androidx.browser:browser:1.8.0'
     //noinspection GradleDependency
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
 
     //noinspection GradleDependency
     implementation 'androidx.slidingpanelayout:slidingpanelayout:1.0.0'
@@ -174,14 +174,21 @@ dependencies {
     //noinspection GradleDependency
     implementation 'androidx.drawerlayout:drawerlayout:1.1.0'
     //noinspection GradleDependency
-    implementation 'androidx.viewpager:viewpager:1.0.0'
+    //noinspection GradleDependency
+    implementation 'androidx.slidingpanelayout:slidingpanelayout:1.0.0'
+    //noinspection GradleDependency
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'
+    //noinspection GradleDependency
+    implementation 'androidx.drawerlayout:drawerlayout:1.1.0'
+
+    implementation 'androidx.viewpager:viewpager:1.1.0'
 
     //noinspection GradleDependency
     implementation 'androidx.media3:media3-exoplayer:1.9.1'
     //noinspection GradleDependency
     implementation 'androidx.media3:media3-ui:1.9.1'
 
-    compileOnly 'org.checkerframework:checker-qual:3.54.0'
+    compileOnly 'org.checkerframework:checker-qual:3.55.1'
 
     //noinspection NewerVersionAvailable
     implementation 'com.squareup.okhttp3:okhttp:5.1.0'
@@ -189,14 +196,14 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:5.1.0'
     //noinspection NewerVersionAvailable
     implementation 'com.j256.ormlite:ormlite-android:4.48'
-    implementation 'org.jsoup:jsoup:1.22.2'
-    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.31'
+    implementation 'org.jsoup:jsoup:1.23.2'
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.32'
     implementation 'com.github.penfeizhou.android.animation:apng:3.0.5'
     implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
     implementation 'de.greenrobot:eventbus:2.4.1'
     implementation 'org.nibor.autolink:autolink:0.12.0'
     //noinspection NewerVersionAvailable
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.code.gson:gson:2.15.0'
     implementation 'me.xdrop:fuzzywuzzy:1.4.0'
     implementation 'org.codejargon.feather:feather:1.0'
 }
