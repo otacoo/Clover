@@ -422,6 +422,8 @@ public class DrawerController extends Controller implements DrawerAdapter.Callba
             }
         });
         AndroidUtils.applyThemedStyle(snackbar, drawerLayout);
+        // Long thread titles would make the snackbar grow over multiple lines
+        AndroidUtils.setSnackbarSingleLine(snackbar);
         snackbar.show();
     }
 
