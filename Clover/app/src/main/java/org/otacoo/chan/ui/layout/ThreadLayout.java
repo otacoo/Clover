@@ -911,7 +911,21 @@ public class ThreadLayout extends CoordinatorLayout implements
     @Override
     public void showNewPostsNotification(boolean show, int more) {
         if (show && replyLayoutOpen && threadListLayout != null && threadListLayout.isReplyExpanded()) return;
-        
+
+        if (show && threadListLayout != null && threadListLayout.isAttachedToWindow()) {
+            // The new posts are laid out after this call, so check afterwards:
+            // don't announce posts that are already on screen
+            AndroidUtils.waitForLayout(threadListLayout, view -> {
+                showNewPostsBar(!threadListLayout.scrolledToBottom(), more);
+                return true;
+            });
+            return;
+        }
+
+        showNewPostsBar(show, more);
+    }
+
+    private void showNewPostsBar(boolean show, int more) {
         updateNewPostsBarPosition();
         if (show) {
             String text = getContext().getResources()
