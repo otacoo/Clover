@@ -31,6 +31,7 @@ import org.otacoo.chan.core.model.orm.Filter;
 import org.otacoo.chan.ui.helper.BoardHelper;
 import org.otacoo.chan.utils.AndroidUtils;
 import org.otacoo.chan.utils.Logger;
+import org.jsoup.parser.Parser;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -189,11 +190,11 @@ public class FilterEngine {
             return true;
         }
 
-        if ((filter.type & FilterType.NAME.flag) != 0 && matches(filter, FilterType.NAME.isRegex, post.name, false)) {
+        if ((filter.type & FilterType.NAME.flag) != 0 && matches(filter, FilterType.NAME.isRegex, filterText(post.name), false)) {
             return true;
         }
 
-        if ((filter.type & FilterType.COMMENT.flag) != 0 && matches(filter, FilterType.COMMENT.isRegex, post.comment.toString(), false)) {
+        if ((filter.type & FilterType.COMMENT.flag) != 0 && matches(filter, FilterType.COMMENT.isRegex, filterText(post.comment), false)) {
             return true;
         }
 
@@ -201,7 +202,7 @@ public class FilterEngine {
             return true;
         }
 
-        if ((filter.type & FilterType.SUBJECT.flag) != 0 && matches(filter, FilterType.SUBJECT.isRegex, post.subject, false)) {
+        if ((filter.type & FilterType.SUBJECT.flag) != 0 && matches(filter, FilterType.SUBJECT.isRegex, filterText(post.subject), false)) {
             return true;
         }
 
@@ -267,6 +268,22 @@ public class FilterEngine {
         return false;
     }
 
+    // Filters run before the comment html is parsed, so decode entities and
+    // drop invisible word-break tags to match the text shown in the thread
+    private static String filterText(CharSequence raw) {
+        if (raw == null) {
+            return "";
+        }
+        String text = raw.toString().replace("<wbr>", "");
+        return normalizeQuotes(Parser.unescapeEntities(text, false));
+    }
+
+    // Typographic quotes from phones and websites differ from typed ones
+    private static String normalizeQuotes(String text) {
+        return text.replace('\u2018', '\'').replace('\u2019', '\'')
+                .replace('\u201C', '"').replace('\u201D', '"');
+    }
+
     @AnyThread
     public boolean matches(Filter filter, boolean matchRegex, String text, boolean forceCompile) {
         if (matchRegex) {
@@ -329,11 +346,11 @@ public class FilterEngine {
             }
         } else if (rawPattern.length() >= 2 && rawPattern.charAt(0) == '"' && rawPattern.charAt(rawPattern.length() - 1) == '"') {
             // "matches an exact sentence"
-            String text = escapeRegex(rawPattern.substring(1, rawPattern.length() - 1));
+            String text = escapeRegex(normalizeQuotes(rawPattern.substring(1, rawPattern.length() - 1)));
             //Don't allow only double quotes (would match everything)
             pattern = rawPattern.length() != 2 ? Pattern.compile(text, Pattern.CASE_INSENSITIVE) : null;
         } else {
-            String[] words = rawPattern.trim().split("\\s+");
+            String[] words = normalizeQuotes(rawPattern).trim().split("\\s+");
             StringBuilder text = new StringBuilder();
             for (String word : words) {
                 if (word.isEmpty()) continue;
