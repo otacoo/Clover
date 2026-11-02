@@ -401,6 +401,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
         String text = patternPreview.getText().toString();
         boolean matches = matchesPreview(text);
         patternPreviewStatus.setText(matches ? R.string.filter_matches : R.string.filter_no_matches);
+        patternPreviewStatus.setTextColor(matches ? 0xff4caf50 : 0xfff44336);
     }
 
     // Mirrors FilterEngine.matches() per enabled type: exact-match types use
