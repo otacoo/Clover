@@ -363,6 +363,7 @@ If any other filters are enabled for it, it will not work.
     <string name="post_filter">Filter</string>
     <string name="post_filter_id">Unique ID</string>
     <string name="post_filter_name">Name</string>
+    <string name="post_filter_comment">Comment</string>
     <string name="post_filter_image_md5">Image (MD5)</string>
     <string name="post_filter_dimensions">Dimensions</string>
     <string name="post_filter_filesize">File size</string>

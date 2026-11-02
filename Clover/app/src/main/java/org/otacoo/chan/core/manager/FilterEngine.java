@@ -268,13 +268,17 @@ public class FilterEngine {
         return false;
     }
 
-    // Filters run before the comment html is parsed, so decode entities and
-    // drop invisible word-break tags to match the text shown in the thread
+    // Filters run before the comment html is parsed, so turn it into plain
+    // text first to match the text shown in the thread
+    private static final Pattern htmlLineBreakPattern = Pattern.compile("(?i)<br\\s*/?>");
+    private static final Pattern htmlTagPattern = Pattern.compile("<[^>]*>");
+
     private static String filterText(CharSequence raw) {
         if (raw == null) {
             return "";
         }
-        String text = raw.toString().replace("<wbr>", "");
+        String text = htmlLineBreakPattern.matcher(raw.toString()).replaceAll("\n");
+        text = htmlTagPattern.matcher(text).replaceAll("");
         return normalizeQuotes(Parser.unescapeEntities(text, false));
     }
 

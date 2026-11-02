@@ -91,6 +91,11 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
     private Filter filter;
     private boolean onlyOnOPValue;
 
+    // Parsing the help html takes long enough to notice, so build it once in
+    // the background and reuse it for every filter editor
+    private static volatile Spanned helpText;
+    private static volatile boolean helpTextLoading;
+
     public FilterLayout(Context context) {
         super(context);
     }
@@ -147,6 +152,7 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
         help = findViewById(R.id.help);
         theme().helpDrawable.apply(help);
         help.setOnClickListener(this);
+        prepareHelpText();
         colorContainer = findViewById(R.id.color_container);
         colorContainer.setOnClickListener(this);
         colorPreview = findViewById(R.id.color_preview);
@@ -303,26 +309,11 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
             menu.setItems(menuItems);
             menu.show();
         } else if (v == help) {
-            Spanned text = Html.fromHtml(getString(R.string.filter_help), Html.FROM_HTML_MODE_LEGACY);
-            SpannableStringBuilder message = (SpannableStringBuilder) text;
-            TypefaceSpan[] typefaceSpans = message.getSpans(0, message.length(), TypefaceSpan.class);
-            for (TypefaceSpan span : typefaceSpans) {
-                if (span.getFamily().equals("monospace")) {
-                    int start = message.getSpanStart(span);
-                    int end = message.getSpanEnd(span);
-                    message.setSpan(new BackgroundColorSpan(0x22000000), start, end, 0);
-                }
+            Spanned message = helpText;
+            if (message == null) {
+                message = buildHelpText(getString(R.string.filter_help));
+                helpText = message;
             }
-
-            StyleSpan[] styleSpans = message.getSpans(0, message.length(), StyleSpan.class);
-            for (StyleSpan span : styleSpans) {
-                if (span.getStyle() == Typeface.ITALIC) {
-                    int start = message.getSpanStart(span);
-                    int end = message.getSpanEnd(span);
-                    message.setSpan(new BackgroundColorSpan(0x22000000), start, end, 0);
-                }
-            }
-
             new AlertDialog.Builder(getContext())
                     .setTitle(R.string.filter_help_title)
                     .setMessage(message)
@@ -420,6 +411,36 @@ public class FilterLayout extends LinearLayout implements View.OnClickListener {
             }
         }
         return hasPatternType && filterEngine.matches(filter, true, text, false);
+    }
+
+    private void prepareHelpText() {
+        if (helpText != null || helpTextLoading) {
+            return;
+        }
+        helpTextLoading = true;
+        final String raw = getString(R.string.filter_help);
+        new Thread(() -> {
+            helpText = buildHelpText(raw);
+            helpTextLoading = false;
+        }, "filter-help").start();
+    }
+
+    private static Spanned buildHelpText(String raw) {
+        SpannableStringBuilder message =
+                (SpannableStringBuilder) Html.fromHtml(raw, Html.FROM_HTML_MODE_LEGACY);
+        for (TypefaceSpan span : message.getSpans(0, message.length(), TypefaceSpan.class)) {
+            if (span.getFamily().equals("monospace")) {
+                message.setSpan(new BackgroundColorSpan(0x22000000),
+                        message.getSpanStart(span), message.getSpanEnd(span), 0);
+            }
+        }
+        for (StyleSpan span : message.getSpans(0, message.length(), StyleSpan.class)) {
+            if (span.getStyle() == Typeface.ITALIC) {
+                message.setSpan(new BackgroundColorSpan(0x22000000),
+                        message.getSpanStart(span), message.getSpanEnd(span), 0);
+            }
+        }
+        return message;
     }
 
     public interface FilterLayoutCallback {

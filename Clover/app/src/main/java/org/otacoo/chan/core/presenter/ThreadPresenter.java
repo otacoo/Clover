@@ -49,6 +49,7 @@ import org.otacoo.chan.core.site.http.DeleteRequest;
 import org.otacoo.chan.core.site.http.DeleteResponse;
 import org.otacoo.chan.core.site.http.HttpCall;
 import org.otacoo.chan.core.site.loader.ChanThreadLoader;
+import org.otacoo.chan.core.site.parser.CommentParser;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
 import org.otacoo.chan.core.site.sites.chan4.Chan4ArchiveFetcher;
 import org.otacoo.chan.ui.adapter.PostAdapter;
@@ -103,6 +104,7 @@ public class ThreadPresenter implements
     private static final int POST_OPTION_HIDE_ID = 26;
     private static final int POST_OPTION_FILTER_IMAGE_DIMENSIONS = 27;
     private static final int POST_OPTION_FILTER_IMAGE_FILESIZE = 28;
+    private static final int POST_OPTION_FILTER_COMMENT = 29;
 
     private ThreadPresenterCallback threadPresenterCallback;
     private WatchManager watchManager;
@@ -891,6 +893,9 @@ public class ThreadPresenter implements
         if (!TextUtils.isEmpty(post.name)) {
             filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_NAME, R.string.post_filter_name));
         }
+        if (!TextUtils.isEmpty(post.comment) && !post.comment.toString().trim().isEmpty()) {
+            filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_COMMENT, R.string.post_filter_comment));
+        }
         if (firstImageMd5(post) != null) {
             filterMenu.add(new FloatingMenuItem(POST_OPTION_FILTER_IMAGE_MD5, R.string.post_filter_image_md5));
         }
@@ -1017,6 +1022,22 @@ public class ThreadPresenter implements
                 filter.type = FilterType.NAME.flag;
                 filter.pattern = post.name;
                 threadPresenterCallback.filterPostWithFilter(filter);
+                break;
+            }
+            case POST_OPTION_FILTER_COMMENT: {
+                // The shown text has reply suffixes like " (OP)" that are not
+                // in the post html, drop them so the pattern can match
+                String comment = post.comment.toString().trim()
+                        .replace(CommentParser.OP_REPLY_SUFFIX, "")
+                        .replace(CommentParser.SAVED_REPLY_SUFFIX, "")
+                        .replace(CommentParser.EXTERN_THREAD_LINK_SUFFIX, "");
+                if (!comment.isEmpty()) {
+                    Filter filter = new Filter();
+                    filter.type = FilterType.COMMENT.flag;
+                    // Quoted so the whole comment is matched as one exact phrase
+                    filter.pattern = "\"" + comment + "\"";
+                    threadPresenterCallback.filterPostWithFilter(filter);
+                }
                 break;
             }
             case POST_OPTION_FILTER_IMAGE_MD5: {
