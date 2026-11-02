@@ -1,3 +1,14 @@
+## 2026-11-02 – v3.15.2
+
+### Snackbars
+- **Fixed:** The *new posts* message no longer pops up when the new posts are already on screen
+- **Changed:** Snackbars wrap again when the text is long, only the "bookmark removed" message stays on *one line* with `...`
+
+### Filters
+- **New option:** The post menu has a new *Filter → Comment* entry that fills in the filter with that post's comment, so there's no regex to write by hand
+- **Fixed:** Quoted filter phrases now match again when the post has encoded characters (like `'` or `&`) or links in it, and curly quotes are treated the same as typed ones
+- **Changed:** The "Test the pattern" result now shows *Matches* in green and *Does not match* in red
+
 ## 2026-10-31 – v3.15.1
 
 - **Fixed:** Catalog thumbnails now start loading just before they come into view
