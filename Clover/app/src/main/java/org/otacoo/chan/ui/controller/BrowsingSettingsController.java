@@ -127,6 +127,20 @@ public class BrowsingSettingsController extends SettingsController {
                     ChanSettings.tapQuotelinkSpan,
                     R.string.setting_tap_quotelink_span, R.string.setting_tap_quotelink_span_desc));
 
+            List<ListSettingView.Item<?>> underlineModes = new ArrayList<>();
+            for (ChanSettings.UnderlineLinksMode mode : ChanSettings.UnderlineLinksMode.values()) {
+                int name = switch (mode) {
+                    case ALL -> R.string.setting_underline_all;
+                    case QUOTES -> R.string.setting_underline_quotes_only;
+                    case URLS -> R.string.setting_underline_urls_only;
+                    case NONE -> R.string.setting_underline_none;
+                };
+                underlineModes.add(new ListSettingView.Item<>(getString(name), mode));
+            }
+            requiresUiRefresh.add(posts.add(new ListSettingView<>(this,
+                    ChanSettings.underlineQuotesLinks,
+                    R.string.setting_underline_quotes_links, underlineModes)));
+
             requiresUiRefresh.add(posts.add(new BooleanSettingView(this,
                     ChanSettings.postFullDate,
                     R.string.setting_post_full_date, 0)));

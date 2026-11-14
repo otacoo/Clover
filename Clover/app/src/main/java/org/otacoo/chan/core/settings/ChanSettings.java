@@ -187,6 +187,24 @@ public class ChanSettings {
         }
     }
 
+    public enum UnderlineLinksMode implements OptionSettingItem {
+        ALL("all"),
+        QUOTES("quotes"),
+        URLS("urls"),
+        NONE("none");
+
+        final String name;
+
+        UnderlineLinksMode(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getKey() {
+            return name;
+        }
+    }
+
     private static Proxy proxy;
 
     private static final StringSetting theme;
@@ -248,6 +266,7 @@ public class ChanSettings {
     public static final BooleanSetting disableBackButton;
     public static final BooleanSetting tapNoReply;
     public static final BooleanSetting tapQuotelinkSpan;
+    public static final OptionsSetting<UnderlineLinksMode> underlineQuotesLinks;
     public static final BooleanSetting volumeKeysScrolling;
     public static final BooleanSetting postFullDate;
     public static final BooleanSetting postFileInfo;
@@ -427,6 +446,8 @@ public class ChanSettings {
         disableBackButton = new BooleanSetting(p, "preference_disable_back_button", false);
         tapNoReply = new BooleanSetting(p, "preference_tap_no_reply", false);
         tapQuotelinkSpan = new BooleanSetting(p, "preference_tap_quotelink_span", true);
+        underlineQuotesLinks = new OptionsSetting<>(p, "preference_underline_quotes_links_mode",
+                UnderlineLinksMode.class, UnderlineLinksMode.ALL);
         volumeKeysScrolling = new BooleanSetting(p, "preference_volume_key_scrolling", false);
         postFullDate = new BooleanSetting(p, "preference_post_full_date", false);
         postFileInfo = new BooleanSetting(p, "preference_post_file_info", true);

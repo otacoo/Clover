@@ -80,7 +80,12 @@ public class PostLinkable extends ClickableSpan {
                 ds.setColor(currentTheme.quoteColor);
             }
 
-            ds.setUnderlineText(true);
+            ds.setUnderlineText(switch (ChanSettings.underlineQuotesLinks.get()) {
+                case ALL -> true;
+                case QUOTES -> type == Type.QUOTE;
+                case URLS -> type != Type.QUOTE;
+                case NONE -> false;
+            });
         } else if (type == Type.SPOILER) {
             ds.bgColor = currentTheme.spoilerColor;
             ds.setUnderlineText(false);

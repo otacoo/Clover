@@ -687,6 +687,11 @@ A workaround is to use an external media player, enable Clover's libvpx decoder 
     <string name="setting_tap_no_rely">Tap the post number to reply</string>
     <string name="setting_tap_quotelink_span">Tap the quotelink span to open</string>
     <string name="setting_tap_quotelink_span_desc">If enabled, tapping anywhere on the quotelink span will open the quotelink</string>
+    <string name="setting_underline_quotes_links">Underline quotes and links</string>
+    <string name="setting_underline_all">All links</string>
+    <string name="setting_underline_quotes_only">Quotelinks only</string>
+    <string name="setting_underline_urls_only">URLs only</string>
+    <string name="setting_underline_none">None</string>
     <string name="setting_open_link_confirmation">Ask before opening links</string>
     <string name="setting_fetch_youtube_titles">Fetch Youtube titles</string>
     <string name="setting_open_link_browser">Always open links in external browser</string>
