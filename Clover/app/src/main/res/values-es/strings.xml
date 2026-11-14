@@ -794,6 +794,11 @@ Si hay otros filtros habilitados para él, no funcionará.
         inferior</string>
     <string name="setting_disable_back_button">Deshabilitar botón Atrás en la vista del hilo</string>
     <string name="setting_tap_quotelink_span">Tocar el enlace de cita para abrir</string>
+    <string name="setting_underline_quotes_links">Subrayar citas y enlaces</string>
+    <string name="setting_underline_all">Todos los enlaces</string>
+    <string name="setting_underline_quotes_only">Solo enlaces de cita</string>
+    <string name="setting_underline_urls_only">Solo URLs</string>
+    <string name="setting_underline_none">Ninguno</string>
     <string name="setting_tap_quotelink_span_desc">Si está habilitado, tocar en cualquier lugar del
         enlace de cita lo abrirá</string>
     <string name="setting_load_full_size_thumbnails">Cargar miniaturas a tamaño completo</string>
@@ -832,4 +837,44 @@ Si hay otros filtros habilitados para él, no funcionará.
         continuar?</string>
     <string name="could_not_remove_site_error_message">No se pudo eliminar el sitio %1$s, mensaje de
         error: %2$s</string>
+    <string name="action_album_columns">Número de columnas</string>
+    <string name="action_show_reply_badge">Mostrar insignia de respuestas</string>
+    <string name="action_hide_reply_badge">Ocultar insignia de respuestas</string>
+    <string name="setup_site_4chan_signin">Iniciar sesión</string>
+    <string name="setup_site_4chan_signin_description">Abrir la página de inicio de sesión de 4chan con las cookies del captcha</string>
+    <string name="setup_site_4chan_ban_page">Página de baneos</string>
+    <string name="setup_site_4chan_ban_page_description">Abrir la página de estado de baneos y advertencias de 4chan</string>
+    <string name="filter_pin">Fijar post</string>
+    <string name="filter_only_on_op">Aplicar solo al OP</string>
+    <string name="filter_remove_all">Quitar todos</string>
+    <string name="filter_all_removed">Todos los filtros eliminados.</string>
+    <string name="filter_remove_all_confirm">Mantén pulsado para confirmar…</string>
+    <string name="post_filter_comment">Comentario</string>
+    <string name="image_copied">Imagen copiada al portapapeles</string>
+    <string name="filename_copied">Nombre de archivo copiado al portapapeles</string>
+    <string name="setting_watch_enable">Activado</string>
+    <string name="setting_chan8_fetch_gap">Intervalo de actualización de 8chan</string>
+    <string name="setting_chan8_fetch_gap_description">Espera mínima entre actualizaciones de favoritos de 8chan; un valor mayor es más suave con los límites de velocidad</string>
+    <string name="settings_restore_running">Restaurando ajustes.</string>
+    <string name="setting_theme_item_post_last_seen_color">Color de la línea de no leídos</string>
+    <string name="settings_gestures">Gestos</string>
+    <string name="settings_gestures_description">Deslizar, zoom y otros controles táctiles</string>
+    <string name="settings_screen_gestures">Gestos</string>
+    <string name="settings_group_media_gestures">Gestos</string>
+    <string name="setting_swipe_to_close">Deslizar para cerrar</string>
+    <string name="setting_swipe_to_close_description">Deslizar sobre un archivo multimedia lo cierra</string>
+    <string name="setting_swipe_to_save">Deslizar para guardar</string>
+    <string name="setting_swipe_to_save_description">Deslizar sobre un archivo multimedia lo guarda en la ubicación de guardado</string>
+    <string name="setting_tap_to_close">Tocar para cerrar</string>
+    <string name="setting_tap_to_close_description">Tocar una imagen cargada cierra el visor</string>
+    <string name="setting_finger_rotate">Rotar con dos dedos</string>
+    <string name="setting_swipe_zoomed">Deslizar con zoom</string>
+    <string name="setting_double_tap_play_pause">Doble toque para reproducir/pausar</string>
+    <string name="setting_video_zoom">Pellizcar para hacer zoom en videos</string>
+    <string name="setting_video_zoom_description">Pellizca los videos para acercar y alejar, doble toque para restablecer</string>
+    <string name="setting_show_zoom_level">Mostrar nivel de zoom</string>
+    <string name="setting_show_zoom_level_description">Mostrar el porcentaje de zoom al pellizcar imágenes y videos</string>
+    <string name="swipe_gesture_none">Ninguno</string>
+    <string name="swipe_gesture_up">Arriba</string>
+    <string name="swipe_gesture_down">Abajo</string>
 </resources>

@@ -813,6 +813,11 @@
     <string name="setting_bottom_reply_description">Открывать диалог ответа снизу</string>
     <string name="setting_disable_back_button">Отключить кнопку \'Назад\' в треде</string>
     <string name="setting_tap_quotelink_span">Нажать на область ссылки-цитаты, чтобы открыть</string>
+    <string name="setting_underline_quotes_links">Подчёркивать цитаты и ссылки</string>
+    <string name="setting_underline_all">Все ссылки</string>
+    <string name="setting_underline_quotes_only">Только ссылки-цитаты</string>
+    <string name="setting_underline_urls_only">Только URL</string>
+    <string name="setting_underline_none">Нет</string>
     <string name="setting_tap_quotelink_span_desc">Если включено, нажатие в любом месте области
         ссылки-цитаты откроет ее</string>
     <string name="setting_load_full_size_thumbnails">Загружать миниатюры в полном размере</string>
@@ -847,4 +852,44 @@
         действие</string>
     <string name="could_not_remove_site_error_message">Не удалось удалить сайт %1$s, сообщение об
         ошибке: %2$s</string>
+    <string name="action_album_columns">Число столбцов</string>
+    <string name="action_show_reply_badge">Показывать значок ответов</string>
+    <string name="action_hide_reply_badge">Скрывать значок ответов</string>
+    <string name="setup_site_4chan_signin">Вход</string>
+    <string name="setup_site_4chan_signin_description">Открыть страницу входа 4chan с использованием cookies капчи</string>
+    <string name="setup_site_4chan_ban_page">Страница банов</string>
+    <string name="setup_site_4chan_ban_page_description">Открыть страницу статуса банов и предупреждений 4chan</string>
+    <string name="filter_pin">Закрепить пост</string>
+    <string name="filter_only_on_op">Применять только к ОП</string>
+    <string name="filter_remove_all">Удалить все</string>
+    <string name="filter_all_removed">Все фильтры удалены.</string>
+    <string name="filter_remove_all_confirm">Удерживайте для подтверждения…</string>
+    <string name="post_filter_comment">Комментарий</string>
+    <string name="image_copied">Изображение скопировано в буфер обмена</string>
+    <string name="filename_copied">Имя файла скопировано в буфер обмена</string>
+    <string name="setting_watch_enable">Включено</string>
+    <string name="setting_chan8_fetch_gap">Интервал обновления 8chan</string>
+    <string name="setting_chan8_fetch_gap_description">Минимальная пауза между обновлениями закладок 8chan; большее значение мягче к ограничениям частоты</string>
+    <string name="settings_restore_running">Восстановление настроек.</string>
+    <string name="setting_theme_item_post_last_seen_color">Цвет линии непрочитанного</string>
+    <string name="settings_gestures">Жесты</string>
+    <string name="settings_gestures_description">Свайпы, масштабирование и другие сенсорные управления</string>
+    <string name="settings_screen_gestures">Жесты</string>
+    <string name="settings_group_media_gestures">Жесты</string>
+    <string name="setting_swipe_to_close">Свайп для закрытия</string>
+    <string name="setting_swipe_to_close_description">Свайп по медиафайлу закрывает его</string>
+    <string name="setting_swipe_to_save">Свайп для сохранения</string>
+    <string name="setting_swipe_to_save_description">Свайп по медиафайлу сохраняет его в папку сохранения</string>
+    <string name="setting_tap_to_close">Нажатие для закрытия</string>
+    <string name="setting_tap_to_close_description">Нажатие на загруженное изображение закрывает просмотрщик</string>
+    <string name="setting_finger_rotate">Поворот двумя пальцами</string>
+    <string name="setting_swipe_zoomed">Свайп при масштабе</string>
+    <string name="setting_double_tap_play_pause">Двойное нажатие для воспроизведения/паузы</string>
+    <string name="setting_video_zoom">Щипок для масштабирования видео</string>
+    <string name="setting_video_zoom_description">Сведите или разведите пальцы для масштабирования видео, двойное нажатие сбрасывает</string>
+    <string name="setting_show_zoom_level">Показывать уровень масштаба</string>
+    <string name="setting_show_zoom_level_description">Показывать процент масштаба при масштабировании изображений и видео</string>
+    <string name="swipe_gesture_none">Нет</string>
+    <string name="swipe_gesture_up">Вверх</string>
+    <string name="swipe_gesture_down">Вниз</string>
 </resources>

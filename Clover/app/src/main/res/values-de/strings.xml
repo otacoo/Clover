@@ -794,6 +794,11 @@ Noch keinen 4chan Pass?<br>
     <string name="setting_bottom_reply_description">Antwort-Dialog von unten öffnen</string>
     <string name="setting_disable_back_button">Zurück-Taste in der Thread-Ansicht deaktivieren</string>
     <string name="setting_tap_quotelink_span">Auf Quotelink-Bereich tippen zum Öffnen</string>
+    <string name="setting_underline_quotes_links">Quotelinks und Links unterstreichen</string>
+    <string name="setting_underline_all">Alle Links</string>
+    <string name="setting_underline_quotes_only">Nur Quotelinks</string>
+    <string name="setting_underline_urls_only">Nur URLs</string>
+    <string name="setting_underline_none">Keine</string>
     <string name="setting_tap_quotelink_span_desc">Wenn aktiviert, öffnet das Tippen irgendwo im
         Quotelink-Bereich den Quotelink</string>
     <string name="setting_load_full_size_thumbnails">Thumbnails in voller Größe laden</string>
@@ -832,4 +837,44 @@ Noch keinen 4chan Pass?<br>
         Möchtest du fortfahren?</string>
     <string name="could_not_remove_site_error_message">Konnte Seite %1$s nicht entfernen,
         Fehlermeldung: %2$s</string>
+    <string name="action_album_columns">Spaltenanzahl</string>
+    <string name="action_show_reply_badge">Antwort-Badge anzeigen</string>
+    <string name="action_hide_reply_badge">Antwort-Badge ausblenden</string>
+    <string name="setup_site_4chan_signin">Anmeldung</string>
+    <string name="setup_site_4chan_signin_description">4chans Anmeldeseite mit den Captcha-Cookies öffnen</string>
+    <string name="setup_site_4chan_ban_page">Bann-Seite</string>
+    <string name="setup_site_4chan_ban_page_description">4chans Bann- und Warnungsstatus-Seite öffnen</string>
+    <string name="filter_pin">Post anheften</string>
+    <string name="filter_only_on_op">Nur auf OP anwenden</string>
+    <string name="filter_remove_all">Alle entfernen</string>
+    <string name="filter_all_removed">Alle Filter entfernt.</string>
+    <string name="filter_remove_all_confirm">Zum Bestätigen halten…</string>
+    <string name="post_filter_comment">Kommentar</string>
+    <string name="image_copied">Bild in die Zwischenablage kopiert</string>
+    <string name="filename_copied">Dateiname in die Zwischenablage kopiert</string>
+    <string name="setting_watch_enable">Aktiviert</string>
+    <string name="setting_chan8_fetch_gap">8chan-Abrufabstand</string>
+    <string name="setting_chan8_fetch_gap_description">Mindestwartezeit zwischen 8chan-Lesezeichen-Updates, höher ist schonender für Ratenlimits</string>
+    <string name="settings_restore_running">Einstellungen werden wiederhergestellt.</string>
+    <string name="setting_theme_item_post_last_seen_color">Farbe der Ungelesen-Linie</string>
+    <string name="settings_gestures">Gesten</string>
+    <string name="settings_gestures_description">Wischen, Zoomen und andere Berührungssteuerung</string>
+    <string name="settings_screen_gestures">Gesten</string>
+    <string name="settings_group_media_gestures">Gesten</string>
+    <string name="setting_swipe_to_close">Zum Schließen wischen</string>
+    <string name="setting_swipe_to_close_description">Wischen auf einer Mediendatei schließt sie</string>
+    <string name="setting_swipe_to_save">Zum Speichern wischen</string>
+    <string name="setting_swipe_to_save_description">Wischen auf einer Mediendatei speichert sie im Speicherort</string>
+    <string name="setting_tap_to_close">Zum Schließen tippen</string>
+    <string name="setting_tap_to_close_description">Tippen auf ein geladenes Bild schließt den Betrachter</string>
+    <string name="setting_finger_rotate">Mit zwei Fingern drehen</string>
+    <string name="setting_swipe_zoomed">Wischen bei Zoom</string>
+    <string name="setting_double_tap_play_pause">Doppeltippen für Wiedergabe/Pause</string>
+    <string name="setting_video_zoom">Videos zum Zoomen zusammenziehen</string>
+    <string name="setting_video_zoom_description">Videos zusammenziehen zum Zoomen, Doppeltippen zum Zurücksetzen</string>
+    <string name="setting_show_zoom_level">Zoomstufe anzeigen</string>
+    <string name="setting_show_zoom_level_description">Zoom-Prozentsatz beim Zoomen von Bildern und Videos anzeigen</string>
+    <string name="swipe_gesture_none">Keine</string>
+    <string name="swipe_gesture_up">Nach oben</string>
+    <string name="swipe_gesture_down">Nach unten</string>
 </resources>
