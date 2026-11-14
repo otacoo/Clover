@@ -49,8 +49,10 @@ import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -1140,45 +1142,61 @@ public class PostCell extends LinearLayout implements PostCellInterface {
     }
 
     private class PostViewFastMovementMethod implements FastTextViewMovementMethod {
+        private Runnable pendingCopy;
+
         @Override
         public boolean onTouchEvent(@NonNull FastTextView widget, @NonNull Spanned buffer, @NonNull MotionEvent event) {
             int action = event.getActionMasked();
 
-            if (action == MotionEvent.ACTION_UP) {
-                int x = (int) event.getX();
-                int y = (int) event.getY();
-
-                x -= widget.getPaddingLeft();
-                y -= widget.getPaddingTop();
-
-                x += widget.getScrollX();
-                y += widget.getScrollY();
-
-                Layout layout = widget.getLayout();
-                if (layout == null) return false;
-
-                int line = layout.getLineForVertical(y);
-                if (!ChanSettings.tapQuotelinkSpan.get() && (x < layout.getLineLeft(line) || x > layout.getLineRight(line))) {
-                    return false;
+            if (action == MotionEvent.ACTION_DOWN) {
+                ClickableSpan link = findLink(widget, buffer, event);
+                if (link instanceof FileNameSpan fileNameSpan) {
+                    pendingCopy = () -> {
+                        widget.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                        copyFilenameToClipboard(widget, fileNameSpan.filename);
+                    };
+                    widget.postDelayed(pendingCopy, ViewConfiguration.getLongPressTimeout());
+                }
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                if (pendingCopy != null) {
+                    widget.removeCallbacks(pendingCopy);
+                    pendingCopy = null;
                 }
 
-                int off = layout.getOffsetForHorizontal(line, x);
-
-                ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
-
-                if (link.length != 0) {
-                    if (link[0] instanceof FileNameSpan fileNameSpan) {
-                        copyFilenameToClipboard(widget, fileNameSpan.filename);
-                    } else if (link[0] instanceof PostLinkable) {
-                        handlePostLinkableClick(widget, (PostLinkable) link[0]);
-                    } else {
-                        link[0].onClick(widget);
+                if (action == MotionEvent.ACTION_UP) {
+                    ClickableSpan link = findLink(widget, buffer, event);
+                    if (link != null) {
+                        // Filenames copy on long press only, a plain tap does nothing.
+                        if (!(link instanceof FileNameSpan)) {
+                            if (link instanceof PostLinkable) {
+                                handlePostLinkableClick(widget, (PostLinkable) link);
+                            } else {
+                                link.onClick(widget);
+                            }
+                        }
+                        return true;
                     }
-                    return true;
                 }
             }
 
             return false;
+        }
+
+        private ClickableSpan findLink(FastTextView widget, Spanned buffer, MotionEvent event) {
+            int x = (int) event.getX() - widget.getPaddingLeft() + widget.getScrollX();
+            int y = (int) event.getY() - widget.getPaddingTop();
+
+            Layout layout = widget.getLayout();
+            if (layout == null) return null;
+
+            int line = layout.getLineForVertical(y);
+            if (!ChanSettings.tapQuotelinkSpan.get() && (x < layout.getLineLeft(line) || x > layout.getLineRight(line))) {
+                return null;
+            }
+
+            int off = layout.getOffsetForHorizontal(line, x);
+            ClickableSpan[] spans = buffer.getSpans(off, off, ClickableSpan.class);
+            return spans.length > 0 ? spans[0] : null;
         }
     }
 
