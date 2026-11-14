@@ -24,4 +24,7 @@ public interface AuthenticationLayoutCallback {
 
     /** Called when user completes email verification on signin page; return to reply form and reload captcha on next post. */
     void onVerificationComplete();
+
+    /** Opens the site settings, called from the captcha error page. */
+    void openSiteSetup();
 }

@@ -857,12 +857,8 @@ public class ReplyLayout extends LoadView implements
     }
 
     @Override
-    public void suggestReVerify() {
-        Snackbar snackbar = Snackbar.make(this,
-                R.string.reply_reverify_suggestion, Snackbar.LENGTH_LONG);
-        snackbar.setAction(R.string.reply_reverify_action, v -> callback.openReVerify());
-        AndroidUtils.applyThemedStyle(snackbar, this);
-        snackbar.show();
+    public void openSiteSetup() {
+        callback.openSiteSetup();
     }
 
     @Override
@@ -1571,7 +1567,7 @@ public class ReplyLayout extends LoadView implements
 
         void showImageReencodingWindow();
 
-        void openReVerify();
+        void openSiteSetup();
     }
 
     private static String guessClipFilename(Context context, Uri uri) {

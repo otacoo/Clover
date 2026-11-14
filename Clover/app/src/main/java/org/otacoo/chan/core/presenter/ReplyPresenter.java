@@ -44,7 +44,6 @@ import org.otacoo.chan.core.site.http.HttpCall;
 import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.core.site.http.ReplyResponse;
 import org.otacoo.chan.core.site.sites.chan4.Chan4;
-import org.otacoo.chan.core.site.sites.chan4.Chan4NetworkProfiles;
 import org.otacoo.chan.ui.activity.ImagePickDelegate;
 import org.otacoo.chan.ui.captcha.AuthenticationLayoutCallback;
 import org.otacoo.chan.ui.captcha.AuthenticationLayoutInterface;
@@ -495,17 +494,6 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                 authenticationErrorMessage = replyResponse.errorMessage != null ?
                     replyResponse.errorMessage : "Captcha authentication failed.\nPlease solve the captcha again.";
                 switchPage(Page.AUTHENTICATION, true);
-
-                // The user has a 4chan_pass but the server rejected the post.
-                // This usually means the token doesn't match the current
-                // connection's fingerprint — offer re-verification.
-                if (loadable.site instanceof Chan4 chan4) {
-                    boolean hasPass = !chan4.getCookieStore().getChanPass().isEmpty()
-                            || Chan4NetworkProfiles.hasPassForCurrentNetwork();
-                    if (hasPass) {
-                        callback.suggestReVerify();
-                    }
-                }
             }
         } else {
             String errorMessage = getString(R.string.reply_error);
@@ -610,6 +598,11 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
     @Override
     public void onVerificationComplete() {
         switchPage(Page.INPUT, true);
+    }
+
+    @Override
+    public void openSiteSetup() {
+        callback.openSiteSetup();
     }
 
     public void onCommentTextChanged(CharSequence text) {
@@ -1047,6 +1040,6 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         
         void showAuthenticationError(String errorMessage);
 
-        void suggestReVerify();
+        void openSiteSetup();
     }
 }

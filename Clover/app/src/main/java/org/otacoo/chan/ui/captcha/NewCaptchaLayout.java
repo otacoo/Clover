@@ -360,7 +360,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
             overlay.put("message", message);
             overlay.put("isError", isError);
             overlay.put("showGetCaptcha", true);
-            overlay.put("showReset", true);
             JSONObject root = new JSONObject();
             root.put("overlay", overlay);
             return root.toString();
@@ -906,30 +905,6 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         });
     }
 
-    private void clearFingerprintCookies() {
-        // Clear stale ticket immediately
-        CaptchaSession.clearTickets();
-
-        // Drop all in-memory captcha state so nothing stale bleeds into the fresh session.
-        CaptchaSession.clear();
-
-        AndroidUtils.runOnUiThread(() -> {
-            showingOverlay = false;  // allow hardReset to proceed past the guard
-            CookieManager cm = CookieManager.getInstance();
-
-            // Only the fingerprint cookies are expired, the pass cookies
-            // (pass_id, pass_enabled, 4chan_pass) must survive the reset.
-            CaptchaCookies.expireFingerprintCookies();
-
-            evaluateJavascript("localStorage.clear(); sessionStorage.clear();", null);
-
-            maybeToast("4chan session cleared.", true);
-
-            // Do NOT re-include the (now erased) ticket in the next load.
-            hardReset(true, false);
-        });
-    }
-
 
     // Show a toast if user has enabled captcha toasts or when it is forced.
     private void maybeToast(final String msg, boolean force) {
@@ -1061,15 +1036,8 @@ public class NewCaptchaLayout extends WebView implements AuthenticationLayoutInt
         hardReset(false, true);
     }
 
-    /**
-     * Shows a confirmation dialog to the user before clearing cookies and restarting the session.
-     */
-    void onResetSession() {
-        new androidx.appcompat.app.AlertDialog.Builder(getContext())
-                .setTitle("Reset Session?")
-                .setMessage("This will clear all session cookies, localStorage for all sites (!) and restart the captcha process. Use this if you are stuck or seeing consistent errors.")
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> clearFingerprintCookies())
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+    /** Opens the site settings, called by the error page. */
+    void onOpenSiteSetup() {
+        callback.openSiteSetup();
     }
 }

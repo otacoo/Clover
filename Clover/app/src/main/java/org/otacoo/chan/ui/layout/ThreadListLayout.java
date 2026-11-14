@@ -790,8 +790,8 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
     }
 
     @Override
-    public void openReVerify() {
-        threadListLayoutCallback.openReVerify();
+    public void openSiteSetup() {
+        threadListLayoutCallback.openSiteSetup();
     }
 
     public int[] getIndexAndTop() {
@@ -1033,7 +1033,7 @@ public class ThreadListLayout extends FrameLayout implements ReplyLayout.ReplyLa
 
         void showImageReencodingWindow();
 
-        void openReVerify();
+        void openSiteSetup();
 
         void onScrolling(int dy);
     }

@@ -123,6 +123,9 @@
             flex-direction: column;
             align-items: center;
         }
+        .ov-error .ov-content {
+            margin: 12vh 0 0;
+        }
         .t-client-overlay .btn {
             font-size: 16px;
             padding: 10px 20px;
@@ -380,8 +383,10 @@
         .ov-title       { color: var(--c-fg); font-weight: bold; font-size: 17px; margin-bottom: 14px; }
         .ov-msg-error   { color: #e53935; font-style: italic; word-break: break-word; margin-bottom: 20px; }
         .ov-msg         { color: var(--c-fg); word-break: break-word; margin-bottom: 20px; }
-        .ov-reset-link  { font-size: 13px; color: var(--c-link); text-decoration: underline;
-                          cursor: pointer; margin-top: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); opacity: 0.8; }
+        .ov-footer      { margin-top: auto; font-size: 13px; text-align: center; color: var(--c-muted);
+                          padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)); }
+        .ov-footer a    { display: inline-block; margin-top: 6px; color: var(--c-link);
+                          text-decoration: underline; cursor: pointer; }
     </style>
     <title></title>
 </head>

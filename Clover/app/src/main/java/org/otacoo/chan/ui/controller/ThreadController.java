@@ -277,6 +277,13 @@ public abstract class ThreadController extends Controller implements
     }
 
     @Override
+    public void openSiteSetup(Site site) {
+        SiteSetupController controller = new SiteSetupController(context);
+        controller.setSite(site);
+        navigationController.pushController(controller);
+    }
+
+    @Override
     public void openSiteAuthentication(Site site, String url, String title) {
         if (site.name().equals("8chan.moe") || site.name().equals("8chan")) {
             title = site.name() + " Verification";

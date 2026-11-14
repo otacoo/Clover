@@ -80,7 +80,7 @@ class CaptchaBridge {
     }
 
     @JavascriptInterface
-    public void onResetSession() {
-        AndroidUtils.runOnUiThread(layout::onResetSession);
+    public void onOpenSiteSetup() {
+        AndroidUtils.runOnUiThread(layout::onOpenSiteSetup);
     }
 }

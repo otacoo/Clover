@@ -260,7 +260,7 @@ var expiryInterval = null;
 // Exact expiry time is 115 secs, I added 1 additional sec for reasons
 var expirySeconds = 116;
 
-function showJsOverlay(message, title, isError, showGetCaptcha, showReset) {
+function showJsOverlay(message, title, isError, showGetCaptcha) {
     var old = document.getElementById('clover-overlay');
     if (old && old.parentNode) old.parentNode.removeChild(old);
 
@@ -292,14 +292,26 @@ function showJsOverlay(message, title, isError, showGetCaptcha, showReset) {
         content.appendChild(btn);
     }
 
+    if (isError) {
+        ov.classList.add('ov-error');
+    }
+
     ov.appendChild(content);
 
-    if (showReset) {
-        var r = document.createElement('div');
-        r.className = 'ov-reset-link';
-        r.textContent = '\u26a0\ufe0f Reset Session';
-        r.onclick = function() { CaptchaCallback.onResetSession(); };
-        ov.appendChild(r);
+    if (isError) {
+        var footer = document.createElement('div');
+        footer.className = 'ov-footer';
+
+        var hint = document.createElement('div');
+        hint.textContent = 'Verify your email or check your ban status.';
+        footer.appendChild(hint);
+
+        var config = document.createElement('a');
+        config.textContent = 'Configure 4chan';
+        config.onclick = function() { CaptchaCallback.onOpenSiteSetup(); };
+        footer.appendChild(config);
+
+        ov.appendChild(footer);
     }
 
     document.body.appendChild(ov);
@@ -311,7 +323,7 @@ function showJsOverlay(message, title, isError, showGetCaptcha, showReset) {
 function showClientOverlay(msg) {
     var tm = document.getElementById('t-msg');
     if (tm) tm.style.display = 'none';
-    showJsOverlay(msg, '', false, true, false);
+    showJsOverlay(msg, '', false, true);
 }
 
 function startExpiryTimer(ttl) {
@@ -366,15 +378,14 @@ function buildFromJson(data) {
     if (data.single_view !== undefined) isSingleView = !!data.single_view;
     if (data.auto_skip_challenge !== undefined) autoSkipChallenge = !!data.auto_skip_challenge;
 
-    // Overlay mode: Java sends { overlay: { message, title, isError, showGetCaptcha, showReset } }
+    // Overlay mode: Java sends { overlay: { message, title, isError, showGetCaptcha } }
     if (data.overlay) {
         var ov = data.overlay;
         showJsOverlay(
             ov.message || '',
             ov.title || (ov.isError ? 'Error while posting' : ''),
             !!ov.isError,
-            ov.showGetCaptcha !== false,
-            ov.showReset !== false
+            ov.showGetCaptcha !== false
         );
         try { CaptchaCallback.onCaptchaLoaded(); } catch(e) {}
         return;
