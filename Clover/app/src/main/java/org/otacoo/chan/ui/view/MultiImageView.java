@@ -147,6 +147,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
     private ImageView videoStartupOverlay;
     private boolean videoError = false;
     private int vp9FallbackStage = 0; // 0=initial, 1=libvpx retry, 2=c2.android retry
+    // Stage reached by a previous failure in this app run; later videos skip
+    // the attempts that already proved broken.
+    private static int vp9StageFloor = 0;
     private ExoPlayer exoPlayer;
     private android.webkit.WebView fallbackWebView;
 
@@ -1128,7 +1131,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
             videoStartupOverlay = overlay;
         }
         playerRoot = root;
-        vp9FallbackStage = 0;
+        vp9FallbackStage = vp9StageFloor;
         videoError = false;
         videoScale = 1f;
         videoTransX = 0f;
@@ -1276,6 +1279,7 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                                  : 0;
                     if (vp9FallbackStage < maxStage) {
                         vp9FallbackStage++;
+                        vp9StageFloor = Math.max(vp9StageFloor, vp9FallbackStage);
                         handler.removeCallbacks(updateTimeTask);
                         handler.removeCallbacks(hideControllerTask);
                         if (exoPlayer != null) {
