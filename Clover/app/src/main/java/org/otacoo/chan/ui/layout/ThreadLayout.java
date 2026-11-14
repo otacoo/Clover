@@ -795,6 +795,11 @@ public class ThreadLayout extends CoordinatorLayout implements
     }
 
     @Override
+    public void scrollToUnread(int displayPosition) {
+        threadListLayout.scrollToUnread(displayPosition);
+    }
+
+    @Override
     public int getThreadListPosition(Post post) {
         // Always the thread list: the posts popup must not influence this.
         List<Post> posts = threadListLayout.getDisplayingPosts();

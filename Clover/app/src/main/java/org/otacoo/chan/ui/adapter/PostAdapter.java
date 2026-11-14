@@ -251,18 +251,17 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             sourceList.get(i).threadPostNumber = i + 1;
         }
 
+        // The line goes above the first post past the last one seen, so it
+        // survives that post being deleted or hidden by a filter.
+        List<Post> newList = filter.apply(sourceList);
         int newLastSeen = -1;
-        List<Post> newList;
         if (lastViewed >= 0 && thread.loadable.isThreadMode()) {
-            newList = filter.apply(sourceList);
-            for (int i = 0, size = newList.size() - 1; i < size; i++) {
-                if (newList.get(i).no == lastViewed) {
-                    newLastSeen = i + 1;
+            for (int i = 0; i < newList.size(); i++) {
+                if (newList.get(i).no > lastViewed) {
+                    newLastSeen = i;
                     break;
                 }
             }
-        } else {
-            newList = filter.apply(sourceList);
         }
 
         final List<Post> finalNewList = newList;
@@ -497,6 +496,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             postPosition++;
         }
         return postPosition;
+    }
+
+    // Adapter position of the unread line, or -1 when there is none.
+    public int getLastSeenIndicatorPosition() {
+        return lastSeenIndicatorPosition;
     }
 
     // Starts downloads for the thumbnails just beyond the visible edges into

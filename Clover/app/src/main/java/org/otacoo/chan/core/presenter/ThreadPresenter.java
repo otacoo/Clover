@@ -704,29 +704,14 @@ public class ThreadPresenter implements
     }
 
     public void onNewPostsViewClicked() {
-        // Jump to the first post of the new batch; fall back to lastViewed if
-        // that post is gone (deleted, filtered out).
+        // Jump to the start of the new posts; fall back to lastViewed if that
+        // post is gone (deleted, filtered out).
         int anchorNo = firstNewPostNo;
         firstNewPostNo = -1;
         Post post = findPostById(anchorNo >= 0 ? anchorNo : loadable.lastViewed);
-        if (post != null) {
-            List<Post> posts = threadPresenterCallback.getDisplayingPosts();
-            int position = -1;
-            for (int i = 0; i < posts.size(); i++) {
-                if (posts.get(i).no == post.no) {
-                    position = i;
-                    break;
-                }
-            }
-            if (position < 0 || position + 1 >= posts.size()) {
-                // Target is (just past) the newest post; reveal it minimally.
-                // Also covers the anchor post not being in the display list.
-                scrollToPost(post, true);
-            } else {
-                // Top-align: the first new post for the bar anchor, or one
-                // below the unread line for the lastViewed fallback
-                threadPresenterCallback.scrollToTopOf(anchorNo >= 0 ? position : position + 1);
-            }
+        int position = post != null ? threadPresenterCallback.getThreadListPosition(post) : -1;
+        if (position >= 0) {
+            threadPresenterCallback.scrollToUnread(position);
         } else {
             scrollTo(-1, true);
         }
@@ -1453,6 +1438,8 @@ public class ThreadPresenter implements
         void scrollTo(int displayPosition, boolean smooth);
 
         void scrollToTopOf(int displayPosition);
+
+        void scrollToUnread(int displayPosition);
 
         int getThreadListPosition(Post post);
 
