@@ -156,6 +156,14 @@ public class BitmapUtils {
                     newBitmap.compress(compressFormat, quality, output);
                 }
 
+                // The result replaces the input, so a re-encode temp that was
+                // used as input is not needed anymore
+                if (inputBitmapFile.getName().startsWith(TEMP_FILE_NAME)) {
+                    if (!inputBitmapFile.delete()) {
+                        Logger.w(TAG, "Could not delete replaced temp image file: " + inputBitmapFile.getAbsolutePath());
+                    }
+                }
+
                 return tempFile;
             } catch (Throwable error) {
                 if (tempFile != null) {
@@ -185,12 +193,17 @@ public class BitmapUtils {
     }
 
     private static void deleteOldTempFiles(File[] files) {
-        if (files.length == 0) {
+        // Only remove stale leftovers, e.g. from an interrupted re-encode.
+        // Deleting every temp file here used to destroy the re-encoded
+        // files that the other attachments still pointed at.
+        if (files == null || files.length == 0) {
             return;
         }
 
+        long staleBefore = System.currentTimeMillis() - 60L * 60L * 1000L;
         for (File file : files) {
-            if (file.getAbsolutePath().contains(TEMP_FILE_NAME_WITH_CACHE_DIR)) {
+            if (file.getAbsolutePath().contains(TEMP_FILE_NAME_WITH_CACHE_DIR)
+                    && file.lastModified() < staleBefore) {
                 if (!file.delete()) {
                     Logger.w(TAG, "Could not delete old temp image file: " + file.getAbsolutePath());
                 }

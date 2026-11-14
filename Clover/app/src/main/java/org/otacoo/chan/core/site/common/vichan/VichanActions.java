@@ -150,9 +150,14 @@ public class VichanActions extends CommonSite.CommonActions {
     private boolean addFiles(MultipartHttpCall call, Reply reply, String fileFieldName) {
         boolean added = false;
         if (!reply.fileAttachments.isEmpty()) {
-            for (Reply.FileAttachment attachment : reply.fileAttachments) {
+            for (int i = 0; i < reply.fileAttachments.size(); i++) {
+                Reply.FileAttachment attachment = reply.fileAttachments.get(i);
+                // The site's own multi-file scripts name the extra file
+                // inputs file2, file3, ... and PHP keeps only the last part
+                // of duplicate names, so every part needs its own name
+                String fieldName = i > 0 ? fileFieldName + (i + 1) : fileFieldName;
                 //Logger.d(TAG, "  Adding file: " + attachment.fileName + " (size=" + attachment.file.length() + " bytes)");
-                call.fileParameter(fileFieldName, attachment.fileName, attachment.file);
+                call.fileParameter(fieldName, attachment.fileName, attachment.file);
                 if (attachment.spoiler) {
                     call.parameter("fileSpoiler", "on");
                 }
