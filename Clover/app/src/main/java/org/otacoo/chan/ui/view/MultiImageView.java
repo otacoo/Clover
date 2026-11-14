@@ -1267,7 +1267,9 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                         || error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED
                         || error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES
                         || error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED
-                        || error.errorCode == PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED) {
+                        || error.errorCode == PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED
+                        // A dying decoder can fail the surface attach instead
+                        || error.errorCode == PlaybackException.ERROR_CODE_UNSPECIFIED) {
                     ChanSettings.Vp9ExtensionMode extMode = ChanSettings.vp9ExtensionMode.get();
                     int maxStage = extMode == ChanSettings.Vp9ExtensionMode.DEFAULT ? 2
                                  : extMode == ChanSettings.Vp9ExtensionMode.PREFER  ? 1
