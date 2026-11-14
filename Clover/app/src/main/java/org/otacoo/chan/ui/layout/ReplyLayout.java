@@ -709,7 +709,15 @@ public class ReplyLayout extends LoadView implements
                     break;
                 }
                 case NEW_CAPTCHA: {
-                    authenticationLayout = new NewCaptchaLayout(getContext());
+                    NewCaptchaLayout view = new NewCaptchaLayout(getContext());
+
+                    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                            LayoutParams.MATCH_PARENT,
+                            LayoutParams.MATCH_PARENT
+                    );
+                    view.setLayoutParams(params);
+
+                    authenticationLayout = view;
                     Logger.i("ReplyLayout", "Created NewCaptchaLayout (NEW_CAPTCHA)");
                     break;
                 }
@@ -796,7 +804,8 @@ public class ReplyLayout extends LoadView implements
                     message.setFocusable(false);
                 }
                 openMessage(false, true, "", false);
-                if (ChanSettings.toolbarBottom.get() && !lynxchan) {
+                if (ChanSettings.toolbarBottom.get() && !lynxchan
+                        && !ChanSettings.bottomReply.get()) {
                     captchaContainer.setPadding(0, 0, 0, dp(56));
                 } else {
                     captchaContainer.setPadding(0, 0, 0, 0);
