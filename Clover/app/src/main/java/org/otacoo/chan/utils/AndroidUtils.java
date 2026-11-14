@@ -753,7 +753,8 @@ public class AndroidUtils {
             public void onShown(Snackbar sb) {
                 notifySnackbarShowing(true);
                 sb.getView().post(() -> {
-                    snackbarHeight = sb.getView().getHeight();
+                    // FABs must clear the visible card, not the reserved margin.
+                    snackbarHeight = sb.getView().getHeight() - sb.getView().getPaddingBottom();
                     // Only lift when the snackbar is actually still up, the
                     // onShown post can run after a fast onDismissed.
                     if (isAnySnackbarShowing()) {
