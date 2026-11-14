@@ -427,9 +427,17 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         exoPlayerView.setTranslationY(videoTransY);
     }
 
+    // How far a zoomed video may be panned horizontally from the center.
+    private float videoMaxTranslationX() {
+        if (exoPlayerView == null || exoPlayerView.getWidth() == 0 || exoPlayerView.getHeight() == 0) {
+            return 0f;
+        }
+        return exoPlayerView.getWidth() * (videoScale - 1f) / 2f;
+    }
+
     private void clampVideoTranslation() {
         if (exoPlayerView == null || exoPlayerView.getWidth() == 0 || exoPlayerView.getHeight() == 0) return;
-        float maxX = exoPlayerView.getWidth() * (videoScale - 1f) / 2f;
+        float maxX = videoMaxTranslationX();
         float maxY = exoPlayerView.getHeight() * (videoScale - 1f) / 2f;
         videoTransX = Math.max(-maxX, Math.min(videoTransX, maxX));
         videoTransY = Math.max(-maxY, Math.min(videoTransY, maxY));
@@ -606,8 +614,15 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
                 videoTransY += dy;
                 clampVideoTranslation();
                 applyVideoTransform();
-                if (getParent() != null && !ChanSettings.swipeWhileZoomedIn.get()) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
+                if (getParent() != null) {
+                    if (!ChanSettings.swipeWhileZoomedIn.get()) {
+                        // Prevent swipes while zoomed in
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    } else {
+                        boolean canPan = (dx > 0f && videoTransX < videoMaxTranslationX())
+                                || (dx < 0f && videoTransX > -videoMaxTranslationX());
+                        getParent().requestDisallowInterceptTouchEvent(canPan);
+                    }
                 }
             } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                 scheduleZoomOverlayHide();
