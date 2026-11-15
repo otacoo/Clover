@@ -1,3 +1,28 @@
+## 2026-11-14 – v3.16.0
+
+- **New option:** *Underline quotes and links* in Browsing > Posts & replies (#44)
+  - This option provides various options to underline the links (all (default), none, quotelinks only, URLs only)
+
+### Changes:
+
+- Copying a filename now needs a long press (#44)
+- The unread line is now only cleared once you scroll all the way down; reopening a thread puts it back where you last stopped (#44)
+- Change the behaviour for the *View* button of the new posts snackbar, it now always lands on the unread line, with the new posts right below it (#44)
+- Update i18n strings
+
+**4chan:**
+- Removed the snackbar asking to verify when 4chan throws an error (#44)
+- Removed the *Reset session* button (#44)
+- A new message and *Configure 4chan* button have been added, leading you to the 4chan Settings page (#44)
+
+### Fixes
+- Fix a bug when picking multiple images and using *Re-encode*, *Change image checksum* or *Remove metadata* on them would cause the temp image file to be deleted from cache and prevent the newly created images from being uploaded
+- Panning a zoomed video will no longer swipe when using *Pinch to zoom* and *Swipe while zoomed in* together (#44)
+- The 4chan captcha challenge screen no longer has an empty strip at the bottom when using the *Bottom toolbar* (#44)
+- With the *Bottom toolbar* on, floating buttons no longer jump up much higher than needed when a snackbar appears
+- Fix an issue where the video hardware decoder could break on re-opening a video
+  - If the a decoder fails, the rest of the videos in that app session skip it automatically and start on the decoder that worked, so there's no retry delay every time
+
 ## 2026-11-02 – v3.15.2
 
 ### Snackbars
