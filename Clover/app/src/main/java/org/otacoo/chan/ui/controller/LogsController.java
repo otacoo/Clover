@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
 public class LogsController extends Controller {
     private static final String TAG = "LogsController";
 
-    private static final String[] QUICK_FILTERS = {"otacoo", "E/", "W/", "Captcha"};
+    private static final String[] QUICK_FILTERS = {"E/", "W/"};
 
     private TextView logTextView;
     private TextView lineCountView;
