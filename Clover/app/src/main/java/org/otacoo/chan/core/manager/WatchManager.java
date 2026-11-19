@@ -46,6 +46,7 @@ import org.otacoo.chan.core.model.Post;
 import org.otacoo.chan.core.model.PostImage;
 import org.otacoo.chan.core.model.orm.Loadable;
 import org.otacoo.chan.core.model.orm.Pin;
+import org.otacoo.chan.core.net.BackgroundRequest;
 import org.otacoo.chan.core.pool.ChanLoaderFactory;
 import org.otacoo.chan.core.receiver.WatchUpdateReceiver;
 import org.otacoo.chan.core.settings.ChanSettings;
@@ -1178,7 +1179,11 @@ public class WatchManager {
             }
 
             OkHttpClient client = injector().instance(OkHttpClient.class);
-            Request request = new Request.Builder().url(pin.thumbnailUrl).build();
+            // A pin refresh must not show POW messages; it retries on its own.
+            Request request = new Request.Builder()
+                    .url(pin.thumbnailUrl)
+                    .tag(BackgroundRequest.class, BackgroundRequest.INSTANCE)
+                    .build();
             currentThumbnailCall = client.newCall(request);
             currentThumbnailCall.enqueue(new Callback() {
                 @Override
