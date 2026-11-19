@@ -458,9 +458,7 @@ public class ThreadLayout extends CoordinatorLayout implements
         showReplyButton(!open);
         if (open) {
             showTopBottomButtons(false, false);
-            if (threadListLayout != null && threadListLayout.isReplyExpanded()) {
-                showNewPostsNotification(false, -1);
-            }
+            showNewPostsNotification(false, -1);
         }
         updateNewPostsBarPosition();
         updateFabContainerMargins();
@@ -468,7 +466,7 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void replyLayoutChanged() {
-        if (threadListLayout != null && threadListLayout.isReplyExpanded()) {
+        if (replyLayoutOpen) {
             showNewPostsNotification(false, -1);
         }
         updateNewPostsBarPosition();
@@ -914,13 +912,13 @@ public class ThreadLayout extends CoordinatorLayout implements
 
     @Override
     public void showNewPostsNotification(boolean show, int more) {
-        if (show && replyLayoutOpen && threadListLayout != null && threadListLayout.isReplyExpanded()) return;
+        if (show && replyLayoutOpen) return;
 
         if (show && threadListLayout != null && threadListLayout.isAttachedToWindow()) {
             // The new posts are laid out after this call, so check afterwards:
             // don't announce posts that are already on screen
             AndroidUtils.waitForLayout(threadListLayout, view -> {
-                showNewPostsBar(!threadListLayout.scrolledToBottom(), more);
+                showNewPostsBar(!replyLayoutOpen && !threadListLayout.scrolledToBottom(), more);
                 return true;
             });
             return;
