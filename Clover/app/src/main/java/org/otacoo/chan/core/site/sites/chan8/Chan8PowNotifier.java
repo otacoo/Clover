@@ -27,6 +27,9 @@ public final class Chan8PowNotifier {
     // The proof of work is solved in a moment, so the message is only shown
     // when it takes a while. Otherwise it would only flicker.
     private static final long SHOW_DELAY_MS = 5000;
+    // A failed attempt is often recovered moments later by another request,
+    // so the error is only announced when the site stays broken.
+    private static final long FAIL_DELAY_MS = 4000;
     private static final Handler handler = new Handler(Looper.getMainLooper());
     private static final Runnable showMessage = () -> {
         if (waitingCount.get() <= 0) return;
@@ -60,6 +63,7 @@ public final class Chan8PowNotifier {
      * is only shown when it takes a while.
      */
     public static void onPowStarted() {
+        handler.removeCallbacks(showFailure);
         waitingCount.incrementAndGet();
         handler.removeCallbacks(showMessage);
         handler.postDelayed(showMessage, SHOW_DELAY_MS);
@@ -87,6 +91,7 @@ public final class Chan8PowNotifier {
 
     public static void onPowSolved() {
         handler.removeCallbacks(showMessage);
+        handler.removeCallbacks(showFailure);
         Runnable retry = pendingRetry;
         pendingRetry = null;
         if (retry != null) {
@@ -95,10 +100,11 @@ public final class Chan8PowNotifier {
             t.setDaemon(true);
             t.start();
         }
-        AndroidUtils.runOnUiThread(Chan8PowNotifier::dismissSolving);
+        AndroidUtils.runOnUiThread(Chan8PowNotifier::dismissAll);
     }
 
     public static void showRateLimit() {
+        handler.removeCallbacks(showFailure);
         AndroidUtils.runOnUiThread(() -> {
             View root = rootViewRef.get();
             if (root == null) return;
@@ -114,6 +120,7 @@ public final class Chan8PowNotifier {
 
     public static void onPowRateLimited() {
         handler.removeCallbacks(showMessage);
+        handler.removeCallbacks(showFailure);
         AndroidUtils.runOnUiThread(() -> {
             dismissAll();
             View root = rootViewRef.get();
@@ -127,8 +134,7 @@ public final class Chan8PowNotifier {
         });
     }
 
-    public static void onPowFailed() {
-        handler.removeCallbacks(showMessage);
+    private static final Runnable showFailure = () -> {
         AndroidUtils.runOnUiThread(() -> {
             dismissAll();
             View root = rootViewRef.get();
@@ -140,6 +146,17 @@ public final class Chan8PowNotifier {
             activeSnackbar = sb;
             sb.show();
         });
+    };
+
+    public static void onPowFailed() {
+        handler.removeCallbacks(showMessage);
+        handler.removeCallbacks(showFailure);
+        handler.postDelayed(showFailure, FAIL_DELAY_MS);
+    }
+
+    /** The site answered normally again; a pending failure message is stale. */
+    public static void onPowSuccess() {
+        handler.removeCallbacks(showFailure);
     }
 
     private static void dismissSolving() {

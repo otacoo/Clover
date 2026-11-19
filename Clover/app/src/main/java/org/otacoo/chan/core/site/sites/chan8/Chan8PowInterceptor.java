@@ -224,6 +224,7 @@ private static final Pattern POW_TOKEN_PATTERN =
                 }
             }
             if (!xBlockRequired && !is403Pow && !is200HtmlPow) {
+                Chan8PowNotifier.onPowSuccess();
                 return resp;
             }
             // A stale POW token makes the site answer with 403 and without a
@@ -284,6 +285,7 @@ private static final Pattern POW_TOKEN_PATTERN =
                 // solves it itself.
                 Response retryResp = chain.proceed(req);
                 if (!isChallenge(retryResp)) {
+                    Chan8PowNotifier.onPowSuccess();
                     return retryResp;
                 }
                 resp = retryResp;
