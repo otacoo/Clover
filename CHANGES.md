@@ -1,3 +1,10 @@
+## 2026-11-19 – v3.16.1
+
+Small patch to fix two annoyances.
+
+- 8chan bookmarks will longer fail and throw a snackbar when the app comes back from background after a long time
+- **Changed:** The *new posts snackbar* will no longer be shown while the reply form or the captcha is open
+
 ## 2026-11-14 – v3.16.0
 
 - **New option:** *Underline quotes and links* in Browsing > Posts & replies (#44)
