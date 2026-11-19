@@ -323,14 +323,32 @@ private static final Pattern POW_TOKEN_PATTERN =
                 clearPowCookieStore(req.url().host());
                 html = fetchPowChallenge(req.url());
                 if (html == null) {
-                    Logger.w(TAG, "403 POW: could not retrieve fresh challenge");
-                    if (!silentPow) {
-                        Chan8PowNotifier.onPowFailed();
+                    // captcha.js does not always hand the challenge out;
+                    // asking the original page again usually gets it inline.
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
                     }
-                    return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
+                    resp = chain.proceed(req);
+                    String retryPow = resp.header("X-PoWBlock-Status");
+                    String retryHtml = resp.peekBody(64 * 1024).string();
+                    if ("required".equalsIgnoreCase(retryPow)
+                            && POW_TOKEN_PATTERN.matcher(retryHtml).find()) {
+                        html = retryHtml;
+                        challengeReceivedAt = System.currentTimeMillis();
+                    } else {
+                        resp.close();
+                        Logger.w(TAG, "403 POW: could not retrieve fresh challenge");
+                        if (!silentPow) {
+                            Chan8PowNotifier.onPowFailed();
+                        }
+                        return chain.proceed(req.newBuilder().header(POW_BYPASS_HEADER, "1").build());
+                    }
+                } else {
+                    challengeReceivedAt = System.currentTimeMillis();
+                    useCaptchaJsSubmit = true;
                 }
-                challengeReceivedAt = System.currentTimeMillis();
-                useCaptchaJsSubmit = true;
             } else if (is200HtmlPow) {
                 // The body is a challenge or TOS/interstitial page.
                 // Try to parse a challenge token from it first.  If none is present
