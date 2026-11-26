@@ -1,3 +1,13 @@
+## 2026-11-26 – v3.16.2
+
+- Reworked the layout for image attachments for better separation
+- **8chan:** Fix an issue where spoilering one image in a multi-image reply would mark all the other images as spoilered
+- **Vichan:** On vichan sites (Sushi, Lainchan), spoilering images in a multi-image reply now correctly spoilers them (no per-image spoiler exists)
+- Moved the *Reveal image spoilers* option to Browsing > Misc, next to *Reveal text spoilers*
+  - Toggling the option will correctly update the layout and spoilered images
+- Videos played with the WebView fallback now start muted when the *Start videos muted* option is enabled
+- Rebuilt the VP9 decoder with [16 KB alignment](https://developer.android.com/guide/practices/page-sizes)
+
 ## 2026-11-19 – v3.16.1
 
 Small patch to fix two annoyances.
