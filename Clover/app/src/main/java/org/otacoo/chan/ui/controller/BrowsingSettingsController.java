@@ -179,6 +179,11 @@ public class BrowsingSettingsController extends SettingsController {
                     R.string.settings_reveal_text_spoilers,
                     R.string.settings_reveal_text_spoilers_description)));
 
+            requiresUiRefresh.add(misc.add(new BooleanSettingView(this,
+                    ChanSettings.revealImageSpoilers,
+                    R.string.settings_reveal_image_spoilers,
+                    R.string.settings_reveal_image_spoilers_description)));
+
             groups.add(misc);
         }
     }

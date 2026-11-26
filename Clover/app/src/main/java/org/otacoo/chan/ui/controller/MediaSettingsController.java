@@ -157,11 +157,6 @@ public class MediaSettingsController extends SettingsController implements
                     ChanSettings.shareUrl,
                     R.string.setting_share_url, R.string.setting_share_url_description));
 
-            media.add(new BooleanSettingView(this,
-                    ChanSettings.revealImageSpoilers,
-                    R.string.settings_reveal_image_spoilers,
-                    R.string.settings_reveal_image_spoilers_description));
-
             groups.add(media);
         }
 
