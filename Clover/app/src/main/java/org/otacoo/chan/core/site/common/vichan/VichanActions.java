@@ -150,6 +150,7 @@ public class VichanActions extends CommonSite.CommonActions {
     private boolean addFiles(MultipartHttpCall call, Reply reply, String fileFieldName) {
         boolean added = false;
         if (!reply.fileAttachments.isEmpty()) {
+            boolean anySpoiler = false;
             for (int i = 0; i < reply.fileAttachments.size(); i++) {
                 Reply.FileAttachment attachment = reply.fileAttachments.get(i);
                 // The site's own multi-file scripts name the extra file
@@ -158,10 +159,11 @@ public class VichanActions extends CommonSite.CommonActions {
                 String fieldName = i > 0 ? fileFieldName + (i + 1) : fileFieldName;
                 //Logger.d(TAG, "  Adding file: " + attachment.fileName + " (size=" + attachment.file.length() + " bytes)");
                 call.fileParameter(fieldName, attachment.fileName, attachment.file);
-                if (attachment.spoiler) {
-                    call.parameter("fileSpoiler", "on");
-                }
+                anySpoiler |= attachment.spoiler;
                 added = true;
+            }
+            if (anySpoiler) {
+                call.parameter("spoiler", "on");
             }
         } else if (reply.file != null) {
             //Logger.d(TAG, "  Adding file: " + reply.fileName + " (size=" + reply.file.length() + " bytes)");
