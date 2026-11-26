@@ -1327,11 +1327,12 @@ public class MultiImageView extends FrameLayout implements View.OnClickListener,
         lp.gravity = Gravity.CENTER;
 
         Uri fileUri = Uri.fromFile(file);
+        String muted = isMuted ? " muted" : "";
         String html = "<html><head><style>" +
                 "body { margin: 0; background-color: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; }" +
                 "video { max-width: 100%; max-height: 100%; outline: none; }" +
                 "</style></head><body>" +
-                "<video controls autoplay loop src=\"" + fileUri.toString() + "\"></video>" +
+                "<video controls autoplay loop" + muted + " src=\"" + fileUri.toString() + "\"></video>" +
                 "</body></html>";
         fallbackWebView.loadDataWithBaseURL("file:///", html, "text/html", "UTF-8", null);
 
