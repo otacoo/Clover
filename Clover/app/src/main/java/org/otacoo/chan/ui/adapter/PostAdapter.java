@@ -148,6 +148,9 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Loadable boundLoadable;
     private final Map<Integer, int[]> boundPostState = new HashMap<>();
     private ChanSettings.ReplyAnchorMode boundReplyAnchorMode;
+    // Changing reveal-image-spoilers swaps thumbnails without changing any
+    // post counter, so it needs a full rebind.
+    private Boolean boundRevealImageSpoilers;
 
     private void updateBoundState(Post post) {
         int[] state = new int[5];
@@ -243,6 +246,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 && boundReplyAnchorMode != replyAnchorMode;
         boundReplyAnchorMode = replyAnchorMode;
 
+        boolean revealImageSpoilersChanged = boundRevealImageSpoilers != null
+                && boundRevealImageSpoilers != ChanSettings.revealImageSpoilers.get();
+        boundRevealImageSpoilers = ChanSettings.revealImageSpoilers.get();
+        final boolean forceRebind = revealImageSpoilersChanged;
+
         sourceList.clear();
         sourceList.addAll(thread.posts);
 
@@ -334,6 +342,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                if (forceRebind) return false;
+
                 boolean oldIsLastSeen = (oldLastSeen >= 0 && oldItemPosition == oldLastSeen);
                 boolean newIsLastSeen = (finalNewLastSeen >= 0 && newItemPosition == finalNewLastSeen);
                 if (oldIsLastSeen || newIsLastSeen) return true;
@@ -411,6 +421,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         error = null;
         bound = false;
         boundLoadable = null;
+        boundRevealImageSpoilers = null;
         boundPostState.clear();
     }
 
