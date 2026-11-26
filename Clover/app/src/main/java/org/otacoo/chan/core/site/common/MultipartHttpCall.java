@@ -68,7 +68,7 @@ public abstract class MultipartHttpCall extends HttpCall {
         return this;
     }
 
-    private String guessMimeType(String filename) {
+    public static String guessMimeType(String filename) {
         if (filename == null) {
             return "application/octet-stream";
         }

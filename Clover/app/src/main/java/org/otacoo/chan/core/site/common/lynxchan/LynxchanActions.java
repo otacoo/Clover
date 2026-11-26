@@ -15,7 +15,11 @@ import org.otacoo.chan.core.site.http.HttpCall;
 import org.otacoo.chan.core.site.http.Reply;
 import org.otacoo.chan.core.site.http.ReplyResponse;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +39,13 @@ public class LynxchanActions extends CommonSite.CommonActions {
 
     public LynxchanActions(CommonSite commonSite) {
         super(commonSite);
+    }
+
+    @Override
+    public boolean requirePrepare() {
+        // The files are hashed for the per-file metadata; keep that off the
+        // main thread.
+        return true;
     }
 
     @Override
@@ -150,17 +161,34 @@ public class LynxchanActions extends CommonSite.CommonActions {
 
         // Support both legacy single file and new multiple files
         if (!reply.fileAttachments.isEmpty()) {
-            // New multiple file support
+            int spoilerCount = 0;
             for (Reply.FileAttachment attachment : reply.fileAttachments) {
-                call.fileParameter("files", attachment.fileName, attachment.file);
+                if (attachment.spoiler) spoilerCount++;
             }
-            // Spoiler: send if any attachment is marked as spoiler
-            boolean anySpoiler = false;
-            for (Reply.FileAttachment attachment : reply.fileAttachments) {
-                if (attachment.spoiler) { anySpoiler = true; break; }
-            }
-            if (anySpoiler) {
+
+            if (spoilerCount == reply.fileAttachments.size()) {
+                // Every file is spoilered: the global parameter does the job,
+                // no per-file metadata or hashing needed.
+                for (Reply.FileAttachment attachment : reply.fileAttachments) {
+                    call.fileParameter("files", attachment.fileName, attachment.file);
+                }
                 call.parameter("spoiler", "on");
+            } else if (spoilerCount > 0) {
+                // Mixed spoilers: Lynxchan only reads per-file spoilers from
+                // the metadata lists, which are matched to uploads by sha256.
+                for (Reply.FileAttachment attachment : reply.fileAttachments) {
+                    String sha256 = sha256(attachment.file);
+                    call.parameter("fileSha256", sha256 != null ? sha256 : "");
+                    call.parameter("fileMime", MultipartHttpCall.guessMimeType(attachment.fileName));
+                    call.parameter("fileSpoiler", attachment.spoiler ? "on" : "");
+                    call.parameter("fileName", attachment.fileName);
+                    call.fileParameter("files", attachment.fileName, attachment.file);
+                }
+            } else {
+                // No spoilers: plain uploads.
+                for (Reply.FileAttachment attachment : reply.fileAttachments) {
+                    call.fileParameter("files", attachment.fileName, attachment.file);
+                }
             }
         } else if (reply.file != null) {
             // Legacy single file support
@@ -453,5 +481,27 @@ public class LynxchanActions extends CommonSite.CommonActions {
         // Match any TOS cookie (e.g., TOS, TOS20250418) and POW_TOKEN
         boolean hasTOS = TOS_PATTERN.matcher(cookies).find();
         return hasTOS && cookies.contains("POW_TOKEN");
+    }
+
+    // SHA-256 of the file contents, as lower-case hex, for Lynxchan's
+    // per-file metadata.
+    private static String sha256(File file) {
+        try (InputStream in = new FileInputStream(file)) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            StringBuilder hex = new StringBuilder(64);
+            for (byte b : digest.digest()) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
+                hex.append(Character.forDigit(b & 0xF, 16));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            Logger.e(TAG, "Could not hash " + file.getName(), e);
+            return null;
+        }
     }
 }
