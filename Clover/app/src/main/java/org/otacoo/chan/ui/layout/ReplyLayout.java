@@ -31,6 +31,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -1302,7 +1303,7 @@ public class ReplyLayout extends LoadView implements
                 final Reply.FileAttachment attachment = attachments.get(i);
                 final int index = i;
                 
-                // Create vertical container for each file
+                // Card around each file so its controls stay with its image
                 LinearLayout fileContainer = new LinearLayout(getContext());
                 fileContainer.setOrientation(LinearLayout.VERTICAL);
                 LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
@@ -1314,33 +1315,86 @@ public class ReplyLayout extends LoadView implements
                 containerParams.topMargin = dp(8);
                 containerParams.bottomMargin = dp(8);
                 fileContainer.setLayoutParams(containerParams);
-                
-                // Image view
-                final ImageView imageView = new ImageView(getContext());
-                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+
+                GradientDrawable card = new GradientDrawable();
+                card.setCornerRadius(dp(8));
+                card.setColor(getAttrColor(getContext(), R.attr.backcolor));
+                card.setStroke(dp(1), getAttrColor(getContext(), R.attr.divider_color));
+                fileContainer.setBackground(card);
+                fileContainer.setPadding(dp(8), dp(8), dp(8), dp(8));
+
+                // Image with the spoiler and remove controls on top of it
+                FrameLayout imageContainer = new FrameLayout(getContext());
+                imageContainer.setLayoutParams(new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         dp(200)
-                );
-                imageView.setLayoutParams(imageParams);
-                
+                ));
+
+                final ImageView imageView = new ImageView(getContext());
+                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                imageView.setLayoutParams(new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                ));
+
                 // Add click listener to show reencode options
                 imageView.setOnClickListener(v -> {
                     AndroidUtils.hideKeyboard(ReplyLayout.this);
                     presenter.onImageAttachmentClicked(index);
                     callback.showImageReencodingWindow();
                 });
-                
+
                 // Decode and display image - create separate closure for each iteration
                 decodeImageAsync(attachment.file, dp(400), dp(300), (file, bitmap) -> {
                     if (bitmap != null) {
                         imageView.setImageBitmap(bitmap);
                     }
                 });
-                
-                fileContainer.addView(imageView);
-                
-                // Filename Edit - show under every image
+                imageContainer.addView(imageView);
+
+                CheckBox spoilerCheckbox = new CheckBox(getContext());
+                spoilerCheckbox.setText("Spoiler");
+                spoilerCheckbox.setTextSize(12);
+                spoilerCheckbox.setTextColor(getAttrColor(getContext(), R.attr.text_color_primary));
+                spoilerCheckbox.setMinHeight(0);
+                spoilerCheckbox.setMinWidth(0);
+                spoilerCheckbox.setChecked(attachment.spoiler);
+                spoilerCheckbox.setOnCheckedChangeListener((buttonView, isChecked) ->
+                        presenter.setFileAttachmentSpoiler(index, isChecked)
+                );
+                GradientDrawable checkboxBackground = new GradientDrawable();
+                checkboxBackground.setCornerRadius(dp(12));
+                checkboxBackground.setColor(
+                        (getAttrColor(getContext(), R.attr.backcolor) & 0x00FFFFFF) | 0xCC000000);
+                spoilerCheckbox.setBackground(checkboxBackground);
+                spoilerCheckbox.setPadding(dp(6), dp(2), dp(8), dp(2));
+                FrameLayout.LayoutParams checkboxParams = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        Gravity.TOP | Gravity.START
+                );
+                checkboxParams.setMargins(dp(6), dp(6), 0, 0);
+                imageContainer.addView(spoilerCheckbox, checkboxParams);
+
+                TextView removeButton = new TextView(getContext());
+                removeButton.setText("✕");
+                removeButton.setTextSize(16);
+                removeButton.setGravity(Gravity.CENTER);
+                removeButton.setTextColor(getAttrColor(getContext(), R.attr.text_color_primary));
+                GradientDrawable removeBackground = new GradientDrawable();
+                removeBackground.setShape(GradientDrawable.OVAL);
+                removeBackground.setColor(
+                        (getAttrColor(getContext(), R.attr.backcolor_secondary) & 0x00FFFFFF) | 0xCC000000);
+                removeButton.setBackground(removeBackground);
+                removeButton.setOnClickListener(v -> presenter.removeFileAttachment(index));
+                FrameLayout.LayoutParams removeParams = new FrameLayout.LayoutParams(
+                        dp(32), dp(32), Gravity.TOP | Gravity.END);
+                removeParams.setMargins(0, dp(6), dp(6), 0);
+                imageContainer.addView(removeButton, removeParams);
+
+                fileContainer.addView(imageContainer);
+
+                // Filename is the last element of the card
                 EditText filenameEdit = new EditText(getContext());
                 String displayName = (attachment.fileName != null && !attachment.fileName.isEmpty()) ? 
                         attachment.fileName : attachment.file.getName();
@@ -1359,40 +1413,7 @@ public class ReplyLayout extends LoadView implements
                     }
                 });
                 fileContainer.addView(filenameEdit);
-                
-                // Control buttons
-                LinearLayout buttonsContainer = new LinearLayout(getContext());
-                buttonsContainer.setOrientation(LinearLayout.HORIZONTAL);
-                LinearLayout.LayoutParams buttonsParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                buttonsContainer.setLayoutParams(buttonsParams);
-                
-                CheckBox spoilerCheckbox = new CheckBox(getContext());
-                spoilerCheckbox.setText("Spoiler");
-                spoilerCheckbox.setChecked(attachment.spoiler);
-                spoilerCheckbox.setOnCheckedChangeListener((buttonView, isChecked) ->
-                    presenter.setFileAttachmentSpoiler(index, isChecked)
-                );
-                LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                checkboxParams.weight = 1;
-                buttonsContainer.addView(spoilerCheckbox, checkboxParams);
-                
-                Button removeButton = new Button(getContext(), null, android.R.attr.buttonBarButtonStyle);
-                removeButton.setLayoutParams(new LinearLayout.LayoutParams(dp(50), dp(50)));
-                removeButton.setText("✕");
-                removeButton.setTextSize(18);
-                removeButton.setAllCaps(false);
-                removeButton.setPadding(0, 0, 0, 0);
-                removeButton.setOnClickListener(v -> presenter.removeFileAttachment(index));
-                buttonsContainer.addView(removeButton);
-                
-                fileContainer.addView(buttonsContainer);
-                
+
                 previewHolder.addView(fileContainer);
             }
         } else {
