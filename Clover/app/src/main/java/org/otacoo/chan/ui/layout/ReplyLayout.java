@@ -1146,6 +1146,9 @@ public class ReplyLayout extends LoadView implements
         currentAttachmentMaxCount = maxCount;
         pruneAttachmentBitmaps(attachments);
 
+        // The per-attachment controls replace the legacy global fields.
+        spoiler.setVisibility(View.GONE);
+
         if (attachments.isEmpty()) {
             theme().imageDrawable.apply(attach);
         } else {
@@ -1162,7 +1165,7 @@ public class ReplyLayout extends LoadView implements
             createAttachmentViews(attachments);
 
             previewMessage.setText(currentCount + "/" + maxCount);
-            previewMessage.setVisibility(View.VISIBLE);
+            previewMessage.setVisibility(maxCount > 1 ? View.VISIBLE : View.GONE);
             showReencodeImageHint();
         } else {
             // Restore preview view to its original container if it was moved

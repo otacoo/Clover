@@ -166,8 +166,8 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         // Reset previewOpen before checking attachments
         previewOpen = false;
         
-        // Show multi-file attachments if they exist
-        if (limits.maxFileCount > 1 && !draft.fileAttachments.isEmpty()) {
+        // Show attachments if they exist, single or multi file.
+        if (!draft.fileAttachments.isEmpty()) {
             callback.openFileAttachments(draft.fileAttachments, draft.fileAttachments.size(), limits.maxFileCount);
             previewOpen = true;
         } else if (draft.file != null) {
@@ -236,13 +236,6 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
             callback.openSubject(moreOpen);
         }
         updateButtons();
-        if (previewOpen) {
-            // Only show global filename field for single-file sites
-            if (isSingleFileMode()) {
-                callback.openFileName(moreOpen);
-            }
-            callback.openSpoiler(loadable.getSite().boardFeature(Site.BoardFeature.POSTING_SPOILER, board) && moreOpen && isSingleFileMode(), false);
-        }
     }
 
     private void updateButtons() {
@@ -295,15 +288,10 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
                     pickingFile = callback.getImagePickDelegate().pick(this, allowMultiple, remainingFiles);
                 }
             } else if (maxFiles == 1) {
-                // Single file mode - toggle preview
-                if (previewOpen) {
-                    callback.openPreview(false, null);
-                    draft.file = null;
-                    draft.fileName = "";
-                    if (moreOpen) {
-                        callback.openFileName(false);
-                        callback.openSpoiler(false, false);
-                    }
+                // Single file mode - the attachment is shown like any other
+                if (!draft.fileAttachments.isEmpty()) {
+                    draft.fileAttachments.clear();
+                    callback.openFileAttachments(draft.fileAttachments, 0, maxFiles);
                     previewOpen = false;
                 } else {
                     pickingFile = callback.getImagePickDelegate().pick(this, false, 1);
@@ -371,7 +359,11 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         draft.captchaResponse = null;
         draft.skipPass = false;
 
-        // For backwards compatibility with single-file mode
+        // The attachment list is the source of truth; keep the legacy
+        // single-file fields in sync for the site's upload code.
+        draft.file = null;
+        draft.fileName = "";
+        draft.spoilerImage = false;
         if (!draft.fileAttachments.isEmpty()) {
             Reply.FileAttachment first = draft.fileAttachments.get(0);
             draft.file = first.file;
@@ -412,6 +404,9 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         draft.captchaResponse = null;
         draft.skipPass = true;
 
+        draft.file = null;
+        draft.fileName = "";
+        draft.spoilerImage = false;
         if (!draft.fileAttachments.isEmpty()) {
             Reply.FileAttachment first = draft.fileAttachments.get(0);
             draft.file = first.file;
@@ -739,18 +734,12 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
         int maxFiles = limits.maxFileCount;
         
         String finalFileName = maybeRandomizeFilename(name);
-        
-        // For sites that support multiple files
-        if (maxFiles > 1 && draft.fileAttachments.size() < maxFiles) {
+
+        // Every site uses the attachment list, single file included.
+        if (maxFiles > 0 && draft.fileAttachments.size() < maxFiles) {
             draft.fileAttachments.add(new Reply.FileAttachment(file, finalFileName, false));
             callback.openFileAttachments(draft.fileAttachments, draft.fileAttachments.size(), maxFiles);
             previewOpen = true;
-        } else {
-            // Legacy single file mode (for 4chan and single-file sites)
-            draft.file = file;
-            draft.fileName = finalFileName;
-            draft.spoilerImage = false;
-            showPreview(finalFileName, file);
         }
     }
 
@@ -911,8 +900,7 @@ public class ReplyPresenter implements AuthenticationLayoutCallback, ImagePickDe
      * @param index Index of the attachment
      */
     public void onImageAttachmentClicked(int index) {
-        org.otacoo.chan.core.site.FileUploadLimits limits = loadable.getSite().fileUploadLimits();
-        if (limits.maxFileCount > 1 && index >= 0 && index < draft.fileAttachments.size()) {
+        if (index >= 0 && index < draft.fileAttachments.size()) {
             editingAttachmentIndex = index;
             Reply.FileAttachment attachment = draft.fileAttachments.get(index);
             // Temporarily set single file fields so re-encoder picks them up
